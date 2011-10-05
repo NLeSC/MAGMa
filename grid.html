@@ -12,14 +12,14 @@ Ext.Loader.setConfig({
 });
 
 Ext.onReady(function () {
-  //ChemDoodle.default_atoms_useJMOLColors = true;
-  
   Ext.define('Molecule', {
     extend:'Ext.data.Model',
     fields: [{
       name:'name', type:'string'
     },{
       name:'mol', type:'string'
+    },{
+      name:'query', defaultValue: [] // array of atom indexes of molecule which are the substructure of the query 
     }]
   });
 
@@ -40,10 +40,10 @@ Ext.onReady(function () {
  });
 
   //Minimal
-// var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
-//  text: 'Molecule', dataIndex: 'mol',
-//  width: 150
-// });
+// 	var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
+// 	 text: 'Molecule', dataIndex: 'mol',
+// 	 width: 150
+// 	});
 
  // Bigger
 //  var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
@@ -52,18 +52,41 @@ Ext.onReady(function () {
 //    width: 300, canvasClass: 'x-chemdoodle-cols2',
 //  });
 
- // bigger and transformable
+ // jmol color, bigger and transformable
+//  var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
+//    text: 'Molecule', dataIndex: 'mol',
+//    canvasWidth: 300, canvasHeight: 200,
+//    width: 300,
+//    initCanvas:function(id, width, height, value) {
+//      var c = new ChemDoodle.TransformCanvas(id, width, height,true);
+//      c.specs.bonds_useJMOLColors = true;
+//      c.specs.atoms_useJMOLColors = true;
+//      c.loadMolecule(ChemDoodle.readMOL(value));
+//      c.specs.scale = 2;c.repaint();
+//    }
+//  });
+
+ // substructure highlight
+ var hlspecs = new ChemDoodle.structures.VisualSpecifications();
+ hlspecs.bonds_color = 'gold';
+ hlspecs.atoms_color = 'gold';
  var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
    text: 'Molecule', dataIndex: 'mol',
    canvasWidth: 300, canvasHeight: 200,
    width: 300,
-   initCanvas:function(id, width, height, value) {
-     console.log('initcanvas1',id, width, height);
+   initCanvas:function(id, width, height, value,record) {
      var c = new ChemDoodle.TransformCanvas(id, width, height,true);
-     c.loadMolecule(ChemDoodle.readMOL(value));
+     var m = ChemDoodle.readMOL(value);
+     record.data.query.forEach(function(qa) {
+       // use highlight visual spec for atoms which are part of query
+       m.atoms[qa].specs = hlspecs;
+       // also highlight all bonds conected to query atoms
+       m.getBonds(m.atoms[qa]).forEach(function(b) { b.specs = hlspecs; });
+     });
+     c.loadMolecule(m);
    }
  });
-
+ 
  var grid = Ext.create('Ext.grid.Panel', {
    title: 'Chemdoodle table',
    store: store,
