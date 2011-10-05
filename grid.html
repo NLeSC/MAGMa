@@ -14,7 +14,6 @@ Ext.Loader.setConfig({
 Ext.onReady(function () {
   //ChemDoodle.default_atoms_useJMOLColors = true;
   
-  
   Ext.define('Molecule', {
     extend:'Ext.data.Model',
     fields: [{
@@ -40,16 +39,31 @@ Ext.onReady(function () {
     autoLoad: true
  });
 
+  //Minimal
+// var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
+//  text: 'Molecule', dataIndex: 'mol',
+//  width: 150
+// });
+
+ // Bigger
+//  var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
+//    text: 'Molecule', dataIndex: 'mol',
+//    canvasWidth: 300, canvasHeight: 200,
+//    width: 300, canvasClass: 'x-chemdoodle-cols2',
+//  });
+
+ // bigger and transformable
  var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
-   text: 'Molecule', dataIndex: 'mol'
-   ,canvasWidth: 200, canvasHeight: 100,
-   width: 200,
+   text: 'Molecule', dataIndex: 'mol',
+   canvasWidth: 300, canvasHeight: 200,
+   width: 300,
    initCanvas:function(id, width, height, value) {
+     console.log('initcanvas1',id, width, height);
      var c = new ChemDoodle.TransformCanvas(id, width, height,true);
      c.loadMolecule(ChemDoodle.readMOL(value));
    }
  });
- 
+
  var grid = Ext.create('Ext.grid.Panel', {
    title: 'Chemdoodle table',
    store: store,
