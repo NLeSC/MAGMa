@@ -52,7 +52,8 @@ Ext.define('Ext.esc.ChemDoodleColumn', {
   config: {
     /**
      * @cfg {Number} canvasWidth
-     * The width of the chemdoodle canvas in pixels.
+     * The width of the chemdoodle canvas in pixels. 
+     * If width is set then set this a little bit smaller (10pixels) so its not collapsed into an ellipsis.
      */
     canvasWidth:150,
     /**

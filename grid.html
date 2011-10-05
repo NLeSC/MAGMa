@@ -1,3 +1,4 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"> 
 <html> 
 <head> 
 <link rel="stylesheet" href="ChemDoodleWeb/install/ChemDoodleWeb.css" type="text/css"> 
@@ -42,21 +43,21 @@ Ext.onReady(function () {
   //Minimal
 // 	var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
 // 	 text: 'Molecule', dataIndex: 'mol',
-// 	 width: 150
+// 	 width: 160
 // 	});
 
  // Bigger
 //  var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
 //    text: 'Molecule', dataIndex: 'mol',
 //    canvasWidth: 300, canvasHeight: 200,
-//    width: 300, canvasClass: 'x-chemdoodle-cols2',
+//    width: 310, canvasClass: 'x-chemdoodle-cols2',
 //  });
 
  // jmol color, bigger and transformable
 //  var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
 //    text: 'Molecule', dataIndex: 'mol',
 //    canvasWidth: 300, canvasHeight: 200,
-//    width: 300,
+//    width: 310,
 //    initCanvas:function(id, width, height, value) {
 //      var c = new ChemDoodle.TransformCanvas(id, width, height,true);
 //      c.specs.bonds_useJMOLColors = true;
@@ -73,7 +74,7 @@ Ext.onReady(function () {
  var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
    text: 'Molecule', dataIndex: 'mol',
    canvasWidth: 300, canvasHeight: 200,
-   width: 300,
+   width: 310,
    initCanvas:function(id, width, height, value,record) {
      var c = new ChemDoodle.TransformCanvas(id, width, height,true);
      var m = ChemDoodle.readMOL(value);
@@ -93,7 +94,7 @@ Ext.onReady(function () {
    columns: [
      Ext.create('Ext.grid.RowNumberer'),
      molcol,
-     {text: 'Name', dataIndex: 'name', flex:1},
+     {text: 'Name', dataIndex: 'name', flex:1}
    ],
    pageSize: pageSize,
    dockedItems: [{
@@ -105,7 +106,7 @@ Ext.onReady(function () {
    height: 600,
    width: 700,
    plugins: [molcol],
-   renderTo: Ext.getBody(),
+   renderTo: Ext.getBody()
  });
 
 });
