@@ -1,0 +1,92 @@
+<html> 
+<head> 
+<link rel="stylesheet" href="ChemDoodleWeb/install/ChemDoodleWeb.css" type="text/css"> 
+<link rel="stylesheet" href="ext-4.0.2a/resources/css/ext-all.css" type="text/css"> 
+<script type="text/javascript" src="ext-4.0.2a/bootstrap.js"></script> 
+<script type="text/javascript" src="ChemDoodleWeb/install/ChemDoodleWeb-libs.js"></script> 
+<script type="text/javascript" src="ChemDoodleWeb/src/ChemDoodleWeb-unpacked.js"></script> 
+<script type="text/javascript">
+
+// for post render clue see http://skirtlesden.com/ux/component-column
+
+Ext.define('Ext.grid.column.Action', {
+  extend: 'Ext.grid.column.Column',
+  alias: ['widget.actioncolumn'],
+  alternateClassName: 'Ext.grid.ActionColumn',
+  renderer: function(v,meta,r,row,col,store,gridview) {
+    // renderer returns html string
+    // we want to run js on created dom, but that must be delayed until dom is complete.
+    // create canvas with right dimensions using id unique to this gridview and row
+    return '<canvas width='+150+' height='+100+' class="x-chemdoodle-cols" id="'+gridview.id+'-'+row+'"></canvas>';
+  },
+  // use grid plugin so canvas can be selected with grid as root
+  init: function(grid) {
+    this.grid = grid;
+    // after canvas tag has been added to dom
+    // find canvas tags and paint with chemdoodle
+    this.grid.getView().on('refresh', function() {
+      Ext.Array.forEach(
+          Ext.DomQuery.select('canvas[class*="x-chemdoodle-cols"]',this.grid.getView().dom),
+          function(canvas) {
+            var canvasid = canvas.id;
+            var rowid = canvasid.replace(this.grid.getView().id+'-',''); 
+            var row = this.grid.getStore().getAt(rowid);
+            var c = new ChemDoodle.TransformCanvas(canvasid,150,100,true);
+            c.loadMolecule(ChemDoodle.readMOL(row.data[this.dataIndex]));
+          }, 
+          this
+      );
+    }, this);
+  }
+});
+
+var mol;
+Ext.onReady(function () {
+  //ChemDoodle.default_atoms_useJMOLColors = true;
+  
+  Ext.define('Molecule', {
+    extend:'Ext.data.Model',
+    fields: [{
+      name:'name', type:'string'
+    },{
+      name:'mol', type:'string'
+    }]
+  });
+
+  Ext.create('Ext.data.Store', {
+    storeId:'sampleStore',
+    model:'Molecule',
+    proxy: {
+        type: 'ajax',
+        url: 'data.json',
+        reader: {
+            type: 'json',
+            root: 'rows'
+        }
+    },
+    autoLoad: true
+ });
+
+ var molcol = Ext.create('Ext.grid.column.Action', {
+   text: 'Rocks', dataIndex: 'mol', xtype:'actioncolumn', flex: 1
+ });
+ 
+ var grid = Ext.create('Ext.grid.Panel', {
+     title: 'Boolean Column Demo',
+     store: Ext.data.StoreManager.lookup('sampleStore'),
+     columns: [
+         {text: 'Framework', dataIndex: 'name'},
+         molcol
+     ],
+     height: 600,
+     width: 700,
+     plugins: [molcol],
+     renderTo: Ext.getBody()
+ });
+
+});
+</script>
+</head> 
+<body> 
+</body> 
+</html>
