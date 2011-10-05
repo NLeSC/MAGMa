@@ -13,31 +13,49 @@ Ext.define('Ext.grid.column.Action', {
   extend: 'Ext.grid.column.Column',
   alias: ['widget.actioncolumn'],
   alternateClassName: 'Ext.grid.ActionColumn',
+  config: {
+    canvasWidth:150,
+    canvasHeight:100,
+    // change when more then one chemdoodle columns in grid
+    // used to find canvases belonging to this column
+    canvasClass: 'x-chemdoodle-cols'
+	},
+	constructor: function(config) {
+    this.initConfig(config);
+    this.callParent(arguments);
+    return this;
+	},
   renderer: function(v,meta,r,row,col,store,gridview) {
     // renderer returns html string
     // we want to run js on created dom, but that must be delayed until dom is complete.
-    // create canvas with right dimensions using id unique to this gridview and row
-    return '<canvas width='+150+' height='+100+' class="x-chemdoodle-cols" id="'+gridview.id+'-'+row+'"></canvas>';
+    // create canvas with right dimensions using id unique to this gridview and cell (row/col)
+    var c = this.columns[col];
+    return '<canvas width='+c.getCanvasWidth()+' height='+c.getCanvasHeight()+' class="'+c.getCanvasClass()+'" id="'+gridview.id+'-'+row+'-'+col+'"></canvas>';
   },
   // use grid plugin so canvas can be selected with grid as root
   init: function(grid) {
+    var self = this;
     this.grid = grid;
     // after canvas tag has been added to dom
     // find canvas tags and paint with chemdoodle
     this.grid.getView().on('refresh', function() {
       Ext.Array.forEach(
-          Ext.DomQuery.select('canvas[class*="x-chemdoodle-cols"]',this.grid.getView().dom),
+          Ext.DomQuery.select('canvas[class*="'+this.getCanvasClass()+'"]',this.grid.getView().dom),
           function(canvas) {
             var canvasid = canvas.id;
-            var rowid = canvasid.replace(this.grid.getView().id+'-',''); 
+            var rowid = canvasid.replace(this.grid.getView().id+'-','');
+            rowid = rowid.replace(/-\d$/,'');
             var row = this.grid.getStore().getAt(rowid);
-            var c = new ChemDoodle.TransformCanvas(canvasid,150,100,true);
-            c.loadMolecule(ChemDoodle.readMOL(row.data[this.dataIndex]));
+            this.initCanvas(canvasid,this.getCanvasWidth(),this.getCanvasHeight(),row.data[this.dataIndex],row);
           }, 
-          this
+          self
       );
     }, this);
-  }
+  },
+  initCanvas: function(id, width, height, value, record) {
+    var c = new ChemDoodle.ViewerCanvas(id, width, height);
+    c.loadMolecule(ChemDoodle.readMOL(value));
+  } 
 });
 
 var mol;
@@ -69,6 +87,11 @@ Ext.onReady(function () {
 
  var molcol = Ext.create('Ext.grid.column.Action', {
    text: 'Rocks', dataIndex: 'mol', xtype:'actioncolumn', flex: 1
+   ,canvasWidth: 200, canvasHeight: 100, 
+   initCanvas:function(id, width, height, value) {
+     var c = new ChemDoodle.TransformCanvas(id, width, height,true);
+     c.loadMolecule(ChemDoodle.readMOL(value));
+   }
  });
  
  var grid = Ext.create('Ext.grid.Panel', {
