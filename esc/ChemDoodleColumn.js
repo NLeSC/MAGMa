@@ -1,9 +1,9 @@
 /**
  * @class Ext.esc.ChemDoodleColumn
  * @extends Ext.grid.column.Column
- * 
+ *
  * <p>A Column definition class which renders a chemdoodle canvas</p>
- * 
+ *
  * ## Code
  *     Ext.create('Ext.data.Store', {
  *        storeId:'sampleStore',
@@ -26,12 +26,12 @@
  *            }
  *        }
  *     });
- *     
+ *
  *     var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
  *       text: 'Molecule', dataIndex: 'mol',
  *       width: 150
  *     });
- *     
+ *
  *     Ext.create('Ext.grid.Panel', {
  *         title: 'Chemdoodle Column Demo',
  *         store: Ext.data.StoreManager.lookup('sampleStore'),
@@ -52,8 +52,8 @@ Ext.define('Ext.esc.ChemDoodleColumn', {
   config: {
     /**
      * @cfg {Number} canvasWidth
-     * The width of the chemdoodle canvas in pixels. 
-     * If width is set then set this a little bit smaller (10pixels) so its not collapsed into an ellipsis.
+     * The width of the chemdoodle canvas in pixels.
+     * If width is set then set this a little bit smaller (12pixels) so its not collapsed into an ellipsis.
      */
     canvasWidth:150,
     /**
@@ -64,7 +64,7 @@ Ext.define('Ext.esc.ChemDoodleColumn', {
     /**
      * @cfg {String} canvasClass
      * Class of the chemdoodle canvas tag.
-     * 
+     *
      *  Change when more then one different chemdoodle columns in grid
      */
     canvasClass: 'x-chemdoodle-cols'
@@ -104,16 +104,16 @@ Ext.define('Ext.esc.ChemDoodleColumn', {
             rowid = rowid.replace(/-\d$/,'');
             var row = this.grid.getStore().getAt(rowid);
             this.initCanvas(canvasid,this.getCanvasWidth(),this.getCanvasHeight(),row.data[this.dataIndex],row);
-          }, 
+          },
           self
       );
     }, this);
   },
   /**
    * @method
-   * <p>Initializes a ChemDoodle.ViewerCanvas in the cell and loads 'value' as a molfile. 
+   * <p>Initializes a ChemDoodle.ViewerCanvas in the cell and loads 'value' as a molfile.
    * Can be overwritten to use a different canvas, perform highlighting etc. Example</p>
-   * 
+   *
    * <pre><code>{
     initCanvas: function(id, width, height, value, record){
         var c = new ChemDoodle.TransformCanvas(id, width, height,true);
@@ -122,8 +122,8 @@ Ext.define('Ext.esc.ChemDoodleColumn', {
     }
 }
    * </code></pre>
-   * 
-   * @param {String} id Canvas identifier  
+   *
+   * @param {String} id Canvas identifier
    * @param {Number} width
    * @param {Number} height
    * @param {Mixed} value The data value for the current cell
@@ -132,5 +132,5 @@ Ext.define('Ext.esc.ChemDoodleColumn', {
   initCanvas: function(id, width, height, value, record) {
     var c = new ChemDoodle.ViewerCanvas(id, width, height);
     c.loadMolecule(ChemDoodle.readMOL(value));
-  } 
+  }
 });

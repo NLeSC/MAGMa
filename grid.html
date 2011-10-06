@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"> 
-<html> 
-<head> 
-<link rel="stylesheet" href="ChemDoodleWeb/install/ChemDoodleWeb.css" type="text/css"> 
-<link rel="stylesheet" href="ext-4.0.2a/resources/css/ext-all.css" type="text/css"> 
-<script type="text/javascript" src="ext-4.0.2a/bootstrap.js"></script> 
-<script type="text/javascript" src="ChemDoodleWeb/install/ChemDoodleWeb-libs.js"></script> 
-<script type="text/javascript" src="ChemDoodleWeb/src/ChemDoodleWeb-unpacked.js"></script> 
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<link rel="stylesheet" href="ChemDoodleWeb/install/ChemDoodleWeb.css" type="text/css">
+<link rel="stylesheet" href="ext-4.0.2a/resources/css/ext-all.css" type="text/css">
+<script type="text/javascript" src="ext-4.0.2a/bootstrap.js"></script>
+<script type="text/javascript" src="ChemDoodleWeb/install/ChemDoodleWeb-libs.js"></script>
+<script type="text/javascript" src="ChemDoodleWeb/src/ChemDoodleWeb-unpacked.js"></script>
 <script type="text/javascript">
 
 Ext.Loader.setConfig({
@@ -20,7 +20,7 @@ Ext.onReady(function () {
     },{
       name:'mol', type:'string'
     },{
-      name:'query', defaultValue: [] // array of atom indexes of molecule which are the substructure of the query 
+      name:'query', defaultValue: [] // array of atom indexes of molecule which are the substructure of the query
     }]
   });
 
@@ -74,7 +74,8 @@ Ext.onReady(function () {
  var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
    text: 'Molecule', dataIndex: 'mol',
    canvasWidth: 300, canvasHeight: 200,
-   width: 310,
+//   flex:1,
+   width: 312,
    initCanvas:function(id, width, height, value,record) {
      var c = new ChemDoodle.TransformCanvas(id, width, height,true);
      var m = ChemDoodle.readMOL(value);
@@ -87,7 +88,7 @@ Ext.onReady(function () {
      c.loadMolecule(m);
    }
  });
- 
+
  var grid = Ext.create('Ext.grid.Panel', {
    title: 'Chemdoodle table',
    store: store,
@@ -111,7 +112,7 @@ Ext.onReady(function () {
 
 });
 </script>
-</head> 
-<body> 
-</body> 
+</head>
+<body>
+</body>
 </html>
