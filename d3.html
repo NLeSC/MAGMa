@@ -72,14 +72,44 @@ Ext.onReady(function () {
     renderTo: Ext.getBody(),
     items: chromatogram,
     bbar:[{
-      text: 'Select metabolite',
+      text: 'Select peaks of metabolite 1',
       handler: function() {
-
+        var metid = 1;
+        svg.selectAll("line.peak")
+          .transition()
+            .duration(1000)
+            .attr("y2", function(d) {
+              if (("hits" in d) && (metid in d.hits)) {
+                return y(d.intensity);
+              }
+              return h;
+            })
+        ;
       }
     },{
-      text: 'Unselect metabolite',
+      text: 'All peaks',
       handler: function() {
-
+        svg.selectAll("line.peak")
+        .transition()
+          .duration(1000)
+          .attr("y2", function(d) {
+            return y(d.intensity);
+          })
+        ;
+      }
+    },{
+      text: 'Only metabolite peaks',
+      handler: function() {
+        svg.selectAll("line.peak")
+          .transition()
+            .duration(1000)
+            .attr("y2", function(d) {
+              if (d.hashit) {
+                return y(d.intensity);
+              }
+              return h;
+            })
+        ;
       }
     }]
   });
@@ -88,7 +118,8 @@ Ext.onReady(function () {
   .attr("transform", "translate(" + m[3] + "," + m[0] + ")")
   ;
 
-  d3.json("chromatogram.subset.json", function(data) {
+//  d3.json("chromatogram.subset.json", function(data) {
+  d3.json("chromatogram.json", function(data) {
     chromatogram_data = data;
 
     var cutoff = 200000;
