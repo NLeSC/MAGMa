@@ -27,12 +27,13 @@ path.area {
 
 .peak {
   fill: none;
-  stroke: #000;
   stroke-width: 1px;
 }
 
-.hit {
-  stroke: green;
+.cutoffline {
+  fill: none;
+  stroke-width: 1px;
+  stroke: #ddd;
 }
 
 </style>
@@ -75,6 +76,7 @@ Ext.onReady(function () {
   d3.json("chromatogram.subset.json", function(data) {
     chromatogram_data = data;
 
+    var cutoff = 200000;
     var xmin = 0;
     var xmax = d3.max(chromatogram_data, function(r) { return r.rt; });
     var ymin = 0;
@@ -109,14 +111,34 @@ Ext.onReady(function () {
 			    .text('Intensity')
 		;
 
+    // cutoff
+    svg.append("svg:line")
+      .attr('class','cutoffline')
+      .attr('x1',0)
+      .attr('x2',w)
+      .attr('y1',y(cutoff))
+      .attr('y2',y(cutoff))
+      .attr('stroke-dasharray','15,15')
+
     var peaks = svg.selectAll("peaks.line")
     .data(chromatogram_data)
   .enter().append("svg:line")
-    .attr("class", function(d) { return d.hashit ? "peak hit": "peak";})
+    .attr("class", "peak")
     .attr("x1", function(d) { return x(d.rt); })
     .attr("y2", function(d) { return y(d.intensity); })
     .attr("y1", h)
-    .attr("x2", function(d) { return x(d.rt); });
+    .attr("x2", function(d) { return x(d.rt); })
+    .style("stroke", function(d) {
+      if (d.intensity < cutoff) {
+        return "#eee";
+      };
+      if (d.hashit) {
+        return "#080";
+      } else {
+        return "#999";
+      }
+    })
+    ;
 
 
   });
@@ -124,5 +146,16 @@ Ext.onReady(function () {
 </script>
 </head>
 <body>
+<h1>Wish list</h1>
+<ul>
+<li>Render peak as vertical line</li>
+<li>Zoom&pan chromatogram</li>
+<li>Resize chromatogram</li>
+<li>Highlight peaks which have a metabolite hit</li>
+<li>Downlight peaks below cutoff</li>
+<li>Select peaks manually and programmaticly</li>
+<li>On mouseover show peak details</li>
+<li>Intergrates with Extjs (inside a panel)</li>
+</ul>
 </body>
 </html>
