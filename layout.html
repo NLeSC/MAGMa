@@ -1,0 +1,481 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<link rel="stylesheet" href="ChemDoodleWeb/install/ChemDoodleWeb.css" type="text/css">
+<link rel="stylesheet" href="ext-4.0.7-gpl/resources/css/ext-all.css" type="text/css">
+<script type="text/javascript" src="ext-4.0.7-gpl/bootstrap.js"></script>
+<script type="text/javascript" src="ChemDoodleWeb/install/ChemDoodleWeb-libs.js"></script>
+<script type="text/javascript" src="ChemDoodleWeb/src/ChemDoodleWeb-unpacked.js"></script>
+<script type="text/javascript">
+
+Ext.Loader.setConfig({
+  enabled: true
+});
+
+Ext.onReady(function () {
+  Ext.define('Molecule', {
+    extend:'Ext.data.Model',
+    fields: [{
+      name:'name', type:'string'
+    },{
+      name:'mol', type:'string'
+    },{
+      name:'query', defaultValue: [] // array of atom indexes of molecule which are the substructure of the query
+    }]
+  });
+
+  var pageSize = 10;
+  var store = Ext.create('Ext.data.Store', {
+    storeId:'sampleStore',
+    model:'Molecule',
+    pageSize: pageSize,
+    proxy: {
+        type: 'ajax',
+        url: 'data.json',
+        reader: {
+            type: 'json',
+            root: 'rows'
+        }
+    },
+    autoLoad: true,
+    listeners: {
+      lo2ad: function(store) {
+        var r = network.paper;
+        r.addReactant(ChemDoodle.readMOL(store.getAt(0).data.mol));
+        r.addProduct(ChemDoodle.readMOL(store.getAt(1).data.mol));
+        r.layout();
+      }
+    }
+ });
+
+  var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
+   text: 'Molecule', dataIndex: 'mol',
+   width: 160
+  });
+
+  var mgrid = Ext.create('Ext.grid.Panel', {
+    store: store,
+    selType:'checkboxmodel',
+    multiSelect:true,
+    columns: [
+      molcol,
+      {text: 'Name', dataIndex: 'name', flex:1}
+    ],
+    pageSize: pageSize,
+    dockedItems: [{
+      xtype: 'pagingtoolbar',
+      store: store,   // same store GridPanel is using
+      dock: 'bottom',
+      displayInfo: true
+    }],
+    plugins: [molcol],
+  });
+
+  var fmolcol = Ext.create('Ext.esc.ChemDoodleColumn', {
+    text: 'Molecule', dataIndex: 'mol',
+    canvasClass: 'x-chemdoodle-cols2',
+    width: 160
+   });
+
+  var fgrid = Ext.create('Ext.grid.Panel', {
+   store: store,
+   selType:'checkboxmodel',
+   multiSelect:true,
+   columns: [
+     fmolcol,
+     {text: 'Name', dataIndex: 'name', width: 200 }
+   ],
+   pageSize: pageSize,
+   dockedItems: [{
+     xtype: 'pagingtoolbar',
+     store: store,   // same store GridPanel is using
+     dock: 'bottom',
+     displayInfo: true
+   }],
+   plugins: [fmolcol],
+ });
+
+  // uses perl Finnigan package to make data
+  // mzxml-unpack -r 1..1  F0060068.mzXML > F0060068.scan1.txt
+  lc_store = Ext.create('Ext.data.Store', {
+    fields: [ {name:'time', type: 'float'}, {name:'signal', type: 'float'} ],
+    proxy: {
+      type: 'ajax',
+      url: 'F0060068.scan1.json',
+      reader: {
+        type: 'json',
+        root: 'peaks',
+        idProperty: 'time'
+      }
+    },
+    pageSize: 10000,
+    autoLoad: true
+  });
+
+  lc_chart = Ext.create('Ext.chart.Chart', {
+    xtype: 'chart',
+    store: lc_store,
+    shadow: false,
+    axes: [{
+      type: 'Numeric',
+      position:'left',
+      fields: ['signal'],
+      title: 'Signal'
+    },{
+      type: 'Numeric',
+      position:'bottom',
+      fields: ['time'],
+      title: 'Retention time'
+    }],
+    series: [{
+      type: 'line',
+      xField: 'time',
+      yField: ['signal'],
+      axis: 'left',
+      markerConfig: {
+        type: 'circle',
+        radius: 1
+      },
+    }]
+  });
+
+  ms_store = Ext.create('Ext.data.Store', {
+    fields: [ {name:'mz', type: 'float'}, {name:'intensity', type: 'float'} ],
+    proxy: {
+      type: 'ajax',
+      url: 'F0060068.scan81.json',
+      reader: {
+        type: 'json',
+        root: 'peaks',
+        idProperty: 'mz'
+      }
+    },
+    pageSize: 10000,
+    autoLoad: true
+  });
+
+  Ext.chart.Shape['vline'] = function (surface, opts) {
+	    return surface.add(Ext.apply({
+	      type: 'rect',
+	      x: opts.x,
+	      y: 20,
+	      height: opts.y,
+	      width: opts.radius
+	  }, opts));
+	};
+
+  ms_chart = Ext.create('Ext.chart.Chart', {
+    xtype: 'chart',
+    store: ms_store,
+    shadow: false,
+    axes: [{
+      type: 'Numeric',
+      position:'left',
+      fields: ['intensity'],
+//      title: 'Intensity'
+    },{
+      type: 'Numeric',
+      position:'bottom',
+      fields: ['mz'],
+//      title: 'm/z',
+//      minimum:50
+    }],
+    series: [{
+      type: 'scatter',
+      xField: 'mz',
+      yField: ['intensity'],
+      renderer: function(sprite, record, attributes) {
+//         console.log(arguments);
+//         if (record.data.mz < 100) { attributes.stroke = 'red'; }
+// ms_chart.surface.add({type:'circle',x:300,y:300,radius:30,fill:'#233'}).show(true);
+//         console.log([sprite.x,sprite.y,record.data]);
+         return attributes;
+      },
+      axis: 'left',
+      markerConfig: {
+        type: 'circle',
+        radius: 2
+      },
+    }]
+  });
+
+  ms_chart2 = Ext.create('Ext.chart.Chart', {
+    xtype: 'chart',
+    store: ms_store,
+    shadow: false,
+    axes: [{
+      type: 'Numeric',
+      position:'left',
+      fields: ['intensity'],
+//      title: 'Intensity'
+    },{
+      type: 'Numeric',
+      position:'bottom',
+      fields: ['mz'],
+      title: 'm/z',
+    }],
+    series: [{
+      type: 'scatter',
+      xField: 'mz',
+      yField: ['intensity'],
+      renderer: function(sprite, record, attributes) {
+         return attributes;
+      },
+      axis: 'left',
+      markerConfig: {
+        type: 'circle',
+        radius: 2
+      },
+    }]
+  });
+
+  Ext.define('Scan', {
+    extend: 'Ext.data.Model',
+    fields: [
+      { name:'id', type: 'int' }, // num in mzxml
+      { name:'msLevel', type: 'int' },
+      { name:'precursorMz', type: 'float' }
+    ]
+  });
+
+  scan_store = Ext.create('Ext.data.TreeStore', {
+    model: 'Scan',
+    proxy: {
+      type: 'ajax',
+      url: 'scans.json'
+    },
+  });
+
+  scan_tree = Ext.create('Ext.tree.Panel', {
+    store: scan_store,
+    rootVisible: false,
+    columns: [{
+      xtype: 'treecolumn',
+      text: 'Scan',
+      flex: 2,
+      dataIndex: 'id',
+    },{
+      text: 'Level',
+      dataIndex: 'msLevel',
+      flex: 1,
+    },{
+      text: 'Precursor',
+      dataIndex: 'precursorMz',
+      flex: 1,
+    }]
+  });
+
+  Ext.define('Ext.ChemDoodle.ViewerCanvas', {
+    extend: 'Ext.Component',
+    onRender: function(ct) {
+      if (!this.canvas) {
+        this.canvas = ct.createChild({
+          id: ct.id+'-canvas',
+          tag: 'canvas',
+          width: 300, height: 300
+        })
+        // disabled SimpleReactionLayout creates table with canvases using document.writeln
+//        this.paper = new ChemDoodle.SimpleReactionLayout(ct.id+'-canvas', 300, 300);
+        this.el = this.canvas;
+//       } else {
+//         console.log(ct.getWidth(), ct.getHeight());
+//         this.canvas.setWidth(ct.getWidth());
+//         this.canvas.setHeight(ct.getHeight());
+//         this.canvas.dom.width = ct.getWidth();
+//         this.canvas.dom.height = ct.getHeight();
+//         this.paper.width = ct.getWidth();
+//         this.paper.height = ct.getHeight();
+//         this.paper.center();
+//         this.paper.repaint();
+      }
+    }
+  });
+
+  network = Ext.create('Ext.ChemDoodle.ViewerCanvas', {
+    title: 'Network',
+  });
+
+// horizontal split
+function rightleft() {
+
+	var master_side = Ext.create('Ext.panel.Panel', {
+        // master side
+        region: 'center',
+        width: '50%',
+        layout: 'border',
+        items:[{
+            region:'center',
+            title: 'Query molecules & Metabolites',
+            layout: 'fit',
+            items: [
+              mgrid,
+            ]
+        },{
+            title:'Chromatogram',
+            region:'south',
+            hideCollapseTool: true,
+            collapsible: true,
+            height: '50%',
+            split: true,
+            layout: 'fit',
+            items:[lc_chart],
+            listeners: {
+            	resize: function(t,w,h) {
+            		console.log(t,w,h);
+            	}
+            }
+        }]
+	});
+
+    var detail_side = Ext.create('Ext.panel.Panel', {
+        // detail side
+        region: 'east',
+        split: true,
+        collapsible: true,
+        layout: 'border',
+        width: '50%',
+        hideCollapseTool: true,
+        items:[{
+            region: 'center',
+            title: 'Fragments of Fragment1',
+            items: [fgrid],
+            layout: 'fit',
+            dockedItems: [{
+              xtype: 'toolbar',
+              dock: 'top',
+              items: [{
+                  text: 'Parent molecule >> Metabolite >> Fragment1'
+              }]
+            }]
+        },{
+          region:'south',
+          height: '50%',
+          layout: 'border',
+          split: true,
+          collapsible: true,
+          hideCollapseTool: true,
+          items:[{
+//              title:'Scan - <a href="#">Scan321</a> >> Scan2324',
+              region: 'center',
+              layout: {
+                  type: 'vbox',
+                  align: 'stretch'
+              },
+              defaults: {
+            	  flex: 1,
+            	  layout:'fit'
+              },
+              items:[{
+            	 title: 'Scan 123 (Level 1)',
+            	 items: ms_chart
+              },{
+                 title: 'Scan 12 (Level 2)',
+            	 items: ms_chart2
+              }]
+          },{
+              region:'east',
+              collapsible: true,
+              collapsed: true,
+              hideCollapseTool: true,
+              layout: 'fit',
+              width: '20%',
+              split: true,
+//              title:'Scans',
+              items:[scan_tree]
+          }],
+        }]
+    });
+
+	Ext.create('Ext.Viewport', {
+	  layout: 'border',
+	  items:[ master_side, detail_side ]
+	});
+}
+
+function topbottom() {
+	Ext.create('Ext.Viewport', {
+	  layout: 'border',
+	  items:[{
+	    // top side
+	    region: 'center',
+	    layout: 'border',
+	    split: true,
+	    collapsible: true,
+	    hideCollapseTool: true,
+	    height: '50%',
+	    items:[{
+	      title:'Chromatogram',
+	      region:'east',
+	      hideCollapseTool: true,
+	      collapsible: true,
+        width: '50%',
+	      split: true,
+        layout: 'fit',
+//	      html:'LC Chromatogram as line chart'
+        items:[lc_chart]
+	    },{
+	      region:'center',
+	      title: 'Parents & Metabolites',
+        width: '50%',
+        xtype: 'tabpanel',
+        activeTab: 0,
+        items: [
+          mgrid,
+          network,
+          //{ title:'Network', html:'network of parents & metabolites' }
+        ],
+//	      html: 'grid with parents & metabolites'
+	    }]
+	  },{
+	    // bottom side
+	    region: 'south',
+	      hideCollapseTool: true,
+	      collapsible: true,
+	      split: true,
+      height: '50%',
+	    layout: 'border',
+	    items:[{
+	      region: 'west',
+	      hideCollapseTool: true,
+	      collapsible: true,
+	      split: true,
+        layout: 'fit',
+        width: '50%',
+	      title: 'Fragments of Fragment1',
+        items: [fgrid],
+// 	      dockedItems: [{
+// 	        xtype: 'toolbar',
+// 	        dock: 'top',
+// 	        items: [{
+// 	            text: 'Parent molecule >> Metabolite >> Fragment1'
+// 	        }]
+// 	      }]
+	    },{
+	      region:'center',
+	      title:'Scan - <a href="#">Scan321</a> >> Scan2324',
+        layout: 'fit',
+	      items:[ms_chart]
+	    },{
+	      region:'east',
+	      hideCollapseTool: true,
+        width: '20%',
+	      collapsible: true,
+	      split: true,
+	      title:'Scans',
+	      layout: 'fit',
+//	      html:'tree of scans, with scan selected which is visible in the scan panel'
+	      items:[scan_tree]
+	    }]
+	  }]
+	});
+}
+
+//topbottom();
+rightleft();
+
+});
+</script>
+</head>
+<body>
+</body>
+</html>

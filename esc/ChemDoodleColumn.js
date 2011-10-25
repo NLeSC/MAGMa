@@ -103,7 +103,9 @@ Ext.define('Ext.esc.ChemDoodleColumn', {
             var rowid = canvasid.replace(this.grid.getView().id+'-','');
             rowid = rowid.replace(/-\d$/,'');
             var row = this.grid.getStore().getAt(rowid);
-            this.initCanvas(canvasid,this.getCanvasWidth(),this.getCanvasHeight(),row.data[this.dataIndex],row);
+            if (row && row.data[this.dataIndex]) {
+              this.initCanvas(canvasid,this.getCanvasWidth(),this.getCanvasHeight(),row.data[this.dataIndex],row);
+            }
           },
           self
       );
