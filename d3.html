@@ -1,0 +1,128 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<link rel="stylesheet" href="ext-4.0.7-gpl/resources/css/ext-all.css" type="text/css">
+<script type="text/javascript" src="mbostock-d3-2f6d2fa/d3.js"></script>
+<script type="text/javascript" src="ext-4.0.7-gpl/bootstrap.js"></script>
+    <style type="text/css">
+
+path.line {
+  fill: none;
+  stroke: #666;
+  stroke-width: 1.5px;
+}
+
+path.area {
+  fill: #e7e7e7;
+}
+
+.axis {
+  shape-rendering: crispEdges;
+}
+
+.y.axis line, .y.axis path, .x.axis line, .x.axis path {
+  fill: none;
+  stroke: #ccc;
+}
+
+.peak {
+  fill: none;
+  stroke: #000;
+  stroke-width: 1px;
+}
+
+.hit {
+  stroke: green;
+}
+
+</style>
+<script type="text/javascript">
+
+/*
+ * perl -MData::Dumper -ne 'chomp;next if /^#/;my @r = split(/\s+/);next unless ($r[5] eq "ms1" );$r[5]=~s/ms//;printf("INSERT INTO scans (scanid,mslevel,rt,lowmz,highmz,basepeakmz,basepeakintensity,totioncurrent,precursormz) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);\n",$r[1],$r[5],$r[6],$r[7],$r[8],$r[9],$r[10],$r[11],$r[13])' F0060068.mzXML.spectrum_table.txt > F0060068.mzXML.spectrum_table.sql
+ */
+
+Ext.Loader.setConfig({
+  enabled: true
+});
+
+Ext.onReady(function () {
+  var m = [80, 80, 80, 80]; // margins up,left,down,right
+  var w = 960 - m[1] - m[3];
+  var h = 500 - m[0] - m[2];
+  console.log([w,h]);
+  chromatogram = Ext.create('Ext.draw.Component', {
+    width: w + m[1] + m[3],
+    height: h + m[0] + m[2],
+    renderTo: Ext.getBody(),
+    enginePriority: ['Svg'],
+    resizable: {
+      dynamic: true,
+      pinned: true,
+      handles: 'all'
+    },
+    listeners: {
+      resize: function(t,aw, ah) {
+        console.log([w,h,aw,ah]);
+        w = aw - m[1] - m[3];
+        h = ah - m[0] - m[2];
+      }
+    }
+  });
+  var svg = d3.select(chromatogram.el.dom.children[0]).append("svg:g")
+  .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
+
+  d3.json("chromatogram.subset.json", function(data) {
+    chromatogram_data = data;
+
+    var xmin = 0;
+    var xmax = d3.max(chromatogram_data, function(r) { return r.rt; });
+    var ymin = 0;
+    var ymax = d3.max(chromatogram_data, function(r) { return r.intensity; });
+
+    x = d3.scale.linear().domain([xmin, xmax]).range([0, w]);
+    y = d3.scale.linear().domain([ymin, ymax]).range([h, 0]);
+
+    var xAxis = d3.svg.axis().scale(x).ticks(10);
+    var yAxis = d3.svg.axis().scale(y).ticks(4).orient("left");
+
+    // Add the x-axis.
+    svg.append("svg:g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + h + ")")
+        .call(xAxis)
+        .append("svg:text")
+          .attr("x",w/2).attr("y",30)
+          .attr("text-anchor","middle")
+          .text('Retention time (s)')
+    ;
+
+    // Add the y-axis.
+    svg.append("svg:g")
+        .attr("class", "y axis")
+        .call(yAxis)
+		    .append("svg:text")
+			    .attr("y",h/2)
+			    .attr("x",-5)
+			    .attr("text-anchor", "middle")
+			    .attr("transform", "rotate(-90,"+-5+","+h/2+")" )
+			    .text('Intensity')
+		;
+
+    var peaks = svg.selectAll("peaks.line")
+    .data(chromatogram_data)
+  .enter().append("svg:line")
+    .attr("class", function(d) { return d.hashit ? "peak hit": "peak";})
+    .attr("x1", function(d) { return x(d.rt); })
+    .attr("y2", function(d) { return y(d.intensity); })
+    .attr("y1", h)
+    .attr("x2", function(d) { return x(d.rt); });
+
+
+  });
+});
+</script>
+</head>
+<body>
+</body>
+</html>
