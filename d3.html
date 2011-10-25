@@ -114,9 +114,28 @@ Ext.onReady(function () {
     }]
   });
 
-  var svg = d3.select(chromatogram.el.dom.children[0]).append("svg:g")
+  var svg = d3.select(chromatogram.el.dom.children[0])
+  .call(d3.behavior.zoom().on("zoom", redraw)) // should be put below, but extjs adds rect to catch all events
+  .append("svg:g")
+  .attr("pointer-events", "all")
   .attr("transform", "translate(" + m[3] + "," + m[0] + ")")
   ;
+
+  function redraw() {
+    if (d3.event && d3.event.translate[0] != 0 && d3.event.translate[1] != 0) {
+      console.log(d3.event);
+	    d3.event.transform(x, y);
+	    svg.select(".x.axis").call(xAxis);
+	    svg.select(".y.axis").call(yAxis);
+	    svg.selectAll("line.peak").attr("y2", function(d) {
+	      return y(d.intensity);
+	    }).attr("x1", function(d) {
+	      return x(d.rt);
+	    }).attr("x2", function(d) {
+	      return x(d.rt);
+	    }).attr("y1", y(0));
+    }
+  }
 
 //  d3.json("chromatogram.subset.json", function(data) {
   d3.json("chromatogram.json", function(data) {
@@ -131,8 +150,8 @@ Ext.onReady(function () {
     x = d3.scale.linear().domain([xmin, xmax]).range([0, w]);
     y = d3.scale.linear().domain([ymin, ymax]).range([h, 0]);
 
-    var xAxis = d3.svg.axis().scale(x).ticks(10);
-    var yAxis = d3.svg.axis().scale(y).ticks(4).orient("left");
+    xAxis = d3.svg.axis().scale(x).ticks(10);
+    yAxis = d3.svg.axis().scale(y).ticks(4).orient("left");
 
     // Add the x-axis.
     svg.append("svg:g")
@@ -193,28 +212,6 @@ Ext.onReady(function () {
       .text(function(d) { return 'Scan#'+d.id; })
     ;
 
-    /*
-    svg.selectAll("text.peak")
-      .data(chromatogram_data)
-      .enter().append("svg:text")
-	    .attr("x", function(d) { return x(d.rt); })
-	    .attr("y", function(d) { return y(d.intensity); })
-	    .attr("dy",-5)
-	    .attr("fill", function(d) {
-	      if (d.intensity < cutoff) {
-	        return "#eee";
-	      };
-	      if (d.hashit) {
-	        return "#080";
-	      } else {
-	        return "#999";
-	      }
-	    })
-	    .attr("text-anchor", "middle")
-	    .text(function(d) { return d.intensity })
-    ;
-    */
-
   });
 });
 
@@ -224,13 +221,14 @@ Ext.onReady(function () {
 <body>
 <h1>Wish list</h1>
 <ul>
-<li>Render peak as vertical line</li>
+<li>V Render peak as vertical line</li>
 <li>Zoom&pan chromatogram</li>
 <li>Resize chromatogram</li>
-<li>Highlight peaks which have a metabolite hit</li>
-<li>Downlight peaks below cutoff</li>
-<li>Select peaks manually and programmaticly</li>
-<li>On mouseover show peak details</li>
+<li>V Highlight peaks which have a metabolite hit</li>
+<li>V Downlight peaks below cutoff</li>
+<li>V Select peak manually</li>
+<li>V Select peaks programmaticly</li>
+<li>V On mouseover show peak details</li>
 <li>Intergrates with Extjs (inside a panel)</li>
 </ul>
 </body>
