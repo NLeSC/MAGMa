@@ -48,20 +48,13 @@ Ext.Loader.setConfig({
 });
 
 Ext.onReady(function () {
-  var m = [80, 80, 80, 80]; // margins up,left,down,right
+  var m = [5, 5, 40, 80]; // margins up,right,down,left
   var w = 960 - m[1] - m[3];
   var h = 500 - m[0] - m[2];
-  console.log([w,h]);
   chromatogram = Ext.create('Ext.draw.Component', {
     width: w + m[1] + m[3],
     height: h + m[0] + m[2],
-    renderTo: Ext.getBody(),
     enginePriority: ['Svg'],
-    resizable: {
-      dynamic: true,
-      pinned: true,
-      handles: 'all'
-    },
     listeners: {
       resize: function(t,aw, ah) {
         console.log([w,h,aw,ah]);
@@ -70,8 +63,30 @@ Ext.onReady(function () {
       }
     }
   });
+
+  Ext.create('Ext.panel.Panel', {
+    width: w + m[1] + m[3],
+    height: h + m[0] + m[2],
+    layout: 'fit',
+    title: 'Chromatogram',
+    renderTo: Ext.getBody(),
+    items: chromatogram,
+    bbar:[{
+      text: 'Select metabolite',
+      handler: function() {
+
+      }
+    },{
+      text: 'Unselect metabolite',
+      handler: function() {
+
+      }
+    }]
+  });
+
   var svg = d3.select(chromatogram.el.dom.children[0]).append("svg:g")
-  .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
+  .attr("transform", "translate(" + m[3] + "," + m[0] + ")")
+  ;
 
   d3.json("chromatogram.subset.json", function(data) {
     chromatogram_data = data;
@@ -120,7 +135,7 @@ Ext.onReady(function () {
       .attr('y2',y(cutoff))
       .attr('stroke-dasharray','15,15')
 
-    var peaks = svg.selectAll("peaks.line")
+    peaks = svg.selectAll("line.peak")
     .data(chromatogram_data)
   .enter().append("svg:line")
     .attr("class", "peak")
@@ -138,12 +153,42 @@ Ext.onReady(function () {
         return "#999";
       }
     })
+    .style("cursor", function(d) { return d.hashit ? "pointer" : null; })
+    .on('click', function(d) {
+      console.log(d);
+    });
+
+    peaks.append("svg:title")
+      .text(function(d) { return 'Scan#'+d.id; })
     ;
 
+    /*
+    svg.selectAll("text.peak")
+      .data(chromatogram_data)
+      .enter().append("svg:text")
+	    .attr("x", function(d) { return x(d.rt); })
+	    .attr("y", function(d) { return y(d.intensity); })
+	    .attr("dy",-5)
+	    .attr("fill", function(d) {
+	      if (d.intensity < cutoff) {
+	        return "#eee";
+	      };
+	      if (d.hashit) {
+	        return "#080";
+	      } else {
+	        return "#999";
+	      }
+	    })
+	    .attr("text-anchor", "middle")
+	    .text(function(d) { return d.intensity })
+    ;
+    */
 
   });
 });
+
 </script>
+<title>Sygma - Chromatogram</title>
 </head>
 <body>
 <h1>Wish list</h1>
