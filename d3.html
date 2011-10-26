@@ -33,13 +33,17 @@ path.line {
   stroke: #ddd;
 }
 
+line.peak {
+  stroke-width: 2px;
+}
+
 path.marker {
   stroke: darkgreen;
   fill: none;
   stroke-width: 1.5px;
 }
 
-.selectmarker {
+.selectedscan {
   fill: lightgreen !important;
 }
 
@@ -50,11 +54,42 @@ path.marker {
  * perl -MData::Dumper -ne 'chomp;next if /^#/;my @r = split(/\s+/);next unless ($r[5] eq "ms1" );$r[5]=~s/ms//;printf("INSERT INTO scans (scanid,mslevel,rt,lowmz,highmz,basepeakmz,basepeakintensity,totioncurrent,precursormz) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);\n",$r[1],$r[5],$r[6],$r[7],$r[8],$r[9],$r[10],$r[11],$r[13])' F0060068.mzXML.spectrum_table.txt > F0060068.mzXML.spectrum_table.sql
  */
 
-Ext.Loader.setConfig({
-  enabled: true
-});
+Ext.Loader.setConfig({ enabled: true });
 
 Ext.onReady(function () {
+
+  d3.json("chromatogram.json", function(data) {
+    chromatogram = Ext.create('Ext.esc.Chromatogram', {
+      width: 958,
+      height: 446,
+      data: data,
+      renderTo: Ext.getBody(),
+      title: 'Chromatogram',
+      listeners: {
+        selectscan: function(scanid){
+          console.log('select scan '+scanid);
+        },
+		    unselectscan: function(scanid){
+		      console.log('unselect scan '+scanid);
+		    }
+      },
+      bbar:[{
+        text: 'Select peaks of metabolite 1',
+        enableToggle: true,
+        toggleHandler: function(b,s) {
+          var scanids = {476:true,1928:true};
+          if (s) {
+            chromatogram.selectScans(scanids);
+          } else {
+            chromatogram.clearScanSelection();
+          }
+        }
+      }]
+    });
+  });
+
+});
+/*
   var m = [16, 5, 50, 80]; // margins up,right,down,left
   var w = 960 - m[1] - m[3];
   var h = 500 - m[0] - m[2];
@@ -261,7 +296,7 @@ Ext.onReady(function () {
 
   });
 });
-
+*/
 </script>
 <title>Sygma - Chromatogram</title>
 </head>
