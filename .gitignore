@@ -1,0 +1,7 @@
+.project
+.pydevproject
+Sygma/Sygma.egg-info/
+Sygma/development.ini
+Sygma/production.ini
+Sygma/sygma/**pyc
+env/
