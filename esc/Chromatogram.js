@@ -6,27 +6,84 @@
 Ext.define('Ext.esc.Chromatogram', {
   extend: 'Ext.Panel',
   alias: 'widget.chromatogram',
+
   initComponent: function() {
     var defConfig = {
         plain: true,
         border: false,
         scales: {
+          /**
+           * @cfg {d3.scale} scales.x X scale
+           */
           x: null,
+          /**
+           * @cfg {d3.scale} scales.y Y scale
+           */
           y: null
         },
         axes: {
+          /**
+           * @cfg {d3.svg.axis} axes.x X axis
+           */
           x: null,
+          /**
+           * @cfg {d3.svg.axis} axes.y Y axis
+           */
           y: null
         },
+        /**
+         * @cfg {Array} data array of objects with id, rt, intensity and hashit properties.
+         */
         data: [],
         ranges: {
-          x: { min: 0, max: 0},
-          y: { min: 0, max: 0},
+          x: {
+            /**
+             * @cfg {Number} ranges.x.min Minimal x value. Default is 0.
+             */
+            min: 0,
+            /**
+             * @cfg {Number} ranges.x.min Maximal x value. Default is max rt in this.data.
+             */
+            max: 0
+          },
+          y: {
+            /**
+             * @cfg {Number} ranges.x.min Minimal y value. Default is 0.
+             */
+            min: 0,
+            /**
+             * @cfg {Number} ranges.x.min Maximal y value. Default is max intensity in this.data.
+             */
+            max: 0
+          },
         },
+        /**
+         * @cfg {Array} axesPadding Padding around axes. [top, right, left, bottom]
+         */
         axesPadding: [16, 5, 50, 80],
+        /**
+         * @cfg {Number} cutoff Intensity under which scans where disregarded
+         */
         cutoff: 2000000,
-        ticks: { x:10, y:4 },
+        /**
+         * @cfg {String} cutoffCls The CSS class applied to cutoff line.
+         */
+        cutoffCls: 'cutoffline',
+        ticks: {
+          /**
+           * @cfg {Number} ticks.x=10 Number of ticks on x-axis.
+           */
+          x:10,
+          /**
+           * @cfg {Number} ticks.y=10 Number of ticks on y-axis.
+           */
+          y:4
+        },
         selectedScan: -1,
+        /**
+         * @cfg {String} selectedScanCls The CSS class applied to markers of a selected scan.
+         */
+        selectedScanCls: 'selectedscan',
         chartWidth: 0,
         chartHeight: 0
     };
@@ -34,6 +91,21 @@ Ext.define('Ext.esc.Chromatogram', {
     Ext.applyIf(this, defConfig);
 
     this.callParent(arguments);
+
+    this.addEvents(
+      /**
+       * @event selectscan
+       * Fires when user clicks on scan marker (triangle)
+       * @param {Int} scanid Scan identifier
+       */
+      'selectscan',
+      /**
+       * @event unselectscan
+       * Fires when user clicks on a selected scan marker (triangle) which unselects it.
+       * @param {Int} scanid Scan identifier
+       */
+      'unselectscan'
+    );
   },
   onRender: function() {
     this.callParent(arguments);
@@ -121,7 +193,7 @@ Ext.define('Ext.esc.Chromatogram', {
 
     // cutoff
     this.svg.append("svg:line")
-      .attr('class','cutoffline')
+      .attr('class', this.cutoffCls)
       .attr('x1',0)
       .attr('x2',this.chartWidth)
       .attr('y1',this.scales.y(this.cutoff))
@@ -129,6 +201,7 @@ Ext.define('Ext.esc.Chromatogram', {
       .attr('stroke-dasharray','5,5')
     ;
 
+    // basepeakintensity of each scan as vertical line
     this.svg.selectAll("line.peak")
     .data(this.data)
     .enter().append("svg:line")
@@ -146,11 +219,11 @@ Ext.define('Ext.esc.Chromatogram', {
     })
     ;
 
+    // line drapped over peaks
     this.line = d3.svg.line()
     .interpolate('linear')
     .x(function(d) { return me.scales.x(d.rt); })
     .y(function(d) { return me.scales.y(d.intensity); });
-
     this.svg.append("svg:path")
     .attr("class", "line")
     .attr("d", this.line(this.data))
@@ -159,10 +232,12 @@ Ext.define('Ext.esc.Chromatogram', {
     })
     ;
 
+    // add markers to peaks which have hit
     var peaks_with_hits = this.data.filter(function(d) {
       return d.hashit;
     });
 
+    // lower markers
     this.svg.selectAll("path.lowermarker")
     .data(peaks_with_hits)
     .enter().append("svg:path")
@@ -177,6 +252,7 @@ Ext.define('Ext.esc.Chromatogram', {
         .text(function(d) { return 'Scan#'+d.id; })
     ;
 
+    // upper markers
     this.svg.selectAll("path.uppermarker")
     .data(peaks_with_hits)
     .enter().append("svg:path")
@@ -204,23 +280,37 @@ Ext.define('Ext.esc.Chromatogram', {
       me.selectedscan = -1;
     }
   },
+  /**
+   * selects markers based on f returning true or false.
+   * @param f function
+   */
   markerSelect: function(f) {
     this.svg.selectAll("path.uppermarker")
-    .classed("selectedscan", f)
+    .classed(this.selectedScanCls, f)
     ;
     this.svg.selectAll("path.lowermarker")
-      .classed("selectedscan", f)
+      .classed(this.selectedScanCls, f)
     ;
   },
+  /**
+   * Select scans by their id
+   * @param scanids Array of scan ids
+   */
   selectScans: function(scanids) {
     this.markerSelect(function(d) {
       return (d.id in scanids);
     });
   },
-  clearScanSelection: function(scanids) {
+  /**
+   * Clears any selected scans
+   */
+  clearScanSelection: function() {
     this.markerSelect(false);
     this.selectedscan = -1;
   },
+  /**
+   * Reset zoom.
+   */
   resetZoom: function() {
     // reset d3.behavior.zoom, by overwriting
     d3.select(this.body.dom).select('svg').call(
@@ -229,6 +319,10 @@ Ext.define('Ext.esc.Chromatogram', {
     this.initScales();
     this.redraw();
   },
+  /**
+   * Stuffs data into chromatogram.
+   * @param data
+   */
   setData: function(data) {
     this.data = data;
     this.onDataReady();
