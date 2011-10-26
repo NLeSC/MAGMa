@@ -84,10 +84,28 @@ Ext.onReady(function () {
             chromatogram.clearScanSelection();
           }
         }
+      },{
+        text: 'Reset zoom',
+        handler: function() {
+          chromatogram.resetZoom();
+        }
       }]
     });
-  });
 
+    Ext.create('Ext.window.Window', {
+      title:'Chromatogram resizable',
+      layout: 'fit',
+      width: 1000,
+      height: 600,
+      items: {
+        xtype: 'chromatogram',
+        data: data
+      },
+      resizable: {
+        dynamic: true
+      }
+    }).show();
+  });
 });
 /*
   var m = [16, 5, 50, 80]; // margins up,right,down,left
