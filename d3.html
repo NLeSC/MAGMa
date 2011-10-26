@@ -58,263 +58,49 @@ Ext.Loader.setConfig({ enabled: true });
 
 Ext.onReady(function () {
 
-  d3.json("chromatogram.json", function(data) {
-    chromatogram = Ext.create('Ext.esc.Chromatogram', {
-      width: 958,
-      height: 446,
-      data: data,
-      renderTo: Ext.getBody(),
-      title: 'Chromatogram',
-      listeners: {
-        selectscan: function(scanid){
-          console.log('select scan '+scanid);
-        },
-		    unselectscan: function(scanid){
-		      console.log('unselect scan '+scanid);
-		    }
-      },
-      bbar:[{
-        text: 'Select peaks of metabolite 1',
-        enableToggle: true,
-        toggleHandler: function(b,s) {
-          var scanids = {476:true,1928:true};
-          if (s) {
-            chromatogram.selectScans(scanids);
-          } else {
-            chromatogram.clearScanSelection();
-          }
-        }
-      },{
-        text: 'Reset zoom',
-        handler: function() {
-          chromatogram.resetZoom();
-        }
-      }]
-    });
-
-    Ext.create('Ext.window.Window', {
-      title:'Chromatogram resizable',
-      layout: 'fit',
-      width: 1000,
-      height: 600,
-      items: {
-        xtype: 'chromatogram',
-        data: data
-      },
-      resizable: {
-        dynamic: true
-      }
-    }).show();
-  });
-});
-/*
-  var m = [16, 5, 50, 80]; // margins up,right,down,left
-  var w = 960 - m[1] - m[3];
-  var h = 500 - m[0] - m[2];
-  chromatogram = Ext.create('Ext.draw.Component', {
-    width: w + m[1] + m[3],
-    height: h + m[0] + m[2],
-    enginePriority: ['Svg'],
+  chromatogram = Ext.create('Ext.esc.Chromatogram', {
     listeners: {
-      resize: function(t,aw, ah) {
-        console.log([w,h,aw,ah]);
-        w = aw - m[1] - m[3];
-        h = ah - m[0] - m[2];
+      selectscan: function(scanid){
+        console.log('select scan '+scanid);
+      },
+      unselectscan: function(scanid){
+        console.log('unselect scan '+scanid);
       }
-    }
-  });
-
-  Ext.create('Ext.panel.Panel', {
-    width: w + m[1] + m[3],
-    height: h + m[0] + m[2],
-    layout: 'fit',
-    title: 'Chromatogram',
-    renderTo: Ext.getBody(),
-    items: chromatogram,
+    },
     bbar:[{
       text: 'Select peaks of metabolite 1',
       enableToggle: true,
       toggleHandler: function(b,s) {
+        var scanids = {476:true,1928:true};
         if (s) {
-	        var metid = 1;
-	        svg.selectAll("path.uppermarker")
-	          .classed("selectmarker", function(d) {
-	            return (("hits" in d) && (metid in d.hits));
-	          })
-		      ;
-		      svg.selectAll("path.lowermarker")
-		        .classed("selectmarker", function(d) {
-	            return (("hits" in d) && (metid in d.hits));
-	          })
-		      ;
+          chromatogram.selectScans(scanids);
         } else {
-          svg.selectAll("path.uppermarker")
-            .classed("selectmarker", false)
-		      ;
-		      svg.selectAll("path.lowermarker")
-		        .classed("selectmarker", false)
-		      ;
+          chromatogram.clearScanSelection();
         }
+      }
+    },{
+      text: 'Reset zoom',
+      handler: function() {
+        chromatogram.resetZoom();
       }
     }]
   });
 
-  var svg = d3.select(chromatogram.el.dom.children[0])
-  .call(d3.behavior.zoom().on("zoom", redraw)) // should be put below, but extjs adds rect to catch all events
-  .append("svg:g")
-  .attr("pointer-events", "all")
-  .attr("transform", "translate(" + m[3] + "," + m[0] + ")")
-  ;
-
-  function redraw() {
-    if (d3.event && d3.event.translate[0] != 0 && d3.event.translate[1] != 0) {
-//      console.log(d3.event);
-//      d3.event.transform(x,y);
-	    d3.event.transform(x);
-	    // pan and zoom x axis
-	    svg.select(".x.axis").call(xAxis);
-      // autoscale y axis
-	    //svg.select(".y.axis").call(yAxis);
-	    svg.select("path.line").attr('d',line(chromatogram_data));
-      svg.selectAll("path.lowermarker")
-        .attr("transform", function(d) { return "translate(" + x(d.rt) + "," + y(0) + ")"; });
-	    svg.selectAll("path.uppermarker")
-	     .attr("transform", function(d) { return "translate(" + x(d.rt) + "," + y(ymax) + ")"; });
-	    svg.selectAll("line.peak").attr("y2", function(d) {
-			  return y(d.intensity);
-			}).attr("x1", function(d) {
-			  return x(d.rt);
-			}).attr("x2", function(d) {
-			  return x(d.rt);
-			}).attr("y1", y(0));
+  Ext.create('Ext.window.Window', {
+    title:'Chromatogram',
+    layout: 'fit',
+    width: 1000,
+    height: 600,
+    items: chromatogram,
+    resizable: {
+      dynamic: true
     }
-  }
+  }).show();
 
-//  d3.json("chromatogram.subset.json", function(data) {
   d3.json("chromatogram.json", function(data) {
-    chromatogram_data = data;
-
-    var cutoff = 200000;
-    var xmin = 0;
-    var xmax = d3.max(chromatogram_data, function(r) { return r.rt; });
-    var ymin = 0;
-    ymax = d3.max(chromatogram_data, function(r) { return r.intensity; });
-
-    x = d3.scale.linear().domain([xmin, xmax]).range([0, w]);
-    y = d3.scale.linear().domain([ymin, ymax]).range([h, 0]);
-
-    xAxis = d3.svg.axis().scale(x).ticks(10);
-    yAxis = d3.svg.axis().scale(y).ticks(4).orient("left");
-
-    // Add the x-axis.
-    svg.append("svg:g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + h + ")")
-        .call(xAxis)
-        .append("svg:text")
-          .attr("x",w/2).attr("y",30)
-          .attr("text-anchor","middle")
-          .text('Retention time (s)')
-    ;
-
-    // Add the y-axis.
-    svg.append("svg:g")
-        .attr("class", "y axis")
-        .call(yAxis)
-		    .append("svg:text")
-			    .attr("y",h/2)
-			    .attr("x",-5)
-			    .attr("text-anchor", "middle")
-			    .attr("transform", "rotate(-90,"+-5+","+h/2+")" )
-			    .text('Intensity')
-		;
-
-
-    // cutoff
-    svg.append("svg:line")
-      .attr('class','cutoffline')
-      .attr('x1',0)
-      .attr('x2',w)
-      .attr('y1',y(cutoff))
-      .attr('y2',y(cutoff))
-      .attr('stroke-dasharray','5,5')
-
-
-    peaks = svg.selectAll("line.peak")
-    .data(chromatogram_data)
-    .enter().append("svg:line")
-    .attr("class", "peak")
-    .attr("x1", function(d) { return x(d.rt); })
-    .attr("y2", function(d) { return y(d.intensity); })
-    .attr("y1", h)
-    .attr("x2", function(d) { return x(d.rt); })
-    .style("stroke", function(d) {
-      if (d.hashit) {
-        return "#bbb";
-      } else {
-        return "#eee";
-      }
-    })
-
-    line = d3.svg.line()
-    .interpolate('linear')
-    .x(function(d) { return x(d.rt); })
-    .y(function(d) { return y(d.intensity); });
-
-    svg.append("svg:path")
-    .attr("class", "line")
-    .attr("d", line(chromatogram_data))
-    .on('click', function(d) {
-      console.log(d,d3.event);
-    })
-    ;
-
-    var peaks_with_hits = chromatogram_data.filter(function(d) {
-      return d.hashit;
-    });
-
-    var selectedscan;
-    function toggleMarker(d) {
-      svg.selectAll("path.uppermarker")
-	      .classed("selectmarker", function(e) {
-	        return (d.id == e.id && selectedscan != e.id);
-	      })
-      ;
-      svg.selectAll("path.lowermarker")
-        .classed("selectmarker", function(e) {
-          return (d.id == e.id && selectedscan != e.id);
-        })
-      ;
-      selectedscan = d.id;
-    }
-
-    svg.selectAll("path.lowermarker")
-    .data(peaks_with_hits)
-    .enter().append("svg:path")
-	    .attr('class', 'marker lowermarker')
-	    .attr("transform", function(d) { return "translate(" + x(d.rt) + "," + y(0) + ")"; })
-	    .attr("d", d3.svg.symbol().type('triangle-up').size(36) )
-      .style("cursor", "pointer")
-	    .on('click', toggleMarker)
-      .append("svg:title")
-        .text(function(d) { return 'Scan#'+d.id; })
-    ;
-
-	  svg.selectAll("path.uppermarker")
-    .data(peaks_with_hits)
-    .enter().append("svg:path")
-      .attr('class', 'marker uppermarker')
-      .attr("transform", function(d) { return "translate(" + x(d.rt) + "," + y(ymax) + ")"; })
-      .attr("d", d3.svg.symbol().type('triangle-down').size(36) )
-      .style("cursor", "pointer")
-      .on('click', toggleMarker )
-      .append("svg:title")
-        .text(function(d) { return 'Scan#'+d.id; })
-	  ;
-
+    chromatogram.setData(data);
   });
 });
-*/
 </script>
 <title>Sygma - Chromatogram</title>
 </head>
@@ -330,6 +116,7 @@ Ext.onReady(function () {
 <li>V Select peaks programmaticly</li>
 <li>V On mouseover show peak details</li>
 <li>V Intergrates with Extjs (inside a panel)</li>
+<li>Clip when panning, so chart lines are not visible outside axes</li>
 </ul>
 </body>
 </html>

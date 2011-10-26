@@ -35,7 +35,7 @@ Ext.define('Ext.esc.Chromatogram', {
 
     this.callParent(arguments);
   },
-  afterRender: function() {
+  onRender: function() {
     this.callParent(arguments);
     var padding = this.axesPadding; // top right bottom left
     this.svg = d3.select(this.body.dom)
@@ -50,12 +50,14 @@ Ext.define('Ext.esc.Chromatogram', {
       ;
     this.chartWidth = this.body.getWidth() - this.axesPadding[3] - this.axesPadding[1];
     this.chartHeight = this.body.getHeight() - this.axesPadding[0] - this.axesPadding[2];
-    this.onDataReady();
+    if (this.data.length) {
+      this.onDataReady();
+    }
     this.on('resize', function(t,width, height) {
       // find svg tag and adjust w and h
       var s = d3.select(t.body.dom).select('svg');
-      s.attr('width', width);
-      s.attr('height', height);
+      s.attr('width', this.body.getWidth());
+      s.attr('height', this.body.getHeight());
     });
   },
   redraw: function() {
@@ -220,7 +222,15 @@ Ext.define('Ext.esc.Chromatogram', {
     this.selectedscan = -1;
   },
   resetZoom: function() {
+    // reset d3.behavior.zoom, by overwriting
+    d3.select(this.body.dom).select('svg').call(
+        d3.behavior.zoom().on("zoom", this.redraw.bind(this) )
+    );
     this.initScales();
     this.redraw();
+  },
+  setData: function(data) {
+    this.data = data;
+    this.onDataReady();
   }
 });
