@@ -79,14 +79,13 @@ Ext.define('Ext.esc.AbstractD3', {
 
     this.callParent(arguments);
   },
-  onRender: function() {
-    this.callParent(arguments);
+  initSvg: function() {
     var padding = this.axesPadding; // top right bottom left
     this.svg = d3.select(this.body.dom)
       .append('svg:svg')
       .attr('width',this.body.getWidth()).attr('height',this.body.getHeight())
       .attr('viewBox','0 0 '+this.body.getWidth()+' '+this.body.getHeight())
-//      .attr("preserveAspectRatio", "xMaxYMax meet")
+  //      .attr("preserveAspectRatio", "xMaxYMax meet")
       .attr("preserveAspectRatio", "none")
       .attr("pointer-events", "all")
       .call(d3.behavior.zoom().on("zoom", this.redraw.bind(this) ))
@@ -97,6 +96,19 @@ Ext.define('Ext.esc.AbstractD3', {
     if (this.data.length) {
       this.onDataReady();
     }
+  },
+  onRender: function() {
+    this.callParent(arguments);
+    // width/height are very low when in this inside a % layout,
+    // use afterlayout to get width/height
+    if (this.body.getWidth() > 2 && this.body.getWidth() > 2) {
+      this.initSvg();
+    }
+    this.on('afterlayout', function() {
+      if (!this.svg) {
+        this.initSvg();
+      }
+    });
     this.on('resize', function(t,width, height) {
       // find svg tag and adjust w and h
       var s = d3.select(t.body.dom).select('svg');

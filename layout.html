@@ -6,7 +6,51 @@
 <script type="text/javascript" src="ext-4.0.7-gpl/bootstrap.js"></script>
 <script type="text/javascript" src="ChemDoodleWeb/install/ChemDoodleWeb-libs.js"></script>
 <script type="text/javascript" src="ChemDoodleWeb/src/ChemDoodleWeb-unpacked.js"></script>
-<script type="text/javascript">
+<script type="text/javascript" src="mbostock-d3-2f6d2fa/d3.js"></script>
+    <style type="text/css">
+
+path.line {
+  fill: none;
+  stroke: #66d;
+  stroke-width: 2px;
+}
+
+.axis {
+  shape-rendering: crispEdges;
+}
+
+.y.axis line, .y.axis path, .x.axis line, .x.axis path {
+  fill: none;
+  stroke: #ccc;
+}
+
+.peaks {
+  fill: none;
+  stroke-width: 1px;
+  stroke: "#111";
+}
+
+.cutoffline {
+  fill: none;
+  stroke-width: 1px;
+  stroke: #ddd;
+}
+
+line.peak {
+  stroke-width: 2px;
+}
+
+path.marker {
+  stroke: darkgreen;
+  fill: none;
+  stroke-width: 1.5px;
+}
+
+.selectedscan {
+  fill: lightgreen !important;
+}
+
+</style><script type="text/javascript">
 
 Ext.Loader.setConfig({
   enabled: true
@@ -50,7 +94,7 @@ Ext.onReady(function () {
 
   var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
    text: 'Molecule', dataIndex: 'mol',
-   width: 160
+   width: 162
   });
 
   var mgrid = Ext.create('Ext.grid.Panel', {
@@ -74,7 +118,7 @@ Ext.onReady(function () {
   var fmolcol = Ext.create('Ext.esc.ChemDoodleColumn', {
     text: 'Molecule', dataIndex: 'mol',
     canvasClass: 'x-chemdoodle-cols2',
-    width: 160
+    width: 162
    });
 
   var fgrid = Ext.create('Ext.grid.Panel', {
@@ -97,136 +141,45 @@ Ext.onReady(function () {
 
   // uses perl Finnigan package to make data
   // mzxml-unpack -r 1..1  F0060068.mzXML > F0060068.scan1.txt
-  lc_store = Ext.create('Ext.data.Store', {
-    fields: [ {name:'time', type: 'float'}, {name:'signal', type: 'float'} ],
-    proxy: {
-      type: 'ajax',
-      url: 'F0060068.scan1.json',
-      reader: {
-        type: 'json',
-        root: 'peaks',
-        idProperty: 'time'
+  lc_chart = Ext.create('Ext.esc.Chromatogram', {
+    listeners: {
+      selectscan: function(scanid){
+        console.log('select scan '+scanid);
+      },
+      unselectscan: function(scanid){
+        console.log('unselect scan '+scanid);
       }
     },
-    pageSize: 10000,
-    autoLoad: true
-  });
-
-  lc_chart = Ext.create('Ext.chart.Chart', {
-    xtype: 'chart',
-    store: lc_store,
-    shadow: false,
-    axes: [{
-      type: 'Numeric',
-      position:'left',
-      fields: ['signal'],
-      title: 'Signal'
-    },{
-      type: 'Numeric',
-      position:'bottom',
-      fields: ['time'],
-      title: 'Retention time'
-    }],
-    series: [{
-      type: 'line',
-      xField: 'time',
-      yField: ['signal'],
-      axis: 'left',
-      markerConfig: {
-        type: 'circle',
-        radius: 1
-      },
-    }]
-  });
-
-  ms_store = Ext.create('Ext.data.Store', {
-    fields: [ {name:'mz', type: 'float'}, {name:'intensity', type: 'float'} ],
-    proxy: {
-      type: 'ajax',
-      url: 'F0060068.scan81.json',
-      reader: {
-        type: 'json',
-        root: 'peaks',
-        idProperty: 'mz'
+    bbar:[{
+      text: 'Select peaks of metabolite 1',
+      enableToggle: true,
+      toggleHandler: function(b,s) {
+        var scanids = {476:true,1928:true};
+        if (s) {
+          lc_chart.selectScans(scanids);
+        } else {
+          lc_chart.clearScanSelection();
+        }
       }
-    },
-    pageSize: 10000,
-    autoLoad: true
-  });
-
-  Ext.chart.Shape['vline'] = function (surface, opts) {
-	    return surface.add(Ext.apply({
-	      type: 'rect',
-	      x: opts.x,
-	      y: 20,
-	      height: opts.y,
-	      width: opts.radius
-	  }, opts));
-	};
-
-  ms_chart = Ext.create('Ext.chart.Chart', {
-    xtype: 'chart',
-    store: ms_store,
-    shadow: false,
-    axes: [{
-      type: 'Numeric',
-      position:'left',
-      fields: ['intensity'],
-//      title: 'Intensity'
     },{
-      type: 'Numeric',
-      position:'bottom',
-      fields: ['mz'],
-//      title: 'm/z',
-//      minimum:50
-    }],
-    series: [{
-      type: 'scatter',
-      xField: 'mz',
-      yField: ['intensity'],
-      renderer: function(sprite, record, attributes) {
-//         console.log(arguments);
-//         if (record.data.mz < 100) { attributes.stroke = 'red'; }
-// ms_chart.surface.add({type:'circle',x:300,y:300,radius:30,fill:'#233'}).show(true);
-//         console.log([sprite.x,sprite.y,record.data]);
-         return attributes;
-      },
-      axis: 'left',
-      markerConfig: {
-        type: 'circle',
-        radius: 2
-      },
+      text: 'Reset zoom',
+      handler: function() {
+        lc_chart.resetZoom();
+      }
     }]
   });
+  d3.json("chromatogram.json", function(data) {
+    lc_chart.setData(data);
+  });
 
-  ms_chart2 = Ext.create('Ext.chart.Chart', {
-    xtype: 'chart',
-    store: ms_store,
-    shadow: false,
-    axes: [{
-      type: 'Numeric',
-      position:'left',
-      fields: ['intensity'],
-//      title: 'Intensity'
-    },{
-      type: 'Numeric',
-      position:'bottom',
-      fields: ['mz'],
-      title: 'm/z',
-    }],
-    series: [{
-      type: 'scatter',
-      xField: 'mz',
-      yField: ['intensity'],
-      renderer: function(sprite, record, attributes) {
-         return attributes;
-      },
-      axis: 'left',
-      markerConfig: {
-        type: 'circle',
-        radius: 2
-      },
-    }]
+
+  ms_chart = Ext.create('Ext.esc.MSpectra', {});
+  d3.json("scan.623.json", function(data) {
+    ms_chart.setData(data);
+  });
+  ms_chart2 = Ext.create('Ext.esc.MSpectra', {});
+  d3.json("scan.3862.json", function(data) {
+    ms_chart2.setData(data);
   });
 
   Ext.define('Scan', {
@@ -301,7 +254,6 @@ function rightleft() {
 	var master_side = Ext.create('Ext.panel.Panel', {
         // master side
         region: 'center',
-        width: '50%',
         layout: 'border',
         items:[{
             region:'center',
@@ -319,11 +271,6 @@ function rightleft() {
             split: true,
             layout: 'fit',
             items:[lc_chart],
-            listeners: {
-            	resize: function(t,w,h) {
-            		console.log(t,w,h);
-            	}
-            }
         }]
 	});
 
@@ -365,16 +312,16 @@ function rightleft() {
                  title: 'Scan 12 (Level 2)',
             	 items: ms_chart2
               }]
-          },{
-              region:'east',
-              collapsible: true,
-              collapsed: true,
-              hideCollapseTool: true,
-              layout: 'fit',
-              width: '20%',
-              split: true,
-//              title:'Scans',
-              items:[scan_tree]
+//           },{
+//               region:'east',
+//               collapsible: true,
+//               collapsed: true,
+//               hideCollapseTool: true,
+//               layout: 'fit',
+//               width: '20%',
+//               split: true,
+// //              title:'Scans',
+//               items:[scan_tree]
           }],
         }]
     });
