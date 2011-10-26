@@ -90,6 +90,7 @@ Ext.onReady(function () {
     title:'Chromatogram',
     layout: 'fit',
     width: 1000,
+    y: 20,
     height: 600,
     items: chromatogram,
     resizable: {
@@ -99,6 +100,29 @@ Ext.onReady(function () {
 
   d3.json("chromatogram.json", function(data) {
     chromatogram.setData(data);
+  });
+
+  msspectra1 = Ext.create('Ext.esc.MSpectra', {});
+  Ext.create('Ext.window.Window', {
+    title:'Mass spectra 1',
+    layout: 'fit',
+    width: 500,
+    y: 630,
+    height: 300,
+    items: msspectra1,
+    resizable: {
+      dynamic: true
+    },
+	  bbar:[{
+	    text: 'Reset zoom',
+	    handler: function() {
+	      msspectra1.resetZoom();
+	    }
+	  }]
+  }).show();
+
+  d3.json("scan.3862.json", function(data) {
+    msspectra1.setData(data);
   });
 });
 </script>
