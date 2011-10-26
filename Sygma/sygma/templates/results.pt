@@ -62,39 +62,47 @@ Ext.Loader.setConfig({
 });
 
 Ext.onReady(function () {
-  Ext.define('Molecule', {
+  Ext.define('Metabolite', {
     extend:'Ext.data.Model',
     fields: [{
-      name:'name', type:'string'
+      name: 'id',
     },{
-      name:'mol', type:'string'
+      name: 'mol', type:'string'
     },{
-      name:'query', defaultValue: [] // array of atom indexes of molecule which are the substructure of the query
+      name: 'level'
+    },{
+      name: 'probability'
+    },{
+      name: 'reactionsequence'
+    },{
+      name: 'smiles'
+    },{
+      name: 'molformula'
+    },{
+      name: 'isquery', type: 'bool'
+    },{
+      name: 'origin'
+    },{
+      name: 'nhits'
+    },{
+      name: 'atoms', defaultValue: [] // array of atom indexes of molecule which are the substructure of the query
     }]
   });
 
   var pageSize = 10;
-  var store = Ext.create('Ext.data.Store', {
+  var mstore = Ext.create('Ext.data.Store', {
     storeId:'sampleStore',
-    model:'Molecule',
+    model:'Metabolite',
     pageSize: pageSize,
     proxy: {
         type: 'ajax',
-        url: 'data.json',
+        url: '${request.route_url('metabolites.json')}',
         reader: {
             type: 'json',
             root: 'rows'
         }
     },
-    autoLoad: true,
-    listeners: {
-      lo2ad: function(store) {
-        var r = network.paper;
-        r.addReactant(ChemDoodle.readMOL(store.getAt(0).data.mol));
-        r.addProduct(ChemDoodle.readMOL(store.getAt(1).data.mol));
-        r.layout();
-      }
-    }
+    autoLoad: true
  });
 
   var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
@@ -103,17 +111,22 @@ Ext.onReady(function () {
   });
 
   var mgrid = Ext.create('Ext.grid.Panel', {
-    store: store,
+    store: mstore,
     selType:'checkboxmodel',
     multiSelect:true,
     columns: [
+      {text: 'Name', dataIndex: 'origin'},
       molcol,
-      {text: 'Name', dataIndex: 'name', flex:1}
+      {text: 'Query', dataIndex: 'isquery', xtype:'checkcolumn'},
+      {text: 'Level', dataIndex: 'level'},
+      {text: 'Probability', dataIndex: 'probability'},
+      {text: 'Reaction seq.', dataIndex: 'reactionsequence'},
+      {text: 'Formula', dataIndex: 'molformula'}
     ],
     pageSize: pageSize,
     dockedItems: [{
       xtype: 'pagingtoolbar',
-      store: store,   // same store GridPanel is using
+      store: mstore,   // same store GridPanel is using
       dock: 'bottom',
       displayInfo: true
     }],
@@ -126,18 +139,21 @@ Ext.onReady(function () {
     width: 162
    });
 
+  // TODO create fragment store
+  var fstore = mstore;
+
   var fgrid = Ext.create('Ext.grid.Panel', {
-   store: store,
+   store: fstore,
    selType:'checkboxmodel',
    multiSelect:true,
    columns: [
      fmolcol,
-     {text: 'Name', dataIndex: 'name', width: 200 }
+     {text: 'Smile', dataIndex: 'smiles', width: 200 }
    ],
    pageSize: pageSize,
    dockedItems: [{
      xtype: 'pagingtoolbar',
-     store: store,   // same store GridPanel is using
+     store: fstore,   // same store GridPanel is using
      dock: 'bottom',
      displayInfo: true
    }],
@@ -174,17 +190,17 @@ Ext.onReady(function () {
       }
     }]
   });
-  d3.json("chromatogram.json", function(data) {
+  d3.json('${request.route_url('chromatogram.json')}', function(data) {
     lc_chart.setData(data);
   });
 
 
   ms_chart = Ext.create('Ext.esc.MSpectra', {});
-  d3.json("scan.623.json", function(data) {
+  d3.json("${request.route_url('mspectra.json',id=623)}", function(data) {
     ms_chart.setData(data);
   });
   ms_chart2 = Ext.create('Ext.esc.MSpectra', {});
-  d3.json("scan.3862.json", function(data) {
+  d3.json("${request.route_url('mspectra.json',id=3862)}", function(data) {
     ms_chart2.setData(data);
   });
 

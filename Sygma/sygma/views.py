@@ -1,5 +1,5 @@
 from sygma.models import DBSession
-from sygma.models import Metabolite
+from sygma.models import Metabolite, Scan, Peak
 from pyramid.response import Response
 from pyramid.view import view_config
 
@@ -11,7 +11,9 @@ def index(request):
 def metabolitesjson(request):
     dbsession = DBSession()
     mets = []
-    for met in dbsession.query(Metabolite):
+    start = int(request.params['start'])
+    limit = int(request.params['limit'])
+    for met in dbsession.query(Metabolite)[start:(limit+start)]:
         mets.append({
             'id': met.id,
             'mol': met.mol,
@@ -25,4 +27,33 @@ def metabolitesjson(request):
             'nhits': met.nhits
         })
 
-    return { 'total': len(mets), 'rows': mets }
+    total = dbsession.query(Metabolite).count()
+    return { 'total': total, 'rows': mets }
+
+@view_config(route_name='chromatogram.json', renderer='json')
+def chromatogramjson(request):
+    dbsession = DBSession()
+    scans = []
+    # TODO add left join to find if scan has metabolite hit
+    for scan in dbsession.query(Scan).filter_by(level=1):
+        scans.append({
+            'id': scan.scanid,
+            'rt': scan.rt,
+            'intensity': scan.basepeakintensity,
+            'hashit': False
+        })
+
+    return scans
+
+@view_config(route_name='mspectra.json', renderer='json')
+def mspectrajson(request):
+    dbsession = DBSession()
+    peaks = []
+    for peak in dbsession.query(Peak).filter_by(scanid=request.matchdict['id']):
+        peaks.append({
+            'mz': peak.mz,
+            'intensity': peak.intensity
+        })
+
+    return peaks
+
