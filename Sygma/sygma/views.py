@@ -2,6 +2,7 @@ from sygma.models import DBSession
 from sygma.models import Metabolite, Scan, Peak
 from pyramid.response import Response
 from pyramid.view import view_config
+from sqlalchemy.sql.expression import desc
 
 @view_config(route_name='home', renderer='templates/results.pt')
 def index(request):
@@ -13,7 +14,7 @@ def metabolitesjson(request):
     mets = []
     start = int(request.params['start'])
     limit = int(request.params['limit'])
-    for met in dbsession.query(Metabolite)[start:(limit+start)]:
+    for met in dbsession.query(Metabolite).order_by(desc(Metabolite.isquery), Metabolite.id)[start:(limit+start)]:
         mets.append({
             'id': met.id,
             'mol': met.mol,
@@ -35,7 +36,7 @@ def chromatogramjson(request):
     dbsession = DBSession()
     scans = []
     # TODO add left join to find if scan has metabolite hit
-    for scan in dbsession.query(Scan).filter_by(level=1):
+    for scan in dbsession.query(Scan).filter_by(mslevel=1):
         scans.append({
             'id': scan.scanid,
             'rt': scan.rt,
@@ -57,3 +58,6 @@ def mspectrajson(request):
 
     return peaks
 
+@view_config(route_name='scantree.json', renderer='json')
+def scantree(request):
+    return {}

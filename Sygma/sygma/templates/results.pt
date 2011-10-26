@@ -117,7 +117,7 @@ Ext.onReady(function () {
     columns: [
       {text: 'Name', dataIndex: 'origin'},
       molcol,
-      {text: 'Query', dataIndex: 'isquery', xtype:'checkcolumn'},
+      {text: 'Query', dataIndex: 'isquery'},
       {text: 'Level', dataIndex: 'level'},
       {text: 'Probability', dataIndex: 'probability'},
       {text: 'Reaction seq.', dataIndex: 'reactionsequence'},
@@ -171,24 +171,7 @@ Ext.onReady(function () {
       unselectscan: function(scanid){
         console.log('unselect scan '+scanid);
       }
-    },
-    bbar:[{
-      text: 'Select peaks of metabolite 1',
-      enableToggle: true,
-      toggleHandler: function(b,s) {
-        var scanids = {476:true,1928:true};
-        if (s) {
-          lc_chart.selectScans(scanids);
-        } else {
-          lc_chart.clearScanSelection();
-        }
-      }
-    },{
-      text: 'Reset zoom',
-      handler: function() {
-        lc_chart.resetZoom();
-      }
-    }]
+    }
   });
   d3.json('${request.route_url('chromatogram.json')}', function(data) {
     lc_chart.setData(data);
@@ -217,7 +200,7 @@ Ext.onReady(function () {
     model: 'Scan',
     proxy: {
       type: 'ajax',
-      url: 'scans.json'
+      url: '${request.route_url('scantree.json')}'
     },
   });
 
@@ -277,10 +260,12 @@ function rightleft() {
         // master side
         region: 'center',
         layout: 'border',
+        border: false,
         items:[{
             region:'center',
             title: 'Query molecules & Metabolites',
             layout: 'fit',
+            border: false,
             items: [
               mgrid,
             ]
@@ -293,6 +278,14 @@ function rightleft() {
             split: true,
             layout: 'fit',
             items:[lc_chart],
+            border: false,
+            tools:[{
+              type:'maximize',
+              tooltip: 'Reset zoom',
+              handler: function() {
+                lc_chart.resetZoom();
+              }
+            }]
         }]
   });
 
@@ -302,13 +295,16 @@ function rightleft() {
         split: true,
         collapsible: true,
         layout: 'border',
-        width: '50%',
+//        width: '50%',
+        width: 600,
         hideCollapseTool: true,
+        border: false,
         items:[{
             region: 'center',
             title: 'Fragments of Fragment1',
             items: [fgrid],
             layout: 'fit',
+            border: false
         },{
           region:'south',
           height: '50%',
@@ -316,6 +312,7 @@ function rightleft() {
           split: true,
           collapsible: true,
           hideCollapseTool: true,
+          border: false,
           items:[{
 //              title:'Scan - <a href="#">Scan321</a> >> Scan2324',
               region: 'center',
@@ -323,16 +320,34 @@ function rightleft() {
                   type: 'vbox',
                   align: 'stretch'
               },
+              border: false,
               defaults: {
                 flex: 1,
-                layout:'fit'
+                layout:'fit',
+                border: false
               },
               items:[{
                title: 'Scan 123 (Level 1)',
-               items: ms_chart
+               collapsible: true,
+               tools:[{
+	                 type:'maximize',
+	                 tooltip: 'Reset zoom',
+	                 handler: function() {
+	                   ms_chart.resetZoom();
+	                 }
+	               }],
+	               items: ms_chart
               },{
                  title: 'Scan 12 (Level 2)',
-               items: ms_chart2
+	               items: ms_chart2,
+	               collapsible: true,
+	               tools:[{
+	                 type:'maximize',
+	                 tooltip: 'Reset zoom',
+	                 handler: function() {
+	                   ms_chart2.resetZoom();
+	                 }
+	               }]
               }]
 //           },{
 //               region:'east',
@@ -354,85 +369,6 @@ function rightleft() {
   });
 }
 
-function topbottom() {
-  Ext.create('Ext.Viewport', {
-    layout: 'border',
-    items:[{
-      // top side
-      region: 'center',
-      layout: 'border',
-      split: true,
-      collapsible: true,
-      hideCollapseTool: true,
-      height: '50%',
-      items:[{
-        title:'Chromatogram',
-        region:'east',
-        hideCollapseTool: true,
-        collapsible: true,
-        width: '50%',
-        split: true,
-        layout: 'fit',
-//        html:'LC Chromatogram as line chart'
-        items:[lc_chart]
-      },{
-        region:'center',
-        title: 'Parents & Metabolites',
-        width: '50%',
-        xtype: 'tabpanel',
-        activeTab: 0,
-        items: [
-          mgrid,
-          network,
-          //{ title:'Network', html:'network of parents & metabolites' }
-        ],
-//        html: 'grid with parents & metabolites'
-      }]
-    },{
-      // bottom side
-      region: 'south',
-        hideCollapseTool: true,
-        collapsible: true,
-        split: true,
-      height: '50%',
-      layout: 'border',
-      items:[{
-        region: 'west',
-        hideCollapseTool: true,
-        collapsible: true,
-        split: true,
-        layout: 'fit',
-        width: '50%',
-        title: 'Fragments of Fragment1',
-        items: [fgrid],
-//        dockedItems: [{
-//          xtype: 'toolbar',
-//          dock: 'top',
-//          items: [{
-//              text: 'Parent molecule >> Metabolite >> Fragment1'
-//          }]
-//        }]
-      },{
-        region:'center',
-        title:'Scan - <a href="#">Scan321</a> >> Scan2324',
-        layout: 'fit',
-        items:[ms_chart]
-      },{
-        region:'east',
-        hideCollapseTool: true,
-        width: '20%',
-        collapsible: true,
-        split: true,
-        title:'Scans',
-        layout: 'fit',
-//        html:'tree of scans, with scan selected which is visible in the scan panel'
-        items:[scan_tree]
-      }]
-    }]
-  });
-}
-
-//topbottom();
 rightleft();
 
 });
