@@ -5,6 +5,8 @@
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
 <link rel="stylesheet" href="${request.static_url('sygma:static/ChemDoodleWeb/install/ChemDoodleWeb.css')}" type="text/css">
 <link rel="stylesheet" href="${request.static_url('sygma:static/ext-4.0.7-gpl/resources/css/ext-all.css')}" type="text/css">
+<link rel="stylesheet" type="text/css" href="${request.static_url('sygma:static/ext-4.0.7-gpl/examples/ux/grid/css/GridFilters.css')}" />
+<link rel="stylesheet" type="text/css" href="${request.static_url('sygma:static/ext-4.0.7-gpl/examples/ux/grid/css/RangeMenu.css')}" />
 <script type="text/javascript" src="${request.static_url('sygma:static/ext-4.0.7-gpl/bootstrap.js')}"></script>
 <script type="text/javascript" src="${request.static_url('sygma:static/ChemDoodleWeb/install/ChemDoodleWeb-libs.js')}"></script>
 <script type="text/javascript" src="${request.static_url('sygma:static/ChemDoodleWeb/src/ChemDoodleWeb-unpacked.js')}"></script>
@@ -57,15 +59,19 @@ path.marker {
 Ext.Loader.setConfig({
   enabled: true,
   paths: {
-    'Ext': '${request.static_url('sygma:static/')}'
+    'Ext': '${request.static_url('sygma:static/')}',
+    'Ext.ux': '${request.static_url('sygma:static/ext-4.0.7-gpl/examples/ux')}'
   }
 });
+Ext.require([
+    'Ext.ux.grid.FiltersFeature',
+]);
 
 Ext.onReady(function () {
   Ext.define('Metabolite', {
     extend:'Ext.data.Model',
     fields: [{
-      name: 'id',
+      name: 'metid',
     },{
       name: 'mol', type:'string'
     },{
@@ -102,8 +108,22 @@ Ext.onReady(function () {
             root: 'rows'
         }
     },
-    autoLoad: true
+    sorters: [{
+      property: 'probability',
+      direction: 'DESC'
+    },{
+      property: 'metid',
+      direction: 'ASC'
+    }],
+    autoLoad: true,
+    remoteSort: true,
+    remoteFilter: true,
  });
+
+  var mfilters = {
+    encode: true,
+    ftype: 'filters'
+  };
 
   var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
    text: 'Molecule', dataIndex: 'mol',
@@ -115,13 +135,14 @@ Ext.onReady(function () {
     selType:'checkboxmodel',
     multiSelect:true,
     columns: [
-      {text: 'Name', dataIndex: 'origin'},
       molcol,
-      {text: 'Query', dataIndex: 'isquery'},
-      {text: 'Level', dataIndex: 'level'},
-      {text: 'Probability', dataIndex: 'probability'},
-      {text: 'Reaction seq.', dataIndex: 'reactionsequence'},
-      {text: 'Formula', dataIndex: 'molformula'}
+      {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: [0,1,2,3] }, hidden:true },
+      {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }},
+      {text: 'Reaction seq.', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }},
+      {text: 'Smile', dataIndex: 'smiles', hidden:true},
+      {text: 'Formula', dataIndex: 'molformula', filter: { type: 'string' }},
+      {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
+      {text: 'Name', dataIndex: 'origin', hidden: true, filter: { type: 'string' }},
     ],
     pageSize: pageSize,
     dockedItems: [{
@@ -131,6 +152,7 @@ Ext.onReady(function () {
       displayInfo: true
     }],
     plugins: [molcol],
+    features: [mfilters]
   });
 
   var fmolcol = Ext.create('Ext.esc.ChemDoodleColumn', {

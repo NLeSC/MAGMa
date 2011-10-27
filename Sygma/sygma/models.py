@@ -21,7 +21,7 @@ Base = declarative_base()
 
 class Metabolite(Base):
     __tablename__ = 'metabolites'
-    id = Column(Integer, primary_key=True)
+    metid = Column(Integer, primary_key=True)
     mol = Column(Unicode, unique=True)
     level = Column(Integer)
     probability = Column(Float)
@@ -53,6 +53,18 @@ class Peak(Base):
     scanid = Column(Integer, ForeignKey('scans.scanid'), primary_key=True)
     mz = Column(Float, primary_key=True)
     intensity = Column(Float)
+
+class Fragment(Base):
+    __tablename__ = 'fragments'
+    fragid = Column(Integer, primary_key=True)
+    metid = Column(Integer, ForeignKey('metabolites.metid'))
+    scanid = Column(Integer, ForeignKey('scans.scanid'), ForeignKey('peaks.scanid'))
+    mz = Column(Float, ForeignKey('peaks.scanid'))
+    mass = Column(Float)
+    score = Column(Float)
+    parentfragid = Column(Integer)
+    atoms = Column(Unicode) # , seperated, starting with 0
+    deltah = Column(Float)
 
 def initialize_sql(engine):
     DBSession.configure(bind=engine)

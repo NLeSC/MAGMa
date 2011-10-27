@@ -5,3 +5,4 @@ Sygma/development.ini
 Sygma/production.ini
 Sygma/sygma/**pyc
 env/
+/env64
