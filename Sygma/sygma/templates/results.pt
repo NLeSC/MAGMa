@@ -132,11 +132,12 @@ Ext.onReady(function () {
   });
 
   var mgrid = Ext.create('Ext.grid.Panel', {
+    id: 'metabolitegrid',
     store: mstore,
     selType:'checkboxmodel',
     multiSelect: false,
     columns: [
-      {text: 'ID', dataIndex: 'metid', hidden: true, filter: { type: 'numeric' }},
+      {text: 'ID', dataIndex: 'metid', hidden: true},
       molcol,
       {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: [0,1,2,3] }, hidden:true},
       {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }},
@@ -158,7 +159,8 @@ Ext.onReady(function () {
           mfilters.clearFilters();
           mstore.filter();
           lc_chart.clearScanSelection();
-          // TODO clear fragment and scan panels
+          fstore.removeAll();
+          // TODO clear scan panels
         }
       }]
     }],
@@ -174,12 +176,7 @@ Ext.onReady(function () {
               // if one scan has already been selected test if its a member of the scans of selected metabolite
               // if so then show fragments
               if (lc_chart.selectedscan != -1 && obj.indexOf(lc_chart.selectedscan) != -1) {
-                console.log('Show fragments');
-                fstore.filter([{
-                  property: 'scanid', value: lc_chart.selectedscan
-                },{
-                  property: 'metid', value: r.data.metid
-                }]);
+                loadFragments(lc_chart.selectedscan, r.data.metid);
               } else {
 		            lc_chart.selectScans(obj);
 		            // if metabolite has only one scan hit then show that scan and fragments
@@ -187,12 +184,7 @@ Ext.onReady(function () {
 	                // show scan where metabolite had its hit
 	                loadMSpectra1(obj[0]);
 	                // show fragments with this metabolite and scan
-                  console.log('Show fragments');
-		              fstore.filter([{
-		                property: 'scanid', value: obj[0]
-		              },{
-		                property: 'metid', value: r.data.metid
-		              }]);
+                  loadFragments(obj[0], r.data.metid);
 		            }
               }
 	          } else {
@@ -204,32 +196,91 @@ Ext.onReady(function () {
 	  }
   });
 
+  Ext.define('Fragment', {
+    extend:'Ext.data.Model',
+    fields: [{
+      name: 'fragid',
+    },{
+      name: 'metid',
+    },{
+      name: 'scanid'
+    },{
+      name: 'mz'
+    },{
+      name: 'mass'
+    },{
+      name: 'score'
+    },{
+      name: 'parentfragid'
+    },{
+      name: 'mol', type: 'string'
+    },{
+      name: 'atoms', defaultValue: [] // array of atom indexes of molecule which are the substructure of the query
+    },{
+      name: 'deltah'
+    }]
+  });
+
+  function loadFragments(scanid, metid) {
+    console.log('Show fragments');
+    fstore.getProxy().url = '${request.application_url}/fragments/'+scanid+'/'+metid+'.json';
+    fstore.load();
+  }
+
+  // TODO chemdoodle does not work in tree due to store.getAt must replaced with store.getNodeById
+  var hlspecs = new ChemDoodle.structures.VisualSpecifications();
+  hlspecs.bonds_color = 'gold';
+  hlspecs.atoms_color = 'gold';
   var fmolcol = Ext.create('Ext.esc.ChemDoodleColumn', {
-    text: 'Molecule', dataIndex: 'mol',
+    text: 'Molecule', dataIndex: 'mol', atomIndex:'atoms',
     canvasClass: 'x-chemdoodle-cols2',
-    width: 162
-   });
+    width: 162,
+    initCanvas:function(id, width, height, value,record) {
+      var c = new ChemDoodle.TransformCanvas(id, width, height,true);
+      var m = ChemDoodle.readMOL(value);
+      record.data[this.atomIndex].forEach(function(qa) {
+        // use highlight visual spec for atoms which are part of query
+        m.atoms[qa].specs = hlspecs;
+        // also highlight all bonds conected to query atoms
+        m.getBonds(m.atoms[qa]).forEach(function(b) { b.specs = hlspecs; });
+      });
+      c.loadMolecule(m);
+    }
+  });
 
-  // TODO create fragment store
-  var fstore = mstore;
+  var fstore = Ext.create('Ext.data.TreeStore', {
+    storeId:'fragmentStore',
+    model:'Fragment',
+    proxy: {
+        type: 'ajax',
+        url: '#', // url is build when scan and metabolite are selected
+        reader: {
+            type: 'json',
+            root: 'children',
+            idProperty: 'fragid'
+        }
+    },
+    autoLoad: false,
+  });
 
-  var fgrid = Ext.create('Ext.grid.Panel', {
-   store: fstore,
-   selType:'checkboxmodel',
-   multiSelect: false,
-   columns: [
-     fmolcol,
-     {text: 'Smile', dataIndex: 'smiles', width: 200 }
-   ],
-   pageSize: pageSize,
-   dockedItems: [{
-     xtype: 'pagingtoolbar',
-     store: fstore,   // same store GridPanel is using
-     dock: 'bottom',
-     displayInfo: true
-   }],
-   plugins: [fmolcol],
- });
+  var fgrid = Ext.create('Ext.tree.Panel', {
+    id: 'fragmentgrid',
+    store: fstore,
+    selType:'checkboxmodel',
+    multiSelect: false,
+    rootVisible: false,
+    columns: [
+      { text: 'Score', dataIndex: 'score', xtype: 'treecolumn', flex:1},
+//      fmolcol,
+      { text: 'ID', dataIndex: 'fragid', hidden: true},
+      { text: 'Scan', dataIndex: 'scanid', hidden: true},
+      { text: 'Metabolite', dataIndex: 'metid', hidden: true},
+      { text: 'M/z', dataIndex: 'mz'},
+      { text: 'Mass', dataIndex: 'mass'},
+      { text: 'H Delta', dataIndex: 'deltah'}
+    ],
+//    plugins: [fmolcol],
+  });
 
   /**
    * Removes scan filter from metabolite store
@@ -237,14 +288,14 @@ Ext.onReady(function () {
   function removeScanFilter() {
     var scanfilter;
     // see if already filtered on scanid then remove old filter
-    if (scanfilter = mstore.filters.findBy(
-        function(f) { return ('property' in f && f.property == 'scanid'); }
-    )) {
-      mstore.filters.remove(scanfilter);
+    if ('scanid' in mstore.getProxy().extraParams) {
+      delete(mstore.getProxy().extraParams.scanid);
+      mstore.loadPage(1);
     }
   }
 
   function loadMSpectra1(scanid) {
+    // TODO clear previously loaded scan or d3 data binding to replace data
     // load msspectra level 1
     d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
       Ext.getCmp('mspectra1panel').header.setTitle('Scan '+scanid+' (level 1)');
@@ -263,21 +314,16 @@ Ext.onReady(function () {
         // if metabolite has been selected then show fragments with this metabolite and scan
         // if metabolite has not been selected then filter mstore
         if (mgrid.getSelectionModel().selected.getCount() > 0) {
-          console.log('Show fragments');
-          fstore.filter([{
-            property: 'scanid', value: scanid
-          },{
-            property: 'metid', value: mgrid.getSelectionModel().selected.getAt(0).data.metid
-          }]);
+          loadFragments(scanid, mgrid.getSelectionModel().selected.getAt(0).data.metid);
         } else {
-          mstore.filter('scanid', scanid);
+          mstore.getProxy().extraParams.scanid = scanid;
+          mstore.loadPage(1);
         }
         loadMSpectra1(scanid);
       },
       unselectscan: function(scanid) {
         console.log('unselect scan '+scanid);
         removeScanFilter();
-        mstore.load();
         // TODO unload mspectra1
       }
     }
@@ -334,35 +380,6 @@ Ext.onReady(function () {
     }]
   });
 
-  Ext.define('Ext.ChemDoodle.ViewerCanvas', {
-    extend: 'Ext.Component',
-    onRender: function(ct) {
-      if (!this.canvas) {
-        this.canvas = ct.createChild({
-          id: ct.id+'-canvas',
-          tag: 'canvas',
-          width: 300, height: 300
-        })
-        // disabled SimpleReactionLayout creates table with canvases using document.writeln
-//        this.paper = new ChemDoodle.SimpleReactionLayout(ct.id+'-canvas', 300, 300);
-        this.el = this.canvas;
-//       } else {
-//         console.log(ct.getWidth(), ct.getHeight());
-//         this.canvas.setWidth(ct.getWidth());
-//         this.canvas.setHeight(ct.getHeight());
-//         this.canvas.dom.width = ct.getWidth();
-//         this.canvas.dom.height = ct.getHeight();
-//         this.paper.width = ct.getWidth();
-//         this.paper.height = ct.getHeight();
-//         this.paper.center();
-//         this.paper.repaint();
-      }
-    }
-  });
-
-  network = Ext.create('Ext.ChemDoodle.ViewerCanvas', {
-    title: 'Network',
-  });
 
 // horizontal split
 function rightleft() {
@@ -412,7 +429,8 @@ function rightleft() {
         border: false,
         items:[{
             region: 'center',
-            title: 'Fragments of Fragment1',
+            id: 'fragmentspanel',
+            title: 'Fragments',
             items: [fgrid],
             layout: 'fit',
             border: false

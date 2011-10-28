@@ -3,6 +3,7 @@ from sygma.models import Metabolite, Scan, Peak, Fragment
 from pyramid.response import Response
 from pyramid.view import view_config
 from sqlalchemy.sql.expression import desc, asc
+from sqlalchemy.sql import exists
 import simplejson as json
 
 @view_config(route_name='home', renderer='templates/results.pt')
@@ -32,18 +33,17 @@ def metabolitesjson(request):
     limit = int(request.params['limit'])
     q = dbsession.query(Metabolite)
 
+    # custom filters
+    if ('scanid' in request.params):
+        # TODO add score column + order by score
+        q = q.join(Fragment.metabolite).filter(Fragment.parentfragid==0).filter(Fragment.scanid==request.params['scanid'])
+    if ('metid' in request.params):
+        q = q.filter(Metabolite.metid==request.params['metid'])
+
     if ('filter' in request.params):
         for filter in json.loads(request.params['filter']):
-            if ('property' in filter and 'value' in filter):
-                # custom filters
-                prop = filter['property']
-                if (prop == 'scanid'):
-                    q = q.join(Fragment.metabolite).filter(Fragment.parentfragid==0).filter(Fragment.scanid==filter['value'])
-                elif (prop == 'metid'):
-                    q = q.filter(Metabolite.metid==filter['value'])
-            else:
-                # generic filters
-                q = extjsgridfilter(q, Metabolite.__dict__[filter['field']], filter)
+            # generic filters
+            q = extjsgridfilter(q, Metabolite.__dict__[filter['field']], filter)
 
     total = q.count()
 
@@ -54,9 +54,9 @@ def metabolitesjson(request):
             elif (col['direction'] == 'ASC'):
                 q = q.order_by(asc(Metabolite.__dict__[col['property']]))
     else:
+        # default sort
         q = q.order_by(desc(Metabolite.probability), Metabolite.metid)
 
-    # filter on level, probability, reaction seq, formula en scanid en (scanid,mz)
     for met in q[start:(limit+start)]:
         r = {
             'metid': met.metid,
@@ -70,8 +70,6 @@ def metabolitesjson(request):
             'origin': met.origin,
             'nhits': met.nhits
         }
-        if ('scanid' in request.params):
-            r['score'] = met.score
         mets.append(r)
 
     return { 'total': total, 'rows': mets }
@@ -134,4 +132,30 @@ def metabolitescans(request):
         scans.append(frag.scanid)
     return scans
 
+@view_config(route_name='fragments.json', renderer='json')
+def fragments(request):
+    q = DBSession().query(Fragment,Metabolite.mol).join(Metabolite).filter(
+        Fragment.scanid==request.matchdict['scanid']).filter(
+        Fragment.metid==request.matchdict['metid'])
 
+    # parent metabolite
+    if (request.params['node'] == 'root'):
+        (frag, mol) = q.filter(Fragment.parentfragid==0).one()
+        f = {
+            'fragid': frag.fragid,
+            'scanid': frag.scanid,
+            'metid': frag.metid,
+            'score': frag.score,
+            'mol': mol,
+            'atoms': frag.atoms,
+            'mz': frag.mz,
+            'mass': frag.mass,
+            'deltah': frag.deltah,
+        }
+        if (len(frag.children)>0):
+            f['expanded'] = False
+            f['leaf'] = False
+        else:
+            f['expanded'] = True
+            f['leaf'] = True
+        return { 'children': f, 'expanded': True}

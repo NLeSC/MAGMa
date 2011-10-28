@@ -64,9 +64,10 @@ class Fragment(Base):
     mz = Column(Float, ForeignKey('peaks.scanid'))
     mass = Column(Float)
     score = Column(Float)
-    parentfragid = Column(Integer)
+    parentfragid = Column(Integer, ForeignKey('fragments.fragid'))
     atoms = Column(Unicode) # , seperated, starting with 0
     deltah = Column(Float)
+    children = relationship('Fragment', backref=backref('parent', remote_side=[fragid]), lazy='joined', join_depth=1)
 
 class Run(Base):
     __tablename__ = 'run'

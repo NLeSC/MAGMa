@@ -36,3 +36,11 @@ print DBSession.query(Fragment).filter(Fragment.scanid==2682)
 
 Select child scans of scanid=2682
 SELECT * FROM scans WHERE precursorscanid=2682;
+
+# fragment with mol and with haschildren column
+SELECT f.*,m.mol,
+EXISTS(SELECT * FROM fragments WHERE parentfragid=f.fragid) haschildren
+FROM fragments f JOIN metabolites m USING (metid) WHERE  scanid=1263 AND metid=352 AND parentfragid=0
+;
+r = DBSession.query(Fragment).filter(Fragment.scanid==1263).filter(Fragment.metid==352).filter(Fragment.parentfragid==0).first()
+len(r.chilren)
