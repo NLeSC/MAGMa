@@ -27,6 +27,7 @@ Ext.define('Ext.esc.Chromatogram', {
          * @cfg {String} selectedScanCls The CSS class applied to markers of a selected scan.
          */
         selectedScanCls: 'selectedscan',
+        markers: [],
         chartWidth: 0,
         chartHeight: 0
     };
@@ -60,10 +61,12 @@ Ext.define('Ext.esc.Chromatogram', {
     // do not scale y axis
     //svg.select(".y.axis").call(yAxis);
     this.svg.select("path.line").attr('d', this.line(this.data));
-    this.svg.selectAll("path.lowermarker")
-      .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(0) + ")"; });
-    this.svg.selectAll("path.uppermarker")
-     .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(me.ranges.y.max) + ")"; });
+    if (this.markers.length) {
+      this.svg.selectAll("path.lowermarker")
+        .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(0) + ")"; });
+      this.svg.selectAll("path.uppermarker")
+       .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(me.ranges.y.max) + ")"; });
+    }
     this.svg.selectAll("line.peak").attr("y2", function(d) {
       return me.scales.y(d.intensity);
     }).attr("x1", function(d) {
@@ -149,41 +152,6 @@ Ext.define('Ext.esc.Chromatogram', {
       console.log(d,d3.event);
     })
     ;
-
-    // add markers to peaks which have hit
-    var peaks_with_hits = this.data.filter(function(d) {
-      return d.hashit;
-    });
-
-    // lower markers
-    this.svg.selectAll("path.lowermarker")
-    .data(peaks_with_hits)
-    .enter().append("svg:path")
-      .attr('class', 'marker lowermarker')
-      .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(0) + ")"; })
-      .attr("d", d3.svg.symbol().type('triangle-up').size(36) )
-      .style("cursor", "pointer")
-      .on('click', function(d) {
-        me.onToggleMarker(d.id);
-      })
-      .append("svg:title")
-        .text(function(d) { return 'Scan#'+d.id; })
-    ;
-
-    // upper markers
-    this.svg.selectAll("path.uppermarker")
-    .data(peaks_with_hits)
-    .enter().append("svg:path")
-      .attr('class', 'marker uppermarker')
-      .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(me.ranges.y.max) + ")"; })
-      .attr("d", d3.svg.symbol().type('triangle-down').size(36) )
-      .style("cursor", "pointer")
-      .on('click', function(d) {
-        me.onToggleMarker(d.id);
-      })
-      .append("svg:title")
-        .text(function(d) { return 'Scan#'+d.id; })
-    ;
   },
   onToggleMarker: function(scanid) {
     var me = this;
@@ -204,7 +172,7 @@ Ext.define('Ext.esc.Chromatogram', {
    */
   markerSelect: function(f) {
     this.svg.selectAll("path.uppermarker")
-    .classed(this.selectedScanCls, f)
+      .classed(this.selectedScanCls, f)
     ;
     this.svg.selectAll("path.lowermarker")
       .classed(this.selectedScanCls, f)
@@ -216,7 +184,7 @@ Ext.define('Ext.esc.Chromatogram', {
    */
   selectScans: function(scanids) {
     this.markerSelect(function(d) {
-      return (d.id in scanids);
+      return !(scanids.indexOf(d.id) == -1);
     });
   },
   /**
@@ -226,4 +194,40 @@ Ext.define('Ext.esc.Chromatogram', {
     this.markerSelect(false);
     this.selectedscan = -1;
   },
+  setMarkers: function(data) {
+    this.markers = data;
+    this.onMarkersReady();
+  },
+  onMarkersReady: function() {
+    var me = this;
+    // lower markers
+    this.svg.selectAll("path.lowermarker")
+    .data(function() {return me.markers})
+    .enter().append("svg:path")
+      .attr('class', 'marker lowermarker')
+      .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(0) + ")"; })
+      .attr("d", d3.svg.symbol().type('triangle-up').size(36) )
+      .style("cursor", "pointer")
+      .on('click', function(d) {
+        me.onToggleMarker(d.id);
+      })
+      .append("svg:title")
+        .text(function(d) { return 'Scan#'+d.id; })
+    ;
+
+    // upper markers
+    this.svg.selectAll("path.uppermarker")
+    .data(function() {return me.markers})
+    .enter().append("svg:path")
+      .attr('class', 'marker uppermarker')
+      .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(me.ranges.y.max) + ")"; })
+      .attr("d", d3.svg.symbol().type('triangle-down').size(36) )
+      .style("cursor", "pointer")
+      .on('click', function(d) {
+        me.onToggleMarker(d.id);
+      })
+      .append("svg:title")
+        .text(function(d) { return 'Scan#'+d.id; })
+    ;
+  }
 });
