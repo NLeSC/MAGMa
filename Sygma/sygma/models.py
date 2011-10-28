@@ -31,6 +31,7 @@ class Metabolite(Base):
     isquery = Column(Boolean)
     origin = Column(Unicode)
     nhits = Column(Integer)
+    fragments = relationship('Fragment', backref='metabolite')
 
 class Scan(Base):
     __tablename__ = 'scans'
@@ -47,6 +48,7 @@ class Scan(Base):
     precursorscanid = Column(Integer, ForeignKey('scans.scanid'))
     peaks = relationship('Peak', backref='scan')
     precursor = relationship('Scan')
+    fragments = relationship('Fragment', backref='scan')
 
 class Peak(Base):
     __tablename__ = 'peaks'
@@ -65,6 +67,21 @@ class Fragment(Base):
     parentfragid = Column(Integer)
     atoms = Column(Unicode) # , seperated, starting with 0
     deltah = Column(Float)
+
+class Run(Base):
+    __tablename__ = 'run'
+    # TODO run consists of 1 row so doesn't need a pk
+    # but sqlalchemy requires one
+    n_reaction_steps = Column(Integer, primary_key=True)
+    use_phase1 = Column(Boolean)
+    use_phase2 = Column(Boolean)
+    ms_filename = Column(Unicode)
+    ionisation = Column(Unicode)
+    use_fragmentation = Column(Boolean)
+    ms_intensity_cutoff = Column(Float)
+    msms_intensity_cutoff = Column(Float)
+    mz_precision = Column(Float)
+    use_msms_only = Column(Boolean)
 
 def initialize_sql(engine):
     DBSession.configure(bind=engine)

@@ -45,13 +45,14 @@ line.peak {
 }
 
 path.marker {
-  stroke: darkgreen;
+  stroke: lightgreen;
   fill: none;
   stroke-width: 1.5px;
 }
 
 .selectedscan {
-  fill: lightgreen !important;
+  stroke: darkgreen !important;
+  fill: darkgreen !important;
 }
 
 </style><script type="text/javascript">
@@ -105,7 +106,8 @@ Ext.onReady(function () {
         url: '${request.route_url('metabolites.json')}',
         reader: {
             type: 'json',
-            root: 'rows'
+            root: 'rows',
+            idProperty: 'metid'
         }
     },
     sorters: [{
@@ -120,23 +122,23 @@ Ext.onReady(function () {
     remoteFilter: true,
  });
 
-  var mfilters = {
-    encode: true,
-    ftype: 'filters'
-  };
-
   var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
    text: 'Molecule', dataIndex: 'mol',
    width: 162
   });
 
+  var mfilters = Ext.create('Ext.ux.grid.FiltersFeature',{
+    encode: true,
+  });
+
   var mgrid = Ext.create('Ext.grid.Panel', {
     store: mstore,
     selType:'checkboxmodel',
-    multiSelect:true,
+    multiSelect: false,
     columns: [
+      {text: 'ID', dataIndex: 'metid', hidden: true, filter: { type: 'numeric' }},
       molcol,
-      {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: [0,1,2,3] }, hidden:true },
+      {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: [0,1,2,3] }, hidden:true},
       {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }},
       {text: 'Reaction seq.', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }},
       {text: 'Smile', dataIndex: 'smiles', hidden:true},
@@ -149,10 +151,57 @@ Ext.onReady(function () {
       xtype: 'pagingtoolbar',
       store: mstore,   // same store GridPanel is using
       dock: 'bottom',
-      displayInfo: true
+      displayInfo: true,
+      items: [{
+        text: 'Clear filters',
+        handler: function() {
+          mfilters.clearFilters();
+          mstore.filter();
+          lc_chart.clearScanSelection();
+          // TODO clear fragment and scan panels
+        }
+      }]
     }],
     plugins: [molcol],
-    features: [mfilters]
+    features: [mfilters],
+	  listeners: {
+	    select: function(rm,r) {
+	      Ext.Ajax.request({
+	        url: '${request.application_url}/metabolite/'+r.data.metid+'/scans.json',
+	        success: function(response) {
+	          var obj = Ext.decode(response.responseText);
+            if (obj.length) {
+              // if one scan has already been selected test if its a member of the scans of selected metabolite
+              // if so then show fragments
+              if (lc_chart.selectedscan != -1 && obj.indexOf(lc_chart.selectedscan) != -1) {
+                console.log('Show fragments');
+                fstore.filter([{
+                  property: 'scanid', value: lc_chart.selectedscan
+                },{
+                  property: 'metid', value: r.data.metid
+                }]);
+              } else {
+		            lc_chart.selectScans(obj);
+		            // if metabolite has only one scan hit then show that scan and fragments
+		            if (obj.length == 1) {
+	                // show scan where metabolite had its hit
+	                loadMSpectra1(obj[0]);
+	                // show fragments with this metabolite and scan
+                  console.log('Show fragments');
+		              fstore.filter([{
+		                property: 'scanid', value: obj[0]
+		              },{
+		                property: 'metid', value: r.data.metid
+		              }]);
+		            }
+              }
+	          } else {
+	            Ext.Msg.alert('Metabolite has no hits', 'The selected query/metabolite was not found in the ms data');
+	          }
+	        }
+	      });
+	    }
+	  }
   });
 
   var fmolcol = Ext.create('Ext.esc.ChemDoodleColumn', {
@@ -167,7 +216,7 @@ Ext.onReady(function () {
   var fgrid = Ext.create('Ext.grid.Panel', {
    store: fstore,
    selType:'checkboxmodel',
-   multiSelect:true,
+   multiSelect: false,
    columns: [
      fmolcol,
      {text: 'Smile', dataIndex: 'smiles', width: 200 }
@@ -182,23 +231,63 @@ Ext.onReady(function () {
    plugins: [fmolcol],
  });
 
+  /**
+   * Removes scan filter from metabolite store
+   */
+  function removeScanFilter() {
+    var scanfilter;
+    // see if already filtered on scanid then remove old filter
+    if (scanfilter = mstore.filters.findBy(
+        function(f) { return ('property' in f && f.property == 'scanid'); }
+    )) {
+      mstore.filters.remove(scanfilter);
+    }
+  }
+
+  function loadMSpectra1(scanid) {
+    // load msspectra level 1
+    d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
+      Ext.getCmp('mspectra1panel').header.setTitle('Scan '+scanid+' (level 1)');
+      ms_chart.setData(data);
+    });
+  }
+
   // uses perl Finnigan package to make data
   // mzxml-unpack -r 1..1  F0060068.mzXML > F0060068.scan1.txt
   lc_chart = Ext.create('Ext.esc.Chromatogram', {
     cutoff: ${cutoff},
     listeners: {
-      selectscan: function(scanid){
+      selectscan: function(scanid) {
         console.log('select scan '+scanid);
+        removeScanFilter();
+        // if metabolite has been selected then show fragments with this metabolite and scan
+        // if metabolite has not been selected then filter mstore
+        if (mgrid.getSelectionModel().selected.getCount() > 0) {
+          console.log('Show fragments');
+          fstore.filter([{
+            property: 'scanid', value: scanid
+          },{
+            property: 'metid', value: mgrid.getSelectionModel().selected.getAt(0).data.metid
+          }]);
+        } else {
+          mstore.filter('scanid', scanid);
+        }
+        loadMSpectra1(scanid);
       },
-      unselectscan: function(scanid){
+      unselectscan: function(scanid) {
         console.log('unselect scan '+scanid);
+        removeScanFilter();
+        mstore.load();
+        // TODO unload mspectra1
       }
     }
   });
   d3.json('${request.route_url('chromatogram.json')}', function(data) {
     lc_chart.setData(data);
+    d3.json('${request.route_url('chromatogram/hits.json')}', function(data) {
+      lc_chart.setMarkers(data);
+    });
   });
-
 
   ms_chart = Ext.create('Ext.esc.MSpectra', {});
   d3.json("${request.route_url('mspectra.json',id=623)}", function(data) {
@@ -337,6 +426,7 @@ function rightleft() {
           border: false,
           items:[{
 //              title:'Scan - <a href="#">Scan321</a> >> Scan2324',
+              id: 'mspectrapanel',
               region: 'center',
               layout: {
                   type: 'vbox',
@@ -350,6 +440,7 @@ function rightleft() {
               },
               items:[{
                title: 'Scan 123 (Level 1)',
+               id: 'mspectra1panel',
                collapsible: true,
                tools:[{
 	                 type:'maximize',
@@ -361,6 +452,7 @@ function rightleft() {
 	               items: ms_chart
               },{
                  title: 'Scan 12 (Level 2)',
+                 id: 'mspectra2panel',
 	               items: ms_chart2,
 	               collapsible: true,
 	               tools:[{

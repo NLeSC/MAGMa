@@ -13,8 +13,10 @@ def main(global_config, **settings):
     config.add_route('home','/')
     config.add_route('metabolites.json', '/metabolites.json')
     config.add_route('chromatogram.json', '/chromatogram.json')
-    config.add_route('mspectra.json', '/mspectra.{id}.json')
+    config.add_route('mspectra.json', '/mspectra/{id}.json')
     config.add_route('scantree.json', '/scan.tree.json')
+    config.add_route('chromatogram/hits.json','/chromatogram/hits.json')
+    config.add_route('metabolite/scans.json','/metabolite/{id}/scans.json')
     config.scan('sygma')
     return config.make_wsgi_app()
 
