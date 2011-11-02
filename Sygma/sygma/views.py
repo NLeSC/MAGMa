@@ -33,15 +33,19 @@ def metabolitesjson(request):
     limit = int(request.params['limit'])
     q = dbsession.query(Metabolite)
 
-    stmt = DBSession.query(Fragment.metid,func.count('*').label('nr_scans')).filter(Fragment.parentfragid==0).group_by(Fragment.metid).subquery()
-    q = q.add_column(stmt.c.nr_scans).outerjoin(stmt, Metabolite.metid==stmt.c.metid)
-
     # custom filters
     if ('scanid' in request.params):
         # TODO add score column + order by score
-        q = q.join(Fragment.metabolite).filter(Fragment.parentfragid==0).filter(Fragment.scanid==request.params['scanid'])
+        q = q.join(Fragment.metabolite).filter(Fragment.parentfragid==0).filter(
+            Fragment.scanid==request.params['scanid']
+        )
     if ('metid' in request.params):
         q = q.filter(Metabolite.metid==request.params['metid'])
+
+    # add nr_scans column
+    stmt = DBSession.query(Fragment.metid,func.count('*').label('nr_scans')).filter(
+        Fragment.parentfragid==0).group_by(Fragment.metid).subquery()
+    q = q.add_column(stmt.c.nr_scans).outerjoin(stmt, Metabolite.metid==stmt.c.metid)
 
     if ('filter' in request.params):
         for filter in json.loads(request.params['filter']):
@@ -146,13 +150,11 @@ def metabolitescans(request):
 
 @view_config(route_name='fragments.json', renderer='json')
 def fragments(request):
-    q = DBSession().query(Fragment,Metabolite.mol).join(Metabolite).filter(
-        Fragment.scanid==request.matchdict['scanid']).filter(
-        Fragment.metid==request.matchdict['metid'])
+    node = request.params['node']
+    q = DBSession().query(Fragment,Metabolite.mol,Scan.mslevel).join(Metabolite).join(Scan)
 
-    # parent metabolite
-    if (request.params['node'] == 'root'):
-        (frag, mol) = q.filter(Fragment.parentfragid==0).one()
+    def fragment2json(row):
+        (frag, mol, mslevel) = row
         f = {
             'fragid': frag.fragid,
             'scanid': frag.scanid,
@@ -163,6 +165,7 @@ def fragments(request):
             'mz': frag.mz,
             'mass': frag.mass,
             'deltah': frag.deltah,
+            'mslevel': mslevel,
         }
         if (len(frag.children)>0):
             f['expanded'] = False
@@ -170,4 +173,19 @@ def fragments(request):
         else:
             f['expanded'] = True
             f['leaf'] = True
-        return { 'children': f, 'expanded': True}
+        return f
+
+    # parent metabolite
+    if (node == ''):
+        q = q.filter(
+            Fragment.scanid==request.matchdict['scanid']).filter(
+            Fragment.metid==request.matchdict['metid']).filter(
+            Fragment.parentfragid==0)
+        row = q.one()
+        return { 'children': fragment2json(row), 'expanded': True}
+    # fragments
+    else:
+        fragments = []
+        for row in q.filter(Fragment.parentfragid==node):
+            fragments.append(fragment2json(row))
+        return fragments

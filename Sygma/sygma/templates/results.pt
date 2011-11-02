@@ -56,7 +56,7 @@ path.marker {
 }
 
 #fragmentgrid .x-grid-cell-inner{
-    height: 100px !important;
+    height: 106px !important;
 }
 
 </style><script type="text/javascript">
@@ -143,6 +143,7 @@ Ext.onReady(function () {
     store: mstore,
     selType:'checkboxmodel',
     multiSelect: false,
+    autoScroll: true,
     columns: [
       {text: 'ID', dataIndex: 'metid', hidden: true},
       molcol,
@@ -177,6 +178,7 @@ Ext.onReady(function () {
 	  listeners: {
 	    select: function(rm,r) {
 	      console.log('Selected metabolite '+r.data.metid);
+	      clearFragments();
 	      Ext.Ajax.request({
 	        url: '${request.application_url}/metabolite/'+r.data.metid+'/scans.json',
 	        success: function(response) {
@@ -185,14 +187,18 @@ Ext.onReady(function () {
                   // if one scan has already been selected test if its a member of the scans of selected metabolite
                   // if so then show fragments
                   if (lc_chart.selectedscan != -1 && obj.indexOf(lc_chart.selectedscan) != -1) {
+                    console.log('Selected metabolite and its one scan is selected');
                     loadFragments(lc_chart.selectedscan, r.data.metid);
                   } else {
+                    console.log('Selecting scans of metabolite');
     		            lc_chart.selectScans(obj);
     		            // if metabolite has only one scan hit then show that scan and fragments
     		            if (obj.length == 1) {
     	                // show scan where metabolite had its hit
+                      console.log('show scan where metabolite had its hit');
     	                loadMSpectra1(obj[0]);
     	                // show fragments with this metabolite and scan
+                      console.log('show fragments of metabolite');
                       loadFragments(obj[0], r.data.metid);
     		            }
                   }
@@ -228,13 +234,21 @@ Ext.onReady(function () {
       name: 'atoms', defaultValue: [] // array of atom indexes of molecule which are the substructure of the query
     },{
       name: 'deltah'
+    },{
+      name: 'mslevel'
     }],
     hasMany: { model: 'Fragment', name:'children' }
   });
 
+  function clearFragments() {
+    console.log('Clearing fragments');
+    fstore.getRootNode().removeAll();
+  }
+
   function loadFragments(scanid, metid) {
+    clearFragments();
     console.log('Show fragments of scan '+scanid+' metabolite '+metid);
-    fstore.getProxy().url = '${request.application_url}/fragments/'+scanid+'/'+metid+'.json';
+    fstore.setProxy(fragmentProxy(scanid, metid));
     fstore.load();
   }
 
@@ -242,7 +256,7 @@ Ext.onReady(function () {
   var hlspecs = new ChemDoodle.structures.VisualSpecifications();
   hlspecs.bonds_color = 'cyan';
   hlspecs.atoms_color = 'cyan';
-  var fmolcol = Ext.create('Ext.esc.ChemDoodleColumn', {
+  fmolcol = Ext.create('Ext.esc.ChemDoodleColumn', {
     text: 'Molecule', dataIndex: 'mol', atomIndex:'atoms',
     canvasClass: 'x-chemdoodle-cols2',
     width: 162,
@@ -259,18 +273,23 @@ Ext.onReady(function () {
     }
   });
 
+  // need to change url of fragment proxy so use a factory to create a new proxy foreach scan/metabolite combo
+  function fragmentProxy(scanid, metid) {
+    return Ext.create('Ext.data.proxy.Ajax', {
+      // url is build when scan and metabolite are selected
+      url: '${request.application_url}/fragments/'+scanid+'/'+metid+'.json',
+      reader: {
+          type: 'json',
+          root: 'children',
+          idProperty: 'fragid'
+      }
+    });
+  }
+
   var fstore = Ext.create('Ext.data.TreeStore', {
     storeId:'fragmentStore',
     model:'Fragment',
-    proxy: {
-        type: 'ajax',
-        url: '#', // url is build when scan and metabolite are selected
-        reader: {
-            type: 'json',
-            root: 'children',
-            idProperty: 'fragid'
-        }
-    },
+    proxy: fragmentProxy(),
     autoLoad: false,
     root: { children : [] }, // prevent tree from autoloading
   });
@@ -279,24 +298,36 @@ Ext.onReady(function () {
       return this.getNodeById(id);
   };
 
-
   var fgrid = Ext.create('Ext.tree.Panel', {
     id: 'fragmentgrid',
     store: fstore,
     selType:'checkboxmodel',
     multiSelect: false,
     rootVisible: false,
+    useArrows: true,
+    autoScroll: true,
     columns: [
-      { text: 'Score', dataIndex: 'score', xtype: 'treecolumn', flex:1},
+      { text: 'Score', dataIndex: 'score', xtype: 'treecolumn', width: 120},
       fmolcol,
       { text: 'ID', dataIndex: 'fragid', hidden: true},
-      { text: 'Scan', dataIndex: 'scanid', hidden: true},
+      { text: 'Scan', dataIndex: 'scanid', hidden: false},
       { text: 'Metabolite', dataIndex: 'metid', hidden: true},
       { text: 'M/z', dataIndex: 'mz'},
       { text: 'Mass', dataIndex: 'mass'},
+      { text: 'Level', dataIndex: 'mslevel'},
       { text: 'H Delta', dataIndex: 'deltah'}
     ],
     plugins: [fmolcol],
+    viewConfig: {
+      // animate is default true causing refresh to be blocked
+      // we use refresh event to render molecules
+      // so after expanding a node the refresh was not fired causing all prev. rendered mols to disappear
+      // now we turn off animate, so refresh events are fired and mols can be rendered
+      // But still some nodes have no molecule and be fixes by collapse/expand or fmolcol.initCanvases()
+      animate: false,
+      blockRefresh: false,
+      emptyText: 'Select a metabolite and scan, to show its fragments',
+    }
   });
 
   /**
@@ -352,13 +383,12 @@ Ext.onReady(function () {
     });
   });
 
-  ms_chart = Ext.create('Ext.esc.MSpectra', {});
-  d3.json("${request.route_url('mspectra.json',id=623)}", function(data) {
-//    ms_chart.setData(data);
+  // TODO look at run.n_reaction_steps to see how many levels are needed
+  // Select a scan in the chromatogram
+  ms_chart = Ext.create('Ext.esc.MSpectra', {
   });
-  ms_chart2 = Ext.create('Ext.esc.MSpectra', {});
-  d3.json("${request.route_url('mspectra.json',id=3862)}", function(data) {
-//    ms_chart2.setData(data);
+  // Select a fragment to show its level 2 scan
+  ms_chart2 = Ext.create('Ext.esc.MSpectra', {
   });
 
   Ext.define('Scan', {
@@ -474,7 +504,7 @@ function rightleft() {
                 border: false
               },
               items:[{
-               title: 'Scan 123 (Level 1)',
+               title: 'Scan ... (Level 1)',
                id: 'mspectra1panel',
                collapsible: true,
                tools:[{
@@ -486,7 +516,7 @@ function rightleft() {
 	               }],
 	               items: ms_chart
               },{
-                 title: 'Scan 12 (Level 2)',
+                 title: 'Scan ... (Level 2)',
                  id: 'mspectra2panel',
 	               items: ms_chart2,
 	               collapsible: true,
