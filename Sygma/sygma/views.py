@@ -99,8 +99,7 @@ def chromatogramjson(request):
         scans.append({
             'id': scan.scanid,
             'rt': scan.rt,
-            'intensity': scan.basepeakintensity,
-            'hashit': False
+            'intensity': scan.basepeakintensity
         })
 
     return scans

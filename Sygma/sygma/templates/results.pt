@@ -50,7 +50,7 @@ path.marker {
   stroke-width: 1.5px;
 }
 
-.selectedscan {
+.selectedscan, .selectedpeak {
   stroke: darkgreen !important;
   fill: darkgreen !important;
 }
@@ -292,6 +292,26 @@ Ext.onReady(function () {
     proxy: fragmentProxy(),
     autoLoad: false,
     root: { children : [] }, // prevent tree from autoloading
+    listeners: {
+      load: function(t, n, rs) {
+        // show peaks in lvl1 scan
+        if ('id' in n.data && n.data.id == 'root') {
+          console.log('Loaded metabolite as fragment');
+          // add mz of metabolites as markers to lvl1 scan
+          ms_chart.setMarkers(
+              rs.map(function(r) { return {mz: r.data.mz}; })
+          );
+        } else if (n.data.mslevel == 1) {
+          console.log('Loaded lvl2 fragments of metabolite ');
+          // load the scan of first child
+          // add mz of metabolites as markers to lvl2 scan
+          loadMSpectra2(
+              rs[0].data.scanid,
+              rs.map(function(r) { return {mz: r.data.mz}; })
+          );
+        }
+      }
+    }
   });
   // TreeStore and Store have different function to fetch record by id, add getById to TreeStore
   fstore.getById = function(id) {
@@ -327,6 +347,12 @@ Ext.onReady(function () {
       animate: false,
       blockRefresh: false,
       emptyText: 'Select a metabolite and scan, to show its fragments',
+    },
+    listeners: {
+      select: function(rm,r) {
+        console.log('Fragment selected '.r.id);
+        // TODO show scan where fragment is a peak + select fragment parents in parent scans
+      }
     }
   });
 
@@ -343,11 +369,23 @@ Ext.onReady(function () {
   }
 
   function loadMSpectra1(scanid) {
-    // TODO clear previously loaded scan or d3 data binding to replace data
+    console.log('Loading msspectra level 1 with id '+scanid);
     // load msspectra level 1
     d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
-      Ext.getCmp('mspectra1panel').header.setTitle('Scan '+scanid+' (level 1)');
+      Ext.getCmp('mspectra1panel').header.setTitle('Scan '+scanid+' (Level 1)');
       ms_chart.setData(data);
+      // TODO add markers of metabolites in this scan
+      // If metabolite is selected then also select its fragment in scan
+    });
+  }
+
+  function loadMSpectra2(scanid, markers) {
+    console.log('Loading msspectra level 2 with id '+scanid);
+    // load msspectra level 2
+    d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
+      Ext.getCmp('mspectra2panel').header.setTitle('Scan '+scanid+' (Level 2)');
+      ms_chart2.setData(data);
+      ms_chart2.setMarkers(markers);
     });
   }
 
@@ -386,9 +424,19 @@ Ext.onReady(function () {
   // TODO look at run.n_reaction_steps to see how many levels are needed
   // Select a scan in the chromatogram
   ms_chart = Ext.create('Ext.esc.MSpectra', {
+    listeners: {
+      selectpeak: function(mz) {
+        console.log('Selected peak with m/z = '+mz);
+      }
+    }
   });
   // Select a fragment to show its level 2 scan
   ms_chart2 = Ext.create('Ext.esc.MSpectra', {
+    listeners: {
+      selectpeak: function(mz) {
+        console.log('Selected peak with m/z = '+mz);
+      }
+    }
   });
 
   Ext.define('Scan', {
