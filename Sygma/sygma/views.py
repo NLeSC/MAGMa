@@ -3,7 +3,7 @@ from sygma.models import Metabolite, Scan, Peak, Fragment
 from pyramid.response import Response
 from pyramid.view import view_config
 from sqlalchemy.sql.expression import desc, asc
-from sqlalchemy.sql import exists
+from sqlalchemy.sql import exists, func
 import simplejson as json
 
 @view_config(route_name='home', renderer='templates/results.pt')
@@ -33,6 +33,9 @@ def metabolitesjson(request):
     limit = int(request.params['limit'])
     q = dbsession.query(Metabolite)
 
+    stmt = DBSession.query(Fragment.metid,func.count('*').label('nr_scans')).filter(Fragment.parentfragid==0).group_by(Fragment.metid).subquery()
+    q = q.add_column(stmt.c.nr_scans).outerjoin(stmt, Metabolite.metid==stmt.c.metid)
+
     # custom filters
     if ('scanid' in request.params):
         # TODO add score column + order by score
@@ -43,21 +46,29 @@ def metabolitesjson(request):
     if ('filter' in request.params):
         for filter in json.loads(request.params['filter']):
             # generic filters
-            q = extjsgridfilter(q, Metabolite.__dict__[filter['field']], filter)
+            if (filter['field'] == 'nr_scans'):
+                col = stmt.c.nr_scans
+            else:
+                col = Metabolite.__dict__[filter['field']]
+            q = extjsgridfilter(q, col, filter)
 
     total = q.count()
 
     if ('sort' in request.params):
         for col in json.loads(request.params['sort']):
+            if (col['property'] == 'nr_scans'):
+                col2 = stmt.c.nr_scans
+            else:
+                col2 = Metabolite.__dict__[col['property']]
             if (col['direction'] == 'DESC'):
-                q = q.order_by(desc(Metabolite.__dict__[col['property']]))
+                q = q.order_by(desc(col2))
             elif (col['direction'] == 'ASC'):
-                q = q.order_by(asc(Metabolite.__dict__[col['property']]))
+                q = q.order_by(asc(col2))
     else:
         # default sort
         q = q.order_by(desc(Metabolite.probability), Metabolite.metid)
 
-    for met in q[start:(limit+start)]:
+    for (met, nr_scans) in q[start:(limit+start)]:
         r = {
             'metid': met.metid,
             'mol': met.mol,
@@ -68,7 +79,8 @@ def metabolitesjson(request):
             'molformula': met.molformula,
             'isquery': met.isquery,
             'origin': met.origin,
-            'nhits': met.nhits
+            'nhits': met.nhits,
+            'nr_scans': nr_scans
         }
         mets.append(r)
 

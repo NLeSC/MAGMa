@@ -30,6 +30,19 @@ Select metabolites with score on scanid=2682
 SELECT m.*,score FROM metabolites m JOIN fragments USING (metid) WHERE scanid=2682 AND parentfragid=0;
 print DBSession.query(Metabolite,Fragment.score).join(Fragment).filter(Fragment.parentfragid==0).filter(Fragment.scanid==2682)
 
+Select metabolites with nr_scans:
+SELECT m.*,nr_scans FROM metabolites m
+LEFT JOIN (SELECT metid, count(*) nr_scans FROM fragments WHERE parentfragid=0 GROUP BY metid) USING (metid)
+;
+SELECT metabolites.metid AS metabolites_metid, anon_1.nr_scans AS anon_1_nr_scans
+FROM metabolites LEFT OUTER JOIN (SELECT fragments.metid AS metid, count(*) AS nr_scans
+FROM fragments
+WHERE fragments.parentfragid = 0 GROUP BY fragments.metid) AS anon_1 ON metabolites.metid = anon_1.metid;
+
+from sqlalchemy.sql import func
+stmt = DBSession.query(Fragment.metid,func.count('*').label('nr_scans')).filter(Fragment.parentfragid==0).group_by(Fragment.metid).subquery()
+print DBSession.query(Metabolite.metid, stmt.c.nr_scans).outerjoin(stmt, Metabolite.metid==stmt.c.metid)
+
 Select fragments on scanid=2682
 SELECT * FROM fragments WHERE scanid=2682;
 print DBSession.query(Fragment).filter(Fragment.scanid==2682)
