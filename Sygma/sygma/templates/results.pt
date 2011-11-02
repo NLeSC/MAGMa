@@ -309,6 +309,14 @@ Ext.onReady(function () {
               rs[0].data.scanid,
               rs.map(function(r) { return {mz: r.data.mz}; })
           );
+        } else if (n.data.mslevel == 2) {
+          console.log('Loaded lvl3 fragments of metabolite ');
+          // load the scan of first child
+          // add mz of metabolites as markers to lvl3 scan
+          loadMSpectra3(
+              rs[0].data.scanid,
+              rs.map(function(r) { return {mz: r.data.mz}; })
+          );
         }
       }
     }
@@ -352,7 +360,8 @@ Ext.onReady(function () {
       select: function(rm,r) {
         console.log('Fragment selected '.r.id);
         // TODO show scan where fragment is a peak + select fragment parents in parent scans
-      }
+      },
+      // TODO on collapse clear child scans
     }
   });
 
@@ -386,6 +395,16 @@ Ext.onReady(function () {
       Ext.getCmp('mspectra2panel').header.setTitle('Scan '+scanid+' (Level 2)');
       ms_chart2.setData(data);
       ms_chart2.setMarkers(markers);
+    });
+  }
+
+  function loadMSpectra3(scanid, markers) {
+    console.log('Loading msspectra level 3 with id '+scanid);
+    // load msspectra level 3
+    d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
+      Ext.getCmp('mspectra3panel').header.setTitle('Scan '+scanid+' (Level 3)');
+      ms_chart3.setData(data);
+      ms_chart3.setMarkers(markers);
     });
   }
 
@@ -426,7 +445,7 @@ Ext.onReady(function () {
   ms_chart = Ext.create('Ext.esc.MSpectra', {
     listeners: {
       selectpeak: function(mz) {
-        console.log('Selected peak with m/z = '+mz);
+        console.log('Selected lvl1 peak with m/z = '+mz);
       }
     }
   });
@@ -434,7 +453,15 @@ Ext.onReady(function () {
   ms_chart2 = Ext.create('Ext.esc.MSpectra', {
     listeners: {
       selectpeak: function(mz) {
-        console.log('Selected peak with m/z = '+mz);
+        console.log('Selected lvl2 peak with m/z = '+mz);
+      }
+    }
+  });
+  // Select a fragment to show its level 3 scan
+  ms_chart3 = Ext.create('Ext.esc.MSpectra', {
+    listeners: {
+      selectpeak: function(mz) {
+        console.log('Selected lvl3 peak with m/z = '+mz);
       }
     }
   });
@@ -564,15 +591,27 @@ function rightleft() {
 	               }],
 	               items: ms_chart
               },{
-                 title: 'Scan ... (Level 2)',
-                 id: 'mspectra2panel',
-	               items: ms_chart2,
+                title: 'Scan ... (Level 2)',
+                id: 'mspectra2panel',
+                items: ms_chart2,
+                collapsible: true,
+                tools:[{
+                  type:'maximize',
+                  tooltip: 'Reset zoom',
+                  handler: function() {
+                    ms_chart2.resetZoom();
+                  }
+                }]
+              },{
+                 title: 'Scan ... (Level 3)',
+                 id: 'mspectra3panel',
+	               items: ms_chart3,
 	               collapsible: true,
 	               tools:[{
 	                 type:'maximize',
 	                 tooltip: 'Reset zoom',
 	                 handler: function() {
-	                   ms_chart2.resetZoom();
+	                   ms_chart3.resetZoom();
 	                 }
 	               }]
               }]
