@@ -11,7 +11,7 @@ Ext.define('Ext.esc.Chromatogram', {
   initComponent: function() {
     var defConfig = {
         /**
-         * @cfg {Array} data array of objects with id, rt, intensity and hashit properties.
+         * @cfg {Array} data array of objects with scanid, rt and intensity properties.
          */
 
         /**
@@ -158,6 +158,8 @@ Ext.define('Ext.esc.Chromatogram', {
 	  this.svg.selectAll('.peak').remove();
 	  this.svg.selectAll('.line').remove();
 	  this.svg.selectAll('.'+this.cutoffCls).remove();
+	  this.selectedscan = -1;
+	  this.svg.selectAll('.marker').remove();
 	  this.data = data;
 	  this.onDataReady();
   },
@@ -203,40 +205,44 @@ Ext.define('Ext.esc.Chromatogram', {
     this.selectedscan = -1;
   },
   setMarkers: function(data) {
+    this.clearScanSelection();
+    this.svg.selectAll('.marker').remove();
     this.markers = data;
     this.onMarkersReady();
   },
   onMarkersReady: function() {
     var me = this;
-    this.svg.selectAll('.marker').remove();
+    function markerTitle(d) {
+      return 'Scan#'+d.id;
+    }
+    function markerClick(d) {
+      me.onToggleMarker(d.id);
+    }
+
     // lower markers
     this.svg.selectAll("path.lowermarker")
-    .data(function() {return me.markers})
+    .data(function() {return me.markers;})
     .enter().append("svg:path")
       .attr('class', 'marker lowermarker')
       .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(0) + ")"; })
       .attr("d", d3.svg.symbol().type('triangle-up').size(36) )
       .style("cursor", "pointer")
-      .on('click', function(d) {
-        me.onToggleMarker(d.id);
-      })
+      .on('click', markerClick)
       .append("svg:title")
-        .text(function(d) { return 'Scan#'+d.id; })
+        .text(markerTitle)
     ;
 
     // upper markers
     this.svg.selectAll("path.uppermarker")
-    .data(function() {return me.markers})
+    .data(function() {return me.markers;})
     .enter().append("svg:path")
       .attr('class', 'marker uppermarker')
       .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(me.ranges.y.max) + ")"; })
       .attr("d", d3.svg.symbol().type('triangle-down').size(36) )
       .style("cursor", "pointer")
-      .on('click', function(d) {
-        me.onToggleMarker(d.id);
-      })
+      .on('click', markerClick)
       .append("svg:title")
-        .text(function(d) { return 'Scan#'+d.id; })
+        .text(markerTitle)
     ;
   }
 });

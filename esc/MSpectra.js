@@ -7,6 +7,42 @@
 Ext.define('Ext.esc.MSpectra', {
   extend: 'Ext.esc.AbstractD3',
   alias: 'widget.mspectra',
+  initComponent: function() {
+    var defConfig = {
+        /**
+         * @cfg {Array} data array of objects with mz and intensity and hashit properties.
+         */
+        // mz of selectedPeak
+        selectedPeak: -1,
+        /**
+         * @cfg {String} selectedPeakCls The CSS class applied to markers of a selected peak.
+         */
+        selectedPeakCls: 'selectedpeak',
+        markers: [],
+        chartWidth: 0,
+        chartHeight: 0,
+        // TODO add cutoff and basepeakintensity so cutoff line can be drawn
+    };
+
+    Ext.applyIf(this, defConfig);
+
+    this.callParent(arguments);
+
+    this.addEvents(
+      /**
+       * @event selectpeak
+       * Fires when user clicks on peak marker (triangle)
+       * @param {Int} mz
+       */
+      'selectpeak',
+      /**
+       * @event unselectpeak
+       * Fires when user clicks on a selected peak marker (triangle) which unselects it.
+       * @param {Int} mz
+       */
+      'unselectpeak'
+    );
+  },
   /**
    * @cfg {Array} data array of objects with mz, intensity.
    */
@@ -19,6 +55,12 @@ Ext.define('Ext.esc.MSpectra', {
     this.svg.select(".x.axis").call(this.axes.x);
     // do not scale y axis
     //svg.select(".y.axis").call(yAxis);
+    if (this.markers.length) {
+      this.svg.selectAll("path.lowermarker")
+        .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + me.scales.y(0) + ")"; });
+      this.svg.selectAll("path.uppermarker")
+       .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + me.scales.y(me.ranges.y.max) + ")"; });
+    }
     this.svg.selectAll("line.mspeak").attr("y2", function(d) {
       return me.scales.y(d.intensity);
     }).attr("x1", function(d) {
@@ -64,7 +106,7 @@ Ext.define('Ext.esc.MSpectra', {
           .text('Intensity')
     ;
 
-    // basepeakintensity of each scan as vertical line
+    // of each mz plot intensity as vertical line
     this.svg.selectAll("line.mspeak")
     .data(this.data)
     .enter().append("svg:line")
@@ -80,7 +122,92 @@ Ext.define('Ext.esc.MSpectra', {
   setData: function(data) {
 	  this.svg.selectAll('.axis').remove();
 	  this.svg.selectAll('line.mspeak').remove();
+    this.clearPeakSelection();
+    this.svg.selectAll('.marker').remove();
 	  this.data = data;
 	  this.onDataReady();
+  },
+  onToggleMarker: function(mz) {
+    var me = this;
+    this.markerSelect(function(e) {
+      return (mz == e.mz && me.selectedpeak != e.mz);
+    });
+    if (mz != me.selectedpeak) {
+      me.fireEvent('selectpeak', mz);
+      me.selectedpeak = mz;
+    } else {
+      me.fireEvent('unselectpeak', mz);
+      me.selectedpeak = -1;
+    }
+  },
+  /**
+   * selects markers based on f returning true or false.
+   * @param f function
+   */
+  markerSelect: function(f) {
+    this.svg.selectAll("path.marker")
+      .classed(this.selectedPeakCls, f)
+    ;
+  },
+  /**
+   * Select peaks by their mz
+   * @param mzs Array of mz
+   */
+  selectPeaks: function(mzs) {
+    this.markerSelect(function(d) {
+      return !(mzs.indexOf(d.mz) == -1);
+    });
+  },
+  /**
+   * Clears any selected peaks
+   */
+  clearPeakSelection: function() {
+    this.markerSelect(false);
+    this.selectedpeak = -1;
+  },
+  /**
+   *
+   * @param data array of objects with mz prop
+   */
+  setMarkers: function(data) {
+    this.clearPeakSelection();
+    this.svg.selectAll('.marker').remove();
+    this.markers = data;
+    this.onMarkersReady();
+  },
+  onMarkersReady: function() {
+    var me = this;
+    function markerTitle(d) {
+      return 'm/z='+d.mz;
+    }
+    function markerClick(d) {
+      me.onToggleMarker(d.mz);
+    }
+
+    // lower markers
+    this.svg.selectAll("path.lowermarker")
+    .data(function() {return me.markers;})
+    .enter().append("svg:path")
+      .attr('class', 'marker lowermarker')
+      .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + me.scales.y(0) + ")"; })
+      .attr("d", d3.svg.symbol().type('triangle-up').size(36) )
+      .style("cursor", "pointer")
+      .on('click', markerClick)
+      .append("svg:title")
+        .text(markerTitle)
+    ;
+
+    // upper markers
+    this.svg.selectAll("path.uppermarker")
+    .data(function() {return me.markers;})
+    .enter().append("svg:path")
+      .attr('class', 'marker uppermarker')
+      .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + me.scales.y(me.ranges.y.max) + ")"; })
+      .attr("d", d3.svg.symbol().type('triangle-down').size(36) )
+      .style("cursor", "pointer")
+      .on('click', markerClick)
+      .append("svg:title")
+        .text(markerTitle)
+    ;
   }
 });
