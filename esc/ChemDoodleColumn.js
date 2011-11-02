@@ -88,29 +88,30 @@ Ext.define('Ext.esc.ChemDoodleColumn', {
     var c = this.columns[col];
     return '<canvas width='+c.getCanvasWidth()+' height='+c.getCanvasHeight()+' class="'+c.getCanvasClass()+'" id="'+gridview.id+'-'+r.internalId+'-'+col+'"></canvas>';
   },
+  // find canvas tags and paint with chemdoodle
+  initCanvases: function() {
+    var self = this;
+    Ext.Array.forEach(
+        Ext.DomQuery.select('canvas[class*="'+this.getCanvasClass()+'"]',this.grid.getView().dom),
+        function(canvas) {
+          var canvasid = canvas.id;
+          var rowid = canvasid.replace(this.grid.getView().id+'-','');
+          rowid = rowid.replace(/-\d$/,'')*1;
+          var store = this.grid.getStore();
+          var row = store.getById(rowid);
+          if (row && row.data[this.dataIndex]) {
+            this.initCanvas(canvasid,this.getCanvasWidth(),this.getCanvasHeight(),row.data[this.dataIndex],row);
+          }
+        },
+        self
+    );
+  },
   // use grid plugin so canvas can be selected with grid as root
   // for post render clue see http://skirtlesden.com/ux/component-column
   init: function(grid) {
-    var self = this;
     this.grid = grid;
     // after canvas tag has been added to dom
-    // find canvas tags and paint with chemdoodle
-    this.grid.getView().on('refresh', function() {
-      Ext.Array.forEach(
-          Ext.DomQuery.select('canvas[class*="'+this.getCanvasClass()+'"]',this.grid.getView().dom),
-          function(canvas) {
-            var canvasid = canvas.id;
-            var rowid = canvasid.replace(this.grid.getView().id+'-','');
-            rowid = rowid.replace(/-\d$/,'')*1;
-            var store = this.grid.getStore();
-            var	row = store.getById(rowid);
-            if (row && row.data[this.dataIndex]) {
-              this.initCanvas(canvasid,this.getCanvasWidth(),this.getCanvasHeight(),row.data[this.dataIndex],row);
-            }
-          },
-          self
-      );
-    }, this);
+    this.grid.getView().on('refresh', this.initCanvases , this);
   },
   /**
    * @method
