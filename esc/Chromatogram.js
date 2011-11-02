@@ -153,6 +153,14 @@ Ext.define('Ext.esc.Chromatogram', {
     })
     ;
   },
+  setData: function(data) {
+	  this.svg.selectAll('.axis').remove();
+	  this.svg.selectAll('.peak').remove();
+	  this.svg.selectAll('.line').remove();
+	  this.svg.selectAll('.'+this.cutoffCls).remove();
+	  this.data = data;
+	  this.onDataReady();
+  },
   onToggleMarker: function(scanid) {
     var me = this;
     this.markerSelect(function(e) {
@@ -200,6 +208,7 @@ Ext.define('Ext.esc.Chromatogram', {
   },
   onMarkersReady: function() {
     var me = this;
+    this.svg.selectAll('.marker').remove();
     // lower markers
     this.svg.selectAll("path.lowermarker")
     .data(function() {return me.markers})

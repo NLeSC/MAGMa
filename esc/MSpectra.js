@@ -76,5 +76,11 @@ Ext.define('Ext.esc.MSpectra', {
     .style("stroke-width", '1px')
     .style("stroke", 'black')
     ;
+  },
+  setData: function(data) {
+	  this.svg.selectAll('.axis').remove();
+	  this.svg.selectAll('line.mspeak').remove();
+	  this.data = data;
+	  this.onDataReady();
   }
 });

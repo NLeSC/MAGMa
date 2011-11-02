@@ -86,7 +86,7 @@ Ext.define('Ext.esc.ChemDoodleColumn', {
     // we want to run js on created dom, but that must be delayed until dom is complete.
     // create canvas with right dimensions using id unique to this gridview and cell (row/col)
     var c = this.columns[col];
-    return '<canvas width='+c.getCanvasWidth()+' height='+c.getCanvasHeight()+' class="'+c.getCanvasClass()+'" id="'+gridview.id+'-'+row+'-'+col+'"></canvas>';
+    return '<canvas width='+c.getCanvasWidth()+' height='+c.getCanvasHeight()+' class="'+c.getCanvasClass()+'" id="'+gridview.id+'-'+r.internalId+'-'+col+'"></canvas>';
   },
   // use grid plugin so canvas can be selected with grid as root
   // for post render clue see http://skirtlesden.com/ux/component-column
@@ -101,8 +101,9 @@ Ext.define('Ext.esc.ChemDoodleColumn', {
           function(canvas) {
             var canvasid = canvas.id;
             var rowid = canvasid.replace(this.grid.getView().id+'-','');
-            rowid = rowid.replace(/-\d$/,'');
-            var row = this.grid.getStore().getAt(rowid);
+            rowid = rowid.replace(/-\d$/,'')*1;
+            var store = this.grid.getStore();
+            var	row = store.getById(rowid);
             if (row && row.data[this.dataIndex]) {
               this.initCanvas(canvasid,this.getCanvasWidth(),this.getCanvasHeight(),row.data[this.dataIndex],row);
             }
