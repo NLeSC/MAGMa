@@ -118,6 +118,10 @@ Ext.define('Ext.esc.MSpectra', {
     .style("stroke-width", '1px')
     .style("stroke", 'black')
     ;
+
+    if (this.hasMarkers()) {
+      this.onMarkersReady();
+    }
   },
   setData: function(data) {
 	  this.svg.selectAll('.axis').remove();
@@ -180,7 +184,15 @@ Ext.define('Ext.esc.MSpectra', {
     this.markers = data;
     this.onMarkersReady();
   },
+  hasMarkers: function() {
+    return (this.markers.length>0);
+  },
   onMarkersReady: function() {
+    // can not add markers if there is no data
+    if (!this.hasData()) {
+      return;
+    }
+
     var me = this;
     function markerTitle(d) {
       return 'm/z='+d.mz;
