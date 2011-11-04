@@ -241,8 +241,11 @@ Ext.onReady(function () {
   });
 
   function clearFragments() {
-    console.log('Clearing fragments');
+    console.log('Clearing fragments and lvl2,3 mspectra');
     fstore.getRootNode().removeAll();
+    ms_chart.clearPeakSelection();
+    ms_chart2.setData([]);
+    ms_chart3.setData([]);
   }
 
   function loadFragments(scanid, metid) {
@@ -254,14 +257,16 @@ Ext.onReady(function () {
 
   // TODO chemdoodle does not work in tree due to store.getAt must replaced with store.getNodeById
   var hlspecs = new ChemDoodle.structures.VisualSpecifications();
-  hlspecs.bonds_color = 'cyan';
-  hlspecs.atoms_color = 'cyan';
+  hlspecs.bonds_color = 'black';
+  hlspecs.atoms_color = 'black';
   fmolcol = Ext.create('Ext.esc.ChemDoodleColumn', {
     text: 'Molecule', dataIndex: 'mol', atomIndex:'atoms',
     canvasClass: 'x-chemdoodle-cols2',
     width: 162,
     initCanvas:function(id, width, height, value,record) {
       var c = new ChemDoodle.TransformCanvas(id, width, height,true);
+      c.specs.bonds_color = 'cyan';
+      c.specs.atoms_color = 'cyan';
       var m = ChemDoodle.readMOL(value);
       record.data[this.atomIndex].split(',').forEach(function(qa) {
         // use highlight visual spec for atoms which are part of query
@@ -284,6 +289,33 @@ Ext.onReady(function () {
           idProperty: 'fragid'
       }
     });
+  }
+
+  /**
+   * When user selects fragment in tree then select the peak in the mspectra
+   */
+  function selectPeakInMSpectra(rm, r) {
+    console.log('Selected '+r.id);
+    if (r.data.mslevel==1) {
+      ms_chart.selectPeaks([r.data.mz]);
+    } else if (r.data.mslevel==2) {
+      ms_chart2.selectPeaks([r.data.mz]);
+    } else if (r.data.mslevel==3) {
+      ms_chart3.selectPeaks([r.data.mz]);
+    }
+    // TODO select peaks of parents of fragment in parent scans
+  }
+
+  /**
+   * When user selects peak in spectra then select the fragment belonging to peak in fragment tree
+   */
+  function selectFragmentInTree(mz, mslevel) {
+    console.log('Selected peak in lvl'+mslevel+' mspectra with m/z = '+mz);
+    // find fragment based on mz + mslevel
+    var node = fstore.getRootNode().findChildBy(function(n) {
+      return (n.data.mslevel == mslevel && n.data.mz == mz);
+    });
+    fgrid.getSelectionModel().select([node]);
   }
 
   var fstore = Ext.create('Ext.data.TreeStore', {
@@ -309,6 +341,7 @@ Ext.onReady(function () {
               rs[0].data.scanid,
               rs.map(function(r) { return {mz: r.data.mz}; })
           );
+          ms_chart.selectPeaks([n.data.mz]);
         } else if (n.data.mslevel == 2) {
           console.log('Loaded lvl3 fragments of metabolite ');
           // load the scan of first child
@@ -317,6 +350,7 @@ Ext.onReady(function () {
               rs[0].data.scanid,
               rs.map(function(r) { return {mz: r.data.mz}; })
           );
+          ms_chart2.selectPeaks([n.data.mz]);
         }
       }
     }
@@ -357,10 +391,7 @@ Ext.onReady(function () {
       emptyText: 'Select a metabolite and scan, to show its fragments',
     },
     listeners: {
-      select: function(rm,r) {
-        console.log('Fragment selected '.r.id);
-        // TODO show scan where fragment is a peak + select fragment parents in parent scans
-      },
+      select: selectPeakInMSpectra,
       // TODO on collapse clear child scans
     }
   });
@@ -412,10 +443,12 @@ Ext.onReady(function () {
   // mzxml-unpack -r 1..1  F0060068.mzXML > F0060068.scan1.txt
   lc_chart = Ext.create('Ext.esc.Chromatogram', {
     cutoff: ${cutoff},
+    emptyText: 'Loading chromatogram ...',
     listeners: {
       selectscan: function(scanid) {
         console.log('select scan '+scanid);
         removeScanFilter();
+        clearFragments();
         // if metabolite has been selected then show fragments with this metabolite and scan
         // if metabolite has not been selected then filter mstore
         if (mgrid.getSelectionModel().selected.getCount() > 0) {
@@ -443,25 +476,28 @@ Ext.onReady(function () {
   // TODO look at run.n_reaction_steps to see how many levels are needed
   // Select a scan in the chromatogram
   ms_chart = Ext.create('Ext.esc.MSpectra', {
+    emptyText: 'Select a scan in the chromatogram',
     listeners: {
       selectpeak: function(mz) {
-        console.log('Selected lvl1 peak with m/z = '+mz);
+        selectFragmentInTree(mz, 1);
       }
     }
   });
   // Select a fragment to show its level 2 scan
   ms_chart2 = Ext.create('Ext.esc.MSpectra', {
+    emptyText: 'Select a fragment to show its level 2 scan',
     listeners: {
       selectpeak: function(mz) {
-        console.log('Selected lvl2 peak with m/z = '+mz);
+        selectFragmentInTree(mz, 2);
       }
     }
   });
   // Select a fragment to show its level 3 scan
   ms_chart3 = Ext.create('Ext.esc.MSpectra', {
+    emptyText: 'Select a fragment to show its level 3 scan',
     listeners: {
       selectpeak: function(mz) {
-        console.log('Selected lvl3 peak with m/z = '+mz);
+        selectFragmentInTree(mz, 3);
       }
     }
   });
