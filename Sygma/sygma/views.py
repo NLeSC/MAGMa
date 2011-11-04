@@ -2,8 +2,10 @@ from sygma.models import DBSession
 from sygma.models import Metabolite, Scan, Peak, Fragment
 from pyramid.response import Response
 from pyramid.view import view_config
+from pyramid.httpexceptions import HTTPNotFound
 from sqlalchemy.sql.expression import desc, asc
 from sqlalchemy.sql import exists, func
+from sqlalchemy.orm.exc import NoResultFound
 import simplejson as json
 
 @view_config(route_name='home', renderer='templates/results.pt')
@@ -180,7 +182,10 @@ def fragments(request):
             Fragment.scanid==request.matchdict['scanid']).filter(
             Fragment.metid==request.matchdict['metid']).filter(
             Fragment.parentfragid==0)
-        row = q.one()
+        try:
+            row = q.one()
+        except NoResultFound:
+            return HTTPNotFound();
         return { 'children': fragment2json(row), 'expanded': True}
     # fragments
     else:
