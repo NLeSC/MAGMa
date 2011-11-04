@@ -170,14 +170,18 @@ Ext.onReady(function () {
           mfilters.clearFilters();
           mstore.filter();
           lc_chart.clearScanSelection();
-          fstore.removeAll();
-          // TODO clear scan panels
+          clearFragments();
         }
       }]
     }],
     plugins: [molcol],
     features: [mfilters],
 	  listeners: {
+	    selectionchange: function(m,rs) {
+	      if (rs.length == 0) {
+	        clearFragments();
+	      }
+	    },
 	    select: function(rm,r) {
 	      console.log('Selected metabolite '+r.data.metid);
 	      clearFragments();
@@ -486,8 +490,6 @@ Ext.onReady(function () {
     Ext.getCmp('mspectra1panel').header.setTitle('Scan ... (Level 1)');
   }
 
-  // uses perl Finnigan package to make data
-  // mzxml-unpack -r 1..1  F0060068.mzXML > F0060068.scan1.txt
   lc_chart = Ext.create('Ext.esc.Chromatogram', {
     cutoff: ${cutoff},
     emptyText: 'Loading chromatogram ...',
@@ -504,16 +506,18 @@ Ext.onReady(function () {
   });
 
   // TODO look at run.n_reaction_steps to see how many levels are needed
-  // Select a scan in the chromatogram
   ms_chart = Ext.create('Ext.esc.MSpectra', {
     emptyText: 'Select a scan in the chromatogram',
     listeners: {
       selectpeak: function(mz) {
+        // TODO if scan markers is set to metabolites
+        // then select metabolite in mgrid
+
+        // if scan markers is set to fragments then select fragment in tree
         selectFragmentInTree(mz, 1);
       }
     }
   });
-  // Select a fragment to show its level 2 scan
   ms_chart2 = Ext.create('Ext.esc.MSpectra', {
     emptyText: 'Select a fragment to show its level 2 scan',
     listeners: {
@@ -522,7 +526,6 @@ Ext.onReady(function () {
       }
     }
   });
-  // Select a fragment to show its level 3 scan
   ms_chart3 = Ext.create('Ext.esc.MSpectra', {
     emptyText: 'Select a fragment to show its level 3 scan',
     listeners: {
