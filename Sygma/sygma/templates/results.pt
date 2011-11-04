@@ -100,6 +100,8 @@ Ext.onReady(function () {
       name: 'atoms', defaultValue: [] // array of atom indexes of molecule which are the substructure of the query
     },{
       name: 'nr_scans', type:'number'
+    },{
+      name: 'scans', defaultValue: [] // Filled when metabolite is selected
     }]
   });
 
@@ -183,6 +185,7 @@ Ext.onReady(function () {
 	        url: '${request.application_url}/metabolite/'+r.data.metid+'/scans.json',
 	        success: function(response) {
   	            var obj = Ext.decode(response.responseText);
+  	            r.data.scans = obj;
                 if (obj.length) {
                   // if one scan has already been selected test if its a member of the scans of selected metabolite
                   // if so then show fragments
@@ -419,14 +422,16 @@ Ext.onReady(function () {
     }
   }
 
-  function loadMSpectra1(scanid) {
+  function loadMSpectra1(scanid, onload) {
     console.log('Loading msspectra level 1 with id '+scanid);
     // load msspectra level 1
     d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
       Ext.getCmp('mspectra1panel').header.setTitle('Scan '+scanid+' (Level 1)');
       ms_chart.setData(data);
       // TODO add markers of metabolites in this scan
-      // If metabolite is selected then also select its fragment in scan
+      if (onload) {
+        onload();
+      }
     });
   }
 
@@ -454,15 +459,23 @@ Ext.onReady(function () {
     console.log('select scan '+scanid);
     removeScanFilter();
     clearFragments();
-    // if metabolite has been selected then show fragments with this metabolite and scan
-    // if metabolite has not been selected then filter mstore
-    if (mgrid.getSelectionModel().selected.getCount() > 0) {
-      loadFragments(scanid, mgrid.getSelectionModel().selected.getAt(0).data.metid);
+    // if metabolite has been selected
+    // and scanid is hit of metabolite then show fragments with this metabolite and scan
+    // else filter mstore and load scan
+    if (
+        mgrid.getSelectionModel().selected.getCount() > 0
+        &&
+        mgrid.getSelectionModel().selected.getAt(0).data.scans.indexOf(scanid) != -1
+    ) {
+      loadMSpectra1(scanid, function() {
+        loadFragments(scanid, mgrid.getSelectionModel().selected.getAt(0).data.metid);
+      });
     } else {
       mstore.getProxy().extraParams.scanid = scanid;
       mstore.loadPage(1);
+      loadMSpectra1(scanid);
+      // TODO in spectra add markers for metabolites present in scan
     }
-    loadMSpectra1(scanid);
   }
 
   function unSelectScan() {
