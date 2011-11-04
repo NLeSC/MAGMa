@@ -245,7 +245,10 @@ Ext.onReady(function () {
     fstore.getRootNode().removeAll();
     ms_chart.clearPeakSelection();
     ms_chart2.setData([]);
+    Ext.getCmp('mspectra2panel').header.setTitle('Scan ... (Level 2)');
     ms_chart3.setData([]);
+    Ext.getCmp('mspectra3panel').header.setTitle('Scan ... (Level 3)');
+
   }
 
   function loadFragments(scanid, metid) {
@@ -296,14 +299,21 @@ Ext.onReady(function () {
    */
   function selectPeakInMSpectra(rm, r) {
     console.log('Selected '+r.id);
+    // select peak belonging to r and
+    // select peaks of parents of fragment in parent scans
     if (r.data.mslevel==1) {
       ms_chart.selectPeaks([r.data.mz]);
+      ms_chart2.selectPeaks([]);
+      ms_chart3.selectPeaks([]);
     } else if (r.data.mslevel==2) {
+      ms_chart3.selectPeaks([]);
       ms_chart2.selectPeaks([r.data.mz]);
+      ms_chart.selectPeaks([r.parentNode.data.mz]);
     } else if (r.data.mslevel==3) {
       ms_chart3.selectPeaks([r.data.mz]);
+      ms_chart2.selectPeaks([r.parentNode.data.mz]);
+      ms_chart.selectPeaks([r.parentNode.parentNode.data.mz]);
     }
-    // TODO select peaks of parents of fragment in parent scans
   }
 
   /**
@@ -314,8 +324,9 @@ Ext.onReady(function () {
     // find fragment based on mz + mslevel
     var node = fstore.getRootNode().findChildBy(function(n) {
       return (n.data.mslevel == mslevel && n.data.mz == mz);
-    });
+    }, false, true);
     fgrid.getSelectionModel().select([node]);
+    // TODO unselect peaks of child scans
   }
 
   var fstore = Ext.create('Ext.data.TreeStore', {
@@ -439,31 +450,37 @@ Ext.onReady(function () {
     });
   }
 
+  function selectScan(scanid) {
+    console.log('select scan '+scanid);
+    removeScanFilter();
+    clearFragments();
+    // if metabolite has been selected then show fragments with this metabolite and scan
+    // if metabolite has not been selected then filter mstore
+    if (mgrid.getSelectionModel().selected.getCount() > 0) {
+      loadFragments(scanid, mgrid.getSelectionModel().selected.getAt(0).data.metid);
+    } else {
+      mstore.getProxy().extraParams.scanid = scanid;
+      mstore.loadPage(1);
+    }
+    loadMSpectra1(scanid);
+  }
+
+  function unSelectScan() {
+    removeScanFilter();
+    clearFragments();
+    // unload mspectra1
+    ms_chart.setData([]);
+    Ext.getCmp('mspectra1panel').header.setTitle('Scan ... (Level 1)');
+  }
+
   // uses perl Finnigan package to make data
   // mzxml-unpack -r 1..1  F0060068.mzXML > F0060068.scan1.txt
   lc_chart = Ext.create('Ext.esc.Chromatogram', {
     cutoff: ${cutoff},
     emptyText: 'Loading chromatogram ...',
     listeners: {
-      selectscan: function(scanid) {
-        console.log('select scan '+scanid);
-        removeScanFilter();
-        clearFragments();
-        // if metabolite has been selected then show fragments with this metabolite and scan
-        // if metabolite has not been selected then filter mstore
-        if (mgrid.getSelectionModel().selected.getCount() > 0) {
-          loadFragments(scanid, mgrid.getSelectionModel().selected.getAt(0).data.metid);
-        } else {
-          mstore.getProxy().extraParams.scanid = scanid;
-          mstore.loadPage(1);
-        }
-        loadMSpectra1(scanid);
-      },
-      unselectscan: function(scanid) {
-        console.log('unselect scan '+scanid);
-        removeScanFilter();
-        // TODO unload mspectra1
-      }
+      selectscan: selectScan,
+      unselectscan: unSelectScan
     }
   });
   d3.json('${request.route_url('chromatogram.json')}', function(data) {
@@ -571,6 +588,25 @@ function rightleft() {
               handler: function() {
                 lc_chart.resetZoom();
               }
+            },{
+              type:'search',
+              tooltip: 'Select scan by identifier',
+              handler: function() {
+                Ext.MessageBox.prompt('Scan#', 'Please enter scan identifier:', function(b,v) {
+                  if (b != 'cancel' && v) {
+	                  v = v*1;
+	                  lc_chart.selectScans([v]);
+	                  selectScan(v);
+                  }
+                });
+              }
+            },{
+              type:'restore',
+              tooltip:'Clear scan selection',
+              handler: function() {
+                lc_chart.clearScanSelection();
+                unSelectScan();
+              }
             }]
         }]
   });
@@ -669,6 +705,8 @@ function rightleft() {
     layout: 'border',
     items:[ master_side, detail_side ]
   });
+
+  Ext.QuickTips.init();
 }
 
 rightleft();
