@@ -160,8 +160,13 @@ Ext.define('Ext.esc.Chromatogram', {
 	  this.svg.selectAll('.'+this.cutoffCls).remove();
 	  this.selectedscan = -1;
 	  this.svg.selectAll('.marker').remove();
+	  this.svg.selectAll('.emptytext').remove();
 	  this.data = data;
-	  this.onDataReady();
+    if (this.hasData()) {
+      this.onDataReady();
+    } else {
+      this.onDataEmpty();
+    }
   },
   onToggleMarker: function(scanid) {
     var me = this;

@@ -35,6 +35,7 @@ Ext.define('Ext.esc.AbstractD3', {
          * @cfg {Array} data array of objects.
          */
         data: [],
+        emptyText: '',
         ranges: {
           x: {
             /**
@@ -60,7 +61,7 @@ Ext.define('Ext.esc.AbstractD3', {
         /**
          * @cfg {Array} axesPadding Padding around axes. [top, right, left, bottom]
          */
-        axesPadding: [16, 5, 50, 80],
+        axesPadding: [16, 5, 38, 80],
         ticks: {
           /**
            * @cfg {Number} ticks.x=10 Number of ticks on x-axis.
@@ -93,8 +94,25 @@ Ext.define('Ext.esc.AbstractD3', {
       ;
     this.chartWidth = this.body.getWidth() - this.axesPadding[3] - this.axesPadding[1];
     this.chartHeight = this.body.getHeight() - this.axesPadding[0] - this.axesPadding[2];
-    if (this.data.length) {
+    if (this.hasData()) {
       this.onDataReady();
+    } else {
+      this.onDataEmpty();
+    }
+  },
+  hasData: function() {
+    return (this.data.length>0);
+  },
+  onDataEmpty: function() {
+    if (this.emptyText) {
+       this.svg.append('svg:text')
+         .attr('class', 'emptytext')
+         .attr('x', this.chartWidth/2)
+         .attr('y', this.chartHeight/2)
+         .attr("dy", "1em")
+         .attr("text-anchor", "middle")
+         .attr('fill','gray')
+         .text(this.emptyText);
     }
   },
   onRender: function() {

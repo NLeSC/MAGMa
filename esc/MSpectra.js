@@ -124,8 +124,13 @@ Ext.define('Ext.esc.MSpectra', {
 	  this.svg.selectAll('line.mspeak').remove();
     this.clearPeakSelection();
     this.svg.selectAll('.marker').remove();
+    this.svg.selectAll('.emptytext').remove();
 	  this.data = data;
-	  this.onDataReady();
+    if (this.hasData()) {
+      this.onDataReady();
+    } else {
+      this.onDataEmpty();
+    }
   },
   onToggleMarker: function(mz) {
     var me = this;
