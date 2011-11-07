@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<link rel="stylesheet" href="ChemDoodleWeb/install/ChemDoodleWeb.css" type="text/css">
+<link rel="stylesheet" href="ext-4.0.2a/resources/css/ext-all.css" type="text/css">
+<script type="text/javascript" src="ext-4.0.2a/bootstrap.js"></script>
+<script type="text/javascript" src="ChemDoodleWeb/install/ChemDoodleWeb-libs.js"></script>
+<script type="text/javascript" src="ChemDoodleWeb/src/ChemDoodleWeb-unpacked.js"></script>
+<script type="text/javascript">
+
+Ext.Loader.setConfig({
+  enabled: true
+});
+
+Ext.onReady(function () {
+  Ext.define('Molecule', {
+    extend:'Ext.data.Model',
+    fields: [{
+      name:'name', type:'string'
+    },{
+      name:'mol', type:'string'
+    },{
+      name:'query', defaultValue: [] // array of atom indexes of molecule which are the substructure of the query
+    }]
+  });
+
+  var pageSize = 10;
+  var store = Ext.create('Ext.data.Store', {
+    storeId:'sampleStore',
+    model:'Molecule',
+    pageSize: pageSize,
+    proxy: {
+        type: 'ajax',
+        url: 'data.json',
+        reader: {
+            type: 'json',
+            root: 'rows'
+        }
+    },
+    autoLoad: true
+ });
+
+  //Minimal
+// 	var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
+// 	 text: 'Molecule', dataIndex: 'mol',
+// 	 width: 160
+// 	});
+
+ // Bigger
+//  var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
+//    text: 'Molecule', dataIndex: 'mol',
+//    canvasWidth: 300, canvasHeight: 200,
+//    width: 310, canvasClass: 'x-chemdoodle-cols2',
+//  });
+
+ // jmol color, bigger and transformable
+//  var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
+//    text: 'Molecule', dataIndex: 'mol',
+//    canvasWidth: 300, canvasHeight: 200,
+//    width: 310,
+//    initCanvas:function(id, width, height, value) {
+//      var c = new ChemDoodle.TransformCanvas(id, width, height,true);
+//      c.specs.bonds_useJMOLColors = true;
+//      c.specs.atoms_useJMOLColors = true;
+//      c.loadMolecule(ChemDoodle.readMOL(value));
+//      c.specs.scale = 2;c.repaint();
+//    }
+//  });
+
+ // substructure highlight
+ var hlspecs = new ChemDoodle.structures.VisualSpecifications();
+ hlspecs.bonds_color = 'gold';
+ hlspecs.atoms_color = 'gold';
+ var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
+   text: 'Molecule', dataIndex: 'mol',
+   canvasWidth: 300, canvasHeight: 200,
+//   flex:1,
+   width: 312,
+   initCanvas:function(id, width, height, value,record) {
+     var c = new ChemDoodle.TransformCanvas(id, width, height,true);
+     var m = ChemDoodle.readMOL(value);
+     record.data.query.forEach(function(qa) {
+       // use highlight visual spec for atoms which are part of query
+       m.atoms[qa].specs = hlspecs;
+       // also highlight all bonds conected to query atoms
+       m.getBonds(m.atoms[qa]).forEach(function(b) { b.specs = hlspecs; });
+     });
+     c.loadMolecule(m);
+   }
+ });
+
+ var grid = Ext.create('Ext.grid.Panel', {
+   title: 'Chemdoodle table',
+   store: store,
+   columns: [
+     Ext.create('Ext.grid.RowNumberer'),
+     molcol,
+     {text: 'Name', dataIndex: 'name', flex:1}
+   ],
+   pageSize: pageSize,
+   dockedItems: [{
+     xtype: 'pagingtoolbar',
+     store: store,   // same store GridPanel is using
+     dock: 'bottom',
+     displayInfo: true
+   }],
+   height: 600,
+   width: 700,
+   plugins: [molcol],
+   renderTo: Ext.getBody()
+ });
+
+});
+</script>
+</head>
+<body>
+</body>
+</html>

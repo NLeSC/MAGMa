@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<link rel="stylesheet" href="ext-4.0.7-gpl/resources/css/ext-all.css" type="text/css">
+<script type="text/javascript" src="mbostock-d3-2f6d2fa/d3.js"></script>
+<script type="text/javascript" src="ext-4.0.7-gpl/bootstrap.js"></script>
+    <style type="text/css">
+
+path.line {
+  fill: none;
+  stroke: #66d;
+  stroke-width: 2px;
+}
+
+.axis {
+  shape-rendering: crispEdges;
+}
+
+.y.axis line, .y.axis path, .x.axis line, .x.axis path {
+  fill: none;
+  stroke: #ccc;
+}
+
+.peaks {
+  fill: none;
+  stroke-width: 1px;
+  stroke: "#111";
+}
+
+.cutoffline {
+  fill: none;
+  stroke-width: 1px;
+  stroke: #ddd;
+}
+
+line.peak {
+  stroke-width: 2px;
+}
+
+path.marker {
+  stroke: darkgreen;
+  fill: none;
+  stroke-width: 1.5px;
+}
+
+.selectedscan {
+  fill: lightgreen !important;
+}
+
+</style>
+<script type="text/javascript">
+
+/*
+ * perl -MData::Dumper -ne 'chomp;next if /^#/;my @r = split(/\s+/);next unless ($r[5] eq "ms1" );$r[5]=~s/ms//;printf("INSERT INTO scans (scanid,mslevel,rt,lowmz,highmz,basepeakmz,basepeakintensity,totioncurrent,precursormz) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);\n",$r[1],$r[5],$r[6],$r[7],$r[8],$r[9],$r[10],$r[11],$r[13])' F0060068.mzXML.spectrum_table.txt > F0060068.mzXML.spectrum_table.sql
+ */
+
+Ext.Loader.setConfig({ enabled: true });
+
+Ext.onReady(function () {
+
+  chromatogram = Ext.create('Ext.esc.Chromatogram', {
+    listeners: {
+      selectscan: function(scanid){
+        console.log('select scan '+scanid);
+      },
+      unselectscan: function(scanid){
+        console.log('unselect scan '+scanid);
+      }
+    },
+    bbar:[{
+      text: 'Select peaks of metabolite 1',
+      enableToggle: true,
+      toggleHandler: function(b,s) {
+        var scanids = {476:true,1928:true};
+        if (s) {
+          chromatogram.selectScans(scanids);
+        } else {
+          chromatogram.clearScanSelection();
+        }
+      }
+    },{
+      text: 'Reset zoom',
+      handler: function() {
+        chromatogram.resetZoom();
+      }
+    }]
+  });
+
+  Ext.create('Ext.window.Window', {
+    title:'Chromatogram',
+    layout: 'fit',
+    width: 1000,
+    y: 20,
+    height: 600,
+    items: chromatogram,
+    resizable: {
+      dynamic: true
+    }
+  }).show();
+
+  d3.json("chromatogram.json", function(data) {
+    chromatogram.setData(data);
+  });
+
+  msspectra1 = Ext.create('Ext.esc.MSpectra', {});
+  Ext.create('Ext.window.Window', {
+    title:'Mass spectra 1',
+    layout: 'fit',
+    width: 500,
+    y: 630,
+    height: 300,
+    items: msspectra1,
+    resizable: {
+      dynamic: true
+    },
+	  bbar:[{
+	    text: 'Reset zoom',
+	    handler: function() {
+	      msspectra1.resetZoom();
+	    }
+	  }]
+  }).show();
+
+//  d3.json("scan.3862.json", function(data) {
+  d3.json("scan.623.json", function(data) {
+    msspectra1.setData(data);
+  });
+});
+</script>
+<title>Sygma - Chromatogram</title>
+</head>
+<body>
+<h1>Wish list</h1>
+<ul>
+<li>V Render peak as vertical line</li>
+<li>V Zoom&pan chromatogram</li>
+<li>V Resize chromatogram</li>
+<li>V Highlight peaks which have a metabolite hit</li>
+<li>V Show cutoff</li>
+<li>V Select peak manually</li>
+<li>V Select peaks programmaticly</li>
+<li>V On mouseover show peak details</li>
+<li>V Intergrates with Extjs (inside a panel)</li>
+<li>Clip when panning, so chart lines are not visible outside axes</li>
+</ul>
+</body>
+</html>
