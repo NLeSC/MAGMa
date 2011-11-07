@@ -3,14 +3,14 @@
 <head>
   <title>MSygma - Results</title>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
-<link rel="stylesheet" href="${request.static_url('sygma:static/ChemDoodleWeb/install/ChemDoodleWeb.css')}" type="text/css">
+<link rel="stylesheet" href="${request.static_url('sygma:static/ChemDoodleWeb/ChemDoodleWeb.css')}" type="text/css">
 <link rel="stylesheet" href="${request.static_url('sygma:static/ext-4.0.7-gpl/resources/css/ext-all.css')}" type="text/css">
 <link rel="stylesheet" type="text/css" href="${request.static_url('sygma:static/ext-4.0.7-gpl/examples/ux/grid/css/GridFilters.css')}" />
 <link rel="stylesheet" type="text/css" href="${request.static_url('sygma:static/ext-4.0.7-gpl/examples/ux/grid/css/RangeMenu.css')}" />
 <script type="text/javascript" src="${request.static_url('sygma:static/ext-4.0.7-gpl/bootstrap.js')}"></script>
-<script type="text/javascript" src="${request.static_url('sygma:static/ChemDoodleWeb/install/ChemDoodleWeb-libs.js')}"></script>
-<script type="text/javascript" src="${request.static_url('sygma:static/ChemDoodleWeb/src/ChemDoodleWeb-unpacked.js')}"></script>
-<script type="text/javascript" src="${request.static_url('sygma:static/mbostock-d3-2f6d2fa/d3.js')}"></script>
+<script type="text/javascript" src="${request.static_url('sygma:static/ChemDoodleWeb/ChemDoodleWeb-libs.js')}"></script>
+<script type="text/javascript" src="${request.static_url('sygma:static/ChemDoodleWeb/ChemDoodleWeb.js')}"></script>
+<script type="text/javascript" src="${request.static_url('sygma:static/d3/d3.js')}"></script>
 <style type="text/css">
 
 path.line {
