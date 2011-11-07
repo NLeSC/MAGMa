@@ -4,5 +4,6 @@ Sygma/Sygma.egg-info/
 Sygma/development.ini
 Sygma/production.ini
 Sygma/sygma/**pyc
+Sygma/sygma/static/ext-*
 env/
 /env64

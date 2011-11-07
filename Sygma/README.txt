@@ -1,5 +1,14 @@
 Sygma README
 
+Requirements
+------------
+
+- Extjs installed in Sygma/sygma/static/
+- Add config based on production.ini-dist
+
+Run server
+----------
+
 To start webserver:
 
 . ../../env/bin/activate
