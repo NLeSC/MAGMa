@@ -88,10 +88,15 @@ Ext.define('Ext.esc.AbstractD3', {
       .attr('viewBox','0 0 '+this.body.getWidth()+' '+this.body.getHeight())
   //      .attr("preserveAspectRatio", "xMaxYMax meet")
       .attr("preserveAspectRatio", "none")
-      .attr("pointer-events", "all")
-      .call(d3.behavior.zoom().on("zoom", this.redraw.bind(this) ))
       .append('svg:g').attr('transform','translate('+padding[3]+','+padding[0]+')')
-      ;
+    ;
+    // add
+    this.svg.append('svg:rect')
+        .attr('width',this.body.getWidth()).attr('height',this.body.getHeight())
+        .attr('fill','none').attr('stroke', 'none')
+    	.call(d3.behavior.zoom().on("zoom", this.redraw.bind(this) ))
+    	.attr("pointer-events", "all")
+    ;
     this.chartWidth = this.body.getWidth() - this.axesPadding[3] - this.axesPadding[1];
     this.chartHeight = this.body.getHeight() - this.axesPadding[0] - this.axesPadding[2];
     if (this.hasData()) {
