@@ -174,7 +174,8 @@ Ext.onReady(function () {
       Ext.getCmp('mspectra1panel').header.setTitle('Scan '+scanid+' (Level 1)');
       ms_chart.setLoading(false);
       ms_chart.scanid = scanid;
-      ms_chart.setData(data);
+      ms_chart.cutoff = data.cutoff;
+      ms_chart.setData(data.peaks);
       // TODO add markers of metabolites in this scan
       if (onload) {
         onload();
@@ -190,7 +191,7 @@ Ext.onReady(function () {
       Ext.getCmp('mspectra2panel').header.setTitle('Scan '+scanid+' (Level 2)');
       ms_chart2.setLoading(false);
       ms_chart2.scanid = scanid;
-      ms_chart2.setData(data);
+      ms_chart2.setData(data.peaks);
       ms_chart2.setMarkers(markers);
       if (onload) {
         onload();
@@ -206,7 +207,7 @@ Ext.onReady(function () {
       Ext.getCmp('mspectra3panel').header.setTitle('Scan '+scanid+' (Level 3)');
       ms_chart3.setLoading(false);
       ms_chart3.scanid = scanid;
-      ms_chart3.setData(data);
+      ms_chart3.setData(data.peaks);
       ms_chart3.setMarkers(markers);
       if (onload) {
         onload();
@@ -491,7 +492,7 @@ Ext.onReady(function () {
           ms_chart.selectPeaks([metabolite_fragment.data.mz]);
           if (metabolite_fragment.hasChildNodes()) {
             loadMSpectra2(
-              metabolite_fragment.data.scanid,
+              metabolite_fragment.childNodes[0].data.scanid,
               metabolite_fragment.childNodes.map(function(r) { return {mz: r.data.mz}; })
             );
           }

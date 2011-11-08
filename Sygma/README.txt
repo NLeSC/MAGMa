@@ -98,5 +98,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS scanmz ON peaks (scanid,mz);
 CREATE UNIQUE INDEX IF NOT EXISTS scanpk ON scans (scanid);
 CREATE INDEX IF NOT EXISTS scanlvl ON scans (mslevel);
 
+SELECT basepeakintensity*msms_intensity_cutoff FROM scans,run WHERE scanid=1104;
+print DBSession().query(Scan.basepeakintensity*Run.msms_intensity_cutoff).filter(Scan.scanid==1104)
 
 

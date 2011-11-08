@@ -1,5 +1,5 @@
 from sygma.models import DBSession
-from sygma.models import Metabolite, Scan, Peak, Fragment
+from sygma.models import Metabolite, Scan, Peak, Fragment, Run
 from pyramid.response import Response
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPNotFound
@@ -133,14 +133,16 @@ def chromatogram_hits(request):
 @view_config(route_name='mspectra.json', renderer='json')
 def mspectrajson(request):
     dbsession = DBSession()
+    scanid = request.matchdict['id']
     peaks = []
-    for peak in dbsession.query(Peak).filter_by(scanid=request.matchdict['id']):
+    for peak in dbsession.query(Peak).filter_by(scanid=scanid):
         peaks.append({
             'mz': peak.mz,
             'intensity': peak.intensity
         })
 
-    return peaks
+    cutoff = DBSession().query(Scan.basepeakintensity*Run.msms_intensity_cutoff).filter(Scan.scanid==scanid).scalar()
+    return { 'peaks': peaks, 'cutoff': cutoff }
 
 @view_config(route_name='scantree.json', renderer='json')
 def scantree(request):
@@ -154,7 +156,7 @@ def metabolitescans(request):
         scans.append(frag.scanid)
     chromatogram = []
     # fetch avg mz of metabolite fragment
-    mzq = DBSession().query(func.avg(Fragment.mz)).filter(Fragment.metid==metid).filter(Fragment.parentfragid==0).one()[0]
+    mzq = DBSession().query(func.avg(Fragment.mz)).filter(Fragment.metid==metid).filter(Fragment.parentfragid==0).scalar()
     if (mzq):
         mzoffset = 0.005
         # fetch max intensity of peaks with mz = mzq+-mzoffset

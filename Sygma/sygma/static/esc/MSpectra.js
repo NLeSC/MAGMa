@@ -17,6 +17,14 @@ Ext.define('Ext.esc.MSpectra', {
         /**
          * @cfg {String} selectedPeakCls The CSS class applied to markers of a selected peak.
          */
+        /**
+         * @cfg {Number} cutoff intensity under which peaks where disregarded
+         */
+        cutoff: 0,
+        /**
+         * @cfg {String} cutoffCls The CSS class applied to cutoff line.
+         */
+        cutoffCls: 'cutoffline',
         selectedPeakCls: 'selectedpeak',
         markers: [],
         chartWidth: 0,
@@ -106,6 +114,18 @@ Ext.define('Ext.esc.MSpectra', {
           .text('Intensity')
     ;
 
+    // cutoff
+    if (this.cutoff) {
+      this.svg.append("svg:line")
+        .attr('class', this.cutoffCls)
+        .attr('x1',0)
+        .attr('x2',this.chartWidth)
+        .attr('y1',this.scales.y(this.cutoff))
+        .attr('y2',this.scales.y(this.cutoff))
+        .attr('stroke-dasharray','5,5')
+      ;
+    }
+
     // of each mz plot intensity as vertical line
     this.svg.selectAll("line.mspeak")
     .data(this.data)
@@ -129,6 +149,7 @@ Ext.define('Ext.esc.MSpectra', {
     this.clearPeakSelection();
     this.svg.selectAll('.marker').remove();
     this.svg.selectAll('.emptytext').remove();
+    this.svg.selectAll('.'+this.cutoffCls).remove();
 	  this.data = data;
     if (this.hasData()) {
       this.onDataReady();
