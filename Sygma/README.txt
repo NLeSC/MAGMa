@@ -19,7 +19,8 @@ deactivate
 To work with models on Python shell
 python
 from sygma.models import *
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, and_
+from sqlalchemy.sql import exists, func
 initialize_sql(create_engine('sqlite:///tea_metabolites2_scans_fragments.db'))
 print DBSession.query(Metabolite).first()
 
@@ -66,3 +67,36 @@ FROM fragments f JOIN metabolites m USING (metid) WHERE  scanid=1263 AND metid=3
 ;
 r = DBSession.query(Fragment).filter(Fragment.scanid==1263).filter(Fragment.metid==352).filter(Fragment.parentfragid==0).first()
 len(r.chilren)
+
+
+# chromatogram of a metabolite based on its avg mz (from fragments table) +- 0.005
+SELECT
+s.rt,
+p.intensity
+FROM
+scans s
+LEFT JOIN peaks p ON p.scanid = s.scanid
+AND p.mz BETWEEN
+(SELECT avg(mz)-0.005 FROM fragments WHERE metid = 114 AND parentfragid = 0)
+AND
+(SELECT avg(mz)+0.005 FROM fragments WHERE metid = 114 AND parentfragid = 0)
+WHERE
+mslevel = 1
+;
+SELECT rt, max(p.intensity)
+FROM scans s
+LEFT JOIN peaks p ON p.scanid=s.scanid AND p.mz BETWEEN
+207.0613350266667 AND 207.0713350266667
+WHERE mslevel=1
+GROUP BY rt ORDER BY rt
+;
+mzq = DBSession().query(func.avg(Fragment.mz)).filter(Fragment.metid==114).filter(Fragment.parentfragid==0).one()[0]
+mzoffset = 0.005
+print DBSession().query(Scan.rt,func.max(Peak.intensity)).outerjoin(Peak,and_(Peak.scanid==Scan.scanid,Peak.mz.between(mzq-mzoffset,mzq+mzoffset))).group_by(Scan.rt).order_by(Scan.rt)
+
+CREATE UNIQUE INDEX IF NOT EXISTS scanmz ON peaks (scanid,mz);
+CREATE UNIQUE INDEX IF NOT EXISTS scanpk ON scans (scanid);
+CREATE INDEX IF NOT EXISTS scanlvl ON scans (mslevel);
+
+
+

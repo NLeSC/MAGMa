@@ -19,6 +19,12 @@ path.line {
   stroke-width: 2px;
 }
 
+path.metaboliteline {
+  fill: none;
+  stroke: #6d6;
+  stroke-width: 2px;
+}
+
 .axis {
   shape-rendering: crispEdges;
 }
@@ -166,7 +172,7 @@ Ext.onReady(function () {
     ms_chart.setLoading(true);
     d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
       Ext.getCmp('mspectra1panel').header.setTitle('Scan '+scanid+' (Level 1)');
-      ms_chart.setLoading(true);
+      ms_chart.setLoading(false);
       ms_chart.scanid = scanid;
       ms_chart.setData(data);
       // TODO add markers of metabolites in this scan
@@ -237,6 +243,43 @@ Ext.onReady(function () {
     // unload mspectra1
     ms_chart.setData([]);
     Ext.getCmp('mspectra1panel').header.setTitle('Scan ... (Level 1)');
+  }
+
+  function selectMetabolite(metabolite) {
+    var metid = metabolite.data.metid;
+    console.log('Selected metabolite '+metid);
+    clearFragments();
+    Ext.Ajax.request({
+      url: '${request.application_url}/metabolite/'+metid+'/scans.json',
+      success: function(response) {
+        var obj = Ext.decode(response.responseText);
+        metabolite.data.scans = obj.scans;
+        lc_chart.setMetabolite(obj.chromatogram);
+        if (obj.scans.length) {
+          // if one scan has already been selected test if its a member of the scans of selected metabolite
+          // if so then show fragments
+          if (lc_chart.selectedscan != -1 && obj.scans.indexOf(lc_chart.selectedscan) != -1) {
+            console.log('Selected metabolite and its one scan is selected');
+            loadFragments(lc_chart.selectedscan, metid);
+          } else {
+            console.log('Selecting scans of metabolite');
+            lc_chart.selectScans(obj.scans);
+            // if metabolite has only one scan hit then show that scan and fragments
+            if (obj.scans.length == 1) {
+              // show scan where metabolite had its hit
+              console.log('show scan where metabolite had its hit');
+              loadMSpectra1(obj.scans[0]);
+              // show fragments with this metabolite and scan
+              console.log('show fragments of metabolite');
+              loadFragments(obj.scans[0], metid);
+            }
+          }
+        } else {
+          Ext.Msg.alert('Metabolite has no hits', 'The selected query/metabolite was not found in the ms data');
+          mgrid.getSelectionModel().deselectAll();
+        }
+      }
+    });
   }
 
   Ext.define('Metabolite', {
@@ -378,37 +421,7 @@ Ext.onReady(function () {
 	      }
 	    },
 	    select: function(rm,r) {
-	      console.log('Selected metabolite '+r.data.metid);
-	      clearFragments();
-	      Ext.Ajax.request({
-	        url: '${request.application_url}/metabolite/'+r.data.metid+'/scans.json',
-	        success: function(response) {
-  	            var obj = Ext.decode(response.responseText);
-  	            r.data.scans = obj;
-                if (obj.length) {
-                  // if one scan has already been selected test if its a member of the scans of selected metabolite
-                  // if so then show fragments
-                  if (lc_chart.selectedscan != -1 && obj.indexOf(lc_chart.selectedscan) != -1) {
-                    console.log('Selected metabolite and its one scan is selected');
-                    loadFragments(lc_chart.selectedscan, r.data.metid);
-                  } else {
-                    console.log('Selecting scans of metabolite');
-    		            lc_chart.selectScans(obj);
-    		            // if metabolite has only one scan hit then show that scan and fragments
-    		            if (obj.length == 1) {
-    	                // show scan where metabolite had its hit
-                      console.log('show scan where metabolite had its hit');
-    	                loadMSpectra1(obj[0]);
-    	                // show fragments with this metabolite and scan
-                      console.log('show fragments of metabolite');
-                      loadFragments(obj[0], r.data.metid);
-    		            }
-                  }
-                } else {
-                  Ext.Msg.alert('Metabolite has no hits', 'The selected query/metabolite was not found in the ms data');
-                }
-	        }
-	      });
+	      selectMetabolite(r);
 	    }
 	  }
   });

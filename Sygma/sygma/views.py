@@ -5,6 +5,7 @@ from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPNotFound
 from sqlalchemy.sql.expression import desc, asc
 from sqlalchemy.sql import exists, func
+from sqlalchemy import and_
 from sqlalchemy.orm.exc import NoResultFound
 import simplejson as json
 
@@ -147,7 +148,18 @@ def metabolitescans(request):
     scans = []
     for frag in DBSession().query(Fragment.scanid).filter(Fragment.metid==metid).filter(Fragment.parentfragid==0):
         scans.append(frag.scanid)
-    return scans
+    chromatogram = []
+    # fetch avg mz of metabolite fragment
+    mzq = DBSession().query(func.avg(Fragment.mz)).filter(Fragment.metid==metid).filter(Fragment.parentfragid==0).one()[0]
+    if (mzq):
+        mzoffset = 0.005
+        # fetch max intensity of peaks with mz = mzq+-mzoffset
+        for (rt,intens) in DBSession().query(Scan.rt,func.max(Peak.intensity)).outerjoin(Peak, and_(Peak.scanid==Scan.scanid,Peak.mz.between(mzq-mzoffset,mzq+mzoffset))).filter(Scan.mslevel==1).group_by(Scan.rt).order_by(asc(Scan.rt)):
+            chromatogram.append({
+                'rt': rt,
+                'intensity': intens or 0
+            })
+    return {'scans': scans, 'chromatogram': chromatogram}
 
 @view_config(route_name='fragments.json', renderer='json')
 def fragments(request):

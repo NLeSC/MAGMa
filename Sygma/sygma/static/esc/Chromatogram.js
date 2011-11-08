@@ -27,9 +27,12 @@ Ext.define('Ext.esc.Chromatogram', {
          * @cfg {String} selectedScanCls The CSS class applied to markers of a selected scan.
          */
         selectedScanCls: 'selectedscan',
+        // array of {rt:,intensity:, id:}
         markers: [],
         chartWidth: 0,
-        chartHeight: 0
+        chartHeight: 0,
+        // array of {rt:,intensity:}
+        metabolitedata: [],
     };
 
     Ext.applyIf(this, defConfig);
@@ -61,6 +64,7 @@ Ext.define('Ext.esc.Chromatogram', {
     // do not scale y axis
     //svg.select(".y.axis").call(yAxis);
     this.svg.select("path.line").attr('d', this.line(this.data));
+    this.svg.select("path.metaboliteline").attr('d', this.line(this.metabolitedata));
     if (this.markers.length) {
       this.svg.selectAll("path.lowermarker")
         .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(0) + ")"; });
@@ -162,6 +166,8 @@ Ext.define('Ext.esc.Chromatogram', {
 	  this.selectedscan = -1;
 	  this.svg.selectAll('.marker').remove();
 	  this.svg.selectAll('.emptytext').remove();
+	  this.metabolitedata = [];
+    this.svg.selectAll('path.metaboliteline').remove();
 	  this.data = data;
     if (this.hasData()) {
       this.onDataReady();
@@ -204,7 +210,7 @@ Ext.define('Ext.esc.Chromatogram', {
     });
     if (scanids.length == 1) {
        this.selectedscan = scanids[0];
-     } else if (scanid.length == 0) {
+     } else if (scanids.length == 0) {
        this.selectedscan = -1;
      }
   },
@@ -262,6 +268,17 @@ Ext.define('Ext.esc.Chromatogram', {
       .on('click', markerClick)
       .append("svg:title")
         .text(markerTitle)
+    ;
+  },
+  /**
+   * @param data Array of rt and max intensity of a metabolite
+   */
+  setMetabolite: function(data) {
+    this.metabolitedata = data;
+    this.svg.selectAll('path.metaboliteline').remove();
+    this.svg.append('svg:path')
+      .attr('class','metaboliteline')
+      .attr('d', this.line(this.metabolitedata) )
     ;
   }
 });
