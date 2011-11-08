@@ -147,7 +147,7 @@ Ext.onReady(function () {
     multiSelect: false,
     autoScroll: true,
     columns: [
-      {text: 'ID', dataIndex: 'metid', hidden: true},
+      {text: 'ID', dataIndex: 'metid', hidden: true, filter: { type: 'numeric' }},
       molcol,
       {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: [0,1,2,3] }, hidden:true},
       {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }},
@@ -265,7 +265,6 @@ Ext.onReady(function () {
     fstore.load();
   }
 
-  // TODO chemdoodle does not work in tree due to store.getAt must replaced with store.getNodeById
   var hlspecs = new ChemDoodle.structures.VisualSpecifications();
   hlspecs.bonds_color = 'black';
   hlspecs.atoms_color = 'black';
@@ -281,7 +280,7 @@ Ext.onReady(function () {
       record.data[this.atomIndex].split(',').forEach(function(qa) {
         // use highlight visual spec for atoms which are part of query
         m.atoms[qa].specs = hlspecs;
-        // also highlight all bonds conected to query atoms
+        // also highlight all bonds connected to query atoms
         m.getBonds(m.atoms[qa]).forEach(function(b) { b.specs = hlspecs; });
       });
       c.loadMolecule(m);
@@ -385,7 +384,7 @@ Ext.onReady(function () {
     multiSelect: false,
     rootVisible: false,
     useArrows: true,
-    autoScroll: true,
+    scroll: false,
     columns: [
       { text: 'Score', dataIndex: 'score', xtype: 'treecolumn', width: 120},
       fmolcol,
@@ -405,6 +404,7 @@ Ext.onReady(function () {
       // now we turn off animate, so refresh events are fired and mols can be rendered
       // But still some nodes have no molecule and be fixes by collapse/expand or fmolcol.initCanvases()
       animate: false,
+      autoScroll: true,
       blockRefresh: false,
       emptyText: 'Select a metabolite and scan, to show its fragments',
     },
