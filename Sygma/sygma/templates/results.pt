@@ -73,6 +73,148 @@ Ext.require([
 ]);
 
 Ext.onReady(function () {
+
+  function clearFragments() {
+    console.log('Clearing fragments and lvl2,3 mspectra');
+    fstore.getRootNode().removeAll();
+    ms_chart.clearPeakSelection();
+    ms_chart2.setData([]);
+    Ext.getCmp('mspectra2panel').header.setTitle('Scan ... (Level 2)');
+    ms_chart3.setData([]);
+    Ext.getCmp('mspectra3panel').header.setTitle('Scan ... (Level 3)');
+  }
+
+  function loadFragments(scanid, metid) {
+    clearFragments();
+    console.log('Show fragments of scan '+scanid+' metabolite '+metid);
+    fstore.setProxy(fragmentProxy(scanid, metid));
+    fstore.load();
+  }
+
+  // need to change url of fragment proxy so use a factory to create a new proxy foreach scan/metabolite combo
+  function fragmentProxy(scanid, metid) {
+    return Ext.create('Ext.data.proxy.Ajax', {
+      // url is build when scan and metabolite are selected
+      url: '${request.application_url}/fragments/'+scanid+'/'+metid+'.json',
+      reader: {
+          type: 'json',
+          root: 'children',
+          idProperty: 'fragid'
+      }
+    });
+  }
+
+  /**
+   * When user selects fragment in tree then select the peak in the mspectra
+   */
+  function selectPeakInMSpectra(rm, r) {
+    console.log('Selected '+r.id);
+    // select peak belonging to r and
+    // select peaks of parents of fragment in parent scans
+    if (r.data.mslevel==1) {
+      ms_chart.selectPeaks([r.data.mz]);
+      ms_chart2.selectPeaks([]);
+      ms_chart3.selectPeaks([]);
+    } else if (r.data.mslevel==2) {
+      ms_chart3.selectPeaks([]);
+      ms_chart2.selectPeaks([r.data.mz]);
+      ms_chart.selectPeaks([r.parentNode.data.mz]);
+    } else if (r.data.mslevel==3) {
+      ms_chart3.selectPeaks([r.data.mz]);
+      ms_chart2.selectPeaks([r.parentNode.data.mz]);
+      ms_chart.selectPeaks([r.parentNode.parentNode.data.mz]);
+    }
+  }
+
+  /**
+   * When user selects peak in spectra then select the fragment belonging to peak in fragment tree
+   */
+  function selectFragmentInTree(mz, mslevel) {
+    console.log('Selected peak in lvl'+mslevel+' mspectra with m/z = '+mz);
+    // find fragment based on mz + mslevel
+    var node = fstore.getRootNode().findChildBy(function(n) {
+      return (n.data.mslevel == mslevel && n.data.mz == mz);
+    }, false, true);
+    fgrid.getSelectionModel().select([node]);
+    // TODO unselect peaks of child scans
+  }
+
+  /**
+   * Removes scan filter from metabolite store
+   */
+  function removeScanFilter() {
+    var scanfilter;
+    // see if already filtered on scanid then remove old filter
+    if ('scanid' in mstore.getProxy().extraParams) {
+      delete(mstore.getProxy().extraParams.scanid);
+      mstore.loadPage(1);
+    }
+  }
+
+  function loadMSpectra1(scanid, onload) {
+    console.log('Loading msspectra level 1 with id '+scanid);
+    // load msspectra level 1
+    d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
+      Ext.getCmp('mspectra1panel').header.setTitle('Scan '+scanid+' (Level 1)');
+      ms_chart.setData(data);
+      // TODO add markers of metabolites in this scan
+      if (onload) {
+        onload();
+      }
+    });
+  }
+
+  function loadMSpectra2(scanid, markers) {
+    console.log('Loading msspectra level 2 with id '+scanid);
+    // load msspectra level 2
+    d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
+      Ext.getCmp('mspectra2panel').header.setTitle('Scan '+scanid+' (Level 2)');
+      ms_chart2.setData(data);
+      ms_chart2.setMarkers(markers);
+    });
+  }
+
+  function loadMSpectra3(scanid, markers) {
+    console.log('Loading msspectra level 3 with id '+scanid);
+    // load msspectra level 3
+    d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
+      Ext.getCmp('mspectra3panel').header.setTitle('Scan '+scanid+' (Level 3)');
+      ms_chart3.setData(data);
+      ms_chart3.setMarkers(markers);
+    });
+  }
+
+  function selectScan(scanid) {
+    console.log('select scan '+scanid);
+    removeScanFilter();
+    clearFragments();
+    // if metabolite has been selected
+    // and scanid is hit of metabolite then show fragments with this metabolite and scan
+    // else filter mstore and load scan
+    if (
+        mgrid.getSelectionModel().selected.getCount() > 0
+        &&
+        mgrid.getSelectionModel().selected.getAt(0).data.scans.indexOf(scanid) != -1
+    ) {
+      loadMSpectra1(scanid, function() {
+        loadFragments(scanid, mgrid.getSelectionModel().selected.getAt(0).data.metid);
+      });
+    } else {
+      mstore.getProxy().extraParams.scanid = scanid;
+      mstore.loadPage(1);
+      loadMSpectra1(scanid);
+      // TODO in spectra add markers for metabolites present in scan
+    }
+  }
+
+  function unSelectScan() {
+    removeScanFilter();
+    clearFragments();
+    // unload mspectra1
+    ms_chart.setData([]);
+    Ext.getCmp('mspectra1panel').header.setTitle('Scan ... (Level 1)');
+  }
+
   Ext.define('Metabolite', {
     idProperty: 'metid',
     extend:'Ext.data.Model',
@@ -103,6 +245,35 @@ Ext.onReady(function () {
     },{
       name: 'scans', defaultValue: [] // Filled when metabolite is selected
     }]
+  });
+
+  Ext.define('Fragment', {
+    extend:'Ext.data.Model',
+    idProperty: 'fragid',
+    fields: [{
+      name: 'fragid',
+    },{
+      name: 'metid',
+    },{
+      name: 'scanid'
+    },{
+      name: 'mz'
+    },{
+      name: 'mass'
+    },{
+      name: 'score'
+    },{
+      name: 'parentfragid'
+    },{
+      name: 'mol', type: 'string'
+    },{
+      name: 'atoms', defaultValue: [] // array of atom indexes of molecule which are the substructure of the query
+    },{
+      name: 'deltah'
+    },{
+      name: 'mslevel'
+    }],
+    hasMany: { model: 'Fragment', name:'children' }
   });
 
   var pageSize = 10;
@@ -218,53 +389,6 @@ Ext.onReady(function () {
 	  }
   });
 
-  Ext.define('Fragment', {
-    extend:'Ext.data.Model',
-    idProperty: 'fragid',
-    fields: [{
-      name: 'fragid',
-    },{
-      name: 'metid',
-    },{
-      name: 'scanid'
-    },{
-      name: 'mz'
-    },{
-      name: 'mass'
-    },{
-      name: 'score'
-    },{
-      name: 'parentfragid'
-    },{
-      name: 'mol', type: 'string'
-    },{
-      name: 'atoms', defaultValue: [] // array of atom indexes of molecule which are the substructure of the query
-    },{
-      name: 'deltah'
-    },{
-      name: 'mslevel'
-    }],
-    hasMany: { model: 'Fragment', name:'children' }
-  });
-
-  function clearFragments() {
-    console.log('Clearing fragments and lvl2,3 mspectra');
-    fstore.getRootNode().removeAll();
-    ms_chart.clearPeakSelection();
-    ms_chart2.setData([]);
-    Ext.getCmp('mspectra2panel').header.setTitle('Scan ... (Level 2)');
-    ms_chart3.setData([]);
-    Ext.getCmp('mspectra3panel').header.setTitle('Scan ... (Level 3)');
-
-  }
-
-  function loadFragments(scanid, metid) {
-    clearFragments();
-    console.log('Show fragments of scan '+scanid+' metabolite '+metid);
-    fstore.setProxy(fragmentProxy(scanid, metid));
-    fstore.load();
-  }
-
   var hlspecs = new ChemDoodle.structures.VisualSpecifications();
   hlspecs.bonds_color = 'black';
   hlspecs.atoms_color = 'black';
@@ -286,54 +410,6 @@ Ext.onReady(function () {
       c.loadMolecule(m);
     }
   });
-
-  // need to change url of fragment proxy so use a factory to create a new proxy foreach scan/metabolite combo
-  function fragmentProxy(scanid, metid) {
-    return Ext.create('Ext.data.proxy.Ajax', {
-      // url is build when scan and metabolite are selected
-      url: '${request.application_url}/fragments/'+scanid+'/'+metid+'.json',
-      reader: {
-          type: 'json',
-          root: 'children',
-          idProperty: 'fragid'
-      }
-    });
-  }
-
-  /**
-   * When user selects fragment in tree then select the peak in the mspectra
-   */
-  function selectPeakInMSpectra(rm, r) {
-    console.log('Selected '+r.id);
-    // select peak belonging to r and
-    // select peaks of parents of fragment in parent scans
-    if (r.data.mslevel==1) {
-      ms_chart.selectPeaks([r.data.mz]);
-      ms_chart2.selectPeaks([]);
-      ms_chart3.selectPeaks([]);
-    } else if (r.data.mslevel==2) {
-      ms_chart3.selectPeaks([]);
-      ms_chart2.selectPeaks([r.data.mz]);
-      ms_chart.selectPeaks([r.parentNode.data.mz]);
-    } else if (r.data.mslevel==3) {
-      ms_chart3.selectPeaks([r.data.mz]);
-      ms_chart2.selectPeaks([r.parentNode.data.mz]);
-      ms_chart.selectPeaks([r.parentNode.parentNode.data.mz]);
-    }
-  }
-
-  /**
-   * When user selects peak in spectra then select the fragment belonging to peak in fragment tree
-   */
-  function selectFragmentInTree(mz, mslevel) {
-    console.log('Selected peak in lvl'+mslevel+' mspectra with m/z = '+mz);
-    // find fragment based on mz + mslevel
-    var node = fstore.getRootNode().findChildBy(function(n) {
-      return (n.data.mslevel == mslevel && n.data.mz == mz);
-    }, false, true);
-    fgrid.getSelectionModel().select([node]);
-    // TODO unselect peaks of child scans
-  }
 
   var fstore = Ext.create('Ext.data.TreeStore', {
     storeId:'fragmentStore',
@@ -370,12 +446,12 @@ Ext.onReady(function () {
           ms_chart2.selectPeaks([n.data.mz]);
         }
       }
+    },
+    // TreeStore and Store have different function to fetch record by id, add getById to TreeStore
+    getById: function(id) {
+      return this.getNodeById(id);
     }
   });
-  // TreeStore and Store have different function to fetch record by id, add getById to TreeStore
-  fstore.getById = function(id) {
-      return this.getNodeById(id);
-  };
 
   var fgrid = Ext.create('Ext.tree.Panel', {
     id: 'fragmentgrid',
@@ -413,82 +489,6 @@ Ext.onReady(function () {
       // TODO on collapse clear child scans
     }
   });
-
-  /**
-   * Removes scan filter from metabolite store
-   */
-  function removeScanFilter() {
-    var scanfilter;
-    // see if already filtered on scanid then remove old filter
-    if ('scanid' in mstore.getProxy().extraParams) {
-      delete(mstore.getProxy().extraParams.scanid);
-      mstore.loadPage(1);
-    }
-  }
-
-  function loadMSpectra1(scanid, onload) {
-    console.log('Loading msspectra level 1 with id '+scanid);
-    // load msspectra level 1
-    d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
-      Ext.getCmp('mspectra1panel').header.setTitle('Scan '+scanid+' (Level 1)');
-      ms_chart.setData(data);
-      // TODO add markers of metabolites in this scan
-      if (onload) {
-        onload();
-      }
-    });
-  }
-
-  function loadMSpectra2(scanid, markers) {
-    console.log('Loading msspectra level 2 with id '+scanid);
-    // load msspectra level 2
-    d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
-      Ext.getCmp('mspectra2panel').header.setTitle('Scan '+scanid+' (Level 2)');
-      ms_chart2.setData(data);
-      ms_chart2.setMarkers(markers);
-    });
-  }
-
-  function loadMSpectra3(scanid, markers) {
-    console.log('Loading msspectra level 3 with id '+scanid);
-    // load msspectra level 3
-    d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
-      Ext.getCmp('mspectra3panel').header.setTitle('Scan '+scanid+' (Level 3)');
-      ms_chart3.setData(data);
-      ms_chart3.setMarkers(markers);
-    });
-  }
-
-  function selectScan(scanid) {
-    console.log('select scan '+scanid);
-    removeScanFilter();
-    clearFragments();
-    // if metabolite has been selected
-    // and scanid is hit of metabolite then show fragments with this metabolite and scan
-    // else filter mstore and load scan
-    if (
-        mgrid.getSelectionModel().selected.getCount() > 0
-        &&
-        mgrid.getSelectionModel().selected.getAt(0).data.scans.indexOf(scanid) != -1
-    ) {
-      loadMSpectra1(scanid, function() {
-        loadFragments(scanid, mgrid.getSelectionModel().selected.getAt(0).data.metid);
-      });
-    } else {
-      mstore.getProxy().extraParams.scanid = scanid;
-      mstore.loadPage(1);
-      loadMSpectra1(scanid);
-      // TODO in spectra add markers for metabolites present in scan
-    }
-  }
-
-  function unSelectScan() {
-    removeScanFilter();
-    clearFragments();
-    // unload mspectra1
-    ms_chart.setData([]);
-    Ext.getCmp('mspectra1panel').header.setTitle('Scan ... (Level 1)');
-  }
 
   lc_chart = Ext.create('Ext.esc.Chromatogram', {
     cutoff: ${cutoff},
@@ -535,187 +535,135 @@ Ext.onReady(function () {
     }
   });
 
-  Ext.define('Scan', {
-    extend: 'Ext.data.Model',
-    fields: [
-      { name:'id', type: 'int' }, // num in mzxml
-      { name:'msLevel', type: 'int' },
-      { name:'precursorMz', type: 'float' }
-    ]
+  var master_side = Ext.create('Ext.panel.Panel', {
+	  // master side
+	  region: 'center',
+	  layout: 'border',
+	  border: false,
+	  items:[{
+      region:'center',
+      title: 'Query molecules & Metabolites',
+      layout: 'fit',
+      border: false,
+      items: [
+        mgrid,
+      ]
+	  },{
+      title:'Chromatogram',
+      region:'south',
+      hideCollapseTool: true,
+      collapsible: true,
+      height: '50%',
+      split: true,
+      layout: 'fit',
+      items:[lc_chart],
+      border: false,
+      tools:[{
+        type:'maximize',
+        tooltip: 'Reset zoom',
+        handler: function() {
+          lc_chart.resetZoom();
+        }
+      },{
+        type:'search',
+        tooltip: 'Select scan by identifier',
+        handler: function() {
+          Ext.MessageBox.prompt('Scan#', 'Please enter scan identifier:', function(b,v) {
+            if (b != 'cancel' && v) {
+             v = v*1;
+             lc_chart.selectScans([v]);
+             selectScan(v);
+            }
+          });
+        }
+      },{
+        type:'restore',
+        tooltip:'Clear scan selection',
+        handler: function() {
+          lc_chart.clearScanSelection();
+          unSelectScan();
+        }
+      }]
+	  }]
   });
 
-  scan_store = Ext.create('Ext.data.TreeStore', {
-    model: 'Scan',
-    proxy: {
-      type: 'ajax',
-      url: '${request.route_url('scantree.json')}'
-    },
-  });
-
-  scan_tree = Ext.create('Ext.tree.Panel', {
-    store: scan_store,
-    rootVisible: false,
-    columns: [{
-      xtype: 'treecolumn',
-      text: 'Scan',
-      flex: 2,
-      dataIndex: 'id',
+  // detail side
+  var detail_side = Ext.create('Ext.panel.Panel', {
+    region: 'east',
+    split: true,
+    collapsible: true,
+    layout: 'border',
+    width: 600,
+    hideCollapseTool: true,
+    border: false,
+    items:[{
+      region: 'center',
+      id: 'fragmentspanel',
+      title: 'Fragments',
+      items: [fgrid],
+      layout: 'fit',
+      border: false
     },{
-      text: 'Level',
-      dataIndex: 'msLevel',
-      flex: 1,
-    },{
-      text: 'Precursor',
-      dataIndex: 'precursorMz',
-      flex: 1,
+      region:'south',
+      height: '50%',
+      layout: 'border',
+      split: true,
+      collapsible: true,
+      hideCollapseTool: true,
+      border: false,
+      items:[{
+        id: 'mspectrapanel',
+        region: 'center',
+        layout: {
+	        type: 'vbox',
+	        align: 'stretch'
+        },
+        border: false,
+        defaults: {
+          flex: 1,
+          layout:'fit',
+          border: false
+        },
+        items:[{
+	        title: 'Scan ... (Level 1)',
+	        id: 'mspectra1panel',
+	        collapsible: true,
+	        tools:[{
+            type:'maximize',
+            tooltip: 'Reset zoom',
+            handler: function() {
+              ms_chart.resetZoom();
+            }
+          }],
+          items: ms_chart
+        },{
+          title: 'Scan ... (Level 2)',
+          id: 'mspectra2panel',
+          items: ms_chart2,
+          collapsible: true,
+          tools:[{
+            type:'maximize',
+            tooltip: 'Reset zoom',
+            handler: function() {
+              ms_chart2.resetZoom();
+            }
+          }]
+        },{
+          title: 'Scan ... (Level 3)',
+          id: 'mspectra3panel',
+          items: ms_chart3,
+          collapsible: true,
+          tools:[{
+            type:'maximize',
+            tooltip: 'Reset zoom',
+            handler: function() {
+              ms_chart3.resetZoom();
+            }
+          }]
+        }]
+      }],
     }]
   });
-
-
-// horizontal split
-function rightleft() {
-
-  var master_side = Ext.create('Ext.panel.Panel', {
-        // master side
-        region: 'center',
-        layout: 'border',
-        border: false,
-        items:[{
-            region:'center',
-            title: 'Query molecules & Metabolites',
-            layout: 'fit',
-            border: false,
-            items: [
-              mgrid,
-            ]
-        },{
-            title:'Chromatogram',
-            region:'south',
-            hideCollapseTool: true,
-            collapsible: true,
-            height: '50%',
-            split: true,
-            layout: 'fit',
-            items:[lc_chart],
-            border: false,
-            tools:[{
-              type:'maximize',
-              tooltip: 'Reset zoom',
-              handler: function() {
-                lc_chart.resetZoom();
-              }
-            },{
-              type:'search',
-              tooltip: 'Select scan by identifier',
-              handler: function() {
-                Ext.MessageBox.prompt('Scan#', 'Please enter scan identifier:', function(b,v) {
-                  if (b != 'cancel' && v) {
-	                  v = v*1;
-	                  lc_chart.selectScans([v]);
-	                  selectScan(v);
-                  }
-                });
-              }
-            },{
-              type:'restore',
-              tooltip:'Clear scan selection',
-              handler: function() {
-                lc_chart.clearScanSelection();
-                unSelectScan();
-              }
-            }]
-        }]
-  });
-
-    var detail_side = Ext.create('Ext.panel.Panel', {
-        // detail side
-        region: 'east',
-        split: true,
-        collapsible: true,
-        layout: 'border',
-//        width: '50%',
-        width: 600,
-        hideCollapseTool: true,
-        border: false,
-        items:[{
-            region: 'center',
-            id: 'fragmentspanel',
-            title: 'Fragments',
-            items: [fgrid],
-            layout: 'fit',
-            border: false
-        },{
-          region:'south',
-          height: '50%',
-          layout: 'border',
-          split: true,
-          collapsible: true,
-          hideCollapseTool: true,
-          border: false,
-          items:[{
-//              title:'Scan - <a href="#">Scan321</a> >> Scan2324',
-              id: 'mspectrapanel',
-              region: 'center',
-              layout: {
-                  type: 'vbox',
-                  align: 'stretch'
-              },
-              border: false,
-              defaults: {
-                flex: 1,
-                layout:'fit',
-                border: false
-              },
-              items:[{
-               title: 'Scan ... (Level 1)',
-               id: 'mspectra1panel',
-               collapsible: true,
-               tools:[{
-	                 type:'maximize',
-	                 tooltip: 'Reset zoom',
-	                 handler: function() {
-	                   ms_chart.resetZoom();
-	                 }
-	               }],
-	               items: ms_chart
-              },{
-                title: 'Scan ... (Level 2)',
-                id: 'mspectra2panel',
-                items: ms_chart2,
-                collapsible: true,
-                tools:[{
-                  type:'maximize',
-                  tooltip: 'Reset zoom',
-                  handler: function() {
-                    ms_chart2.resetZoom();
-                  }
-                }]
-              },{
-                 title: 'Scan ... (Level 3)',
-                 id: 'mspectra3panel',
-	               items: ms_chart3,
-	               collapsible: true,
-	               tools:[{
-	                 type:'maximize',
-	                 tooltip: 'Reset zoom',
-	                 handler: function() {
-	                   ms_chart3.resetZoom();
-	                 }
-	               }]
-              }]
-//           },{
-//               region:'east',
-//               collapsible: true,
-//               collapsed: true,
-//               hideCollapseTool: true,
-//               layout: 'fit',
-//               width: '20%',
-//               split: true,
-// //              title:'Scans',
-//               items:[scan_tree]
-          }],
-        }]
-    });
 
   Ext.create('Ext.Viewport', {
     layout: 'border',
@@ -724,8 +672,6 @@ function rightleft() {
 
   Ext.QuickTips.init();
 }
-
-rightleft();
 
 });
 </script>
