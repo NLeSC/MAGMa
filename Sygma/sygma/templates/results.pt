@@ -237,12 +237,16 @@ Ext.onReady(function () {
     }
   }
 
-  function unSelectScan() {
-    removeScanFilter();
-    clearFragments();
+  function clearMSpectra1() {
     // unload mspectra1
     ms_chart.setData([]);
     Ext.getCmp('mspectra1panel').header.setTitle('Scan ... (Level 1)');
+  }
+
+  function unSelectScan() {
+    removeScanFilter();
+    clearFragments();
+    clearMSpectra1();
   }
 
   function selectMetabolite(metabolite) {
@@ -272,6 +276,9 @@ Ext.onReady(function () {
               // show fragments with this metabolite and scan
               console.log('show fragments of metabolite');
               loadFragments(obj.scans[0], metid);
+            } else {
+              // multiple scans so mspectra1 should be empty
+              clearMSpectra1();
             }
           }
         } else {
@@ -378,11 +385,15 @@ Ext.onReady(function () {
     encode: true,
   });
 
+  var mselmodel = Ext.create('Ext.selection.CheckboxModel', {
+    allowDeselect: true,
+    mode: 'SINGLE'
+  });
+
   var mgrid = Ext.create('Ext.grid.Panel', {
     id: 'metabolitegrid',
     store: mstore,
-    selType:'checkboxmodel',
-    multiSelect: false,
+    selModel: mselmodel,
     autoScroll: true,
     columns: [
       {text: 'ID', dataIndex: 'metid', hidden: true},
@@ -407,7 +418,7 @@ Ext.onReady(function () {
         handler: function() {
           mfilters.clearFilters();
           mstore.filter();
-          lc_chart.clearScanSelection();
+          lc_chart.setMetabolite([]);
           clearFragments();
         }
       }]
@@ -415,10 +426,12 @@ Ext.onReady(function () {
     plugins: [molcol],
     features: [mfilters],
 	  listeners: {
-	    selectionchange: function(m,rs) {
-	      if (rs.length == 0) {
-	        clearFragments();
+	    deselect: function(m,rs) {
+	      if (rs.data.scans.length > 1) {
+	        lc_chart.clearScanSelection();
 	      }
+        lc_chart.setMetabolite([]);
+        clearFragments();
 	    },
 	    select: function(rm,r) {
 	      selectMetabolite(r);
@@ -634,7 +647,7 @@ Ext.onReady(function () {
           });
         }
       },{
-        type:'restore',
+        type:'refresh',
         tooltip:'Clear scan selection',
         handler: function() {
           lc_chart.clearScanSelection();
