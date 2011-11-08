@@ -143,17 +143,6 @@ Ext.define('Ext.esc.AbstractD3', {
   initScales: Ext.emptyFn,
   onDataReady: Ext.emptyFn,
   /**
-   * Reset zoom.
-   */
-  resetZoom: function() {
-    // reset d3.behavior.zoom, by overwriting
-    d3.select(this.body.dom).select('svg').call(
-        d3.behavior.zoom().on("zoom", this.redraw.bind(this) )
-    );
-    this.initScales();
-    this.redraw();
-  },
-  /**
    * Stuffs data into chromatogram.
    * @param data
    */

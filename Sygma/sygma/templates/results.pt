@@ -629,12 +629,6 @@ Ext.onReady(function () {
       items:[lc_chart],
       border: false,
       tools:[{
-        type:'maximize',
-        tooltip: 'Reset zoom',
-        handler: function() {
-          lc_chart.resetZoom();
-        }
-      },{
         type:'search',
         tooltip: 'Select scan by identifier',
         handler: function() {
@@ -698,38 +692,17 @@ Ext.onReady(function () {
 	        title: 'Scan ... (Level 1)',
 	        id: 'mspectra1panel',
 	        collapsible: true,
-	        tools:[{
-            type:'maximize',
-            tooltip: 'Reset zoom',
-            handler: function() {
-              ms_chart.resetZoom();
-            }
-          }],
           items: ms_chart
         },{
           title: 'Scan ... (Level 2)',
           id: 'mspectra2panel',
           items: ms_chart2,
-          collapsible: true,
-          tools:[{
-            type:'maximize',
-            tooltip: 'Reset zoom',
-            handler: function() {
-              ms_chart2.resetZoom();
-            }
-          }]
+          collapsible: true
         },{
           title: 'Scan ... (Level 3)',
           id: 'mspectra3panel',
           items: ms_chart3,
-          collapsible: true,
-          tools:[{
-            type:'maximize',
-            tooltip: 'Reset zoom',
-            handler: function() {
-              ms_chart3.resetZoom();
-            }
-          }]
+          collapsible: true
         }]
       }],
     }]
