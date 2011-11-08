@@ -9,8 +9,12 @@ from sqlalchemy import and_
 from sqlalchemy.orm.exc import NoResultFound
 import simplejson as json
 
-@view_config(route_name='home', renderer='templates/results.pt')
-def index(request):
+@view_config(route_name='home', renderer='templates/home.pt')
+def home(request):
+    return {}
+
+@view_config(route_name='results', renderer='templates/results.pt')
+def results(request):
     return { 'cutoff': 200000 }
 
 def extjsgridfilter(q,column,filter):

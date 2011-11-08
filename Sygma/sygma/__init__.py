@@ -11,6 +11,7 @@ def main(global_config, **settings):
     config = Configurator(settings=settings)
     config.add_static_view('static', 'sygma:static', cache_max_age=3600)
     config.add_route('home','/')
+    config.add_route('results','/results')
     config.add_route('metabolites.json', '/metabolites.json')
     config.add_route('fragments.json', '/fragments/{scanid}/{metid}.json')
     config.add_route('chromatogram.json', '/chromatogram.json')
