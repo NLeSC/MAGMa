@@ -10,6 +10,7 @@ pyramid.default_locale_name = en
 pyramid.includes = pyramid_tm
 
 sqlalchemy.url = sqlite:///%(here)s/Sygma.db
+mako.directories = sygma:templates
 
 [server:main]
 use = egg:Paste#http

@@ -9,11 +9,11 @@ from sqlalchemy import and_
 from sqlalchemy.orm.exc import NoResultFound
 import simplejson as json
 
-@view_config(route_name='home', renderer='templates/home.pt')
+@view_config(route_name='home', renderer='templates/home.mak')
 def home(request):
     return dict()
 
-@view_config(route_name='results', renderer='templates/results.pt')
+@view_config(route_name='results', renderer='results.mak')
 def results(request):
     run = DBSession().query(Run).one()
     maxmslevel = DBSession().query(func.max(Scan.mslevel)).scalar()
