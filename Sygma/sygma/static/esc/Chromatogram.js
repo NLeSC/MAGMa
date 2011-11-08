@@ -202,6 +202,11 @@ Ext.define('Ext.esc.Chromatogram', {
     this.markerSelect(function(d) {
       return !(scanids.indexOf(d.id) == -1);
     });
+    if (scanids.length == 1) {
+       this.selectedscan = scanids[0];
+     } else if (scanid.length == 0) {
+       this.selectedscan = -1;
+     }
   },
   /**
    * Clears any selected scans
