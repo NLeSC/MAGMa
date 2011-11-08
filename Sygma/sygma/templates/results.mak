@@ -509,13 +509,18 @@ Ext.onReady(function () {
           );
           mspectras[1].selectPeaks([n.data.mz]);
         } else if (n.data.mslevel >= 2) {
-          console.log('Loaded lvl3 fragments of metabolite ');
+          console.log('Loaded lvl'+(n.data.mslevel+1)+' fragments of metabolite ');
           // load the scan of first child
           // add mz of metabolites as markers to lvl3 scan
           loadMSpectra3(
             n.data.mslevel+1,
             rs[0].data.scanid,
-            rs.map(function(r) { return {mz: r.data.mz}; })
+            rs.map(function(r) { return {mz: r.data.mz}; }),
+            function() {
+              // fgrid.refresh event is called before canvas have been rendered
+              // force fragment molecule rendering, hopyfully canvas have been rendered after spectra has been loaded
+              fmolcol.initCanvases();
+            }
           );
           // TODO select parent peaks if n.data.mslevel>2
           mspectras[2].selectPeaks([n.data.mz]);
@@ -550,7 +555,7 @@ Ext.onReady(function () {
     ],
     plugins: [fmolcol],
     viewConfig: {
-      // animate is default true causing refresh to be blocked
+      // animate is default true causing refresh event to be blocked
       // we use refresh event to render molecules
       // so after expanding a node the refresh was not fired causing all prev. rendered mols to disappear
       // now we turn off animate, so refresh events are fired and mols can be rendered
