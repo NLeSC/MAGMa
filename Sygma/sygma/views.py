@@ -152,7 +152,8 @@ def metabolitescans(request):
 @view_config(route_name='fragments.json', renderer='json')
 def fragments(request):
     node = request.params['node']
-    q = DBSession().query(Fragment,Metabolite.mol,Scan.mslevel).join(Metabolite).join(Scan)
+    def q():
+        return DBSession().query(Fragment,Metabolite.mol,Scan.mslevel).join(Metabolite).join(Scan)
 
     def fragment2json(row):
         (frag, mol, mslevel) = row
@@ -178,18 +179,22 @@ def fragments(request):
 
     # parent metabolite
     if (node == ''):
-        q = q.filter(
-            Fragment.scanid==request.matchdict['scanid']).filter(
-            Fragment.metid==request.matchdict['metid']).filter(
-            Fragment.parentfragid==0)
         try:
-            row = q.one()
+            row = q().filter(
+                Fragment.scanid==request.matchdict['scanid']).filter(
+                Fragment.metid==request.matchdict['metid']).filter(
+                Fragment.parentfragid==0).one()
         except NoResultFound:
             return HTTPNotFound();
-        return { 'children': fragment2json(row), 'expanded': True}
+        metabolite = fragment2json(row)
+        metabolite['children'] = []
+        for frow in q().filter(Fragment.parentfragid==metabolite['fragid']):
+            metabolite['expanded'] = True
+            metabolite['children'].append(fragment2json(frow))
+        return { 'children': metabolite, 'expanded': True}
     # fragments
     else:
         fragments = []
-        for row in q.filter(Fragment.parentfragid==node):
+        for row in q().filter(Fragment.parentfragid==node):
             fragments.append(fragment2json(row))
         return fragments

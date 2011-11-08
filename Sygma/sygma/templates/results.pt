@@ -163,8 +163,10 @@ Ext.onReady(function () {
   function loadMSpectra1(scanid, onload) {
     console.log('Loading msspectra level 1 with id '+scanid);
     // load msspectra level 1
+    ms_chart.setLoading(true);
     d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
       Ext.getCmp('mspectra1panel').header.setTitle('Scan '+scanid+' (Level 1)');
+      ms_chart.setLoading(true);
       ms_chart.scanid = scanid;
       ms_chart.setData(data);
       // TODO add markers of metabolites in this scan
@@ -177,8 +179,10 @@ Ext.onReady(function () {
   function loadMSpectra2(scanid, markers, onload) {
     console.log('Loading msspectra level 2 with id '+scanid);
     // load msspectra level 2
+    ms_chart2.setLoading(true);
     d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
       Ext.getCmp('mspectra2panel').header.setTitle('Scan '+scanid+' (Level 2)');
+      ms_chart2.setLoading(false);
       ms_chart2.scanid = scanid;
       ms_chart2.setData(data);
       ms_chart2.setMarkers(markers);
@@ -457,6 +461,14 @@ Ext.onReady(function () {
           ms_chart.setMarkers(
             rs.map(function(r) { return {mz: r.data.mz}; })
           );
+          var metabolite_fragment = rs[0];
+          ms_chart.selectPeaks([metabolite_fragment.data.mz]);
+          if (metabolite_fragment.hasChildNodes()) {
+            loadMSpectra2(
+              metabolite_fragment.data.scanid,
+              metabolite_fragment.childNodes.map(function(r) { return {mz: r.data.mz}; })
+            );
+          }
         } else if (n.data.mslevel == 1) {
           console.log('Loaded lvl2 fragments of metabolite ');
           // load the scan of first child
