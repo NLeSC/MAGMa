@@ -91,7 +91,7 @@ Ext.define('Ext.esc.Chromatogram', {
     var me = this;
     this.initScales();
     this.axes.x = d3.svg.axis().scale(this.scales.x).ticks(this.ticks.x);
-    this.axes.y = d3.svg.axis().scale(this.scales.y).ticks(this.ticks.y).orient("left");
+    this.axes.y = d3.svg.axis().scale(this.scales.y).ticks(this.ticks.y).orient("left").tickFormat(d3.format('.2e'));
 
     // Add the x-axis.
     this.svg.append("svg:g")

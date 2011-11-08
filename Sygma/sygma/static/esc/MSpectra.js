@@ -89,7 +89,7 @@ Ext.define('Ext.esc.MSpectra', {
     var me = this;
     this.initScales();
     this.axes.x = d3.svg.axis().scale(this.scales.x).ticks(this.ticks.x);
-    this.axes.y = d3.svg.axis().scale(this.scales.y).ticks(this.ticks.y).orient("left");
+    this.axes.y = d3.svg.axis().scale(this.scales.y).ticks(this.ticks.y).orient("left").tickFormat(d3.format('.2e'));
 
     // Add the x-axis.
     this.svg.append("svg:g")
@@ -106,12 +106,6 @@ Ext.define('Ext.esc.MSpectra', {
     this.svg.append("svg:g")
         .attr("class", "y axis")
         .call(this.axes.y)
-        .append("svg:text")
-          .attr("y",this.chartHeight/2)
-          .attr("x",-5)
-          .attr("text-anchor", "middle")
-          .attr("transform", "rotate(-90,"+-5+","+this.chartHeight/2+")" )
-          .text('Intensity')
     ;
 
     // cutoff
