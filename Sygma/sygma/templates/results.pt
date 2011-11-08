@@ -562,7 +562,7 @@ Ext.onReady(function () {
   });
 
   lc_chart = Ext.create('Ext.esc.Chromatogram', {
-    cutoff: ${cutoff},
+    cutoff: ${run.ms_intensity_cutoff},
     emptyText: 'Loading chromatogram ...',
     listeners: {
       selectscan: selectScan,

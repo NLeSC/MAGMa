@@ -11,11 +11,13 @@ import simplejson as json
 
 @view_config(route_name='home', renderer='templates/home.pt')
 def home(request):
-    return {}
+    return dict()
 
 @view_config(route_name='results', renderer='templates/results.pt')
 def results(request):
-    return { 'cutoff': 200000 }
+    run = DBSession().query(Run).one()
+    maxmslevel = DBSession().query(func.max(Scan.mslevel)).scalar()
+    return dict(run=run, maxmslevel=maxmslevel)
 
 def extjsgridfilter(q,column,filter):
     if (filter['type'] == 'numeric'):
@@ -158,7 +160,7 @@ def metabolitescans(request):
     # fetch avg mz of metabolite fragment
     mzq = DBSession().query(func.avg(Fragment.mz)).filter(Fragment.metid==metid).filter(Fragment.parentfragid==0).scalar()
     if (mzq):
-        mzoffset = 0.005
+        mzoffset = DBSession().query(Run.mz_precision).scalar()
         # fetch max intensity of peaks with mz = mzq+-mzoffset
         for (rt,intens) in DBSession().query(Scan.rt,func.max(Peak.intensity)).outerjoin(Peak, and_(Peak.scanid==Scan.scanid,Peak.mz.between(mzq-mzoffset,mzq+mzoffset))).filter(Scan.mslevel==1).group_by(Scan.rt).order_by(asc(Scan.rt)):
             chromatogram.append({
