@@ -9,7 +9,7 @@ from sqlalchemy import and_
 from sqlalchemy.orm.exc import NoResultFound
 import simplejson as json
 
-@view_config(route_name='home', renderer='templates/home.mak')
+@view_config(route_name='home', renderer='home.mak')
 def home(request):
     return dict()
 
