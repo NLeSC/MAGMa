@@ -437,7 +437,9 @@ Ext.onReady(function () {
       molcol,
       {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: [0,1,2,3] }, hidden:true},
       {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }},
-      {text: 'Reaction seq.', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }},
+      {text: 'Reaction seq.', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }, renderer: function(v) {
+    	  return '<ol><li>'+v.replace("\n","</li><li>")+'</li></ol>';
+      }},
       {text: 'Scans', dataIndex: 'nr_scans', filter: { type: 'numeric' }},
       {text: 'Smile', dataIndex: 'smiles', hidden:true},
       {text: 'Formula', dataIndex: 'molformula', filter: { type: 'string' }},
