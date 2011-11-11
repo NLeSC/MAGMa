@@ -222,10 +222,16 @@ Ext.define('Ext.esc.Chromatogram', {
     this.selectedscan = -1;
   },
   setMarkers: function(data) {
+	if (this.selectedscan != -1) {
+		var selectedScan = this.selectedscan;
+	}
     this.clearScanSelection();
     this.svg.selectAll('.marker').remove();
     this.markers = data;
     this.onMarkersReady();
+    if (selectedScan) {
+    	this.selectScans([selectedScan]);
+    }
   },
   hasMarkers: function() {
     return (this.markers.length>0);

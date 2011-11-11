@@ -231,7 +231,9 @@ Ext.onReady(function () {
     if (
         mgrid.getSelectionModel().selected.getCount() > 0
         &&
-        mgrid.getSelectionModel().selected.getAt(0).data.scans.indexOf(scanid) != -1
+        mgrid.getSelectionModel().selected.getAt(0).data.scans.some(
+          function(e) { return (e.id == scanid); }
+        )
     ) {
       loadMSpectra1(scanid, function() {
         loadFragments(scanid, mgrid.getSelectionModel().selected.getAt(0).data.metid);
@@ -269,20 +271,33 @@ Ext.onReady(function () {
         if (obj.scans.length) {
           // if one scan has already been selected test if its a member of the scans of selected metabolite
           // if so then show fragments
-          if (lc_chart.selectedscan != -1 && obj.scans.indexOf(lc_chart.selectedscan) != -1) {
+          if (
+            lc_chart.selectedscan != -1 &&
+            obj.scans.some(function(e) {
+              return (e.id == lc_chart.selectedscan);
+            })
+          ) {
             console.log('Selected metabolite and its one scan is selected');
             loadFragments(lc_chart.selectedscan, metid);
           } else {
             console.log('Selecting scans of metabolite');
-            lc_chart.selectScans(obj.scans);
+            if (lc_chart.selectedscan != -1) {
+              lc_chart.setMarkers(obj.scans);
+            } else {
+              var selectedScan = lc_chart.selectedscan;
+              lc_chart.setMarkers(obj.scans);
+              lc_chart.selectScans([selectedScan]);
+            }
             // if metabolite has only one scan hit then show that scan and fragments
             if (obj.scans.length == 1) {
+              var selectedScan = obj.scans[0].id;
               // show scan where metabolite had its hit
               console.log('show scan where metabolite had its hit');
-              loadMSpectra1(obj.scans[0]);
+              lc_chart.selectScans([selectedScan]);
+              loadMSpectra1(selectedScan);
               // show fragments with this metabolite and scan
               console.log('show fragments of metabolite');
-              loadFragments(obj.scans[0], metid);
+              loadFragments(selectedScan, metid);
             } else {
               // multiple scans so mspectra1 should be empty
               clearMSpectra1();
@@ -294,6 +309,15 @@ Ext.onReady(function () {
         }
       }
     });
+  }
+
+  function setChromatogramMarkersByMetaboliteFilter() {
+  var store = Ext.StoreMgr.get('metabolites');
+    if (store.isLoaded && lc_chart.hasData()) {
+      console.log('Setting chromatogram markers');
+      var markers = store.getProxy().getReader().rawData.scans;
+    lc_chart.setMarkers(markers);
+  }
   }
 
   Ext.define('Metabolite', {
@@ -359,7 +383,7 @@ Ext.onReady(function () {
 
   var pageSize = 10;
   var mstore = Ext.create('Ext.data.Store', {
-    storeId:'sampleStore',
+    storeId:'metabolites',
     model:'Metabolite',
     pageSize: pageSize,
     proxy: {
@@ -381,6 +405,13 @@ Ext.onReady(function () {
     autoLoad: true,
     remoteSort: true,
     remoteFilter: true,
+    isLoaded: false,
+    listeners: {
+        load: function(store) {
+          this.isLoaded = true;
+          setChromatogramMarkersByMetaboliteFilter();
+        }
+    }
  });
 
   var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
@@ -434,8 +465,8 @@ Ext.onReady(function () {
     listeners: {
       deselect: function(m,rs) {
         if (rs.data.scans.length > 1) {
-          lc_chart.clearScanSelection();
         }
+        setChromatogramMarkersByMetaboliteFilter();
         lc_chart.setMetabolite([]);
         clearFragments();
       },
@@ -455,7 +486,7 @@ Ext.onReady(function () {
     canvasClass: 'x-chemdoodle-cols2',
     width: 162,
     initCanvas:function(id, width, height, value,record) {
-      var c = new ChemDoodle.TransformCanvas(id, width, height,true);
+      var c = new ChemDoodle.ViewerCanvas(id, width, height,true);
       c.specs.bonds_color = 'cyan';
       c.specs.atoms_color = 'cyan';
       var m = ChemDoodle.readMOL(value);
@@ -583,9 +614,7 @@ Ext.onReady(function () {
   });
   d3.json('${request.route_url('chromatogram.json')}', function(data) {
     lc_chart.setData(data);
-    d3.json('${request.route_url('chromatogram/hits.json')}', function(data) {
-      lc_chart.setMarkers(data);
-    });
+    setChromatogramMarkersByMetaboliteFilter();
   });
 
   var msspectrapanels = [];

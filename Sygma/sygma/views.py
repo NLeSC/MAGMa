@@ -97,7 +97,31 @@ def metabolitesjson(request):
         }
         mets.append(r)
 
-    return { 'total': total, 'rows': mets }
+    return { 'total': total, 'rows': mets, 'scans': extracted_ion_chromatogram(request.params) }
+
+def extracted_ion_chromatogram(params):
+    # use all scans where metabolite fragments hit
+    fq = DBSession.query(Fragment.scanid).filter(Fragment.parentfragid==0)
+    if (params):
+        if ('metid' in params):
+            fq = fq.filter(Fragment.metid==params['metid'])
+        if ('scanid' in params):
+            fq = fq.filter(Fragment.scanid==params['scanid'])
+        if ('filter' in params):
+            fq = fq.join(Metabolite)
+            for filter in json.loads(params['filter']):
+                if (filter['field'] != 'nr_scans'):
+                    fq = extjsgridfilter(fq, Metabolite.__dict__[filter['field']], filter)
+
+    hits = []
+    for hit in DBSession.query(Scan.rt,Scan.scanid).filter_by(mslevel=1).filter(Scan.scanid.in_(fq)):
+        hits.append({
+            'id': hit.scanid,
+            'rt': hit.rt
+        })
+
+    return hits
+
 
 @view_config(route_name='chromatogram.json', renderer='json')
 def chromatogramjson(request):
@@ -157,9 +181,6 @@ def scantree(request):
 @view_config(route_name='metabolite/scans.json', renderer='json')
 def metabolitescans(request):
     metid = request.matchdict['id']
-    scans = []
-    for frag in DBSession().query(Fragment.scanid).filter(Fragment.metid==metid).filter(Fragment.parentfragid==0):
-        scans.append(frag.scanid)
     chromatogram = []
     # fetch avg mz of metabolite fragment
     mzq = DBSession().query(func.avg(Fragment.mz)).filter(Fragment.metid==metid).filter(Fragment.parentfragid==0).scalar()
@@ -171,7 +192,10 @@ def metabolitescans(request):
                 'rt': rt,
                 'intensity': intens or 0
             })
-    return {'scans': scans, 'chromatogram': chromatogram}
+    return {
+        'chromatogram': chromatogram,
+        'scans': extracted_ion_chromatogram({ 'metid': metid })
+    }
 
 @view_config(route_name='fragments.json', renderer='json')
 def fragments(request):
