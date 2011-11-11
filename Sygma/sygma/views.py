@@ -143,7 +143,11 @@ def mspectrajson(request):
             'intensity': peak.intensity
         })
 
-    cutoff = DBSession().query(Scan.basepeakintensity*Run.msms_intensity_cutoff).filter(Scan.scanid==scanid).scalar()
+    if (DBSession().query(Scan.mslevel).filter(Scan.scanid==scanid).scalar() == 1):
+        cutoff = DBSession().query(Run.ms_intensity_cutoff).scalar()
+    else:
+        cutoff = DBSession().query(Scan.basepeakintensity*Run.msms_intensity_cutoff).filter(Scan.scanid==scanid).scalar()
+
     return { 'peaks': peaks, 'cutoff': cutoff }
 
 @view_config(route_name='scantree.json', renderer='json')

@@ -196,6 +196,7 @@ Ext.onReady(function () {
       Ext.getCmp('mspectra2panel').header.setTitle('Scan '+scanid+' (Level 2)');
       mspectras[2].setLoading(false);
       mspectras[2].scanid = scanid;
+      mspectras[2].cutoff = data.cutoff;
       mspectras[2].setData(data.peaks);
       mspectras[2].setMarkers(markers);
       if (onload) {
@@ -211,6 +212,7 @@ Ext.onReady(function () {
       Ext.getCmp('mspectra3panel').header.setTitle('Scan '+scanid+' (Level '+mslevel+')');
       mspectras[mslevel].setLoading(false);
       mspectras[mslevel].scanid = scanid;
+      mspectras[mslevel].cutoff = data.cutoff;
       mspectras[mslevel].setData(data.peaks);
       mspectras[mslevel].setMarkers(markers);
       if (onload) {
