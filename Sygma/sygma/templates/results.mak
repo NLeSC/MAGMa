@@ -267,7 +267,7 @@ Ext.onReady(function () {
       success: function(response) {
         var obj = Ext.decode(response.responseText);
         metabolite.data.scans = obj.scans;
-        lc_chart.setMetabolite(obj.chromatogram);
+        lc_chart.setExtractedIonChromatogram(obj.chromatogram);
         if (obj.scans.length) {
           // if one scan has already been selected test if its a member of the scans of selected metabolite
           // if so then show fragments
@@ -455,7 +455,7 @@ Ext.onReady(function () {
         handler: function() {
           mfilters.clearFilters();
           mstore.filter();
-          lc_chart.setMetabolite([]);
+          lc_chart.setExtractedIonChromatogram([]);
           clearFragments();
         }
       }]
@@ -467,7 +467,7 @@ Ext.onReady(function () {
         if (rs.data.scans.length > 1) {
         }
         setChromatogramMarkersByMetaboliteFilter();
-        lc_chart.setMetabolite([]);
+        lc_chart.setExtractedIonChromatogram([]);
         clearFragments();
       },
       select: function(rm,r) {

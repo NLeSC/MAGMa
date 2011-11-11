@@ -279,7 +279,7 @@ Ext.define('Ext.esc.Chromatogram', {
   /**
    * @param data Array of rt and max intensity of a metabolite
    */
-  setMetabolite: function(data) {
+  setExtractedIonChromatogram: function(data) {
     this.metabolitedata = data;
     this.svg.selectAll('path.metaboliteline').remove();
     this.svg.append('svg:path')
