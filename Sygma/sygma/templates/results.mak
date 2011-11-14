@@ -256,9 +256,7 @@ Ext.onReady(function () {
   }
 
   function clearMSpectra1() {
-    // unload mspectra1
-    mspectras[1].setData([]);
-    Ext.getCmp('mspectra1panel').header.setTitle('Scan ... (Level 1)');
+    clearMSpectra(1);
   }
 
   function unSelectScan() {
@@ -457,6 +455,10 @@ Ext.onReady(function () {
       {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
       {text: 'Name', dataIndex: 'origin', hidden: true, filter: { type: 'string' }},
     ],
+    scroll: false,
+    viewConfig: {
+      autoScroll: true,
+    },
     pageSize: pageSize,
     dockedItems: [{
       xtype: 'pagingtoolbar',
