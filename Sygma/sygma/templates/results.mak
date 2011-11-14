@@ -133,7 +133,7 @@ Ext.onReady(function () {
       if (mspectras[r.data.mslevel].scanid == r.data.scanid) {
         mspectras[r.data.mslevel].selectPeaks([r.data.mz]);
       } else {
-        loadMSpectra3(
+        loadMSpectra(
           r.data.mslevel,
           r.data.scanid,
           r.parentNode.childNodes.map(function(rn) { return {mz: rn.data.mz}; }),
@@ -172,43 +172,27 @@ Ext.onReady(function () {
   }
 
   function loadMSpectra1(scanid, onload) {
-    console.log('Loading msspectra level 1 with id '+scanid);
-    // load msspectra level 1
-    mspectras[1].setLoading(true);
-    d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
-      Ext.getCmp('mspectra1panel').header.setTitle('Scan '+scanid+' (Level 1)');
-      mspectras[1].setLoading(false);
-      mspectras[1].scanid = scanid;
-      mspectras[1].cutoff = data.cutoff;
-      mspectras[1].setData(data.peaks);
-      // TODO add markers of metabolites in this scan
-      if (onload) {
-        onload();
-      }
-    });
+    loadMSpectra(1, scanid, [], onload);
   }
 
   function loadMSpectra2(scanid, markers, onload) {
-    console.log('Loading msspectra level 2 with id '+scanid);
-    // load msspectra level 2
-    mspectras[2].setLoading(true);
-    d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
-      Ext.getCmp('mspectra2panel').header.setTitle('Scan '+scanid+' (Level 2)');
-      mspectras[2].setLoading(false);
-      mspectras[2].scanid = scanid;
-      mspectras[2].cutoff = data.cutoff;
-      mspectras[2].setData(data.peaks);
-      mspectras[2].setMarkers(markers);
-      if (onload) {
-        onload();
-      }
-    });
+    loadMSpectra(2, scanid, markers, onload);
   }
 
-  function loadMSpectra3(mslevel,scanid, markers, onload) {
+  function loadMSpectra(mslevel, scanid, markers, onload) {
     console.log('Loading msspectra level '+mslevel+' with id '+scanid);
     mspectras[mslevel].setLoading(true);
-    d3.json('${request.application_url}/mspectra/'+scanid+'.json', function(data) {
+    d3.json('${request.application_url}/mspectra/'+scanid+'.json?mslevel='+mslevel, function(data) {
+      if (!data) {
+        Ext.MessageBox.show({
+          title: 'Unable to find scan',
+          msg: 'Level '+mslevel+' scan with id '+scanid+' was not found',
+          buttons: Ext.MessageBox.OK,
+          icon: Ext.MessageBox.ERROR
+        });
+        mspectras[mslevel].setLoading(false);
+        return;
+      }
       Ext.getCmp('mspectra3panel').header.setTitle('Scan '+scanid+' (Level '+mslevel+')');
       mspectras[mslevel].setLoading(false);
       mspectras[mslevel].scanid = scanid;
@@ -239,9 +223,10 @@ Ext.onReady(function () {
         loadFragments(scanid, mgrid.getSelectionModel().selected.getAt(0).data.metid);
       });
     } else {
-      mstore.getProxy().extraParams.scanid = scanid;
-      mstore.loadPage(1);
-      loadMSpectra1(scanid);
+      loadMSpectra1(scanid, function() {
+        mstore.getProxy().extraParams.scanid = scanid;
+        mstore.loadPage(1);
+      });
       // TODO in spectra add markers for metabolites present in scan
     }
   }
@@ -547,7 +532,7 @@ Ext.onReady(function () {
           console.log('Loaded lvl'+(n.data.mslevel+1)+' fragments of metabolite ');
           // load the scan of first child
           // add mz of metabolites as markers to lvl3 scan
-          loadMSpectra3(
+          loadMSpectra(
             n.data.mslevel+1,
             rs[0].data.scanid,
             rs.map(function(r) { return {mz: r.data.mz}; }),
@@ -668,9 +653,9 @@ Ext.onReady(function () {
       border: false,
       tools:[{
         type:'search',
-        tooltip: 'Select scan by identifier',
+        tooltip: 'Select lvl1 scan by identifier',
         handler: function() {
-          Ext.MessageBox.prompt('Scan#', 'Please enter scan identifier:', function(b,v) {
+          Ext.MessageBox.prompt('Scan#', 'Please enter a level 1 scan identifier:', function(b,v) {
             if (b != 'cancel' && v) {
              v = v*1;
              lc_chart.selectScans([v]);

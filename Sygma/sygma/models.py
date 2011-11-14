@@ -47,7 +47,7 @@ class Scan(Base):
     precursorintensity = Column(Float)
     precursorscanid = Column(Integer, ForeignKey('scans.scanid'))
     peaks = relationship('Peak', backref='scan')
-    precursor = relationship('Scan')
+    products = relationship('Scan', backref=backref('precursor', remote_side=[scanid]))
     fragments = relationship('Fragment', backref='scan')
 
 class Peak(Base):

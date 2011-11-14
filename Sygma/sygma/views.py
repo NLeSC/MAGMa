@@ -160,6 +160,21 @@ def chromatogram_hits(request):
 def mspectrajson(request):
     dbsession = DBSession()
     scanid = request.matchdict['id']
+    scanq = DBSession().query(Scan).filter(Scan.scanid==scanid)
+    if ('mslevel' in request.params):
+        scanq = scanq.filter(Scan.mslevel==request.params['mslevel'])
+
+    try:
+        scan = scanq.one()
+    except NoResultFound:
+        return HTTPNotFound()
+
+    # lvl1 scans use absolute cutoff, lvl>1 use ratio of basepeak as cutoff
+    if (scan.mslevel == 1):
+        cutoff = DBSession().query(Run.ms_intensity_cutoff).scalar()
+    else:
+        cutoff = DBSession().query(Scan.basepeakintensity*Run.msms_intensity_cutoff).filter(Scan.scanid==scanid).scalar()
+
     peaks = []
     for peak in dbsession.query(Peak).filter_by(scanid=scanid):
         peaks.append({
@@ -167,12 +182,7 @@ def mspectrajson(request):
             'intensity': peak.intensity
         })
 
-    if (DBSession().query(Scan.mslevel).filter(Scan.scanid==scanid).scalar() == 1):
-        cutoff = DBSession().query(Run.ms_intensity_cutoff).scalar()
-    else:
-        cutoff = DBSession().query(Scan.basepeakintensity*Run.msms_intensity_cutoff).filter(Scan.scanid==scanid).scalar()
-
-    return { 'peaks': peaks, 'cutoff': cutoff }
+    return { 'peaks': peaks, 'cutoff': cutoff, 'mslevel': scan.mslevel, 'precursor': { 'id': scan.precursorscanid, 'mz': scan.precursormz } }
 
 @view_config(route_name='scantree.json', renderer='json')
 def scantree(request):
@@ -233,7 +243,7 @@ def fragments(request):
                 Fragment.metid==request.matchdict['metid']).filter(
                 Fragment.parentfragid==0).one()
         except NoResultFound:
-            return HTTPNotFound();
+            return HTTPNotFound()
         metabolite = fragment2json(row)
         metabolite['children'] = []
         for frow in q().filter(Fragment.parentfragid==metabolite['fragid']):

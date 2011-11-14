@@ -22,11 +22,11 @@ from sygma.models import *
 from sqlalchemy import create_engine, and_
 from sqlalchemy.sql import exists, func
 initialize_sql(create_engine('sqlite:///tea_metabolites2_scans_fragments.db'))
-print DBSession.query(Metabolite).first()
-
 
 SQL cookbook
 ------------
+
+print DBSession.query(Metabolite).first()
 
 Rt in chromatogram where metid=352 has hits
 SELECT scanid, rt FROM scans WHERE mslevel=1 AND scanid IN (SELECT scanid FROM fragments WHERE metid=352 AND parentfragid=0);
@@ -101,4 +101,7 @@ CREATE INDEX IF NOT EXISTS scanlvl ON scans (mslevel);
 SELECT basepeakintensity*msms_intensity_cutoff FROM scans,run WHERE scanid=1104;
 print DBSession().query(Scan.basepeakintensity*Run.msms_intensity_cutoff).filter(Scan.scanid==1104)
 
-
+# fetch precursors of a scan
+print DBSession().query(Scan.scanid, Scan.mslevel, Scan.precursormz, Scan.precursorscanid).filter(Scan.scanid==64)
+t = DBSession().query(Scan).filter(Scan.scanid==64).one()
+t.precursor
