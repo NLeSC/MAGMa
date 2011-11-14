@@ -544,7 +544,12 @@ Ext.onReady(function () {
           if (metabolite_fragment.hasChildNodes()) {
             loadMSpectra2(
               metabolite_fragment.childNodes[0].data.scanid,
-              metabolite_fragment.childNodes.map(function(r) { return {mz: r.data.mz}; })
+              metabolite_fragment.childNodes.map(function(r) { return {mz: r.data.mz}; }),
+              function() {
+                // fgrid.refresh event is called before canvas have been rendered
+                // force fragment molecule rendering, hopyfully canvas have been rendered after spectra has been loaded
+                fmolcol.initCanvases();
+              }
             );
           }
         } else if (n.data.mslevel == 1) {
@@ -553,7 +558,12 @@ Ext.onReady(function () {
           // add mz of metabolites as markers to lvl2 scan
           loadMSpectra2(
             rs[0].data.scanid,
-            rs.map(function(r) { return {mz: r.data.mz}; })
+            rs.map(function(r) { return {mz: r.data.mz}; }),
+            function() {
+              // fgrid.refresh event is called before canvas have been rendered
+              // force fragment molecule rendering, hopyfully canvas have been rendered after spectra has been loaded
+              fmolcol.initCanvases();
+            }
           );
           mspectras[1].selectPeaks([n.data.mz]);
         } else if (n.data.mslevel >= 2) {
