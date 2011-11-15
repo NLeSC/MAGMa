@@ -184,10 +184,6 @@ def mspectrajson(request):
 
     return { 'peaks': peaks, 'cutoff': cutoff, 'mslevel': scan.mslevel, 'precursor': { 'id': scan.precursorscanid, 'mz': scan.precursormz } }
 
-@view_config(route_name='scantree.json', renderer='json')
-def scantree(request):
-    return {}
-
 @view_config(route_name='metabolite/scans.json', renderer='json')
 def metabolitescans(request):
     metid = request.matchdict['id']
