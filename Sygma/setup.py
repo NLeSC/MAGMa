@@ -17,6 +17,10 @@ requires = [
     'simplejson'
     ]
 
+tests_require = [
+    'WebTest'
+    ]
+
 if sys.version_info[:3] < (2,5,0):
     requires.append('pysqlite')
 
@@ -30,15 +34,16 @@ setup(name='Sygma',
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
         ],
-      author='',
-      author_email='',
-      url='',
+      author='Stefan Verhoeven',
+      author_email='s.verhoeven@esciencecenter.nl',
+      url='http://www.esciencecenter.com',
       keywords='web wsgi bfg pylons pyramid',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
       test_suite='sygma',
       install_requires = requires,
+      tests_require = tests_require,
       entry_points = """\
       [paste.app_factory]
       main = sygma:main

@@ -5,5 +5,7 @@ Sygma/development.ini
 Sygma/production.ini
 Sygma/sygma/**pyc
 Sygma/sygma/static/ext-*
+Sygma/cover
+Sygma/.coverage
 env/
 /env64
