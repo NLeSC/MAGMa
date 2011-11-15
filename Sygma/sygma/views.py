@@ -9,17 +9,22 @@ from sqlalchemy import and_
 from sqlalchemy.orm.exc import NoResultFound
 import simplejson as json
 
+"""Views for pyramid based web application"""
+
 @view_config(route_name='home', renderer='home.mak')
 def home(request):
+    """Returns homepage"""
     return dict()
 
 @view_config(route_name='results', renderer='results.mak')
 def results(request):
+    """Returns results page"""
     run = DBSession().query(Run).one()
     maxmslevel = DBSession().query(func.max(Scan.mslevel)).scalar()
     return dict(run=run, maxmslevel=maxmslevel)
 
 def extjsgridfilter(q,column,filter):
+    """Query helper to convert a extjs grid filter to a sqlalchemy query filter"""
     if (filter['type'] == 'numeric'):
         if (filter['comparison'] == 'eq'):
             return q.filter(column==filter['value'])
@@ -36,6 +41,7 @@ def extjsgridfilter(q,column,filter):
 
 @view_config(route_name='metabolites.json', renderer='json')
 def metabolitesjson(request):
+    """Returns json document with metabolites, which can be used in a extjs store"""
     dbsession = DBSession()
     mets = []
     start = int(request.params['start'])
@@ -100,6 +106,7 @@ def metabolitesjson(request):
     return { 'total': total, 'rows': mets, 'scans': extracted_ion_chromatogram(request.params) }
 
 def extracted_ion_chromatogram(params):
+    """Returns id and rt of lvl1 scans which have a fragment in it and for which the filters in params pass"""
     # use all scans where metabolite fragments hit
     fq = DBSession.query(Fragment.scanid).filter(Fragment.parentfragid==0)
     if (params):
@@ -125,6 +132,7 @@ def extracted_ion_chromatogram(params):
 
 @view_config(route_name='chromatogram.json', renderer='json')
 def chromatogramjson(request):
+    """Returns json object with the id, rt and basepeakintensity for each lvl1 scan"""
     dbsession = DBSession()
     scans = []
     # TODO add left join to find if scan has metabolite hit
@@ -139,6 +147,7 @@ def chromatogramjson(request):
 
 @view_config(route_name='chromatogram/hits.json', renderer='json')
 def chromatogram_hits(request):
+    """TO BE REMOVED"""
     dbsession = DBSession()
     # only metabolite fragment hits
     fq = DBSession.query(Fragment.scanid).filter(Fragment.parentfragid==0)
@@ -158,6 +167,11 @@ def chromatogram_hits(request):
 
 @view_config(route_name='mspectra.json', renderer='json')
 def mspectrajson(request):
+    """Returns json object with peaks of a scan
+
+    Also returns the cutoff applied to the scan
+    and mslevel, precursor.id (parent scan id) and precursor.mz
+    """
     dbsession = DBSession()
     scanid = request.matchdict['id']
     scanq = DBSession().query(Scan).filter(Scan.scanid==scanid)
@@ -186,6 +200,7 @@ def mspectrajson(request):
 
 @view_config(route_name='metabolite/scans.json', renderer='json')
 def metabolitescans(request):
+    """Returns json object with the extracted ion chromatogram for a metabolite and the id,rt of scans which have metabolite hits"""
     metid = request.matchdict['id']
     chromatogram = []
     # fetch avg mz of metabolite fragment
@@ -205,6 +220,11 @@ def metabolitescans(request):
 
 @view_config(route_name='fragments.json', renderer='json')
 def fragments(request):
+    """Returns json object with metabolites and its lvl2 fragments when node is not set
+    When node is set then returns the children fragments which have node as parent fragment
+
+    Can be used in a Extjs.data.TreeStore
+    """
     node = request.params['node']
     def q():
         return DBSession().query(Fragment,Metabolite.mol,Scan.mslevel).join(Metabolite).join(Scan)

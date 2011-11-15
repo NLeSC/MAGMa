@@ -7,5 +7,6 @@ Sygma/sygma/**pyc
 Sygma/sygma/static/ext-*
 Sygma/cover
 Sygma/.coverage
+Sygma/docs/_build/
 env/
 /env64

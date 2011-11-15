@@ -1,5 +1,9 @@
 import transaction
 
+"""
+Sqlalchemy models for msygma result database
+"""
+
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import Unicode
@@ -20,6 +24,7 @@ DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
 class Metabolite(Base):
+    """Metabolite model for metabolites table"""
     __tablename__ = 'metabolites'
     metid = Column(Integer, primary_key=True)
     mol = Column(Unicode, unique=True)
@@ -34,6 +39,7 @@ class Metabolite(Base):
     fragments = relationship('Fragment', backref='metabolite')
 
 class Scan(Base):
+    """Scan model for scans table"""
     __tablename__ = 'scans'
     scanid = Column(Integer, primary_key=True)
     mslevel = Column(Integer)
@@ -51,12 +57,14 @@ class Scan(Base):
     fragments = relationship('Fragment', backref='scan')
 
 class Peak(Base):
+    """Peak model for peaks table"""
     __tablename__ = 'peaks'
     scanid = Column(Integer, ForeignKey('scans.scanid'), primary_key=True)
     mz = Column(Float, primary_key=True)
     intensity = Column(Float)
 
 class Fragment(Base):
+    """Fragment model for fragments table"""
     __tablename__ = 'fragments'
     fragid = Column(Integer, primary_key=True)
     metid = Column(Integer, ForeignKey('metabolites.metid'))
@@ -70,6 +78,7 @@ class Fragment(Base):
     children = relationship('Fragment', backref=backref('parent', remote_side=[fragid]), lazy='joined', join_depth=1)
 
 class Run(Base):
+    """Run model for run table"""
     __tablename__ = 'run'
     # TODO run consists of 1 row so doesn't need a pk
     # but sqlalchemy requires one
@@ -85,5 +94,6 @@ class Run(Base):
     use_msms_only = Column(Boolean)
 
 def initialize_sql(engine):
+    """Initializes orm, does not create tables and does not add data to it"""
     DBSession.configure(bind=engine)
     Base.metadata.bind = engine
