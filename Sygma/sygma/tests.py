@@ -231,36 +231,6 @@ class ChromatogramView(unittest.TestCase):
             'intensity': 807577.0
         }])
 
-class ChromatogramHitsView(unittest.TestCase):
-    def setUp(self):
-        self.config = testing.setUp()
-        self.session = _initTestingDB()
-
-    def tearDown(self):
-        self.session.remove()
-        testing.tearDown()
-
-    def _callFUT(self, params):
-        from sygma.views import chromatogram_hits
-        request = testing.DummyRequest(params=params)
-        return chromatogram_hits(request)
-
-    def test_allhits(self):
-        params = dict()
-        response = self._callFUT(params)
-        self.assertEqual(response, [{
-            'rt': 933.317,
-            'id': 641
-        }])
-
-    def test_metid(self):
-        params = dict(metid=72)
-        response = self._callFUT(params)
-        self.assertEqual(response, [{
-            'rt': 933.317,
-            'id': 641
-        }])
-
 class MSpectraView(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()

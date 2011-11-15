@@ -145,26 +145,6 @@ def chromatogramjson(request):
 
     return scans
 
-@view_config(route_name='chromatogram/hits.json', renderer='json')
-def chromatogram_hits(request):
-    """TO BE REMOVED"""
-    dbsession = DBSession()
-    # only metabolite fragment hits
-    fq = DBSession.query(Fragment.scanid).filter(Fragment.parentfragid==0)
-
-    if ('metid' in request.params):
-        fq.filter(Fragment.metid==request.params['metid'])
-
-    hits = []
-    # only scans which are level 1 and have a metabolite hit
-    for hit in dbsession.query(Scan.rt,Scan.scanid).filter_by(mslevel=1).filter(Scan.scanid.in_(fq)):
-        hits.append({
-            'id': hit.scanid,
-            'rt': hit.rt,
-        })
-
-    return hits
-
 @view_config(route_name='mspectra.json', renderer='json')
 def mspectrajson(request):
     """Returns json object with peaks of a scan
