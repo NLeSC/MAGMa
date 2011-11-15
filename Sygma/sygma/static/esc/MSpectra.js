@@ -174,13 +174,14 @@ Ext.define('Ext.esc.MSpectra', {
     ;
   },
   /**
-   * Select peaks by their mz
-   * @param mzs Array of mz
+   * Select peak by its mz
+   * @param mz float An mz of a peak
    */
-  selectPeaks: function(mzs) {
+  selectPeak: function(mz) {
     this.markerSelect(function(d) {
-      return !(mzs.indexOf(d.mz) == -1);
+      return (d.mz == mz);
     });
+    this.selectedpeak = mz;
   },
   /**
    * Clears any selected peaks

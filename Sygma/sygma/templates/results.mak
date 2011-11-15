@@ -132,7 +132,7 @@ Ext.onReady(function () {
   function selectPeakInMSpectra(rm, r) {
     console.log('Selected '+r.id);
     // select peak belonging to r
-    mspectras[r.data.mslevel].selectPeaks([r.data.mz]);
+    mspectras[r.data.mslevel].selectPeak(r.data.mz);
     // show child mspectra of selected node or mz
     if (!r.isLeaf()) {
       // onselect then expand
@@ -144,20 +144,20 @@ Ext.onReady(function () {
     }
     // select peaks of parents of fragment in parent scans
     if (r.data.mslevel==1) {
-      mspectras[1].selectPeaks([r.data.mz]);
+      mspectras[1].selectPeak(r.data.mz);
       % for i in range(2,maxmslevel+1):
-      mspectras[${i}].selectPeaks([]);
+      mspectras[${i}].clearPeakSelection();
       % endfor
     } else if (r.data.mslevel==2) {
       % for i in range(3,maxmslevel+1):
-        mspectras[${i}].selectPeaks([]);
+        mspectras[${i}].clearPeakSelection();
       % endfor
-      mspectras[2].selectPeaks([r.data.mz]);
-      mspectras[1].selectPeaks([r.parentNode.data.mz]);
+      mspectras[2].selectPeak(r.data.mz);
+      mspectras[1].selectPeak(r.parentNode.data.mz);
     } else if (r.data.mslevel>=3) {
       // TODO make selecting parent Node work for mslevel>3
-      mspectras[2].selectPeaks([r.parentNode.data.mz]);
-      mspectras[1].selectPeaks([r.parentNode.parentNode.data.mz]);
+      mspectras[2].selectPeak(r.parentNode.data.mz);
+      mspectras[1].selectPeak(r.parentNode.parentNode.data.mz);
     }
   }
 
@@ -540,7 +540,7 @@ Ext.onReady(function () {
             rs.map(function(r) { return {mz: r.data.mz}; })
           );
           var metabolite_fragment = rs[0];
-          mspectras[1].selectPeaks([metabolite_fragment.data.mz]);
+          mspectras[1].selectPeak(metabolite_fragment.data.mz);
           if (metabolite_fragment.hasChildNodes()) {
             loadMSpectra2(
               metabolite_fragment.childNodes[0].data.scanid,
@@ -565,7 +565,7 @@ Ext.onReady(function () {
               fmolcol.initCanvases();
             }
           );
-          mspectras[1].selectPeaks([n.data.mz]);
+          mspectras[1].selectPeak(n.data.mz);
         } else if (n.data.mslevel >= 2) {
           console.log('Loaded lvl'+(n.data.mslevel+1)+' fragments of metabolite ');
           // load the scan of first child
@@ -581,7 +581,7 @@ Ext.onReady(function () {
             }
           );
           // TODO select parent peaks if n.data.mslevel>2
-          mspectras[2].selectPeaks([n.data.mz]);
+          mspectras[2].selectPeak(n.data.mz);
         }
       }
     },
