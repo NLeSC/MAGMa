@@ -349,7 +349,7 @@ class MSpectraView(unittest.TestCase):
 class MetaboliteScansView(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()
-        self.config.add_route('metabolite/scans.json','/metabolite/{metid}/scans.json')
+        self.config.add_route('extractedionchromatogram.json','/extractedionchromatogram/{metid}.json')
         self.session = _initTestingDB()
 
     def tearDown(self):
@@ -357,10 +357,10 @@ class MetaboliteScansView(unittest.TestCase):
         testing.tearDown()
 
     def _callFUT(self, id):
-        from sygma.views import metabolitescans
+        from sygma.views import extractedionchromatogram
         request = testing.DummyRequest()
         request.matchdict = {'metid': id }
-        return metabolitescans(request)
+        return extractedionchromatogram(request)
 
     def test_it(self):
         response = self._callFUT(72)

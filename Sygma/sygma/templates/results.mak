@@ -271,7 +271,7 @@ Ext.onReady(function () {
     clearFragments();
     lc_chart.setLoading(true);
     Ext.Ajax.request({
-      url: '${request.application_url}/metabolite/'+metid+'/scans.json',
+      url: '${request.application_url}/extractedionchromatogram/'+metid+'.json',
       success: function(response) {
         lc_chart.setLoading(false);
         var obj = Ext.decode(response.responseText);

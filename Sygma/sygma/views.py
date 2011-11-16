@@ -208,8 +208,8 @@ def mspectrajson(request):
 
     return { 'peaks': peaks, 'cutoff': cutoff, 'mslevel': scan.mslevel, 'precursor': { 'id': scan.precursorscanid, 'mz': scan.precursormz } }
 
-@view_config(route_name='metabolite/scans.json', renderer='json')
-def metabolitescans(request):
+@view_config(route_name='extractedionchromatogram.json', renderer='json')
+def extractedionchromatogram(request):
     """Returns json object with the extracted ion chromatogram for a metabolite and the id,rt of scans which have metabolite hits
 
     request.matchdict['metid']
