@@ -116,9 +116,9 @@ def metabolitesjson(request):
         }
         mets.append(r)
 
-    return { 'total': total, 'rows': mets, 'scans': extracted_ion_chromatogram(request.params) }
+    return { 'total': total, 'rows': mets, 'scans': filteredscans(request.params) }
 
-def extracted_ion_chromatogram(params):
+def filteredscans(params):
     """Returns id and rt of lvl1 scans which have a fragment in it and for which the filters in params pass
 
     params:
@@ -229,7 +229,7 @@ def metabolitescans(request):
             })
     return {
         'chromatogram': chromatogram,
-        'scans': extracted_ion_chromatogram({ 'metid': metid })
+        'scans': filteredscans({ 'metid': metid })
     }
 
 @view_config(route_name='fragments.json', renderer='json')

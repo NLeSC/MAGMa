@@ -3,9 +3,10 @@ from pyramid.config import Configurator
 from pyramid import testing
 
 def _initTestingDB():
+    """Creates testing db and populates with test data"""
     from sqlalchemy import create_engine
     from sygma.models import initialize_sql, DBSession, Base
-    engine = create_engine('sqlite://')
+    engine = create_engine('sqlite://') # in memory db
     initialize_sql(engine)
     Base.metadata.create_all(engine)
     session = DBSession
@@ -13,6 +14,15 @@ def _initTestingDB():
     return session
 
 def _populateTestingDB(session):
+    """Polulates test db with data
+
+    Adds 1 metabolite with one fragment.
+    Adds 1 metabolite with one fragment which has 2 child fragments of which one has another child fragment.
+    Run, Scan and Peak are filled to create a working run.
+
+    session
+        session connection to db
+    """
     from sygma.models import Metabolite, Scan, Peak, Fragment, Run
     session.add(Run(
         n_reaction_steps=2, use_phase1=True, use_phase2=True,
@@ -225,8 +235,8 @@ class extracted_ion_chromatogram_QueryHelper(unittest.TestCase):
         testing.tearDown()
 
     def _callFUT(self, params):
-        from sygma.views import extracted_ion_chromatogram
-        return extracted_ion_chromatogram(params)
+        from sygma.views import filteredscans
+        return filteredscans(params)
 
     def test_metid(self):
         params = dict(metid=72)
