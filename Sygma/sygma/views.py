@@ -179,7 +179,7 @@ def mspectrajson(request):
     Also returns the cutoff applied to the scan
     and mslevel, precursor.id (parent scan id) and precursor.mz
 
-    request.matchdict['id']
+    request.matchdict['scanid']
         Scan identifier of scan of which to return the mspectra
 
     request.params.mslevel
@@ -187,7 +187,7 @@ def mspectrajson(request):
 
     """
     dbsession = DBSession()
-    scanid = request.matchdict['id']
+    scanid = request.matchdict['scanid']
     scanq = DBSession().query(Scan).filter(Scan.scanid==scanid)
     if ('mslevel' in request.params):
         scanq = scanq.filter(Scan.mslevel==request.params['mslevel'])
@@ -216,10 +216,10 @@ def mspectrajson(request):
 def metabolitescans(request):
     """Returns json object with the extracted ion chromatogram for a metabolite and the id,rt of scans which have metabolite hits
 
-    request.matchdict['id']
+    request.matchdict['metid']
         Metabolite identifier
     """
-    metid = request.matchdict['id']
+    metid = request.matchdict['metid']
     chromatogram = []
     # fetch avg mz of metabolite fragment
     mzq = DBSession().query(func.avg(Fragment.mz)).filter(Fragment.metid==metid).filter(Fragment.parentfragid==0).scalar()

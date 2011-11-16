@@ -234,7 +234,7 @@ class ChromatogramView(unittest.TestCase):
 class MSpectraView(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()
-        self.config.add_route('mspectra.json', '/mspectra/{id}.json')
+        self.config.add_route('mspectra.json', '/mspectra/{scanid}.json')
         self.session = _initTestingDB()
 
     def tearDown(self):
@@ -244,7 +244,7 @@ class MSpectraView(unittest.TestCase):
     def _callFUT(self, id, params):
         from sygma.views import mspectrajson
         request = testing.DummyRequest(params=params)
-        request.matchdict = {'id': id }
+        request.matchdict = {'scanid': id }
         return mspectrajson(request)
 
     def test_scanonly(self):
@@ -278,7 +278,7 @@ class MSpectraView(unittest.TestCase):
 class MetaboliteScansView(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()
-        self.config.add_route('metabolite/scans.json','/metabolite/{id}/scans.json')
+        self.config.add_route('metabolite/scans.json','/metabolite/{metid}/scans.json')
         self.session = _initTestingDB()
 
     def tearDown(self):
@@ -288,7 +288,7 @@ class MetaboliteScansView(unittest.TestCase):
     def _callFUT(self, id):
         from sygma.views import metabolitescans
         request = testing.DummyRequest()
-        request.matchdict = {'id': id }
+        request.matchdict = {'metid': id }
         return metabolitescans(request)
 
     def test_it(self):
