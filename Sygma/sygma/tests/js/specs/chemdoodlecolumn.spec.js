@@ -145,6 +145,7 @@ describe('Esc.ChemDoodleColumn', function() {
 				}
 			});
 
+			// mock ChemDoodle.ViewerCanvas
 			var doodle = function() {};
 			doodle.loadMolecule = function() {};
 			doodle.specs = defspecs;
@@ -157,8 +158,12 @@ describe('Esc.ChemDoodleColumn', function() {
 			expect(ChemDoodle.ViewerCanvas).toHaveBeenCalledWith('gridview-1234-5-2', 150, 100, true);
 			expect(doodle.loadMolecule).toHaveBeenCalled();
 			var mol = doodle.loadMolecule.mostRecentCall.args[0];
-			expect(mol.atoms[1].specs.atoms_color).toEqual('cyan');
-			expect(mol.atoms[4].specs.atoms_color).toEqual('black');
+			expect(doodle.specs.atoms_color).toEqual('cyan');
+			expect(doodle.specs.bonds_color).toEqual('cyan');
+			expect(mol.atoms[0].specs).toBeUndefined();
+			expect(mol.atoms[0].specs).toBeUndefined();
+			expect(mol.atoms[1].specs).toEqual(hlspecs);
+			expect(mol.atoms[1].specs).toEqual(hlspecs);
 		});
 	});
 });
