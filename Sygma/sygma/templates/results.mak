@@ -88,13 +88,24 @@ Ext.require([
 
 Ext.onReady(function () {
 
+  var config = {};
+  config.maxmslevel = ${maxmslevel};
+  config.ms_intensity_cutoff = ${run.ms_intensity_cutoff};
+  config.urls = {
+      fragments: '${request.application_url}/fragments/{0}/{1}.json',
+      mspectra: '${request.application_url}/mspectra/{0}.json?mslevel={1}',
+      extractedionchromatogram: '${request.application_url}/extractedionchromatogram/{0}.json',
+      metabolites: '${request.route_url('metabolites.json')}',
+      chromatogram: '${request.route_url('chromatogram.json')}'
+  };
+
   function clearFragments() {
     console.log('Clearing fragments and mspectra');
     fstore.getRootNode().removeAll();
     mspectras[1].setMarkers([]);
-    % for i in range(2,maxmslevel+1):
-    clearMSpectra(${i});
-    % endfor
+    for (var i = 2; i <= config.maxmslevel; i++) {
+      clearMSpectra(i);
+    }
   }
 
   function clearMSpectra(mslevel) {
@@ -114,7 +125,7 @@ Ext.onReady(function () {
   function fragmentProxy(scanid, metid) {
     return Ext.create('Ext.data.proxy.Ajax', {
       // url is build when scan and metabolite are selected
-      url: '${request.application_url}/fragments/'+scanid+'/'+metid+'.json',
+      url: Ext.String.format(config.urls.fragments, scanid, metid),
       reader: {
           type: 'json',
           root: 'children',
@@ -153,13 +164,13 @@ Ext.onReady(function () {
     // select peaks of parents of fragment in parent scans
     if (r.data.mslevel==1) {
       mspectras[1].selectPeak(r.data.mz);
-      % for i in range(2,maxmslevel+1):
-      mspectras[${i}].clearPeakSelection();
-      % endfor
+      for (var i = 2; i <= config.maxmslevel; i++) {
+        mspectras[i].clearPeakSelection();
+      }
     } else if (r.data.mslevel==2) {
-      % for i in range(3,maxmslevel+1):
-        mspectras[${i}].clearPeakSelection();
-      % endfor
+      for (var i = 3; i <= config.maxmslevel; i++) {
+        mspectras[i].clearPeakSelection();
+      }
       mspectras[2].selectPeak(r.data.mz);
       mspectras[1].selectPeak(r.parentNode.data.mz);
     } else if (r.data.mslevel>=3) {
@@ -214,7 +225,7 @@ Ext.onReady(function () {
   function loadMSpectra(mslevel, scanid, markers, onload) {
     console.log('Loading msspectra level '+mslevel+' with id '+scanid);
     mspectras[mslevel].setLoading(true);
-    d3.json('${request.application_url}/mspectra/'+scanid+'.json?mslevel='+mslevel, function(data) {
+    d3.json(Ext.String.format(config.urls.mspectra, scanid, mslevel), function(data) {
       if (!data) {
         Ext.MessageBox.show({
           title: 'Unable to find scan',
@@ -279,7 +290,7 @@ Ext.onReady(function () {
     clearFragments();
     lc_chart.setLoading(true);
     Ext.Ajax.request({
-      url: '${request.application_url}/extractedionchromatogram/'+metid+'.json',
+      url: Ext.String.format(config.urls.extractedionchromatogram, metid),
       success: function(response) {
         lc_chart.setLoading(false);
         var obj = Ext.decode(response.responseText);
@@ -405,7 +416,7 @@ Ext.onReady(function () {
     pageSize: pageSize,
     proxy: {
         type: 'ajax',
-        url: '${request.route_url('metabolites.json')}',
+        url: config.urls.metabolites,
         reader: {
             type: 'json',
             root: 'rows',
@@ -646,7 +657,7 @@ Ext.onReady(function () {
   });
 
   lc_chart = Ext.create('Ext.esc.Chromatogram', {
-    cutoff: ${run.ms_intensity_cutoff},
+    cutoff: config.ms_intensity_cutoff,
     emptyText: 'Loading chromatogram ...',
     listeners: {
       selectscan: selectScan,
@@ -654,7 +665,7 @@ Ext.onReady(function () {
     }
   });
   lc_chart.setLoading(true);
-  d3.json('${request.route_url('chromatogram.json')}', function(data) {
+  d3.json(config.urls.chromatogram, function(data) {
     lc_chart.setLoading(false);
     lc_chart.setData(data);
     setChromatogramMarkersByMetaboliteFilter();
@@ -662,27 +673,26 @@ Ext.onReady(function () {
 
   var msspectrapanels = [];
   mspectras = [];
-  % for i in range(1,maxmslevel+1):
-  mspectras[${i}] = Ext.create('Ext.esc.MSpectra', {
-    emptyText:
-      % if i==1:
-      'Select a scan in the chromatogram',
-      % else:
-      'Select a fragment to show its level ${i} scan',
-      % endif
-    listeners: {
-      selectpeak: function(mz) {
-        selectFragmentInTree(mz, ${i});
-      }
-    }
-  });
-  msspectrapanels.push({
-    title: 'Scan ... (Level ${i})',
-    id: 'mspectra${i}panel',
-    collapsible: true,
-    items: mspectras[${i}]
-  });
-  % endfor
+  for (var i = 1; i <= config.maxmslevel; i++) {
+	  mspectras[i] = Ext.create('Ext.esc.MSpectra', {
+	    emptyText: (
+	        i==1 ?
+	        'Select a scan in the chromatogram' :
+	        'Select a fragment to show its level '+i+' scan'
+	    ),
+	    listeners: {
+	      selectpeak: function(mz) {
+	        selectFragmentInTree(mz, i);
+	      }
+	    }
+	  });
+	  msspectrapanels.push({
+	    title: 'Scan ... (Level '+i+')',
+	    id: 'mspectra'+i+'panel',
+	    collapsible: true,
+	    items: mspectras[i]
+	  });
+  }
 
   var master_side = Ext.create('Ext.panel.Panel', {
     // master side
