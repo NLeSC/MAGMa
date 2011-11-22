@@ -151,6 +151,7 @@ Ext.application({
   name: 'Esc.msygma',
   models: [ 'Metabolite', 'Fragment' ],
   config: {
+    pageSize: 10,
     maxmslevel: ${maxmslevel},
     ms_intensity_cutoff: ${run.ms_intensity_cutoff},
     urls: {
@@ -416,12 +417,10 @@ Ext.application({
       }
     }
 
-
-    var pageSize = 10;
     var mstore = Ext.create('Ext.data.Store', {
       storeId:'metabolites',
       model:'Esc.msygma.model.Metabolite',
-      pageSize: pageSize,
+      pageSize: config.pageSize,
       proxy: {
           type: 'ajax',
           url: config.urls.metabolites,
@@ -486,7 +485,7 @@ Ext.application({
       viewConfig: {
         autoScroll: true,
       },
-      pageSize: pageSize,
+      pageSize: config.pageSize,
       dockedItems: [{
         xtype: 'pagingtoolbar',
         store: mstore,   // same store GridPanel is using
