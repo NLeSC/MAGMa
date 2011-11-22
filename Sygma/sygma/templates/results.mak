@@ -49,6 +49,7 @@ path.metaboliteline {
 
 line.peak {
   stroke-width: 2px;
+  stroke: #eee;
 }
 
 path.marker {

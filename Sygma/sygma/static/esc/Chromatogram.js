@@ -86,6 +86,15 @@ Ext.define('Ext.esc.Chromatogram', {
     this.ranges.y.max = d3.max(this.data, function(r) { return r.intensity; });
     this.scales.x = d3.scale.linear().domain([this.ranges.x.min, this.ranges.x.max]).range([0, this.chartWidth]);
     this.scales.y = d3.scale.linear().domain([this.ranges.y.min, this.ranges.y.max]).range([this.chartHeight, 0]);
+    var me = this;
+    /**
+     * Line factory for basepeakintensity and extractedionchromatogram
+     * @cfg line
+     */
+    this.line = d3.svg.line()
+    .interpolate('linear')
+    .x(function(d) { return me.scales.x(d.rt); })
+    .y(function(d) { return me.scales.y(d.intensity); });
   },
   initAxes: function() {
     this.axes.x = d3.svg.axis().scale(this.scales.x).ticks(this.ticks.x);
@@ -136,20 +145,9 @@ Ext.define('Ext.esc.Chromatogram', {
     .attr("y2", function(d) { return me.scales.y(d.intensity); })
     .attr("y1", this.chartHeight)
     .attr("x2", function(d) { return me.scales.x(d.rt); })
-    .style("stroke", function(d) {
-      if (d.hashit) {
-        return "#bbb";
-      } else {
-        return "#eee";
-      }
-    })
     ;
 
     // line drapped over peaks
-    this.line = d3.svg.line()
-    .interpolate('linear')
-    .x(function(d) { return me.scales.x(d.rt); })
-    .y(function(d) { return me.scales.y(d.intensity); });
     this.svg.append("svg:path")
     .attr("class", "line")
     .attr("d", this.line(this.data))
@@ -164,18 +162,16 @@ Ext.define('Ext.esc.Chromatogram', {
 	  this.svg.selectAll('.peak').remove();
 	  this.svg.selectAll('.line').remove();
 	  this.svg.selectAll('.'+this.cutoffCls).remove();
-	  this.selectedscan = -1;
+	  this.clearScanSelection();
 	  this.svg.selectAll('.marker').remove();
 	  this.svg.selectAll('.emptytext').remove();
 	  this.metabolitedata = [];
     this.svg.selectAll('path.metaboliteline').remove();
-	  this.data = data;
-    if (this.hasData()) {
-      this.onDataReady();
-    } else {
-      this.onDataEmpty();
-    }
+    this.callParent(arguments);
   },
+  /**
+   * @private
+   */
   onToggleMarker: function(scanid) {
     var me = this;
     this.markerSelect(function(e) {
@@ -192,6 +188,7 @@ Ext.define('Ext.esc.Chromatogram', {
   /**
    * selects markers based on f returning true or false.
    * @param f function
+   * @private
    */
   markerSelect: function(f) {
     this.svg.selectAll("path.uppermarker")
@@ -222,10 +219,15 @@ Ext.define('Ext.esc.Chromatogram', {
     this.markerSelect(false);
     this.selectedscan = -1;
   },
+  /**
+   * @param data array of markers.
+   *
+   * When a scan has been selected scan it is reselected if scan is still marked
+   */
   setMarkers: function(data) {
-	if (this.selectedscan != -1) {
-		var selectedScan = this.selectedscan;
-	}
+  	if (this.selectedscan != -1) {
+  		var selectedScan = this.selectedscan;
+  	}
     this.clearScanSelection();
     this.svg.selectAll('.marker').remove();
     this.markers = data;

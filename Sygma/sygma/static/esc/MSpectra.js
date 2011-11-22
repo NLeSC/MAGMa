@@ -145,6 +145,9 @@ Ext.define('Ext.esc.MSpectra', {
     this.svg.selectAll('.'+this.cutoffCls).remove();
     this.callParent(arguments);
   },
+  /**
+   * @private
+   */
   onToggleMarker: function(mz) {
     var me = this;
     this.markerSelect(function(e) {
