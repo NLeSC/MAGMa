@@ -44,6 +44,7 @@ path.metaboliteline {
   fill: none;
   stroke-width: 1px;
   stroke: #ddd;
+  stroke-dasharray: 5px, 5px;
 }
 
 line.peak {
@@ -54,11 +55,17 @@ path.marker {
   stroke: lightgreen;
   fill: none;
   stroke-width: 1.5px;
+  cursor: pointer;
 }
 
 .selectedscan, .selectedpeak {
   stroke: darkgreen !important;
   fill: darkgreen !important;
+}
+
+line.mspeak {
+  stroke-width: 1px;
+  stroke: black;
 }
 
 #fragmentgrid .x-grid-cell-inner{

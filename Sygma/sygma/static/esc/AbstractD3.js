@@ -147,9 +147,28 @@ Ext.define('Ext.esc.AbstractD3', {
       this.initSvg();
     }
   },
+  /**
+   * Called after chart has been zoomed or panned.
+   * See d3.behavior.zoom on zoom event.
+   */
   redraw: Ext.emptyFn,
+  /**
+   * Prepare this.ranges and this.scales based on this.data .
+   * Called by onDataReady.
+   */
   initScales: Ext.emptyFn,
-  onDataReady: Ext.emptyFn,
+  /**
+   * Prepare this.axes based on this.scales .
+   * Called by onDataReady.
+   */
+  initAxes: Ext.emptyFn,
+  /**
+   * Plots this.data in this.svg.
+   */
+  onDataReady: function() {
+    this.initScales();
+    this.initAxes();
+  },
   /**
    * Sets data and rerenders canvas
    * @param data

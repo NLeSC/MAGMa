@@ -128,9 +128,9 @@ describe('Ext.esc.AbstractD3', function() {
         attr: function() { return this; },
         text: function() { return this; }
       };
-      spyOn(chart.svg,'append').andCallThrough();
-      spyOn(chart.svg,'attr').andCallThrough();
-      spyOn(chart.svg,'text').andCallThrough();
+      spyOn(chart.svg, 'append').andCallThrough();
+      spyOn(chart.svg, 'attr').andCallThrough();
+      spyOn(chart.svg, 'text').andCallThrough();
       chart.chartWidth = 300;
       chart.chartHeight = 400;
       chart.onDataEmpty();
@@ -139,5 +139,16 @@ describe('Ext.esc.AbstractD3', function() {
       expect(chart.svg.attr).toHaveBeenCalledWith('y', 200);
       expect(chart.svg.text).toHaveBeenCalledWith(emptyText);
     });
-  })
+  });
+
+  it('onDataReady', function() {
+    var chart = Ext.create('Ext.esc.AbstractD3', {
+      width: 400, height: 500
+    });
+    spyOn(chart, 'initScales');
+    spyOn(chart, 'initAxes');
+    chart.onDataReady();
+    expect(chart.initScales).toHaveBeenCalled();
+    expect(chart.initAxes).toHaveBeenCalled();
+  });
 });

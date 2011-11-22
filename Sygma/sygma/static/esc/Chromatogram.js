@@ -87,11 +87,13 @@ Ext.define('Ext.esc.Chromatogram', {
     this.scales.x = d3.scale.linear().domain([this.ranges.x.min, this.ranges.x.max]).range([0, this.chartWidth]);
     this.scales.y = d3.scale.linear().domain([this.ranges.y.min, this.ranges.y.max]).range([this.chartHeight, 0]);
   },
-  onDataReady: function() {
-    var me = this;
-    this.initScales();
+  initAxes: function() {
     this.axes.x = d3.svg.axis().scale(this.scales.x).ticks(this.ticks.x);
     this.axes.y = d3.svg.axis().scale(this.scales.y).ticks(this.ticks.y).orient("left").tickFormat(d3.format('.2e'));
+  },
+  onDataReady: function() {
+    this.callParent(arguments);
+    var me = this;
 
     // Add the x-axis.
     this.svg.append("svg:g")
@@ -123,7 +125,6 @@ Ext.define('Ext.esc.Chromatogram', {
       .attr('x2',this.chartWidth)
       .attr('y1',this.scales.y(this.cutoff))
       .attr('y2',this.scales.y(this.cutoff))
-      .attr('stroke-dasharray','5,5')
     ;
 
     // basepeakintensity of each scan as vertical line
@@ -257,7 +258,6 @@ Ext.define('Ext.esc.Chromatogram', {
       .attr('class', 'marker lowermarker')
       .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(0) + ")"; })
       .attr("d", d3.svg.symbol().type('triangle-up').size(36) )
-      .style("cursor", "pointer")
       .on('click', markerClick)
       .append("svg:title")
         .text(markerTitle)
@@ -270,7 +270,6 @@ Ext.define('Ext.esc.Chromatogram', {
       .attr('class', 'marker uppermarker')
       .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(me.ranges.y.max) + ")"; })
       .attr("d", d3.svg.symbol().type('triangle-down').size(36) )
-      .style("cursor", "pointer")
       .on('click', markerClick)
       .append("svg:title")
         .text(markerTitle)
