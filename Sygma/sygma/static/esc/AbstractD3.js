@@ -3,6 +3,8 @@
  * @class Ext.esc.AbstractD3
  * @extends Ext.Panel
  * @author Stefan Verhoeven
+ *
+ * @private
  */
 Ext.define('Ext.esc.AbstractD3', {
   extend: 'Ext.Panel',
@@ -78,9 +80,20 @@ Ext.define('Ext.esc.AbstractD3', {
 
     Ext.applyIf(this, defConfig);
 
+    this.on('resize', this.onResize, this);
+    // if width/height where unknown|tiny during onRender
+    // they are known after layout so call initSvg again to
+    // make sure svg is initialized
+    this.on('afterlayout', function() {
+      this.initSvg();
+    }, this);
     this.callParent(arguments);
   },
   initSvg: function() {
+    if (this.svg) {
+      // dont reinit
+      return;
+    }
     var padding = this.axesPadding; // top right bottom left
     this.svg = d3.select(this.body.dom)
       .append('svg:svg')
@@ -120,6 +133,12 @@ Ext.define('Ext.esc.AbstractD3', {
          .text(this.emptyText);
     }
   },
+  onResize: function(me, width, height) {
+    // find svg tag and adjust w and h
+    var s = d3.select(me.body.dom).select('svg');
+    s.attr('width', width);
+    s.attr('height', height);
+  },
   onRender: function() {
     this.callParent(arguments);
     // width/height are very low when in this inside a % layout,
@@ -127,27 +146,20 @@ Ext.define('Ext.esc.AbstractD3', {
     if (this.body.getWidth() > 2 && this.body.getWidth() > 2) {
       this.initSvg();
     }
-    this.on('afterlayout', function() {
-      if (!this.svg) {
-        this.initSvg();
-      }
-    });
-    this.on('resize', function(t,width, height) {
-      // find svg tag and adjust w and h
-      var s = d3.select(t.body.dom).select('svg');
-      s.attr('width', this.body.getWidth());
-      s.attr('height', this.body.getHeight());
-    });
   },
   redraw: Ext.emptyFn,
   initScales: Ext.emptyFn,
   onDataReady: Ext.emptyFn,
   /**
-   * Stuffs data into chromatogram.
+   * Sets data and rerenders canvas
    * @param data
    */
   setData: function(data) {
     this.data = data;
-    this.onDataReady();
+    if (this.hasData()) {
+      this.onDataReady();
+    } else {
+      this.onDataEmpty();
+    }
   }
 });
