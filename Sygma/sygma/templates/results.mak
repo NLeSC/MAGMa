@@ -82,6 +82,7 @@ Ext.Loader.setConfig({
     'Ext.ux': '${request.static_url('sygma:static/ext-4.0.7-gpl/examples/ux')}'
   }
 });
+
 Ext.require([
     'Ext.ux.grid.FiltersFeature',
 ]);
@@ -147,15 +148,184 @@ Ext.define('Esc.msygma.model.Fragment', {
   hasMany: { model: 'Fragment', name:'children' }
 });
 
+Ext.define('Esc.msygma.store.Metabolites', {
+  extend: 'Ext.data.Store',
+  model: 'Esc.msygma.model.Metabolite',
+  proxy: {
+    type: 'ajax',
+    reader: {
+      type: 'json',
+      root: 'rows',
+      idProperty: 'metid'
+    }
+  },
+  sorters: [{
+    property: 'probability',
+    direction: 'DESC'
+  },{
+    property: 'metid',
+    direction: 'ASC'
+  }],
+  remoteSort: true,
+  remoteFilter: true,
+  isLoaded: false,
+  setUrl: function(url) {
+    this.getProxy().url = url;
+  },
+  listeners: {
+    load: function(store) {
+      this.isLoaded = true;
+    }
+  },
+  initComponent: function() {
+    console.log('Init Metabolites store');
+  }
+});
+
+Ext.define('Esc.msygma.view.metabolite.List', {
+  extend: 'Ext.grid.Panel',
+  alias: 'widget.metabolitelist',
+  store: 'Metabolites',
+  selModel: Ext.create('Ext.selection.CheckboxModel', {
+    allowDeselect: true,
+    mode: 'SINGLE'
+  }),
+  scroll: false,
+  viewConfig: {
+    autoScroll: true,
+  },
+  dockedItems: [{
+    xtype: 'pagingtoolbar',
+    store: 'Metabolites',   // same store GridPanel is using
+    dock: 'bottom',
+    displayInfo: true,
+    items: [{
+      text: 'Clear filters',
+      action: 'clear'
+    }]
+  }],
+  initComponent: function() {
+    console.log('Init met grid');
+    var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
+			text: 'Molecule', dataIndex: 'mol',
+			width: 162
+		});
+
+		var mfilters = Ext.create('Ext.ux.grid.FiltersFeature',{
+		  id: 'mfilter',
+		  encode: true,
+		});
+
+		Ext.apply(this, {
+      columns: [
+        {text: 'ID', dataIndex: 'metid', hidden: true},
+        molcol,
+        {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: [0,1,2,3] }, hidden:true},
+        {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }},
+        {text: 'Reaction seq.', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }, renderer: function(v) {
+          return '<ol><li>'+v.replace("\n","</li><li>")+'</li></ol>';
+        }},
+        {text: 'Scans', dataIndex: 'nr_scans', filter: { type: 'numeric' }},
+        {text: 'Smile', dataIndex: 'smiles', hidden:true},
+        {text: 'Formula', dataIndex: 'molformula', filter: { type: 'string' }},
+        {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
+        {text: 'Name', dataIndex: 'origin', hidden: true, filter: { type: 'string' }},
+      ],
+      plugins: [molcol],
+      features: [mfilters],
+		});
+    this.callParent(arguments);
+  },
+  clearFilter: function() {
+    this.getView().getFeature('mfilter').clearFilters();
+  }
+});
+
+Ext.define('Esc.msygma.controller.Metabolites', {
+  extend: 'Ext.app.Controller',
+  views: [ 'metabolite.List' ],
+  stores: [ 'Metabolites' ],
+  models: [ 'Metabolite' ],
+  refs: [{
+    ref: 'metaboliteList', selector: 'metabolitelist'
+  }],
+  init: function() {
+
+    // configure store
+    var store = this.getMetabolitesStore();
+    store.pageSize = this.application.getPageSize();
+    store.setUrl(this.application.getUrls().metabolites);
+    store.on('load', this.onLoad);
+    store.load();
+
+    var grid = this.getMetaboliteListView();
+    grid.pageSize = this.application.getPageSize();
+    console.log('Metabolites controller init');
+
+    this.control({
+      'metabolitelist': {
+	      select: this.onSelect,
+	      deselect: this.onDeselect,
+      },
+      'metabolitelist button[action=clear]': {
+        click: this.clearFilters
+	    },
+    });
+  },
+  onLoad: function(store) {
+    console.log('Metabolite store loaded '+store.isLoaded);
+    // TODO setChromatogramMarkersByMetaboliteFilter();
+  },
+  onSelect: function(rm, metabolite) {
+    var metid = metabolite.data.metid;
+    console.log('Select metabolite '+metid);
+
+    // TODO selectMetabolite(r);
+  },
+  onDeselect: function(rm, r) {
+    console.log('Deselect metabolite');
+    // TODO
+		//     setChromatogramMarkersByMetaboliteFilter();
+		//     lc_chart.setExtractedIonChromatogram([]);
+		//     clearFragments();
+  },
+  clearFilters: function() {
+    console.log('Clear metabolite filter');
+    this.getMetaboliteList().clearFilter();
+    this.getMetabolitesStore().filter();
+    // TODO
+    //     lc_chart.setExtractedIonChromatogram([]);
+    //     clearFragments();
+  }
+});
+
+Ext.define('Esc.msygma.controller.Fragments', {
+  extend: 'Ext.app.Controller',
+  init: function() {
+    console.log('Fragments controller init');
+  }
+});
+
+Ext.define('Esc.msygma.controller.Scans', {
+  extend: 'Ext.app.Controller',
+  init: function() {
+    console.log('Scans controller init');
+  }
+});
+
 Ext.define('Esc.msygma.resultsApp', { extend:'Ext.app.Application',
   constructor: function(config) {
-    console.log('Construct');
+    console.log('Construct app');
     this.initConfig(config);
     this.callParent(arguments);
     return this;
   },
   name: 'Esc.msygma',
   models: [ 'Metabolite', 'Fragment' ],
+  controllers: [ 'Metabolites', 'Fragments', 'Scans' ],
+  refs: [{
+    ref: 'metaboliteList', selector: 'metabolitelist'
+  }],
   config: {
     pageSize: 10,
     maxmslevel: 2,
@@ -168,16 +338,14 @@ Ext.define('Esc.msygma.resultsApp', { extend:'Ext.app.Application',
         chromatogram: null,
     }
   },
-  init: function() {
-    console.log('Init');
-  },
   applyMaxmslevel: function(val) {
     console.log('Apply maxmslevel');
     return val;
   },
   launch: function() {
-    console.log('Launch');
-    var config = this.config;
+    console.log('Launch app');
+    var me = this;
+    var config = me.config;
 
     function clearFragments() {
       console.log('Clearing fragments and mspectra');
@@ -288,9 +456,9 @@ Ext.define('Esc.msygma.resultsApp', { extend:'Ext.app.Application',
     function removeScanFilter() {
       var scanfilter;
       // see if already filtered on scanid then remove old filter
-      if ('scanid' in mstore.getProxy().extraParams) {
-        delete(mstore.getProxy().extraParams.scanid);
-        mstore.loadPage(1);
+      if ('scanid' in me.getController('Metabolites').getMetabolitesStore().getProxy().extraParams) {
+        delete(me.getController('Metabolites').getMetabolitesStore().getProxy().extraParams.scanid);
+        me.getController('Metabolites').getMetabolitesStore().loadPage(1);
       }
     }
 
@@ -336,19 +504,19 @@ Ext.define('Esc.msygma.resultsApp', { extend:'Ext.app.Application',
       // and scanid is hit of metabolite then show fragments with this metabolite and scan
       // else filter mstore and load scan
       if (
-          mgrid.getSelectionModel().selected.getCount() > 0
+          me.getMetaboliteList().getSelectionModel().selected.getCount() > 0
           &&
-          mgrid.getSelectionModel().selected.getAt(0).data.scans.some(
+          me.getMetaboliteList().getSelectionModel().selected.getAt(0).data.scans.some(
             function(e) { return (e.id == scanid); }
           )
       ) {
         loadMSpectra1(scanid, function() {
-          loadFragments(scanid, mgrid.getSelectionModel().selected.getAt(0).data.metid);
+          loadFragments(scanid, me.getMetaboliteList().getSelectionModel().selected.getAt(0).data.metid);
         });
       } else {
         loadMSpectra1(scanid, function() {
-          mstore.getProxy().extraParams.scanid = scanid;
-          mstore.loadPage(1);
+          me.getController('Metabolites').getMetabolitesStore().getProxy().extraParams.scanid = scanid;
+          me.getController('Metabolites').getMetabolitesStore().loadPage(1);
         });
         // TODO in spectra add markers for metabolites present in scan
       }
@@ -413,120 +581,20 @@ Ext.define('Esc.msygma.resultsApp', { extend:'Ext.app.Application',
             }
           } else {
             Ext.Msg.alert('Metabolite has no hits', 'The selected query/metabolite was not found in the ms data');
-            mgrid.getSelectionModel().deselectAll();
+            me.getMetaboliteList().getSelectionModel().deselectAll();
           }
         }
       });
     }
 
     function setChromatogramMarkersByMetaboliteFilter() {
-      var store = Ext.StoreMgr.get('metabolites');
+      var store = me.getController('Metabolites').getMetabolitesStore();
       if (store.isLoaded && lc_chart.hasData()) {
         console.log('Setting chromatogram markers');
         var markers = store.getProxy().getReader().rawData.scans;
         lc_chart.setMarkers(markers);
       }
     }
-
-    var mstore = Ext.create('Ext.data.Store', {
-      storeId:'metabolites',
-      model:'Esc.msygma.model.Metabolite',
-      pageSize: config.pageSize,
-      proxy: {
-          type: 'ajax',
-          url: config.urls.metabolites,
-          reader: {
-              type: 'json',
-              root: 'rows',
-              idProperty: 'metid'
-          }
-      },
-      sorters: [{
-        property: 'probability',
-        direction: 'DESC'
-      },{
-        property: 'metid',
-        direction: 'ASC'
-      }],
-      autoLoad: true,
-      remoteSort: true,
-      remoteFilter: true,
-      isLoaded: false,
-      listeners: {
-          load: function(store) {
-            this.isLoaded = true;
-            setChromatogramMarkersByMetaboliteFilter();
-          }
-      }
-   });
-
-    var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
-     text: 'Molecule', dataIndex: 'mol',
-     width: 162
-    });
-
-    var mfilters = Ext.create('Ext.ux.grid.FiltersFeature',{
-      encode: true,
-    });
-
-    var mselmodel = Ext.create('Ext.selection.CheckboxModel', {
-      allowDeselect: true,
-      mode: 'SINGLE'
-    });
-
-    var mgrid = Ext.create('Ext.grid.Panel', {
-      id: 'metabolitegrid',
-      store: mstore,
-      selModel: mselmodel,
-      columns: [
-        {text: 'ID', dataIndex: 'metid', hidden: true},
-        molcol,
-        {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: [0,1,2,3] }, hidden:true},
-        {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }},
-        {text: 'Reaction seq.', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }, renderer: function(v) {
-          return '<ol><li>'+v.replace("\n","</li><li>")+'</li></ol>';
-        }},
-        {text: 'Scans', dataIndex: 'nr_scans', filter: { type: 'numeric' }},
-        {text: 'Smile', dataIndex: 'smiles', hidden:true},
-        {text: 'Formula', dataIndex: 'molformula', filter: { type: 'string' }},
-        {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
-        {text: 'Name', dataIndex: 'origin', hidden: true, filter: { type: 'string' }},
-      ],
-      scroll: false,
-      viewConfig: {
-        autoScroll: true,
-      },
-      pageSize: config.pageSize,
-      dockedItems: [{
-        xtype: 'pagingtoolbar',
-        store: mstore,   // same store GridPanel is using
-        dock: 'bottom',
-        displayInfo: true,
-        items: [{
-          text: 'Clear filters',
-          handler: function() {
-            mfilters.clearFilters();
-            mstore.filter();
-            lc_chart.setExtractedIonChromatogram([]);
-            clearFragments();
-          }
-        }]
-      }],
-      plugins: [molcol],
-      features: [mfilters],
-      listeners: {
-        deselect: function(m,rs) {
-          if (rs.data.scans.length > 1) {
-          }
-          setChromatogramMarkersByMetaboliteFilter();
-          lc_chart.setExtractedIonChromatogram([]);
-          clearFragments();
-        },
-        select: function(rm,r) {
-          selectMetabolite(r);
-        }
-      }
-    });
 
     // atoms property is array filled with fragment atoms that need to be black
     // bonds having both atoms in array are black
@@ -720,11 +788,8 @@ Ext.define('Esc.msygma.resultsApp', { extend:'Ext.app.Application',
       items:[{
         region:'center',
         title: 'Query molecules & Metabolites',
-        layout: 'fit',
         border: false,
-        items: [
-          mgrid,
-        ]
+        xtype: 'metabolitelist'
       },{
         title:'Chromatogram',
         region:'south',
