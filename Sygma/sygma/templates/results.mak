@@ -77,8 +77,10 @@ line.mspeak {
 
 Ext.Loader.setConfig({
   enabled: true,
+//  disableCaching: false, // otherwise can not use firebug breakpoint
   paths: {
-    'Ext': '${request.static_url('sygma:static/')}',
+    'Esc.msygma': '${request.static_url('sygma:static/app')}',
+    'Ext.esc': '${request.static_url('sygma:static/esc')}',
     'Ext.ux': '${request.static_url('sygma:static/ext-4.0.7-gpl/examples/ux')}'
   }
 });
@@ -175,12 +177,27 @@ Ext.define('Esc.msygma.store.Metabolites', {
   },
   initComponent: function() {
     console.log('Init Metabolites store');
+  },
+  /**
+   * Removes scan filter from metabolite store
+   */
+  removeScanFilter: function() {
+    // see if already filtered on scanid then remove old filter
+    if ('scanid' in this.getProxy().extraParams) {
+      delete(this.getProxy().extraParams.scanid);
+      this.loadPage(1);
+    }
+  },
+  setScanFilter: function(scanid) {
+    this.getProxy().extraParams.scanid = scanid;
+    this.loadPage(1);
   }
 });
 
 Ext.define('Esc.msygma.view.metabolite.List', {
   extend: 'Ext.grid.Panel',
   alias: 'widget.metabolitelist',
+  title: 'Query molecules & Metabolites',
   store: 'Metabolites',
   selModel: Ext.create('Ext.selection.CheckboxModel', {
     allowDeselect: true,
@@ -203,16 +220,16 @@ Ext.define('Esc.msygma.view.metabolite.List', {
   initComponent: function() {
     console.log('Init met grid');
     var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
-			text: 'Molecule', dataIndex: 'mol',
-			width: 162
-		});
+      text: 'Molecule', dataIndex: 'mol',
+      width: 162
+    });
 
-		var mfilters = Ext.create('Ext.ux.grid.FiltersFeature',{
-		  id: 'mfilter',
-		  encode: true,
-		});
+    var mfilters = Ext.create('Ext.ux.grid.FiltersFeature',{
+      id: 'mfilter',
+      encode: true,
+    });
 
-		Ext.apply(this, {
+    Ext.apply(this, {
       columns: [
         {text: 'ID', dataIndex: 'metid', hidden: true},
         molcol,
@@ -229,7 +246,7 @@ Ext.define('Esc.msygma.view.metabolite.List', {
       ],
       plugins: [molcol],
       features: [mfilters],
-		});
+    });
     this.callParent(arguments);
   },
   clearFilter: function() {
@@ -246,31 +263,31 @@ Ext.define('Esc.msygma.controller.Metabolites', {
     ref: 'metaboliteList', selector: 'metabolitelist'
   }],
   init: function() {
+    console.log('Metabolites controller init');
 
     // configure store
     var store = this.getMetabolitesStore();
     store.pageSize = this.application.getPageSize();
     store.setUrl(this.application.getUrls().metabolites);
-    store.on('load', this.onLoad);
+    store.on('load', this.onLoad, this);
     store.load();
 
     var grid = this.getMetaboliteListView();
     grid.pageSize = this.application.getPageSize();
-    console.log('Metabolites controller init');
 
     this.control({
       'metabolitelist': {
-	      select: this.onSelect,
-	      deselect: this.onDeselect,
+        select: this.onSelect,
+        deselect: this.onDeselect,
       },
       'metabolitelist button[action=clear]': {
         click: this.clearFilters
-	    },
+      },
     });
   },
   onLoad: function(store) {
     console.log('Metabolite store loaded '+store.isLoaded);
-    // TODO setChromatogramMarkersByMetaboliteFilter();
+    this.application.getController('Scans').setChromatogramMarkersByMetaboliteFilter();
   },
   onSelect: function(rm, metabolite) {
     var me = this;
@@ -279,70 +296,67 @@ Ext.define('Esc.msygma.controller.Metabolites', {
 
     this.application.getController('Fragments').clearFragments();
 
-// TODO
-//     lc_chart.setLoading(true);
-//     Ext.Ajax.request({
-//       url: Ext.String.format(this.application.getUrls().extractedionchromatogram, metid),
-//       success: function(response) {
-//         lc_chart.setLoading(false);
-//         var obj = Ext.decode(response.responseText);
-//         metabolite.data.scans = obj.scans;
-//         lc_chart.setExtractedIonChromatogram(obj.chromatogram);
-//         if (obj.scans.length) {
-//           // if one scan has already been selected test if its a member of the scans of selected metabolite
-//           // if so then show fragments
-//           if (
-//             lc_chart.selectedscan != -1 &&
-//             obj.scans.some(function(e) {
-//               return (e.id == lc_chart.selectedscan);
-//             })
-//           ) {
-//             console.log('Selected metabolite and its one scan is selected');
-//             me.getController('Fragments').loadFragments(lc_chart.selectedscan, metid);
-//           } else {
-//             console.log('Selecting scans of metabolite');
-//             if (lc_chart.selectedscan != -1) {
-//               lc_chart.setMarkers(obj.scans);
-//             } else {
-//               var selectedScan = lc_chart.selectedscan;
-//               lc_chart.setMarkers(obj.scans);
-//               lc_chart.selectScans([selectedScan]);
-//             }
-//             // if metabolite has only one scan hit then show that scan and fragments
-//             if (obj.scans.length == 1) {
-//               var selectedScan = obj.scans[0].id;
-//               // show scan where metabolite had its hit
-//               console.log('show scan where metabolite had its hit');
-//               lc_chart.selectScans([selectedScan]);
-//               loadMSpectra1(selectedScan);
-//               // show fragments with this metabolite and scan
-//               console.log('show fragments of metabolite');
-//               me.getController('Fragments').loadFragments(selectedScan, metid);
-//             } else {
-//               // multiple scans so mspectra1 should be empty
-//               clearMSpectra1();
-//             }
-//           }
-//         } else {
-//           Ext.Msg.alert('Metabolite has no hits', 'The selected query/metabolite was not found in the ms data');
-//           me.getMetaboliteList().getSelectionModel().deselectAll();
-//         }
-//       }
-//     });
+    this.application.getController('Scans').getScanChromatogram().setLoading(true);
+    Ext.Ajax.request({
+      url: Ext.String.format(this.application.getUrls().extractedionchromatogram, metid),
+      success: function(response) {
+        me.application.getController('Scans').getScanChromatogram().setLoading(false);
+        var obj = Ext.decode(response.responseText);
+        metabolite.data.scans = obj.scans;
+        me.application.getController('Scans').getScanChromatogram().setExtractedIonChromatogram(obj.chromatogram);
+        if (obj.scans.length) {
+          // if one scan has already been selected test if its a member of the scans of selected metabolite
+          // if so then show fragments
+          if (
+            me.application.getController('Scans').getScanChromatogram().selectedscan != -1 &&
+            obj.scans.some(function(e) {
+              return (e.id == me.application.getController('Scans').getScanChromatogram().selectedscan);
+            })
+          ) {
+            console.log('Selected metabolite and its one scan is selected');
+            me.getController('Fragments').loadFragments(me.application.getController('Scans').getScanChromatogram().selectedscan, metid);
+          } else {
+            console.log('Selecting scans of metabolite');
+            if (me.application.getController('Scans').getScanChromatogram().selectedscan != -1) {
+              me.application.getController('Scans').getScanChromatogram().setMarkers(obj.scans);
+            } else {
+              var selectedScan = me.application.getController('Scans').getScanChromatogram().selectedscan;
+              me.application.getController('Scans').getScanChromatogram().setMarkers(obj.scans);
+              me.application.getController('Scans').getScanChromatogram().selectScans([selectedScan]);
+            }
+            // if metabolite has only one scan hit then show that scan and fragments
+            if (obj.scans.length == 1) {
+              var selectedScan = obj.scans[0].id;
+              // show scan where metabolite had its hit
+              console.log('show scan where metabolite had its hit');
+              me.application.getController('Scans').getScanChromatogram().selectScans([selectedScan]);
+              me.application.loadMSpectra1(selectedScan);
+              // show fragments with this metabolite and scan
+              console.log('show fragments of metabolite');
+              me.getController('Fragments').loadFragments(selectedScan, metid);
+            } else {
+              // multiple scans so mspectra1 should be empty
+              me.application.clearMSpectra(1);
+            }
+          }
+        } else {
+          Ext.Msg.alert('Metabolite has no hits', 'The selected query/metabolite was not found in the ms data');
+          me.getMetaboliteList().getSelectionModel().deselectAll();
+        }
+      }
+    });
   },
   onDeselect: function(rm, r) {
     console.log('Deselect metabolite');
-    // TODO
-		//     setChromatogramMarkersByMetaboliteFilter();
-		//     lc_chart.setExtractedIonChromatogram([]);
-		this.application.getController('Fragments').clearFragments();
+    this.application.getController('Scans').setChromatogramMarkersByMetaboliteFilter();
+    this.application.getController('Scans').clearExtractedIonChromatogram();
+    this.application.getController('Fragments').clearFragments();
   },
   clearFilters: function() {
     console.log('Clear metabolite filter');
     this.getMetaboliteList().clearFilter();
     this.getMetabolitesStore().filter();
-    // TODO
-    //     lc_chart.setExtractedIonChromatogram([]);
+    this.application.getController('Scans').clearExtractedIonChromatogram();
     this.application.getController('Fragments').clearFragments();
   }
 });
@@ -359,11 +373,17 @@ Ext.define('Esc.msygma.store.Fragments', {
   getById: function(id) {
     return this.getNodeById(id);
   },
+  getNodeByMzMslevel: function(mz, mslevel) {
+    return this.getRootNode().findChildBy(function(n) {
+      return (n.data.mslevel == mslevel && n.data.mz == mz);
+    }, false, true);
+  }
 });
 
 Ext.define('Esc.msygma.view.fragment.Tree', {
   extend: 'Ext.tree.Panel',
   alias: 'widget.fragmenttree',
+  title: 'Fragments',
   store: 'Fragments',
   selType: 'checkboxmodel',
   cls: 'fragmenttree', // So height of column can be set with .fragmenttree .x-grid-cell-inner{height: 106px !important;}
@@ -390,7 +410,7 @@ Ext.define('Esc.msygma.view.fragment.Tree', {
     hlspecs.bonds_color = 'black';
     hlspecs.atoms_color = 'black';
     var fmolcol = Ext.create('Ext.esc.ChemDoodleColumn', {
-      id: 'fmolcol',
+      pluginId: 'fmolcol',
       text: 'Molecule', dataIndex: 'mol', atomIndex:'atoms',
       canvasClass: 'x-chemdoodle-cols2',
       width: 162,
@@ -438,7 +458,7 @@ Ext.define('Esc.msygma.view.fragment.Tree', {
   },
   // Forces all molecules on fragment tree to be drawn
   initMolecules: function() {
-    this.getView().getPlugin('fmolcol').initCanvases();
+    return this.getPlugin('fmolcol').initCanvases();
   }
 });
 
@@ -453,7 +473,7 @@ Ext.define('Esc.msygma.controller.Fragments', {
   init: function() {
     console.log('Fragments controller init');
 
-    this.getFragmentsStore().on('load', this.onLoad);
+    this.getFragmentsStore().on('load', this.onLoad, this);
 
     this.control({
       'fragmenttree': {
@@ -485,131 +505,123 @@ Ext.define('Esc.msygma.controller.Fragments', {
   clearFragments: function() {
     console.log('Clearing fragments and mspectra >lvl1');
     this.getFragmentsStore().getRootNode().removeAll();
-    // TODO
-		//     mspectras[1].setMarkers([]);
-		//     for (var i = 2; i <= this.application.maxmslevel; i++) {
-		//       clearMSpectra(i);
-		//     }
+    this.application.mspectras[1].setMarkers([]);
+    for (var i = 2; i <= this.application.maxmslevel; i++) {
+      this.application.clearMSpectra(i);
+    }
   },
   onFragmentCollapse: function(fragment) {
     console.log('Collapsing fragment '+fragment.id);
     // on collapse clear child mspectra
-// TODO
-//     mspectras.forEach(function(ms, i) {
-//       if (i > fragment.data.mslevel ) {
-//         clearMSpectra(i);
-//       }
-//     });
+    this.application.mspectras.forEach(function(ms, i) {
+      if (i > fragment.data.mslevel ) {
+        this.application.clearMSpectra(i);
+      }
+    });
   },
   onFragmentExpand: function(fragment) {
+    if (fragment.firstChild == null) {
+      return;
+    }
     console.log('Expanding fragment '+fragment.id);
     // on expand load child mspectra if needed
-// TODO
-    //     if (fragment.firstChild.data.scanid != mspectras[fragment.firstChild.data.mslevel].scanid) {
-//       loadMSpectra(
-//         fragment.firstChild.data.mslevel,
-//         fragment.firstChild.data.scanid,
-//         fragment.childNodes.map(function(r) { return {mz: r.data.mz}; })
-//       );
-//     }
+    if (fragment.firstChild.data.scanid != this.application.mspectras[fragment.firstChild.data.mslevel].scanid) {
+      this.application.loadMSpectra(
+        fragment.firstChild.data.mslevel,
+        fragment.firstChild.data.scanid,
+        fragment.childNodes.map(function(r) { return {mz: r.data.mz}; })
+      );
+    }
   },
   onSelect: function(rm, r) {
     console.log('Selected fragment '+r.id);
     // select peak belonging to r
-    // TODO
-    //    mspectras[r.data.mslevel].selectPeak(r.data.mz);
+    this.application.mspectras[r.data.mslevel].selectPeak(r.data.mz);
     // show child mspectra of selected node or mz
-//     if (!r.isLeaf()) {
-//       // onselect then expand
-//       if (!r.isExpanded()) {
-//         r.expand();
-//       } else {
-//         this.onFragmentExpand(r);
-//       }
-//     }
-//     // select peaks of parents of fragment in parent scans
-//     if (r.data.mslevel==1) {
-//       mspectras[1].selectPeak(r.data.mz);
-//       for (var i = 2; i <= config.maxmslevel; i++) {
-//         mspectras[i].clearPeakSelection();
-//       }
-//     } else if (r.data.mslevel==2) {
-//       for (var i = 3; i <= config.maxmslevel; i++) {
-//         mspectras[i].clearPeakSelection();
-//       }
-//       mspectras[2].selectPeak(r.data.mz);
-//       mspectras[1].selectPeak(r.parentNode.data.mz);
-//     } else if (r.data.mslevel>=3) {
-//       // TODO make selecting parent Node work for mslevel>3
-//       mspectras[2].selectPeak(r.parentNode.data.mz);
-//       mspectras[1].selectPeak(r.parentNode.parentNode.data.mz);
-//     }
+    if (!r.isLeaf()) {
+      // onselect then expand
+      if (!r.isExpanded()) {
+        r.expand();
+      } else {
+        this.onFragmentExpand(r);
+      }
+    }
+    // select peaks of parents of fragment in parent scans
+    if (r.data.mslevel==1) {
+      this.application.mspectras[1].selectPeak(r.data.mz);
+      for (var i = 2; i <= this.application.getMaxmslevel(); i++) {
+        this.application.mspectras[i].clearPeakSelection();
+      }
+    } else if (r.data.mslevel==2) {
+      for (var i = 3; i <= this.application.getMaxmslevel(); i++) {
+        this.application.mspectras[i].clearPeakSelection();
+      }
+      this.application.mspectras[2].selectPeak(r.data.mz);
+      this.application.mspectras[1].selectPeak(r.parentNode.data.mz);
+    } else if (r.data.mslevel>=3) {
+      // TODO make selecting parent Node work for mslevel>3
+      this.application.mspectras[2].selectPeak(r.parentNode.data.mz);
+      this.application.mspectras[1].selectPeak(r.parentNode.parentNode.data.mz);
+    }
   },
   onLoad: function(t, n, rs) {
     var me = this;
     // show peaks in lvl1 scan
-    // TODO
-//     if ('id' in n.data && n.data.id == 'root') {
-//       console.log('Loaded metabolite as fragment');
-//       // add mz of metabolites as markers to lvl1 scan
-//       mspectras[1].setMarkers(
-//         rs.map(function(r) { return {mz: r.data.mz}; })
-//       );
-//       var metabolite_fragment = rs[0];
-//       mspectras[1].selectPeak(metabolite_fragment.data.mz);
-//       if (metabolite_fragment.hasChildNodes()) {
-//         loadMSpectra2(
-//           metabolite_fragment.childNodes[0].data.scanid,
-//           metabolite_fragment.childNodes.map(function(r) { return {mz: r.data.mz}; }),
-//           function() {
-//             // fgrid.refresh event is called before canvas have been rendered
-//             // force fragment molecule rendering, hopyfully canvas have been rendered after spectra has been loaded
-//             me.getFragmentTree().initMolecules();
-//           }
-//         );
-//       }
-//     } else if (n.data.mslevel == 1) {
-//       console.log('Loaded lvl2 fragments of metabolite ');
-//       // load the scan of first child
-//       // add mz of metabolites as markers to lvl2 scan
-//       loadMSpectra2(
-//         rs[0].data.scanid,
-//         rs.map(function(r) { return {mz: r.data.mz}; }),
-//         function() {
-//           // fgrid.refresh event is called before canvas have been rendered
-//           // force fragment molecule rendering, hopyfully canvas have been rendered after spectra has been loaded
-//           me.getFragmentTree().initMolecules();
-//         }
-//       );
-//       mspectras[1].selectPeak(n.data.mz);
-//     } else if (n.data.mslevel >= 2) {
-//       console.log('Loaded lvl'+(n.data.mslevel+1)+' fragments of metabolite ');
-//       // load the scan of first child
-//       // add mz of metabolites as markers to lvl3 scan
-//       loadMSpectra(
-//         n.data.mslevel+1,
-//         rs[0].data.scanid,
-//         rs.map(function(r) { return {mz: r.data.mz}; }),
-//         function() {
-//           // fgrid.refresh event is called before canvas have been rendered
-//           // force fragment molecule rendering, hopyfully canvas have been rendered after spectra has been loaded
-//           me.getFragmentTree().initMolecules();
-//         }
-//       );
-//       // TODO select parent peaks if n.data.mslevel>2
-//       mspectras[2].selectPeak(n.data.mz);
-//     }
+    if ('id' in n.data && n.data.id == 'root') {
+      console.log('Loaded metabolite as fragment');
+      // add mz of metabolites as markers to lvl1 scan
+      me.application.mspectras[1].setMarkers(
+        rs.map(function(r) { return {mz: r.data.mz}; })
+      );
+      var metabolite_fragment = rs[0];
+      me.application.mspectras[1].selectPeak(metabolite_fragment.data.mz);
+      if (metabolite_fragment.hasChildNodes()) {
+        me.application.loadMSpectra2(
+          metabolite_fragment.childNodes[0].data.scanid,
+          metabolite_fragment.childNodes.map(function(r) { return {mz: r.data.mz}; }),
+          function() {
+            // fgrid.refresh event is called before canvas have been rendered
+            // force fragment molecule rendering, hopyfully canvas have been rendered after spectra has been loaded
+            me.getFragmentTree().initMolecules();
+          }
+        );
+      }
+    } else if (n.data.mslevel == 1) {
+      console.log('Loaded lvl2 fragments of metabolite ');
+      // load the scan of first child
+      // add mz of metabolites as markers to lvl2 scan
+      me.application.loadMSpectra2(
+        rs[0].data.scanid,
+        rs.map(function(r) { return {mz: r.data.mz}; }),
+        function() {
+          // fgrid.refresh event is called before canvas have been rendered
+          // force fragment molecule rendering, hopyfully canvas have been rendered after spectra has been loaded
+          me.getFragmentTree().initMolecules();
+        }
+      );
+      me.application.mspectras[1].selectPeak(n.data.mz);
+    } else if (n.data.mslevel >= 2) {
+      console.log('Loaded lvl'+(n.data.mslevel+1)+' fragments of metabolite ');
+      // load the scan of first child
+      // add mz of metabolites as markers to lvl3 scan
+      me.application.loadMSpectra(
+        n.data.mslevel+1,
+        rs[0].data.scanid,
+        rs.map(function(r) { return {mz: r.data.mz}; }),
+        function() {
+          // fgrid.refresh event is called before canvas have been rendered
+          // force fragment molecule rendering, hopyfully canvas have been rendered after spectra has been loaded
+          me.getFragmentTree().initMolecules();
+        }
+      );
+      // TODO select parent peaks if n.data.mslevel>2
+      me.application.mspectras[2].selectPeak(n.data.mz);
+    }
   }
 });
 
-Ext.define('Esc.msygma.controller.Scans', {
-  extend: 'Ext.app.Controller',
-  init: function() {
-    console.log('Scans controller init');
-  }
-});
-
-Ext.define('Esc.msygma.resultsApp', { extend:'Ext.app.Application',
+Ext.define('Esc.msygma.resultsApp', {
+  extend:'Ext.app.Application',
   constructor: function(config) {
     console.log('Construct app');
     this.initConfig(config);
@@ -630,218 +642,132 @@ Ext.define('Esc.msygma.resultsApp', { extend:'Ext.app.Application',
         chromatogram: null,
     }
   },
-  applyMaxmslevel: function(val) {
-    console.log('Apply maxmslevel');
-    return val;
+  clearMSpectra: function(mslevel) {
+    this.mspectras[mslevel].setData([]);
+    this.mspectras[mslevel].scanid = -1;
+    Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Scan ... (Level '+mslevel+')');
+  },
+  loadChildMSpectraOfFragment: function(node) {
+    // on expand load child mspectra if needed
+    if (node.firstChild.data.scanid != this.mspectras[node.firstChild.data.mslevel].scanid) {
+      this.loadMSpectra(
+        node.firstChild.data.mslevel,
+        node.firstChild.data.scanid,
+        node.childNodes.map(function(r) { return {mz: r.data.mz}; })
+      );
+    }
+  },
+  /**
+   * When user selects fragment in tree then select the peak in the mspectra
+   */
+  selectPeakInMSpectra: function(rm, r) {
+    console.log('Selected '+r.id);
+    // select peak belonging to r
+    this.mspectras[r.data.mslevel].selectPeak(r.data.mz);
+    // show child mspectra of selected node or mz
+    if (!r.isLeaf()) {
+      // onselect then expand
+      if (!r.isExpanded()) {
+        r.expand();
+      } else {
+        this.loadChildMSpectraOfFragment(r);
+      }
+    }
+    // select peaks of parents of fragment in parent scans
+    if (r.data.mslevel==1) {
+      this.mspectras[1].selectPeak(r.data.mz);
+      for (var i = 2; i <= config.maxmslevel; i++) {
+        this.mspectras[i].clearPeakSelection();
+      }
+    } else if (r.data.mslevel==2) {
+      for (var i = 3; i <= config.maxmslevel; i++) {
+        this.mspectras[i].clearPeakSelection();
+      }
+      this.mspectras[2].selectPeak(r.data.mz);
+      this.mspectras[1].selectPeak(r.parentNode.data.mz);
+    } else if (r.data.mslevel>=3) {
+      // TODO make selecting parent Node work for mslevel>3
+      this.mspectras[2].selectPeak(r.parentNode.data.mz);
+      this.mspectras[1].selectPeak(r.parentNode.parentNode.data.mz);
+    }
+  },
+  /**
+   * When user selects peak in spectra then select the fragment belonging to peak in fragment tree
+   */
+  selectFragmentInTree: function(mz, mslevel) {
+    console.log('Selected peak in lvl'+mslevel+' mspectra with m/z = '+mz);
+    // find fragment based on mz + mslevel
+    var node = this.getController('Fragments').getFragmentsStore().getNodeByMzMslevel(mz, mslevel);
+    this.getController('Fragments').getFragmentTree().getSelectionModel().select([node]);
+    if (!node.isLeaf()) {
+      if (!node.isExpanded()) {
+        node.expand();
+      } else {
+        this.loadChildMSpectraOfFragment(node);
+      }
+    } else {
+      // clear product scans
+    }
+    // TODO unselect peaks of child scans
+  },
+  loadMSpectra1: function(scanid, onload) {
+    this.loadMSpectra(1, scanid, [], onload);
+  },
+  loadMSpectra2: function(scanid, markers, onload) {
+    this.loadMSpectra(2, scanid, markers, onload);
+  },
+  loadMSpectra: function(mslevel, scanid, markers, onload) {
+    var me = this;
+    console.log('Loading msspectra level '+mslevel+' with id '+scanid);
+    this.mspectras[mslevel].setLoading(true);
+    d3.json(Ext.String.format(this.getUrls().mspectra, scanid, mslevel), function(data) {
+      if (!data) {
+        Ext.MessageBox.show({
+          title: 'Unable to find scan',
+          msg: 'Level '+mslevel+' scan with id '+scanid+' was not found',
+          buttons: Ext.MessageBox.OK,
+          icon: Ext.MessageBox.ERROR
+        });
+        me.mspectras[mslevel].setLoading(false);
+        return;
+      }
+      Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Scan '+scanid+' (Level '+mslevel+')');
+      me.mspectras[mslevel].setLoading(false);
+      me.mspectras[mslevel].scanid = scanid;
+      me.mspectras[mslevel].cutoff = data.cutoff;
+      me.mspectras[mslevel].setData(data.peaks);
+      me.mspectras[mslevel].setMarkers(markers);
+      if (onload) {
+        onload();
+      }
+    });
   },
   launch: function() {
     console.log('Launch app');
     var me = this;
     var config = me.config;
 
-    function clearMSpectra(mslevel) {
-      mspectras[mslevel].setData([]);
-      mspectras[mslevel].scanid = -1;
-      Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Scan ... (Level '+mslevel+')');
-    }
-
-    function loadChildMSpectraOfFragment(node) {
-      // on expand load child mspectra if needed
-      if (node.firstChild.data.scanid != mspectras[node.firstChild.data.mslevel].scanid) {
-        loadMSpectra(
-          node.firstChild.data.mslevel,
-          node.firstChild.data.scanid,
-          node.childNodes.map(function(r) { return {mz: r.data.mz}; })
-        );
-      }
-    }
-
-    /**
-     * When user selects fragment in tree then select the peak in the mspectra
-     */
-    function selectPeakInMSpectra(rm, r) {
-      console.log('Selected '+r.id);
-      // select peak belonging to r
-      mspectras[r.data.mslevel].selectPeak(r.data.mz);
-      // show child mspectra of selected node or mz
-      if (!r.isLeaf()) {
-        // onselect then expand
-        if (!r.isExpanded()) {
-          r.expand();
-        } else {
-          loadChildMSpectraOfFragment(r);
-        }
-      }
-      // select peaks of parents of fragment in parent scans
-      if (r.data.mslevel==1) {
-        mspectras[1].selectPeak(r.data.mz);
-        for (var i = 2; i <= config.maxmslevel; i++) {
-          mspectras[i].clearPeakSelection();
-        }
-      } else if (r.data.mslevel==2) {
-        for (var i = 3; i <= config.maxmslevel; i++) {
-          mspectras[i].clearPeakSelection();
-        }
-        mspectras[2].selectPeak(r.data.mz);
-        mspectras[1].selectPeak(r.parentNode.data.mz);
-      } else if (r.data.mslevel>=3) {
-        // TODO make selecting parent Node work for mslevel>3
-        mspectras[2].selectPeak(r.parentNode.data.mz);
-        mspectras[1].selectPeak(r.parentNode.parentNode.data.mz);
-      }
-    }
-
-    /**
-     * When user selects peak in spectra then select the fragment belonging to peak in fragment tree
-     */
-    function selectFragmentInTree(mz, mslevel) {
-      console.log('Selected peak in lvl'+mslevel+' mspectra with m/z = '+mz);
-      // find fragment based on mz + mslevel
-      var node = me.getController('Fragments').getFragmentsStore().getRootNode().findChildBy(function(n) {
-        return (n.data.mslevel == mslevel && n.data.mz == mz);
-      }, false, true);
-      me.getController('Fragments').getFragmentTree().getSelectionModel().select([node]);
-      if (!node.isLeaf()) {
-        if (!node.isExpanded()) {
-          node.expand();
-        } else {
-          loadChildMSpectraOfFragment(node);
-        }
-      } else {
-        // clear product scans
-      }
-      // TODO unselect peaks of child scans
-    }
-
-    /**
-     * Removes scan filter from metabolite store
-     */
-    function removeScanFilter() {
-      var scanfilter;
-      // see if already filtered on scanid then remove old filter
-      if ('scanid' in me.getController('Metabolites').getMetabolitesStore().getProxy().extraParams) {
-        delete(me.getController('Metabolites').getMetabolitesStore().getProxy().extraParams.scanid);
-        me.getController('Metabolites').getMetabolitesStore().loadPage(1);
-      }
-    }
-
-    function loadMSpectra1(scanid, onload) {
-      loadMSpectra(1, scanid, [], onload);
-    }
-
-    function loadMSpectra2(scanid, markers, onload) {
-      loadMSpectra(2, scanid, markers, onload);
-    }
-
-    function loadMSpectra(mslevel, scanid, markers, onload) {
-      console.log('Loading msspectra level '+mslevel+' with id '+scanid);
-      mspectras[mslevel].setLoading(true);
-      d3.json(Ext.String.format(config.urls.mspectra, scanid, mslevel), function(data) {
-        if (!data) {
-          Ext.MessageBox.show({
-            title: 'Unable to find scan',
-            msg: 'Level '+mslevel+' scan with id '+scanid+' was not found',
-            buttons: Ext.MessageBox.OK,
-            icon: Ext.MessageBox.ERROR
-          });
-          mspectras[mslevel].setLoading(false);
-          return;
-        }
-        Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Scan '+scanid+' (Level '+mslevel+')');
-        mspectras[mslevel].setLoading(false);
-        mspectras[mslevel].scanid = scanid;
-        mspectras[mslevel].cutoff = data.cutoff;
-        mspectras[mslevel].setData(data.peaks);
-        mspectras[mslevel].setMarkers(markers);
-        if (onload) {
-          onload();
-        }
-      });
-    }
-
-    function selectScan(scanid) {
-      console.log('select scan '+scanid);
-      removeScanFilter();
-      me.getController('Fragments').clearFragments();
-      // if metabolite has been selected
-      // and scanid is hit of metabolite then show fragments with this metabolite and scan
-      // else filter mstore and load scan
-      if (
-          me.getController('Metabolites').getMetaboliteList().getSelectionModel().selected.getCount() > 0
-          &&
-          me.getController('Metabolites').getMetaboliteList().getSelectionModel().selected.getAt(0).data.scans.some(
-            function(e) { return (e.id == scanid); }
-          )
-      ) {
-        loadMSpectra1(scanid, function() {
-          me.getController('Fragments').loadFragments(
-              scanid,
-              me.getController('Metabolites').getMetaboliteList().getSelectionModel().selected.getAt(0).data.metid
-          );
-        });
-      } else {
-        loadMSpectra1(scanid, function() {
-          me.getController('Metabolites').getMetabolitesStore().getProxy().extraParams.scanid = scanid;
-          me.getController('Metabolites').getMetabolitesStore().loadPage(1);
-        });
-        // TODO in spectra add markers for metabolites present in scan
-      }
-    }
-
-    function clearMSpectra1() {
-      clearMSpectra(1);
-    }
-
-    function unSelectScan() {
-      removeScanFilter();
-      me.getController('Fragments').clearFragments();
-      clearMSpectra1();
-    }
-
-    function setChromatogramMarkersByMetaboliteFilter() {
-      var store = me.getController('Metabolites').getMetabolitesStore();
-      if (store.isLoaded && lc_chart.hasData()) {
-        console.log('Setting chromatogram markers');
-        var markers = store.getProxy().getReader().rawData.scans;
-        lc_chart.setMarkers(markers);
-      }
-    }
-
-    lc_chart = Ext.create('Ext.esc.Chromatogram', {
-      cutoff: config.ms_intensity_cutoff,
-      emptyText: 'Loading chromatogram ...',
-      listeners: {
-        selectscan: selectScan,
-        unselectscan: unSelectScan
-      }
-    });
-    lc_chart.setLoading(true);
-    d3.json(config.urls.chromatogram, function(data) {
-      lc_chart.setLoading(false);
-      lc_chart.setData(data);
-      setChromatogramMarkersByMetaboliteFilter();
-    });
-
     var msspectrapanels = [];
-    mspectras = [];
-    for (var i = 1; i <= config.maxmslevel; i++) {
-      mspectras[i] = Ext.create('Ext.esc.MSpectra', {
+    this.mspectras = [];
+    for (var mslevel = 1; mslevel <= this.getMaxmslevel(); mslevel++) {
+      this.mspectras[mslevel] = Ext.create('Ext.esc.MSpectra', {
+        mslevel: mslevel,
         emptyText: (
-            i==1 ?
+            mslevel==1 ?
             'Select a scan in the chromatogram' :
-            'Select a fragment to show its level '+i+' scan'
+            'Select a fragment to show its level '+mslevel+' scan'
         ),
         listeners: {
           selectpeak: function(mz) {
-            selectFragmentInTree(mz, i);
+            me.selectFragmentInTree(mz, this.mslevel);
           }
         }
       });
       msspectrapanels.push({
-        title: 'Scan ... (Level '+i+')',
-        id: 'mspectra'+i+'panel',
+        title: 'Scan ... (Level '+mslevel+')',
+        id: 'mspectra'+mslevel+'panel',
         collapsible: true,
-        items: mspectras[i]
+        items: this.mspectras[mslevel]
       });
     }
 
@@ -852,39 +778,16 @@ Ext.define('Esc.msygma.resultsApp', { extend:'Ext.app.Application',
       border: false,
       items:[{
         region:'center',
-        title: 'Query molecules & Metabolites',
         border: false,
         xtype: 'metabolitelist'
       },{
-        title:'Chromatogram',
         region:'south',
         hideCollapseTool: true,
         collapsible: true,
         height: '50%',
         split: true,
-        layout: 'fit',
-        items:[lc_chart],
+        xtype: 'scanchromatogram',
         border: false,
-        tools:[{
-          type:'search',
-          tooltip: 'Select lvl1 scan by identifier',
-          handler: function() {
-            Ext.MessageBox.prompt('Scan#', 'Please enter a level 1 scan identifier:', function(b,v) {
-              if (b != 'cancel' && v) {
-               v = v*1;
-               lc_chart.selectScans([v]);
-               selectScan(v);
-              }
-            });
-          }
-        },{
-          type:'refresh',
-          tooltip:'Clear scan selection',
-          handler: function() {
-            lc_chart.clearScanSelection();
-            unSelectScan();
-          }
-        }]
       }]
     });
 
@@ -899,7 +802,6 @@ Ext.define('Esc.msygma.resultsApp', { extend:'Ext.app.Application',
       border: false,
       items:[{
         region: 'center',
-        title: 'Fragments',
         xtype: 'fragmenttree',
         border: false
       },{
@@ -935,18 +837,18 @@ Ext.define('Esc.msygma.resultsApp', { extend:'Ext.app.Application',
   }
 });
 
-app = Ext.create('Esc.msygma.resultsApp',{
-	maxmslevel: ${maxmslevel},
-	ms_intensity_cutoff: ${run.ms_intensity_cutoff},
-	urls: {
-		fragments: '${request.application_url}/fragments/{0}/{1}.json',
-		mspectra: '${request.application_url}/mspectra/{0}.json?mslevel={1}',
-		extractedionchromatogram: '${request.application_url}/extractedionchromatogram/{0}.json',
-		metabolites: '${request.route_url('metabolites.json')}',
-		chromatogram: '${request.route_url('chromatogram.json')}'
-	}
+app = Ext.create('Esc.msygma.resultsApp', {
+  appFolder: "${request.static_url('sygma:static/app')}",
+  maxmslevel: ${maxmslevel},
+  ms_intensity_cutoff: ${run.ms_intensity_cutoff},
+  urls: {
+    fragments: '${request.application_url}/fragments/{0}/{1}.json',
+    mspectra: '${request.application_url}/mspectra/{0}.json?mslevel={1}',
+    extractedionchromatogram: '${request.application_url}/extractedionchromatogram/{0}.json',
+    metabolites: '${request.route_url('metabolites.json')}',
+    chromatogram: '${request.route_url('chromatogram.json')}'
+  }
 });
-
 </script>
 </head>
 <body>
