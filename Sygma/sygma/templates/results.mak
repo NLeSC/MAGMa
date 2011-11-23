@@ -147,25 +147,36 @@ Ext.define('Esc.msygma.model.Fragment', {
   hasMany: { model: 'Fragment', name:'children' }
 });
 
-Ext.application({
+Ext.define('Esc.msygma.resultsApp', { extend:'Ext.app.Application',
+  constructor: function(config) {
+    console.log('Construct');
+    this.initConfig(config);
+    this.callParent(arguments);
+    return this;
+  },
   name: 'Esc.msygma',
   models: [ 'Metabolite', 'Fragment' ],
   config: {
     pageSize: 10,
-    maxmslevel: ${maxmslevel},
-    ms_intensity_cutoff: ${run.ms_intensity_cutoff},
+    maxmslevel: 2,
+    ms_intensity_cutoff: null,
     urls: {
-        fragments: '${request.application_url}/fragments/{0}/{1}.json',
-        mspectra: '${request.application_url}/mspectra/{0}.json?mslevel={1}',
-        extractedionchromatogram: '${request.application_url}/extractedionchromatogram/{0}.json',
-        metabolites: '${request.route_url('metabolites.json')}',
-        chromatogram: '${request.route_url('chromatogram.json')}'
+        fragments: null,
+        mspectra: null,
+        extractedionchromatogram: null,
+        metabolites: null,
+        chromatogram: null,
     }
   },
   init: function() {
-
+    console.log('Init');
+  },
+  applyMaxmslevel: function(val) {
+    console.log('Apply maxmslevel');
+    return val;
   },
   launch: function() {
+    console.log('Launch');
     var config = this.config;
 
     function clearFragments() {
@@ -794,6 +805,18 @@ Ext.application({
       items:[ master_side, detail_side ]
     });
   }
+});
+
+app = Ext.create('Esc.msygma.resultsApp',{
+	maxmslevel: ${maxmslevel},
+	ms_intensity_cutoff: ${run.ms_intensity_cutoff},
+	urls: {
+		fragments: '${request.application_url}/fragments/{0}/{1}.json',
+		mspectra: '${request.application_url}/mspectra/{0}.json?mslevel={1}',
+		extractedionchromatogram: '${request.application_url}/extractedionchromatogram/{0}.json',
+		metabolites: '${request.route_url('metabolites.json')}',
+		chromatogram: '${request.route_url('chromatogram.json')}'
+	}
 });
 
 </script>
