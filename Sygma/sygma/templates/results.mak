@@ -83,10 +83,6 @@ Ext.Loader.setConfig({
   }
 });
 
-Ext.require([
-    'Ext.ux.grid.FiltersFeature',
-]);
-
 Ext.define('Esc.msygma.model.Metabolite', {
   idProperty: 'metid',
   extend:'Ext.data.Model',
@@ -220,7 +216,7 @@ Ext.define('Esc.msygma.view.metabolite.List', {
       columns: [
         {text: 'ID', dataIndex: 'metid', hidden: true},
         molcol,
-        {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: [0,1,2,3] }, hidden:true},
+        {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: ['0','1','2','3'] }, hidden:true},
         {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }},
         {text: 'Reaction seq.', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }, renderer: function(v) {
           return '<ol><li>'+v.replace("\n","</li><li>")+'</li></ol>';
