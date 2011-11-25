@@ -10,8 +10,12 @@ Ext.define('Esc.msygma.controller.Scans', {
 
     this.control({
       'scanchromatogram': {
-        selectscan: this.onSelectScan,
-        unselectscan: this.onUnselectScan
+        selectscan: function() {
+            me.application.fireEvent('selectscan', arguments);
+        },
+        unselectscan: function() {
+            me.application.fireEvent('noselectscan', arguments);
+        },
       },
       'scanchromatogram tool[action=search]': {
         click: this.searchScan
@@ -20,6 +24,18 @@ Ext.define('Esc.msygma.controller.Scans', {
         click: this.clearScanSelection
       }
     });
+
+    this.application.on('metaboliteload', this.setScansOfMetabolites, this);
+    this.application.on('metaboliteselect', this.loadExtractedIonChromatogram, this);
+    this.application.on('metabolitedeselect', function() {
+        this.resetScans();
+        this.clearExtractedIonChromatogram();
+    }, this);
+    this.application.on('metabolitenoselect', function() {
+        this.resetScans();
+        this.clearExtractedIonChromatogram();
+    }, this);
+    this.application.on('selectscan', this.onSelectScan, this);
   },
   onLaunch: function() {
     var me = this;
@@ -33,67 +49,84 @@ Ext.define('Esc.msygma.controller.Scans', {
       chromatogram.setLoading(false);
       console.log('Loading chromatogram');
       chromatogram.setData(data);
-      me.setChromatogramMarkersByMetaboliteFilter();
+      me.resetScans();
     });
-  },
-  setChromatogramMarkersByMetaboliteFilter: function() {
-    var store = this.application.getController('Metabolites').getMetabolitesStore();
-    if (store.isLoaded && this.getScanChromatogram().hasData()) {
-      console.log('Setting chromatogram markers');
-      var markers = store.getProxy().getReader().rawData.scans;
-      this.getScanChromatogram().setMarkers(markers);
-    }
   },
   clearExtractedIonChromatogram: function() {
     this.getScanChromatogram().setExtractedIonChromatogram([]);
   },
-  onSelectScan: function(scanid) {
+  loadExtractedIonChromatogram: function(metid, metabolite) {
+    console.log('Loading extracted ion chromatogram');
+    this.getScanChromatogram().setLoading(true);
     var me = this;
-    console.log('select scan '+scanid);
-    me.getController('Metabolites').getMetabolitesStore().removeScanFilter();
-    me.getController('Fragments').clearFragments();
-    // if metabolite has been selected
-    // and scanid is hit of metabolite then show fragments with this metabolite and scan
-    // else filter mstore and load scan
-    if (
-      me.getController('Metabolites').getMetaboliteList().getSelectionModel().selected.getCount() > 0
-      &&
-      me.getController('Metabolites').getMetaboliteList().getSelectionModel().selected.getAt(0).data.scans.some(
-        function(e) { return (e.id == scanid); }
-      )
-    ) {
-      me.application.loadMSpectra1(scanid, function() {
-        me.getController('Fragments').loadFragments(
-          scanid,
-          me.getController('Metabolites').getMetaboliteList().getSelectionModel().selected.getAt(0).data.metid
-        );
-      });
-    } else {
-      me.application.loadMSpectra1(scanid, function() {
-        me.getController('Metabolites').getMetabolitesStore().setScanFilter(scanid);
-      });
-      // TODO in spectra add markers for metabolites present in scan
-    }
-  },
-  onUnselectScan: function() {
-    var me = this;
-    console.log('Unselect scan');
-    me.getController('Metabolites').getMetabolitesStore().removeScanFilter();
-    me.getController('Fragments').clearFragments();
-    me.application.clearMSpectra(1);
+    Ext.Ajax.request({
+      url: Ext.String.format(this.application.getUrls().extractedionchromatogram, metid),
+      success: function(response) {
+        me.getScanChromatogram().setLoading(false);
+        var obj = Ext.decode(response.responseText);
+        this.getScanChromatogram().setExtractedIonChromatogram(obj.chromatogram);
+        this.setScans(obj.scans);
+      }
+    });
   },
   searchScan: function() {
     var me = this;
     Ext.MessageBox.prompt('Scan#', 'Please enter a level 1 scan identifier:', function(b,v) {
       if (b != 'cancel' && v) {
        v = v*1;
-       me.getScanChromatogram().selectScans([v]);
-       me.onSelectScan(v);
+       me.selectScan(v);
       }
     });
   },
   clearScanSelection: function() {
-     this.getScanChromatogram().clearScanSelection();
-     this.onUnselectScan();
+    this.getScanChromatogram().clearScanSelection();
+    this.onUnselectScan();
+  },
+  selectScan: function(scanid) {
+    this.getScanChromatogram().selectScans(scanid);
+    this.application.fireEvent('selectscan', scanid);
+  },
+  /**
+   * Each time the metabolite grid is loaded the response also contains a list of scans
+   * where the filtered metabolites have hits, we use this to mark the scans that can be selected
+   */
+  setScansOfMetabolites: function(metabolitestore) {
+      this.scans_of_metabolites = metabolitestore.getProxy().getReader().rawData.scans;
+      this.setScans(scans_of_metabolites);
+  },
+  /**
+   * Sets scans markers to scans where current metabolite filter has hits.
+   */
+  resetScans: function() {
+      if (this.scans_of_metabolites) {
+          this.setScans(this.scans_of_metabolites);
+      }
+  },
+  setScans: function(scans) {
+    console.log('Setting chromatogram scan markers');
+    var chromatogram = this.getScanChromatogram();
+    if (!chromatogram.hasData()) {
+        return; // can not set scan markers if chromatogram is not loaded
+    }
+    if (obj.scans.length) {
+       // if scan is already selected and is part of new scans then reselect scan
+       if (
+         obj.scans.some(function(e) {
+           return (e.id == chromatogram.selectedscan);
+         })
+       ) {
+         var selectedScan = chromatogram.selectedscan;
+         chromatogram.setMarkers(scans);
+         chromatogrametScanChromatogram().selectScans([selectedScan]);
+       } else {
+         chromatogram.setMarkers(scans);
+       }
+       // if only one scan then select scan
+       if (scans.length == 1) {
+         this.selectScan(scans[0].id);
+       }
+    } else {
+      this.application.fireEvent('noscansfound');
+    }
   }
 });

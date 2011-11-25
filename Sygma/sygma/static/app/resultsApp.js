@@ -177,6 +177,7 @@ Ext.define('Esc.msygma.controller.Metabolites', {
   }],
   init: function() {
     console.log('Metabolites controller init');
+    var me = this;
 
     // configure store
     var store = this.getMetabolitesStore();
@@ -192,85 +193,50 @@ Ext.define('Esc.msygma.controller.Metabolites', {
       'metabolitelist': {
         select: this.onSelect,
         deselect: this.onDeselect,
+        beforeselect: this.beforeSelect,
       },
       'metabolitelist button[action=clear]': {
         click: this.clearFilters
       },
     });
+
+    this.application.on('selectscan', function(scanid) {
+        me.getMetabolitesStore().setScanFilter(scanid);
+        // TODO in spectra add markers for metabolites present in scan
+    });
+    this.application.on('noselectscan', function() {
+        me.getMetabolitesStore().removeScanFilter();
+    });
   },
   onLoad: function(store) {
     console.log('Metabolite store loaded '+store.isLoaded);
-    this.application.getController('Scans').setChromatogramMarkersByMetaboliteFilter();
+    this.application.fireEvent('metaboliteload', store);
+  },
+  /**
+   * Only allow metabolite with a scans to be selected.
+   * The extracted ion chromatogram of a metabolite without scans can not be shown because it can not be selected.
+   */
+  beforeSelect: function(rm, metabolite) {
+    return (metabolite.data.nr_scans > 0);
   },
   onSelect: function(rm, metabolite) {
-    var me = this;
     var metid = metabolite.data.metid;
     console.log('Select metabolite '+metid);
-
-    this.application.getController('Fragments').clearFragments();
-
-    this.application.getController('Scans').getScanChromatogram().setLoading(true);
-    Ext.Ajax.request({
-      url: Ext.String.format(this.application.getUrls().extractedionchromatogram, metid),
-      success: function(response) {
-        me.application.getController('Scans').getScanChromatogram().setLoading(false);
-        var obj = Ext.decode(response.responseText);
-        metabolite.data.scans = obj.scans;
-        me.application.getController('Scans').getScanChromatogram().setExtractedIonChromatogram(obj.chromatogram);
-        if (obj.scans.length) {
-          // if one scan has already been selected test if its a member of the scans of selected metabolite
-          // if so then show fragments
-          if (
-            me.application.getController('Scans').getScanChromatogram().selectedscan != -1 &&
-            obj.scans.some(function(e) {
-              return (e.id == me.application.getController('Scans').getScanChromatogram().selectedscan);
-            })
-          ) {
-            console.log('Selected metabolite and its one scan is selected');
-            me.getController('Fragments').loadFragments(me.application.getController('Scans').getScanChromatogram().selectedscan, metid);
-          } else {
-            console.log('Selecting scans of metabolite');
-            if (me.application.getController('Scans').getScanChromatogram().selectedscan != -1) {
-              me.application.getController('Scans').getScanChromatogram().setMarkers(obj.scans);
-            } else {
-              var selectedScan = me.application.getController('Scans').getScanChromatogram().selectedscan;
-              me.application.getController('Scans').getScanChromatogram().setMarkers(obj.scans);
-              me.application.getController('Scans').getScanChromatogram().selectScans([selectedScan]);
-            }
-            // if metabolite has only one scan hit then show that scan and fragments
-            if (obj.scans.length == 1) {
-              var selectedScan = obj.scans[0].id;
-              // show scan where metabolite had its hit
-              console.log('show scan where metabolite had its hit');
-              me.application.getController('Scans').getScanChromatogram().selectScans([selectedScan]);
-              me.application.loadMSpectra1(selectedScan);
-              // show fragments with this metabolite and scan
-              console.log('show fragments of metabolite');
-              me.getController('Fragments').loadFragments(selectedScan, metid);
-            } else {
-              // multiple scans so mspectra1 should be empty
-              me.application.clearMSpectra(1);
-            }
-          }
-        } else {
-          Ext.Msg.alert('Metabolite has no hits', 'The selected query/metabolite was not found in the ms data');
-          me.getMetaboliteList().getSelectionModel().deselectAll();
-        }
-      }
-    });
+    this.application.fireEvent('metaboliteselect', metid, metabolite);
   },
-  onDeselect: function(rm, r) {
-    console.log('Deselect metabolite');
-    this.application.getController('Scans').setChromatogramMarkersByMetaboliteFilter();
-    this.application.getController('Scans').clearExtractedIonChromatogram();
-    this.application.getController('Fragments').clearFragments();
+  onDeselect: function(rm, metabolite) {
+    var metid = metabolite.data.metid;
+    console.log('Deselect metabolite '+metid);
+    this.application.fireEvent('metabolitedeselect', metid, metabolite);
   },
+  /**
+   * Remove filters and clears selection
+   */
   clearFilters: function() {
     console.log('Clear metabolite filter');
     this.getMetaboliteList().clearFilter();
     this.getMetabolitesStore().filter();
-    this.application.getController('Scans').clearExtractedIonChromatogram();
-    this.application.getController('Fragments').clearFragments();
+    this.application.fireEvent('metabolitenoselect');
   }
 });
 
@@ -395,6 +361,9 @@ Ext.define('Esc.msygma.controller.Fragments', {
         itemexpand: this.onFragmentExpand
       }
     });
+
+    this.application.on('scanandmetaboliteselect', this.loadFragments, this);
+    this.application.on('scanandmetabolitenoselect', this.clearFragments, this);
   },
   loadFragments: function (scanid, metid) {
     this.clearFragments();
@@ -656,6 +625,41 @@ Ext.define('Esc.msygma.resultsApp', {
     });
   },
   launch: function() {
+    this.application.on('selectscan', this.loadMSpectra1, this);
+    // when a metabolite and scan are selected then load fragments
+    this.selected = { scanid: false, metid: false };
+    this.application.on('metaboliteselect', function(metid) {
+      this.selected.metid = metid;
+      if (this.selected.metid && this.selected.scanid) {
+        this.application.fireEvent('scanandmetaboliteselect', metid, scanid);
+      }
+    }, this);
+    this.application.on('selectscan', function(scanid) {
+        this.selected.scanid = scanid;
+        if (this.selected.metid && this.selected.scanid) {
+            this.application.fireEvent('scanandmetaboliteselect', metid, scanid);
+        }
+    }, this);
+    this.application.on('noselectscan', function() {
+        me.clearMSpectra(1);
+        if (this.selected.metid && this.selected.scanid) {
+            this.application.fireEvent('scanandmetabolitenoselect');
+        }
+        this.selected.scanid = false;
+    }, this);
+    this.application.on('metabolitedeselect', function() {
+        if (this.selected.metid && this.selected.scanid) {
+            this.application.fireEvent('scanandmetabolitenoselect');
+        }
+        this.selected.metid = false;
+    }, this);
+    this.application.on('metabolitenoselect', function() {
+        if (this.selected.metid && this.selected.scanid) {
+            this.application.fireEvent('scanandmetabolitenoselect');
+        }
+        this.selected.metid = false;
+    }, this);
+
     console.log('Launch app');
     var me = this;
     var config = me.config;
