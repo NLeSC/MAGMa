@@ -77,7 +77,7 @@ line.mspeak {
 
 Ext.Loader.setConfig({
   enabled: true,
-//  disableCaching: false, // otherwise can not use firebug breakpoint
+//  disableCaching: false, // uncomment to use firebug breakpoints
   paths: {
     'Esc.msygma': '${request.static_url('sygma:static/app')}',
     'Ext.esc': '${request.static_url('sygma:static/esc')}',

@@ -10,11 +10,11 @@ Ext.define('Esc.msygma.controller.Scans', {
 
     this.control({
       'scanchromatogram': {
-        selectscan: function() {
-            me.application.fireEvent('selectscan', arguments);
+        selectscan: function(scanid) {
+            me.application.fireEvent('selectscan', scanid);
         },
-        unselectscan: function() {
-            me.application.fireEvent('noselectscan', arguments);
+        unselectscan: function(scanid) {
+            me.application.fireEvent('noselectscan', scanid);
         },
       },
       'scanchromatogram tool[action=search]': {
@@ -35,7 +35,6 @@ Ext.define('Esc.msygma.controller.Scans', {
         this.resetScans();
         this.clearExtractedIonChromatogram();
     }, this);
-    this.application.on('selectscan', this.onSelectScan, this);
   },
   onLaunch: function() {
     var me = this;
@@ -64,8 +63,8 @@ Ext.define('Esc.msygma.controller.Scans', {
       success: function(response) {
         me.getScanChromatogram().setLoading(false);
         var obj = Ext.decode(response.responseText);
-        this.getScanChromatogram().setExtractedIonChromatogram(obj.chromatogram);
-        this.setScans(obj.scans);
+        me.getScanChromatogram().setExtractedIonChromatogram(obj.chromatogram);
+        me.setScans(obj.scans);
       }
     });
   },
@@ -83,7 +82,7 @@ Ext.define('Esc.msygma.controller.Scans', {
     this.onUnselectScan();
   },
   selectScan: function(scanid) {
-    this.getScanChromatogram().selectScans(scanid);
+    this.getScanChromatogram().selectScans([scanid]);
     this.application.fireEvent('selectscan', scanid);
   },
   /**
@@ -92,7 +91,7 @@ Ext.define('Esc.msygma.controller.Scans', {
    */
   setScansOfMetabolites: function(metabolitestore) {
       this.scans_of_metabolites = metabolitestore.getProxy().getReader().rawData.scans;
-      this.setScans(scans_of_metabolites);
+      this.setScans(this.scans_of_metabolites);
   },
   /**
    * Sets scans markers to scans where current metabolite filter has hits.
@@ -108,21 +107,21 @@ Ext.define('Esc.msygma.controller.Scans', {
     if (!chromatogram.hasData()) {
         return; // can not set scan markers if chromatogram is not loaded
     }
-    if (obj.scans.length) {
+    if (scans.length) {
        // if scan is already selected and is part of new scans then reselect scan
        if (
-         obj.scans.some(function(e) {
-           return (e.id == chromatogram.selectedscan);
+         scans.some(function(e) {
+           return (e.id == chromatogram.selectedScan);
          })
        ) {
-         var selectedScan = chromatogram.selectedscan;
+         var selectedScan = chromatogram.selectedScan;
          chromatogram.setMarkers(scans);
-         chromatogrametScanChromatogram().selectScans([selectedScan]);
+         chromatogram.selectScans([selectedScan]);
        } else {
          chromatogram.setMarkers(scans);
        }
        // if only one scan then select scan
-       if (scans.length == 1) {
+       if (scans.length == 1 && chromatogram.selectedScan != scans[0].id) {
          this.selectScan(scans[0].id);
        }
     } else {

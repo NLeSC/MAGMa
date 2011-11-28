@@ -175,14 +175,14 @@ Ext.define('Ext.esc.Chromatogram', {
   onToggleMarker: function(scanid) {
     var me = this;
     this.markerSelect(function(e) {
-      return (scanid == e.id && me.selectedscan != e.id);
+      return (scanid == e.id && me.selectedScan != e.id);
     });
-    if (scanid != me.selectedscan) {
+    if (scanid != me.selectedScan) {
       me.fireEvent('selectscan', scanid);
-      me.selectedscan = scanid;
+      me.selectedScan = scanid;
     } else {
       me.fireEvent('unselectscan', scanid);
-      me.selectedscan = -1;
+      me.selectedScan = -1;
     }
   },
   /**
@@ -207,9 +207,9 @@ Ext.define('Ext.esc.Chromatogram', {
       return !(scanids.indexOf(d.id) == -1);
     });
     if (scanids.length == 1) {
-       this.selectedscan = scanids[0];
+       this.selectedScan = scanids[0];
      } else if (scanids.length == 0) {
-       this.selectedscan = -1;
+       this.selectedScan = -1;
      }
   },
   /**
@@ -217,7 +217,7 @@ Ext.define('Ext.esc.Chromatogram', {
    */
   clearScanSelection: function() {
     this.markerSelect(false);
-    this.selectedscan = -1;
+    this.selectedScan = -1;
   },
   /**
    * @param data array of markers.
@@ -225,8 +225,8 @@ Ext.define('Ext.esc.Chromatogram', {
    * When a scan has been selected scan it is reselected if scan is still marked
    */
   setMarkers: function(data) {
-  	if (this.selectedscan != -1) {
-  		var selectedScan = this.selectedscan;
+  	if (this.selectedScan != -1) {
+  		var selectedScan = this.selectedScan;
   	}
     this.clearScanSelection();
     this.svg.selectAll('.marker').remove();
