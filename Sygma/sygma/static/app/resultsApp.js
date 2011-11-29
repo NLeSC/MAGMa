@@ -1,3 +1,6 @@
+/**
+ * Metabolite model.
+ */
 Ext.define('Esc.msygma.model.Metabolite', {
   idProperty: 'metid',
   extend:'Ext.data.Model',
@@ -30,6 +33,9 @@ Ext.define('Esc.msygma.model.Metabolite', {
   }]
 });
 
+/**
+ * Fragment model.
+ */
 Ext.define('Esc.msygma.model.Fragment', {
   extend:'Ext.data.Model',
   idProperty: 'fragid',
@@ -59,6 +65,9 @@ Ext.define('Esc.msygma.model.Fragment', {
   hasMany: { model: 'Fragment', name:'children' }
 });
 
+/**
+ * Metabolite store.
+ */
 Ext.define('Esc.msygma.store.Metabolites', {
   extend: 'Ext.data.Store',
   model: 'Esc.msygma.model.Metabolite',
@@ -80,6 +89,11 @@ Ext.define('Esc.msygma.store.Metabolites', {
   remoteSort: true,
   remoteFilter: true,
   isLoaded: false,
+  /**
+   * Shortcut for this.getProxy().url
+   *
+   * @param {String} url URL
+   */
   setUrl: function(url) {
     this.getProxy().url = url;
   },
@@ -92,7 +106,8 @@ Ext.define('Esc.msygma.store.Metabolites', {
     console.log('Init Metabolites store');
   },
   /**
-   * Removes scan filter from metabolite store
+   * Removes scan filter from metabolite store.
+   * And reloads store to first page.
    */
   removeScanFilter: function() {
     // see if already filtered on scanid then remove old filter
@@ -101,12 +116,21 @@ Ext.define('Esc.msygma.store.Metabolites', {
       this.loadPage(1);
     }
   },
+  /**
+   * Filter metabolites having hits in a specific scan.
+   * Sets filter and reloads store to first page.
+   *
+   * @param {Number} scanid Scan identifier.
+   */
   setScanFilter: function(scanid) {
     this.getProxy().extraParams.scanid = scanid;
     this.loadPage(1);
   }
 });
 
+/**
+ * Grid of metabolites.
+ */
 Ext.define('Esc.msygma.view.metabolite.List', {
   extend: 'Ext.grid.Panel',
   alias: 'widget.metabolitelist',
@@ -162,11 +186,19 @@ Ext.define('Esc.msygma.view.metabolite.List', {
     });
     this.callParent(arguments);
   },
+  /**
+   * Clears all filters applied to metabolites
+   */
   clearFilter: function() {
     this.getView().getFeature('mfilter').clearFilters();
   }
 });
 
+/**
+ * Metabolite controller.
+ *
+ * Handles actions performed in metabolites views.
+ */
 Ext.define('Esc.msygma.controller.Metabolites', {
   extend: 'Ext.app.Controller',
   views: [ 'metabolite.List' ],
@@ -201,10 +233,47 @@ Ext.define('Esc.msygma.controller.Metabolites', {
 
     this.application.on('selectscan', this.applyScanFilter, this);
     this.application.on('noselectscan', this.clearScanFilter, this);
+
+    this.application.addEvents(
+        /**
+         * @event
+         * Triggered when metabolite store is loaded.
+         * @param {Ext.data.Store} store
+         */
+        'metaboliteload',
+        /**
+         * @event
+         * Triggered when metabolite is selected.
+         * @param {Number} metid Metabolite identifier
+         * @param {Esc.msygma.model.Metabolite} metabolite
+         */
+        'metaboliteselect',
+        /**
+         * @event
+         * Triggered when metabolite is deselected.
+         * @param {Number} metid Metabolite identifier
+         * @param {Esc.msygma.model.Metabolite} metabolite
+         */
+        'metabolitedeselect',
+        /**
+         * @event
+         * Triggered when metabolite selection is cleared
+         */
+        'metabolitenoselect'
+    );
   },
+  /**
+   * Loads metabolite store
+   */
   onLaunch: function() {
       this.getMetabolitesStore().load();
   },
+  /**
+   * Listens for metabolite store load event.
+   * Selects metabolite if store only contains 1 metabolite.
+   *
+   * @param {Ext.data.Store} store
+   */
   onLoad: function(store) {
     this.application.fireEvent('metaboliteload', store);
     if (store.getCount() == 1 && !this.getMetaboliteList().getSelectionModel().hasSelection()) {
@@ -220,12 +289,10 @@ Ext.define('Esc.msygma.controller.Metabolites', {
   },
   onSelect: function(rm, metabolite) {
     var metid = metabolite.data.metid;
-    console.log('Select metabolite '+metid);
     this.application.fireEvent('metaboliteselect', metid, metabolite);
   },
   onDeselect: function(rm, metabolite) {
     var metid = metabolite.data.metid;
-    console.log('Deselect metabolite '+metid);
     this.application.fireEvent('metabolitedeselect', metid, metabolite);
   },
   /**
@@ -239,6 +306,7 @@ Ext.define('Esc.msygma.controller.Metabolites', {
   },
   /**
    * If metabolite is selected then try to reselect it after load
+   * @private
    */
   reselectAfterLoad: function() {
       var me = this;
@@ -255,11 +323,21 @@ Ext.define('Esc.msygma.controller.Metabolites', {
           store.on('load', reselect , me);
       }
   },
+  /**
+   * Apply scan filter to metabolite store.
+   * Tries to keep selection.
+   *
+   * @param {Number} scanid Scan identifier to filter on.
+   */
   applyScanFilter: function(scanid) {
       this.reselectAfterLoad();
       this.getMetabolitesStore().setScanFilter(scanid);
       // TODO in spectra add markers for metabolites present in scan
   },
+  /**
+   * Removes scan filter from metabolite store.
+   * Tries to keep selection.
+   */
   clearScanFilter: function() {
       this.reselectAfterLoad();
       this.getMetabolitesStore().removeScanFilter();
@@ -267,6 +345,8 @@ Ext.define('Esc.msygma.controller.Metabolites', {
 });
 
 /**
+ * Store for fragments.
+ *
  * Fragments are loaded when a scan and metabolite are selected.
  */
 Ext.define('Esc.msygma.store.Fragments', {
@@ -274,10 +354,22 @@ Ext.define('Esc.msygma.store.Fragments', {
   model: 'Esc.msygma.model.Fragment',
   autoLoad: false,
   root: { children : [] }, // prevent tree from autoloading
-  // TreeStore and Store have different function to fetch record by id, add getById to TreeStore
+  /**
+   * TreeStore and Store have different function to fetch record by id, add getById to TreeStore
+   *
+   * @param {Number} id Identifier of fragment
+   * @return {Ext.data.NodeInterface}
+   */
   getById: function(id) {
     return this.getNodeById(id);
   },
+  /**
+   * Find a fragment by m/z and MS level.
+   *
+   * @param {Number} mz M/z of node fragment to find
+   * @param {Number} mslevel MS level on which m/z must be found
+   * @return {Ext.data.NodeInterface}
+   */
   getNodeByMzMslevel: function(mz, mslevel) {
     return this.getRootNode().findChildBy(function(n) {
       return (n.data.mslevel == mslevel && n.data.mz == mz);
@@ -285,6 +377,9 @@ Ext.define('Esc.msygma.store.Fragments', {
   }
 });
 
+/**
+ * Fragment tree.
+ */
 Ext.define('Esc.msygma.view.fragment.Tree', {
   extend: 'Ext.tree.Panel',
   alias: 'widget.fragmenttree',
@@ -319,7 +414,7 @@ Ext.define('Esc.msygma.view.fragment.Tree', {
       text: 'Molecule', dataIndex: 'mol', atomIndex:'atoms',
       canvasClass: 'x-chemdoodle-cols2',
       width: 162,
-      initCanvas:function(id, width, height, value,record) {
+      initCanvas: function(id, width, height, value,record) {
         var c = new ChemDoodle.ViewerCanvas(id, width, height,true);
         c.specs.bonds_color = 'cyan';
         c.specs.atoms_color = 'cyan';
@@ -361,13 +456,20 @@ Ext.define('Esc.msygma.view.fragment.Tree', {
 
     this.callParent(arguments);
   },
-  // Forces all molecules on fragment tree to be drawn
+  /**
+   * Forces all molecules on fragment tree to be drawn
+   */
   initMolecules: function() {
     // force fragment molecule rendering, hopyfully canvas have been rendered after spectra has been loaded
     return this.getPlugin('fmolcol').initCanvases();
   }
 });
 
+/**
+ * Fragment controller.
+ *
+ * Handles actions performed on the fragment views.
+ */
 Ext.define('Esc.msygma.controller.Fragments', {
   extend: 'Ext.app.Controller',
   stores: [ 'Fragments' ],
@@ -411,7 +513,47 @@ Ext.define('Esc.msygma.controller.Fragments', {
           // clear product scans
         }
     }, this);
+
+    this.application.addEvents(
+      /**
+       * @event
+       * Triggered when a fragment node is collapsed.
+       * @param {Esc.msygma.model.Fragment} fragment Fragment which has been collapsed.
+       */
+      'fragmentcollapse',
+      /**
+       * @event
+       * Triggered when a fragment node is expanded.
+       * @param {Esc.msygma.model.Fragment} fragment Fragment which has been expanded.
+       */
+      'fragmentexpand',
+      /**
+       * @event
+       * Triggered when a fragment node is selected.
+       * @param {Esc.msygma.model.Fragment} fragment Fragment which has been selected.
+       */
+      'fragmentselect',
+      /**
+       * @event
+       * Triggered when a fragment node is deselected.
+       * @param {Esc.msygma.model.Fragment} fragment Fragment which has been deselected.
+       */
+      'fragmentdeselect',
+      /**
+       * @event
+       * Triggered when a children of a fragment node are loaded.
+       * @param {Esc.msygma.model.Fragment} parent
+       * @param {Array} children Array of fragment children.
+       */
+      'fragmentload'
+    );
   },
+  /**
+   * Loads lvl 1 and 2 fragments of a metabolite scan combination.
+   *
+   * @param {Number} scanid Scan identifier.
+   * @param {Number} metid Metabolite idenfitier.
+   */
   loadFragments: function (scanid, metid) {
     this.clearFragments();
     console.log('Show fragments of scan '+scanid+' metabolite '+metid);
@@ -419,7 +561,13 @@ Ext.define('Esc.msygma.controller.Fragments', {
     store.setProxy(this.fragmentProxyFactory(scanid, metid));
     store.load();
   },
-  // need to change url of fragment proxy so use a factory to create a new proxy foreach scan/metabolite combo
+  /**
+   * Need to change url of fragment proxy so use a factory to create a new proxy foreach scan/metabolite combo
+   *
+   * @param {Number} scanid Scan identifier.
+   * @param {Number} metid Metabolite idenfitier.
+   * @private
+   */
   fragmentProxyFactory: function (scanid, metid) {
     return Ext.create('Ext.data.proxy.Ajax', {
       // url is build when scan and metabolite are selected
@@ -431,6 +579,9 @@ Ext.define('Esc.msygma.controller.Fragments', {
       }
     });
   },
+  /**
+   * Clears fragments from store.
+   */
   clearFragments: function() {
     console.log('Clearing fragments and mspectra >lvl1');
     this.getFragmentsStore().getRootNode().removeAll();
@@ -460,6 +611,9 @@ Ext.define('Esc.msygma.controller.Fragments', {
   onDeselect: function(rm, fragment) {
       this.application.fireEvent('fragmentdeselect', fragment);
   },
+  /**
+   * Clears fragment selection.
+   */
   clearFragmentSelection: function() {
       this.getFragmentTree().getSelectionModel().deselectAll();
   },
@@ -468,6 +622,9 @@ Ext.define('Esc.msygma.controller.Fragments', {
   }
 });
 
+/**
+ * MSygma results application
+ */
 Ext.define('Esc.msygma.resultsApp', {
   extend:'Ext.app.Application',
   constructor: function(config) {
@@ -479,28 +636,90 @@ Ext.define('Esc.msygma.resultsApp', {
   name: 'Esc.msygma',
   controllers: [ 'Metabolites', 'Fragments', 'Scans' ],
   config: {
+    /**
+     * Metabolite grid page size.
+     * @cfg {Number}
+     */
     pageSize: 10,
+    /**
+     * Maximum MS level or nr of MS levels.
+     * @cfg {Number}
+     */
     maxmslevel: 2,
+    /**
+     * MS intensity cutoff. Intensity under which peaks are ignored.
+     * @cfg {Number}
+     */
     ms_intensity_cutoff: null,
+    /**
+     * Endpoints/templates for contacting server.
+     * @cfg {Object}
+     */
     urls: {
+        /**
+         * Fragments endpoint.
+         * Tokenized string with scanid and metid tokens.
+         * @cfg {String} urls.fragments
+         */
         fragments: null,
+        /**
+         * MSpectra endpoint.
+         * Tokenized string with scanid and mslevel tokens.
+         * @cfg {String} urls.mspectra
+         */
         mspectra: null,
+        /**
+         * Extracted ion chromatogram endpoint.
+         * Tokenized string with metid token.
+         * @cfg {String} urls.extractedionchromatogram
+         */
         extractedionchromatogram: null,
+        /**
+         * Metabolites endpoint.
+         * @cfg {String} urls.metabolites
+         */
         metabolites: null,
-        chromatogram: null,
+        /**
+         * Chromatogram endpoint.
+         * @cfg {String} urls.chromatogram
+         */
+        chromatogram: null
     }
   },
+  /**
+   * Clear a MSpesctra.
+   *
+   * @param {Number} mslevel Level of MSpectra to clear
+   */
   clearMSpectra: function(mslevel) {
     this.mspectras[mslevel].setData([]);
     this.mspectras[mslevel].scanid = -1;
     Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Scan ... (Level '+mslevel+')');
   },
+  /**
+   * Load a lvl1 MSpectra
+   *
+   * @param {Number} scanid Scan identifier.
+   */
   loadMSpectra1: function(scanid) {
     this.loadMSpectra(1, scanid, []);
   },
+  /**
+   * Load a lvl2 MSpectra
+   *
+   * @param {Number} scanid Scan identifier.
+   * @param {Array} markers Array of markers to add after Mspectra is loaded.
+   */
   loadMSpectra2: function(scanid, markers) {
     this.loadMSpectra(2, scanid, markers);
   },
+  /**
+   * Load a MSpectra.
+   *
+   * @param {Number} mslevel MS level
+   * @param {Number} scanid Scan identifier.
+   * @param {Array} markers Array of markers to add after Mspectra is loaded.
+   */
   loadMSpectra: function(mslevel, scanid, markers) {
     var me = this;
     console.log('Loading msspectra level '+mslevel+' with id '+scanid);
@@ -526,6 +745,11 @@ Ext.define('Esc.msygma.resultsApp', {
       me.fireEvent('mspectraload', scanid, mslevel);
     });
   },
+  /**
+   * Loads a MSpectra of a fragment.
+   *
+   * @param {Esc.msygma.model.Fragment} fragment MSpectra of fragments firstchild  is loaded
+   */
   loadMSpectraFromFragment: function(fragment) {
       // on expand load child mspectra if needed
       if (fragment.firstChild.data.scanid != this.mspectras[fragment.firstChild.data.mslevel].scanid) {
@@ -536,6 +760,12 @@ Ext.define('Esc.msygma.resultsApp', {
         );
       }
   },
+  /**
+   * Select a peak using a fragment.
+   * Peaks of fragments parents are also selected.
+   *
+   * @param {Esc.msygma.model.Fragment} fragment Fragment of peak to select.
+   */
   selectPeak: function(fragment) {
       // select peak belonging to r
       this.mspectras[fragment.data.mslevel].selectPeak(fragment.data.mz);
@@ -557,6 +787,11 @@ Ext.define('Esc.msygma.resultsApp', {
         this.mspectras[1].selectPeak(fragment.parentNode.parentNode.data.mz);
       }
   },
+  /**
+   * Deselect a peak using a fragment.
+   *
+   * @param {Esc.msygma.model.Fragment} fragment Fragment of peak to deselect.
+   */
   deselectPeak: function(fragment) {
       this.mspectras[fragment.data.mslevel].clearPeakSelection();
       // also unselect peaks in child scans
@@ -600,7 +835,40 @@ Ext.define('Esc.msygma.resultsApp', {
         // TODO select parent peaks if n.data.mslevel>2
       }
   },
+  /**
+   * Creates viewport and fires/listens for mspectra events
+   */
   launch: function() {
+    this.addEvents(
+        /**
+         * @event
+         * Triggered when a metabolite and scan are selected together.
+         * @param {Number} scanid Scan identifier.
+         * @param {Number} metid Metabolite identifier.
+         */
+        'scanandmetaboliteselect',
+        /**
+         * @event
+         * Triggered when a metabolite and scan are no longer selected together.
+         * @param {Number} scanid Scan identifier.
+         * @param {Number} metid Metabolite identifier.
+         */
+        'scanandmetabolitenoselect',
+        /**
+         * @event
+         * Triggered when a peak in a MSpectra is selected.
+         * @param {Number} mz M/z of selected peak
+         * @param {Number} mslevel MS level where peak is located
+         */
+        'peakselect',
+        /**
+         * @event
+         * Triggered when a peak in a MSpectra is deselected.
+         * @param {Number} mz M/z of selected peak
+         * @param {Number} mslevel MS level where peak is located
+         */
+        'peakdeselect'
+    );
 
     // uncomment to see all application events fired in console
     Ext.util.Observable.capture(this, function() { console.log(arguments);return true;});

@@ -43,13 +43,13 @@ Ext.define('Ext.esc.Chromatogram', {
       /**
        * @event selectscan
        * Fires when user clicks on scan marker (triangle)
-       * @param {Int} scanid Scan identifier
+       * @param {Number} scanid Scan identifier
        */
       'selectscan',
       /**
        * @event unselectscan
        * Fires when user clicks on a selected scan marker (triangle) which unselects it.
-       * @param {Int} scanid Scan identifier
+       * @param {Number} scanid Scan identifier
        */
       'unselectscan'
     );

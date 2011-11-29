@@ -23,6 +23,16 @@ from sqlalchemy import create_engine, and_
 from sqlalchemy.sql import exists, func
 initialize_sql(create_engine('sqlite:///tea_metabolites2_scans_fragments.db'))
 
+Documentation
+-------------
+
+Python documentation generation with
+  cd docs
+  make html
+
+Javascript documentation generation with
+  jsduck sygma/static/ext-4.0.7-gpl/src sygma/static/d3/d3.js sygma/static/esc sygma/static/app --builtin-classes --output jsdoc --images sygma/static/ext-4.0.7-gpl/docs/images
+
 SQL cookbook
 ------------
 

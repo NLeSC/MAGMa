@@ -1,3 +1,8 @@
+/**
+ * Scans controller.
+ *
+ * Handles actions performed on the scan views.
+ */
 Ext.define('Esc.msygma.controller.Scans', {
   extend: 'Ext.app.Controller',
   views: [ 'scan.Chromatogram' ],
@@ -35,7 +40,24 @@ Ext.define('Esc.msygma.controller.Scans', {
         this.resetScans();
         this.clearExtractedIonChromatogram();
     }, this);
+
+    this.application.addEvents(
+      /**
+       * @event
+       * Triggered when a scan is selected.
+       * @param {Number} scanid Scan identifier.
+       */
+      'selectscan',
+      /**
+       * @event
+       * Triggered when no scan is selected anymore.
+       */
+      'noselectscan'
+    );
   },
+  /**
+   * Loads the chromatogram.
+   */
   onLaunch: function() {
     var me = this;
     console.log('Scans contr launch');

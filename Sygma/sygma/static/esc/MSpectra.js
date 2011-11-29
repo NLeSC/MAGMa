@@ -40,13 +40,13 @@ Ext.define('Ext.esc.MSpectra', {
       /**
        * @event selectpeak
        * Fires when user clicks on peak marker (triangle)
-       * @param {Int} mz
+       * @param {Number} mz
        */
       'selectpeak',
       /**
        * @event unselectpeak
        * Fires when user clicks on a selected peak marker (triangle) which unselects it.
-       * @param {Int} mz
+       * @param {Number} mz
        */
       'unselectpeak'
     );

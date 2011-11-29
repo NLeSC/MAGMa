@@ -8,5 +8,6 @@ Sygma/sygma/static/ext-*
 Sygma/cover
 Sygma/.coverage
 Sygma/docs/_build/
+Sygma/jsdoc
 env/
 /env64

@@ -150,16 +150,22 @@ Ext.define('Ext.esc.AbstractD3', {
   /**
    * Called after chart has been zoomed or panned.
    * See d3.behavior.zoom on zoom event.
+   *
+   * @method
    */
   redraw: Ext.emptyFn,
   /**
    * Prepare this.ranges and this.scales based on this.data .
    * Called by onDataReady.
+   *
+   * @method
    */
   initScales: Ext.emptyFn,
   /**
    * Prepare this.axes based on this.scales .
    * Called by onDataReady.
+   *
+   * @method
    */
   initAxes: Ext.emptyFn,
   /**
