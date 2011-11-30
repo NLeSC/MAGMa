@@ -501,25 +501,9 @@ Ext.define('Esc.msygma.controller.Fragments', {
 
     this.application.on('scanandmetaboliteselect', this.loadFragments, this);
     this.application.on('scanandmetabolitenoselect', this.clearFragments, this);
-    this.application.on('mspectraload', function() { this.getFragmentTree().initMolecules(); }, this);
+    this.application.on('mspectraload', this.initMolecules, this);
     this.application.on('peakdeselect', this.clearFragmentSelection, this);
-    this.application.on('peakselect', function(mz, mslevel) {
-        /**
-         * When user selects peak in spectra then select the fragment belonging to peak in fragment tree
-         */
-        // find fragment based on mz + mslevel
-        var node = this.getFragmentsStore().getNodeByMzMslevel(mz, mslevel);
-        this.getFragmentTree().getSelectionModel().select([node]);
-        if (!node.isLeaf()) {
-          if (!node.isExpanded()) {
-            node.expand();
-          } else {
-            this.application.fireEvent('fragmentexpand', node);
-          }
-        } else {
-          // clear product scans
-        }
-    }, this);
+    this.application.on('peakselect', this.selectFragmentByPeak, this);
 
     this.application.addEvents(
       /**
@@ -598,7 +582,7 @@ Ext.define('Esc.msygma.controller.Fragments', {
   },
   onFragmentExpand: function(fragment) {
     if (fragment.firstChild == null) {
-      return;
+      return; // root node auto expands, but is no fragment, so dont fire event
     }
     this.application.fireEvent('fragmentexpand', fragment);
   },
@@ -607,10 +591,10 @@ Ext.define('Esc.msygma.controller.Fragments', {
     // show child mspectra of selected node or mz
     if (!r.isLeaf()) {
       // onselect then expand
-      if (!r.isExpanded()) {
-        r.expand();
-      } else {
+      if (r.isExpanded()) {
         this.onFragmentExpand(r);
+      } else {
+        r.expand();
       }
     }
     this.application.fireEvent('fragmentselect', r);
@@ -626,6 +610,33 @@ Ext.define('Esc.msygma.controller.Fragments', {
   },
   onLoad: function(t, parent, children) {
     this.application.fireEvent('fragmentload', parent, children);
+  },
+  selectFragment: function(fragment) {
+    this.getFragmentTree().getSelectionModel().select([fragment]);
+    if (!fragment.isLeaf()) {
+      if (fragment.isExpanded()) {
+        this.application.fireEvent('fragmentexpand', fragment);
+      } else {
+        fragment.expand();
+      }
+    }
+  },
+  /**
+   * When user selects peak in spectra then select the fragment belonging to peak in fragment tree
+   *
+   * @param {Number} mz m/z of peak
+   * @param {Number} mslevel MS level of peak
+   */
+  selectFragmentByPeak: function(mz, mslevel) {
+    // find fragment based on mz + mslevel
+    var node = this.getFragmentsStore().getNodeByMzMslevel(mz, mslevel);
+    this.selectFragment(node);
+  },
+  /**
+   * Forces molecules canvases to be drawn
+   */
+  initMolecules: function() {
+    this.getFragmentTree().initMolecules();
   }
 });
 
