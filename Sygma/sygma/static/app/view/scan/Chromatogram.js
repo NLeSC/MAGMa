@@ -1,3 +1,8 @@
+/**
+ * Chromatogram of lc-ms.
+ *
+ * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
+ */
 Ext.define('Esc.msygma.view.scan.Chromatogram', {
   extend: 'Ext.esc.Chromatogram',
   alias: 'widget.scanchromatogram',

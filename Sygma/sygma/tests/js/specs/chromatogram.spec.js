@@ -144,10 +144,10 @@ describe('Ext.esc.Chromatogram', function() {
       chart.svg = mockSvg();
       spyOn(chart,'markerSelect');
 
-      chart.selectScans([data[0]]);
+      chart.selectScans([data[0].id]);
 
       expect(chart.markerSelect).toHaveBeenCalled();
-      expect(chart.selectedscan).toEqual(data[0]);
+      expect(chart.selectedScan).toEqual(data[0].id);
     });
 
     it('select0', function() {
@@ -164,7 +164,7 @@ describe('Ext.esc.Chromatogram', function() {
       chart.selectScans([]);
 
       expect(chart.markerSelect).toHaveBeenCalled();
-      expect(chart.selectedscan).toEqual(-1);
+      expect(chart.selectedScan).toEqual(-1);
     });
   });
 
@@ -181,7 +181,7 @@ describe('Ext.esc.Chromatogram', function() {
 
     chart.clearScanSelection();
 
-    expect(chart.selectedscan).toEqual(-1);
+    expect(chart.selectedScan).toEqual(-1);
     expect(chart.markerSelect).toHaveBeenCalledWith(false);
   });
 
@@ -212,7 +212,7 @@ describe('Ext.esc.Chromatogram', function() {
       var markers = data;
       var chart = Ext.create('Ext.esc.Chromatogram', {
         width: 500, height: 400, data: data,
-        cutoff: 3, markers: markers, selectedscan: data[0]
+        cutoff: 3, markers: markers, selectedScan: data[0].id
       });
       // mock initSvg
       chart.chartWidth = 500;
@@ -224,8 +224,8 @@ describe('Ext.esc.Chromatogram', function() {
 
       chart.setMarkers(markers);
 
-      expect(chart.selectScans).toHaveBeenCalledWith([data[0]]);
-      expect(chart.selectedscan).toEqual(data[0]);
+      expect(chart.selectScans).toHaveBeenCalledWith([data[0].id]);
+      expect(chart.selectedScan).toEqual(data[0].id);
     });
   });
 

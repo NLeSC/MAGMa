@@ -2,6 +2,7 @@
  * Scans controller.
  *
  * Handles actions performed on the scan views.
+ * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.msygma.controller.Scans', {
   extend: 'Ext.app.Controller',

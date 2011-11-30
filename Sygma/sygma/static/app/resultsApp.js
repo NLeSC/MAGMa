@@ -1,5 +1,6 @@
 /**
  * Metabolite model.
+ * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.msygma.model.Metabolite', {
   idProperty: 'metid',
@@ -35,6 +36,7 @@ Ext.define('Esc.msygma.model.Metabolite', {
 
 /**
  * Fragment model.
+ * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.msygma.model.Fragment', {
   extend:'Ext.data.Model',
@@ -67,6 +69,7 @@ Ext.define('Esc.msygma.model.Fragment', {
 
 /**
  * Metabolite store.
+ * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.msygma.store.Metabolites', {
   extend: 'Ext.data.Store',
@@ -130,6 +133,7 @@ Ext.define('Esc.msygma.store.Metabolites', {
 
 /**
  * Grid of metabolites.
+ * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.msygma.view.metabolite.List', {
   extend: 'Ext.grid.Panel',
@@ -198,6 +202,7 @@ Ext.define('Esc.msygma.view.metabolite.List', {
  * Metabolite controller.
  *
  * Handles actions performed in metabolites views.
+ * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.msygma.controller.Metabolites', {
   extend: 'Ext.app.Controller',
@@ -348,6 +353,7 @@ Ext.define('Esc.msygma.controller.Metabolites', {
  * Store for fragments.
  *
  * Fragments are loaded when a scan and metabolite are selected.
+ * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.msygma.store.Fragments', {
   extend: 'Ext.data.TreeStore',
@@ -379,6 +385,8 @@ Ext.define('Esc.msygma.store.Fragments', {
 
 /**
  * Fragment tree.
+ *
+ * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.msygma.view.fragment.Tree', {
   extend: 'Ext.tree.Panel',
@@ -469,6 +477,7 @@ Ext.define('Esc.msygma.view.fragment.Tree', {
  * Fragment controller.
  *
  * Handles actions performed on the fragment views.
+ * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.msygma.controller.Fragments', {
   extend: 'Ext.app.Controller',
@@ -624,6 +633,7 @@ Ext.define('Esc.msygma.controller.Fragments', {
 
 /**
  * MSygma results application
+ * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.msygma.resultsApp', {
   extend:'Ext.app.Application',
