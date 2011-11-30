@@ -12,7 +12,6 @@ Ext.define('Esc.msygma.controller.Scans', {
   }],
   /**
    * Cached scans which belong to (filtered) metabolites
-   * @prop {Array}
    */
   scans_of_metabolites: [],
   init: function() {

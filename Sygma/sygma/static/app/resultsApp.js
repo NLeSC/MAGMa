@@ -704,6 +704,18 @@ Ext.define('Esc.msygma.resultsApp', {
     }
   },
   /**
+   * when a metabolite and scan are selected then load fragments
+   * @property {Object} selected
+   * @property {Boolean} selected.scanid Scan identifier
+   * @property {Boolean} selected.metid Metabolite identifier
+   */
+  selected: { scanid: false, metid: false },
+  /**
+   * @property {Array} mspectras Array of Ext.esc.MSpectra
+   * Index is MS level.
+   */
+  mspectras: [],
+  /**
    * Clear a MSpesctra.
    *
    * @param {Number} mslevel Level of MSpectra to clear
@@ -853,46 +865,44 @@ Ext.define('Esc.msygma.resultsApp', {
       }
   },
   /**
-   * Creates viewport and fires/listens for mspectra events
+   * Creates mspectras(panels) and viewport and fires/listens for mspectra events
    */
   launch: function() {
     this.addEvents(
-        /**
-         * @event
-         * Triggered when a metabolite and scan are selected together.
-         * @param {Number} scanid Scan identifier.
-         * @param {Number} metid Metabolite identifier.
-         */
-        'scanandmetaboliteselect',
-        /**
-         * @event
-         * Triggered when a metabolite and scan are no longer selected together.
-         * @param {Number} scanid Scan identifier.
-         * @param {Number} metid Metabolite identifier.
-         */
-        'scanandmetabolitenoselect',
-        /**
-         * @event
-         * Triggered when a peak in a MSpectra is selected.
-         * @param {Number} mz M/z of selected peak
-         * @param {Number} mslevel MS level where peak is located
-         */
-        'peakselect',
-        /**
-         * @event
-         * Triggered when a peak in a MSpectra is deselected.
-         * @param {Number} mz M/z of selected peak
-         * @param {Number} mslevel MS level where peak is located
-         */
-        'peakdeselect'
+      /**
+       * @event
+       * Triggered when a metabolite and scan are selected together.
+       * @param {Number} scanid Scan identifier.
+       * @param {Number} metid Metabolite identifier.
+       */
+      'scanandmetaboliteselect',
+      /**
+       * @event
+       * Triggered when a metabolite and scan are no longer selected together.
+       * @param {Number} scanid Scan identifier.
+       * @param {Number} metid Metabolite identifier.
+       */
+      'scanandmetabolitenoselect',
+      /**
+       * @event
+       * Triggered when a peak in a MSpectra is selected.
+       * @param {Number} mz M/z of selected peak
+       * @param {Number} mslevel MS level where peak is located
+       */
+      'peakselect',
+      /**
+       * @event
+       * Triggered when a peak in a MSpectra is deselected.
+       * @param {Number} mz M/z of selected peak
+       * @param {Number} mslevel MS level where peak is located
+       */
+      'peakdeselect'
     );
 
     // uncomment to see all application events fired in console
     Ext.util.Observable.capture(this, function() { console.log(arguments);return true;});
 
     this.on('selectscan', this.loadMSpectra1, this);
-    // when a metabolite and scan are selected then load fragments
-    this.selected = { scanid: false, metid: false };
     this.on('metaboliteselect', function(metid) {
       this.selected.metid = metid;
       if (this.selected.metid && this.selected.scanid) {
@@ -944,9 +954,6 @@ Ext.define('Esc.msygma.resultsApp', {
           this.clearMSpectra(i);
         }
     }, this);
-    /**
-     * When user selects fragment in tree then select the peak in the mspectra
-     */
     this.on('fragmentselect', this.selectPeak, this);
     this.on('fragmentdeselect', this.deselectPeak, this);
     this.on('fragmentload', this.loadMSpectras, this);
@@ -956,7 +963,6 @@ Ext.define('Esc.msygma.resultsApp', {
     var config = me.config;
 
     var msspectrapanels = [];
-    this.mspectras = [];
     for (var mslevel = 1; mslevel <= this.getMaxmslevel(); mslevel++) {
       this.mspectras[mslevel] = Ext.create('Ext.esc.MSpectra', {
         mslevel: mslevel,
