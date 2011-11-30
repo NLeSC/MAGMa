@@ -339,10 +339,8 @@ Ext.define('Esc.msygma.controller.Metabolites', {
   },
   /**
    * Removes scan filter from metabolite store.
-   * Tries to keep selection.
    */
   clearScanFilter: function() {
-      this.reselectAfterLoad();
       this.getMetabolitesStore().removeScanFilter();
   }
 });

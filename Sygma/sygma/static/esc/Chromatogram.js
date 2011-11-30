@@ -22,6 +22,12 @@ Ext.define('Ext.esc.Chromatogram', {
          * @cfg {String} cutoffCls The CSS class applied to cutoff line.
          */
         cutoffCls: 'cutoffline',
+        /**
+         * Scan identifier of selected scan.
+         * When no scans are selected then it is set to -1.
+         * @prop {Number}
+         * @readonly
+         */
         selectedScan: -1,
         /**
          * @cfg {String} selectedScanCls The CSS class applied to markers of a selected scan.

@@ -10,6 +10,11 @@ Ext.define('Esc.msygma.controller.Scans', {
   refs: [{
     ref: 'scanChromatogram', selector: 'scanchromatogram'
   }],
+  /**
+   * Cached scans which belong to (filtered) metabolites
+   * @prop {Array}
+   */
+  scans_of_metabolites: [],
   init: function() {
     console.log('Scans controller init');
     var me = this;
@@ -57,7 +62,7 @@ Ext.define('Esc.msygma.controller.Scans', {
     );
   },
   /**
-   * Loads the chromatogram.
+   * Loads the chromatogram from server.
    */
   onLaunch: function() {
     var me = this;
@@ -67,43 +72,70 @@ Ext.define('Esc.msygma.controller.Scans', {
     var chromatogram = this.getScanChromatogram();
     chromatogram.cutoff = this.application.getMs_intensity_cutoff();
     chromatogram.setLoading(true);
-    d3.json(me.application.getUrls().chromatogram, function(data) {
-      chromatogram.setLoading(false);
-      console.log('Loading chromatogram');
-      chromatogram.setData(data);
-      me.resetScans();
-    });
+    d3.json(
+        me.application.getUrls().chromatogram,
+        me.loadChromatogramCallback.bind(me)
+    );
+  },
+  /**
+   * Callback for loading chromatogram
+   *
+   * @params {Array} data Array of scans with rt, id and itensity props
+   */
+  loadChromatogramCallback: function(data) {
+    var me = this;
+    var chromatogram = this.getScanChromatogram();
+    chromatogram.setLoading(false);
+    console.log('Loading chromatogram');
+    chromatogram.setData(data);
+    me.resetScans();
   },
   clearExtractedIonChromatogram: function() {
     this.getScanChromatogram().setExtractedIonChromatogram([]);
   },
-  loadExtractedIonChromatogram: function(metid, metabolite) {
+  /**
+   * @param {Number} metid Metobolite identifier
+   */
+  loadExtractedIonChromatogram: function(metid) {
     console.log('Loading extracted ion chromatogram');
     this.getScanChromatogram().setLoading(true);
     var me = this;
-    Ext.Ajax.request({
-      url: Ext.String.format(this.application.getUrls().extractedionchromatogram, metid),
-      success: function(response) {
-        me.getScanChromatogram().setLoading(false);
-        var obj = Ext.decode(response.responseText);
-        me.getScanChromatogram().setExtractedIonChromatogram(obj.chromatogram);
-        me.setScans(obj.scans);
-      }
-    });
+    d3.json(
+      Ext.String.format(this.application.getUrls().extractedionchromatogram, metid),
+      me.loadExtractedIonChromatogramCallback.bind(me)
+    );
+  },
+  /**
+   * @param {Object} data
+   * @param {Array} data.scans Scans in which metabolite has hits
+   * @param {Array} data.chromatogram Foreach scan the intensity of the peak with metabolite m/z
+   */
+  loadExtractedIonChromatogramCallback: function(data) {
+    this.getScanChromatogram().setLoading(false);
+    this.getScanChromatogram().setExtractedIonChromatogram(data.chromatogram);
+    this.setScans(data.scans);
   },
   searchScan: function() {
     var me = this;
-    Ext.MessageBox.prompt('Scan#', 'Please enter a level 1 scan identifier:', function(b,v) {
-      if (b != 'cancel' && v) {
-       v = v*1;
-       me.selectScan(v);
+    Ext.MessageBox.prompt(
+      'Scan#',
+      'Please enter a level 1 scan identifier:',
+      function(b,v) {
+        if (b != 'cancel' && v) {
+         v = v*1;
+         me.selectScan(v);
+        }
       }
-    });
+    );
   },
   clearScanSelection: function() {
     this.getScanChromatogram().clearScanSelection();
-    this.onUnselectScan();
+    this.application.fireEvent('noselectscan');
   },
+  /**
+   * Select a scan
+   * @param {Number} scanid Scan identifier
+   */
   selectScan: function(scanid) {
     this.getScanChromatogram().selectScans([scanid]);
     this.application.fireEvent('selectscan', scanid);
@@ -111,6 +143,8 @@ Ext.define('Esc.msygma.controller.Scans', {
   /**
    * Each time the metabolite grid is loaded the response also contains a list of scans
    * where the filtered metabolites have hits, we use this to mark the scans that can be selected
+   *
+   * @param {Esc.msygma.store.Metabolites} metabolitestore rawdata of store reader has scans
    */
   setScansOfMetabolites: function(metabolitestore) {
       this.scans_of_metabolites = metabolitestore.getProxy().getReader().rawData.scans;
@@ -120,10 +154,12 @@ Ext.define('Esc.msygma.controller.Scans', {
    * Sets scans markers to scans where current metabolite filter has hits.
    */
   resetScans: function() {
-      if (this.scans_of_metabolites) {
-          this.setScans(this.scans_of_metabolites);
-      }
+    this.setScans(this.scans_of_metabolites);
   },
+  /**
+   * Add scan markers to chromatogram that can be selected.
+   * @param {Array} scans Array of scans
+   */
   setScans: function(scans) {
     console.log('Setting chromatogram scan markers');
     var chromatogram = this.getScanChromatogram();
