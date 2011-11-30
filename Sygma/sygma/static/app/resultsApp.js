@@ -105,9 +105,6 @@ Ext.define('Esc.msygma.store.Metabolites', {
       this.isLoaded = true;
     }
   },
-  initComponent: function() {
-    console.log('Init Metabolites store');
-  },
   /**
    * Removes scan filter from metabolite store.
    * And reloads store to first page.
@@ -193,7 +190,7 @@ Ext.define('Esc.msygma.view.metabolite.List', {
   /**
    * Clears all filters applied to metabolites
    */
-  clearFilter: function() {
+  clearFilters: function() {
     this.getView().getFeature('mfilter').clearFilters();
   }
 });
@@ -271,6 +268,7 @@ Ext.define('Esc.msygma.controller.Metabolites', {
    * Loads metabolite store
    */
   onLaunch: function() {
+      // not loaded in init because metaboliteload event is fired before listeners are registerd
       this.getMetabolitesStore().load();
   },
   /**
@@ -282,6 +280,7 @@ Ext.define('Esc.msygma.controller.Metabolites', {
   onLoad: function(store) {
     this.application.fireEvent('metaboliteload', store);
     if (store.getCount() == 1 && !this.getMetaboliteList().getSelectionModel().hasSelection()) {
+        console.log('Only one metabolite loaded and its not selected, selecting it');
         this.getMetaboliteList().getSelectionModel().select(0);
     }
   },
@@ -304,9 +303,8 @@ Ext.define('Esc.msygma.controller.Metabolites', {
    * Remove filters and clears selection
    */
   clearFilters: function() {
-    console.log('Clear metabolite filter');
-    this.getMetaboliteList().clearFilter();
-    this.getMetabolitesStore().filter();
+    console.log('Clear metabolite filters');
+    this.getMetaboliteList().clearFilters();
     this.application.fireEvent('metabolitenoselect');
   },
   /**
