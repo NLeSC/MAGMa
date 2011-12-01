@@ -17,7 +17,7 @@ Ext.onReady(function() {
       ms_intensity_cutoff: 2000000,
       urls: {
         fragments: 'data/fragments.s{0}.m{1}.json',
-        mspectra: 'data/mspectra.{0}.json',
+        mspectra: 'data/mspectra.{0}.json?mslevel={1}',
         extractedionchromatogram: 'data/extractedionchromatogram.{0}.json',
         metabolites: 'data/metabolites.json',
         chromatogram: 'data/chromatogram.json'
