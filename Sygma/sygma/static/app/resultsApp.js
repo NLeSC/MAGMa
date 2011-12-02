@@ -766,10 +766,13 @@ Ext.define('Esc.msygma.resultsApp', {
     }, this);
 
     this.on('mspectraload', function(scanid, mslevel) {
-      Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Scan '+scanid+' (Level '+mslevel+')');
+      Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' scan '+scanid);
     });
     this.on('mspectraclear', function(mslevel) {
-      Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Scan ... (Level '+mslevel+')');
+      Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' Scan ...');
+    });
+    this.on('peakmouseover', function(peak, mslevel, scanid) {
+      Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' Scan '+scanid+' (m/z='+peak.mz+', intensity='+peak.intensity+')');
     });
 
     console.log('Launch app');
@@ -778,7 +781,7 @@ Ext.define('Esc.msygma.resultsApp', {
     var mspectras = this.getController('MSpectras').mspectras;
     for (var mslevel = 1; mslevel <= this.getMaxmslevel(); mslevel++) {
       msspectrapanels.push({
-        title: 'Scan ... (Level '+mslevel+')',
+        title: 'Level '+mslevel+' scan ...',
         id: 'mspectra'+mslevel+'panel',
         collapsible: true,
         items: mspectras[mslevel]

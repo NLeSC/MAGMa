@@ -48,7 +48,15 @@ Ext.define('Ext.esc.MSpectra', {
        * Fires when user clicks on a selected peak marker (triangle) which unselects it.
        * @param {Number} mz
        */
-      'unselectpeak'
+      'unselectpeak',
+      /**
+       * @event
+       * Fires when mouse is moved over a vertical line of the scan
+       * @param {Object} peak
+       * @param {Number} peak.mz M/z of peak
+       * @param {Number} peak.intensity Intensity of peak.
+       */
+      'mouseoverpeak'
     );
   },
   /**
@@ -130,6 +138,9 @@ Ext.define('Ext.esc.MSpectra', {
     .attr("y2", function(d) { return me.scales.y(d.intensity); })
     .attr("y1", this.chartHeight)
     .attr("x2", function(d) { return me.scales.x(d.mz); })
+    .on('mouseover', function(peak) {
+        me.fireEvent('mouseoverpeak', peak);
+    })
     ;
 
     if (this.hasMarkers()) {

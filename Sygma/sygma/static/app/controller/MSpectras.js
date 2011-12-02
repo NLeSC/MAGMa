@@ -71,7 +71,17 @@ Ext.define('Esc.msygma.controller.MSpectras', {
        * Triggered when a mspectra is cleared
        * @param {Number} mslevel MS level of scan
        */
-      'mspectraclear'
+      'mspectraclear',
+      /**
+       * @event
+       * Fires when mouse is moved over a vertical line of a mspectra
+       * @param {Object} peak
+       * @param {Number} peak.mz M/z of peak
+       * @param {Number} peak.intensity Intensity of peak.
+       * @param {Number} mslevel MS level of scan
+       * @param {Number} scanid Scan identifier of mspectra which is loaded
+       */
+      'peakmouseover'
     );
   },
   /**
@@ -95,6 +105,9 @@ Ext.define('Esc.msygma.controller.MSpectras', {
           },
           unselectpeak: function(mz) {
             app.fireEvent('peakdeselect', mz, this.mslevel);
+          },
+          mouseoverpeak: function(peak) {
+            app.fireEvent('peakmouseover', peak, this.mslevel, this.scanid);
           }
         }
       });
