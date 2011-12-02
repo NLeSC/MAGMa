@@ -1,5 +1,5 @@
 /**
- * @class Ext.esc.ChemDoodleColumn
+ * @class Esc.chemdoodle.Column
  * @extends Ext.grid.column.Column
  *
  * <p>A Column definition class which renders a chemdoodle canvas</p>
@@ -27,7 +27,7 @@
  *        }
  *     });
  *
- *     var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
+ *     var molcol = Ext.create('Esc.chemdoodle.Column', {
  *       text: 'Molecule', dataIndex: 'mol',
  *       width: 150
  *     });
@@ -46,7 +46,7 @@
  *     });
  *
  */
-Ext.define('Ext.esc.ChemDoodleColumn', {
+Ext.define('Esc.chemdoodle.Column', {
   extend: 'Ext.grid.column.Column',
   alias: ['widget.chemdoodlecolumn'],
   config: {

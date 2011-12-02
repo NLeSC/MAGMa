@@ -1,11 +1,11 @@
 /**
  * A chromatogram viewer
- * @class Ext.esc.Chromatogram
+ * @class Esc.d3.Chromatogram
  * @extends Ext.Panel
  * @author Stefan Verhoeven
  */
-Ext.define('Ext.esc.Chromatogram', {
-  extend: 'Ext.esc.AbstractD3',
+Ext.define('Esc.d3.Chromatogram', {
+  extend: 'Esc.d3.Abstract',
   alias: 'widget.chromatogram',
 
   initComponent: function() {

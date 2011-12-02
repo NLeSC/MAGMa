@@ -80,7 +80,7 @@ Ext.Loader.setConfig({
 //  disableCaching: false, // uncomment to use firebug breakpoints
   paths: {
     'Esc.msygma': '${request.static_url('sygma:static/app')}',
-    'Ext.esc': '${request.static_url('sygma:static/esc')}',
+    'Esc': '${request.static_url('sygma:static/esc')}',
     'Ext.ux': '${request.static_url('sygma:static/ext-4.0.7-gpl/examples/ux')}'
   }
 });

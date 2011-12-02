@@ -1,4 +1,4 @@
-describe('Ext.esc.MSpectra', function() {
+describe('Esc.d3.MSpectra', function() {
   var data = [{mz:1,intensity:2},{mz:3,intensity:4}];
 
   function mockSvg() {
@@ -27,7 +27,7 @@ describe('Ext.esc.MSpectra', function() {
   }
 
   it('create', function() {
-    var chart = Ext.create('Ext.esc.MSpectra', {
+    var chart = Ext.create('Esc.d3.MSpectra', {
       width: 500, height: 400
     });
     expect(chart.cutoffCls).toEqual('cutoffline');
@@ -37,7 +37,7 @@ describe('Ext.esc.MSpectra', function() {
   });
 
   it('initScales', function() {
-    var chart = Ext.create('Ext.esc.MSpectra', {
+    var chart = Ext.create('Esc.d3.MSpectra', {
       width: 500, height: 400, data: data
     });
     // mock initSvg
@@ -57,7 +57,7 @@ describe('Ext.esc.MSpectra', function() {
   });
 
   it('initAxes', function() {
-    var chart = Ext.create('Ext.esc.MSpectra', {
+    var chart = Ext.create('Esc.d3.MSpectra', {
       width: 500, height: 400, data: data
     });
     // mock initSvg
@@ -77,7 +77,7 @@ describe('Ext.esc.MSpectra', function() {
 
   describe('onDataReady', function() {
     it('!markers + !cutoff', function() {
-      var chart = Ext.create('Ext.esc.MSpectra', {
+      var chart = Ext.create('Esc.d3.MSpectra', {
         width: 500, height: 400, data: data
       });
       // mock initSvg
@@ -97,7 +97,7 @@ describe('Ext.esc.MSpectra', function() {
     });
 
     it('markers + cutoff', function() {
-      var chart = Ext.create('Ext.esc.MSpectra', {
+      var chart = Ext.create('Esc.d3.MSpectra', {
         width: 500, height: 400, data: data,
         cutoff: 3, markers: [{mz: 3}]
       });
@@ -114,7 +114,7 @@ describe('Ext.esc.MSpectra', function() {
   });
 
   it('setData', function() {
-    var chart = Ext.create('Ext.esc.MSpectra', {
+    var chart = Ext.create('Esc.d3.MSpectra', {
       width: 500, height: 400
     });
     // mock initSvg
@@ -132,7 +132,7 @@ describe('Ext.esc.MSpectra', function() {
 
   describe('onToggleMarker', function() {
     it('selectpeak', function() {
-      var chart = Ext.create('Ext.esc.MSpectra', {
+      var chart = Ext.create('Esc.d3.MSpectra', {
         width: 500, height: 400, data: data,
         cutoff: 3, markers: [{mz: 3}],
         listeners: {
@@ -149,7 +149,7 @@ describe('Ext.esc.MSpectra', function() {
     });
 
     it('unselectpeak', function() {
-      var chart = Ext.create('Ext.esc.MSpectra', {
+      var chart = Ext.create('Esc.d3.MSpectra', {
         width: 500, height: 400, data: data,
         cutoff: 3, markers: [{mz: 3}],
         listeners: {
@@ -168,7 +168,7 @@ describe('Ext.esc.MSpectra', function() {
   });
 
   it('selectPeak', function() {
-    var chart = Ext.create('Ext.esc.MSpectra', {
+    var chart = Ext.create('Esc.d3.MSpectra', {
       width: 500, height: 400, data: data,
       cutoff: 3, markers: [{mz: 3}]
     });
@@ -184,7 +184,7 @@ describe('Ext.esc.MSpectra', function() {
   });
 
   it('clearPeakSelection', function() {
-    var chart = Ext.create('Ext.esc.MSpectra', {
+    var chart = Ext.create('Esc.d3.MSpectra', {
       width: 500, height: 400, data: data,
       cutoff: 3, markers: [{mz: 3}]
     });
@@ -202,7 +202,7 @@ describe('Ext.esc.MSpectra', function() {
 
   it('setMarkers', function() {
     var markers = [{mz:3}];
-    var chart = Ext.create('Ext.esc.MSpectra', {
+    var chart = Ext.create('Esc.d3.MSpectra', {
       width: 500, height: 400, data: data,
       cutoff: 3
     });
@@ -224,7 +224,7 @@ describe('Ext.esc.MSpectra', function() {
 
   describe('hasMarkers', function() {
     it('true', function() {
-      var chart = Ext.create('Ext.esc.MSpectra', {
+      var chart = Ext.create('Esc.d3.MSpectra', {
         width: 500, height: 400, data: data,
         cutoff: 3, markers: [{mz: 3}]
       });
@@ -232,7 +232,7 @@ describe('Ext.esc.MSpectra', function() {
     });
 
     it('false', function() {
-      var chart = Ext.create('Ext.esc.MSpectra', {
+      var chart = Ext.create('Esc.d3.MSpectra', {
         width: 500, height: 400, data: data,
         cutoff: 3
       });
@@ -242,7 +242,7 @@ describe('Ext.esc.MSpectra', function() {
 
   describe('onMarkersReady', function() {
     it('nodata', function() {
-      var chart = Ext.create('Ext.esc.MSpectra', {
+      var chart = Ext.create('Esc.d3.MSpectra', {
         width: 500, height: 400,
         cutoff: 3, markers: [{mz: 3}]
       });
@@ -257,7 +257,7 @@ describe('Ext.esc.MSpectra', function() {
     });
 
     it('withdata', function() {
-      var chart = Ext.create('Ext.esc.MSpectra', {
+      var chart = Ext.create('Esc.d3.MSpectra', {
         width: 500, height: 400, data: data,
         cutoff: 3, markers: [{mz: 3}]
       });

@@ -3,7 +3,7 @@ Ext.Loader.setConfig({
 //  disableCaching: false, // otherwise can not use firebug breakpoint
   paths: {
     'Esc.msygma': '../../../static/app',
-    'Ext.esc': '../../../static/esc',
+    'Esc': '../../../static/esc',
     'Ext.ux': '../../../static/ext-4.0.7-gpl/examples/ux'
   }
 });

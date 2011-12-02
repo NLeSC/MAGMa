@@ -1,8 +1,8 @@
-describe('Ext.esc.AbstractD3', function() {
+describe('Esc.d3.Abstract', function() {
   var data = [{x:1,y:2},{x:3,y:4}];
   describe('create', function() {
     it('default', function() {
-      var chart = Ext.create('Ext.esc.AbstractD3', {
+      var chart = Ext.create('Esc.d3.Abstract', {
         width: 400, height: 500
       });
       expect(chart.axesPadding).toEqual([16, 5, 38, 80]);
@@ -12,7 +12,7 @@ describe('Ext.esc.AbstractD3', function() {
     });
 
     it('with data', function() {
-      var chart = Ext.create('Ext.esc.AbstractD3', {
+      var chart = Ext.create('Esc.d3.Abstract', {
         width: 400, height: 500,
         data: data
       });
@@ -23,7 +23,7 @@ describe('Ext.esc.AbstractD3', function() {
 
   describe('onRender', function() {
     it('default', function() {
-      var chart = Ext.create('Ext.esc.AbstractD3', {
+      var chart = Ext.create('Esc.d3.Abstract', {
         width: 400, height: 500
       });
       spyOn(chart, 'callParent');
@@ -38,7 +38,7 @@ describe('Ext.esc.AbstractD3', function() {
     });
 
     it('percentsize', function() {
-      var chart = Ext.create('Ext.esc.AbstractD3', {
+      var chart = Ext.create('Esc.d3.Abstract', {
         width: '50%', height: '30%'
       });
       spyOn(chart, 'callParent');
@@ -59,7 +59,7 @@ describe('Ext.esc.AbstractD3', function() {
   });
 
   it('resize', function() {
-    var chart = Ext.create('Ext.esc.AbstractD3', {
+    var chart = Ext.create('Esc.d3.Abstract', {
       width: 400, height: 500
     });
     spyOn(chart, 'on');
@@ -81,7 +81,7 @@ describe('Ext.esc.AbstractD3', function() {
 
   describe('setData', function() {
     it('filled', function() {
-      var chart = Ext.create('Ext.esc.AbstractD3', {
+      var chart = Ext.create('Esc.d3.Abstract', {
         width: 400, height: 500
       });
       spyOn(chart, 'onDataReady');
@@ -94,7 +94,7 @@ describe('Ext.esc.AbstractD3', function() {
     });
 
     it('empty', function() {
-      var chart = Ext.create('Ext.esc.AbstractD3', {
+      var chart = Ext.create('Esc.d3.Abstract', {
         width: 400, height: 500
       });
       spyOn(chart, 'onDataReady');
@@ -109,7 +109,7 @@ describe('Ext.esc.AbstractD3', function() {
 
   describe('onDataEmpty', function() {
     it('!emptyText', function() {
-      var chart = Ext.create('Ext.esc.AbstractD3', {
+      var chart = Ext.create('Esc.d3.Abstract', {
         width: 400, height: 500
       });
       chart.svg = { append: function() {}};
@@ -120,7 +120,7 @@ describe('Ext.esc.AbstractD3', function() {
 
     it('emptyText', function() {
       var emptyText = 'Select fragment';
-      var chart = Ext.create('Ext.esc.AbstractD3', {
+      var chart = Ext.create('Esc.d3.Abstract', {
         width: 400, height: 500, emptyText: emptyText
       });
       chart.svg = {
@@ -142,7 +142,7 @@ describe('Ext.esc.AbstractD3', function() {
   });
 
   it('onDataReady', function() {
-    var chart = Ext.create('Ext.esc.AbstractD3', {
+    var chart = Ext.create('Esc.d3.Abstract', {
       width: 400, height: 500
     });
     spyOn(chart, 'initScales');

@@ -1,12 +1,12 @@
 /**
  * Ext wrapper around a D3 visualization.
- * @class Ext.esc.AbstractD3
+ * @class Esc.d3.Abstract
  * @extends Ext.Panel
  * @author Stefan Verhoeven
  *
  * @private
  */
-Ext.define('Ext.esc.AbstractD3', {
+Ext.define('Esc.d3.Abstract', {
   extend: 'Ext.Panel',
 
   initComponent: function() {

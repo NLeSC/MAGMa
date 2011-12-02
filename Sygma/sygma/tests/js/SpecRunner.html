@@ -24,22 +24,16 @@
 <script type="text/javascript" src="specs/mspectra.spec.js"></script>
 <script type="text/javascript" src="specs/chromatogram.spec.js"></script>
 
-<script type="text/javascript" src="../../static/esc/ChemDoodleColumn.js"></script>
-<script type="text/javascript" src="../../static/esc/AbstractD3.js"></script>
-<script type="text/javascript" src="../../static/esc/MSpectra.js"></script>
-<script type="text/javascript" src="../../static/esc/Chromatogram.js"></script>
-
 <script type="text/javascript">
 Ext.Loader.setConfig({
   enabled: true,
   paths: {
-    'Ext': '../../static/',
+    'Esc': '../../static/esc',
     'Ext.ux': '../../static/ext-4.0.7-gpl/examples/ux'
   }
 });
 Ext.require([
   'Ext.ux.grid.FiltersFeature',
-  'Ext.esc.ChemDoodleColumn',
 ]);
 
 Ext.onReady(function () {

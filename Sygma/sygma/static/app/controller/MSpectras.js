@@ -91,7 +91,7 @@ Ext.define('Esc.msygma.controller.MSpectras', {
   initMSpectras: function() {
     var app = this.application;
     for (var mslevel = 1; mslevel <= this.getMaxmslevel(); mslevel++) {
-      this.mspectras[mslevel] = Ext.create('Ext.esc.MSpectra', {
+      this.mspectras[mslevel] = Ext.create('Esc.d3.MSpectra', {
         mslevel: mslevel,
         emptyText: (
             mslevel==1 ?

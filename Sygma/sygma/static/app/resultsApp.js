@@ -157,7 +157,7 @@ Ext.define('Esc.msygma.view.metabolite.List', {
   }],
   initComponent: function() {
     console.log('Init met grid');
-    var molcol = Ext.create('Ext.esc.ChemDoodleColumn', {
+    var molcol = Ext.create('Esc.chemdoodle.Column', {
       text: 'Molecule', dataIndex: 'mol',
       width: 162
     });
@@ -417,7 +417,7 @@ Ext.define('Esc.msygma.view.fragment.Tree', {
     var hlspecs = new ChemDoodle.structures.VisualSpecifications();
     hlspecs.bonds_color = 'black';
     hlspecs.atoms_color = 'black';
-    var fmolcol = Ext.create('Ext.esc.ChemDoodleColumn', {
+    var fmolcol = Ext.create('Esc.chemdoodle.Column', {
       pluginId: 'fmolcol',
       text: 'Molecule', dataIndex: 'mol', atomIndex:'atoms',
       canvasClass: 'x-chemdoodle-cols2',

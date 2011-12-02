@@ -13,7 +13,7 @@ describe('MSpectras controller', function() {
 
   it('has mspectras', function() {
     expect(ctrl.mspectras.length-1).toEqual(ctrl.getMaxmslevel());
-    expect(ctrl.mspectras[1].self.getName()).toEqual('Ext.esc.MSpectra');
+    expect(ctrl.mspectras[1].self.getName()).toEqual('Esc.d3.MSpectra');
   });
 
   it('getMSpectra', function() {

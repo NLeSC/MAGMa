@@ -1,11 +1,11 @@
 /**
  * A Mass spectra viewer
- * @class Ext.esc.MSpectra
+ * @class Esc.d3.MSpectra
  * @extends Ext.Panel
  * @author Stefan Verhoeven
  */
-Ext.define('Ext.esc.MSpectra', {
-  extend: 'Ext.esc.AbstractD3',
+Ext.define('Esc.d3.MSpectra', {
+  extend: 'Esc.d3.Abstract',
   alias: 'widget.mspectra',
   initComponent: function() {
     var defConfig = {

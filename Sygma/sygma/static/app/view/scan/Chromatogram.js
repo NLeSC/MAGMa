@@ -4,7 +4,7 @@
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.msygma.view.scan.Chromatogram', {
-  extend: 'Ext.esc.Chromatogram',
+  extend: 'Esc.d3.Chromatogram',
   alias: 'widget.scanchromatogram',
   title: 'Chromatogram',
   emptyText: 'Loading chromatogram ...',

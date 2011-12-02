@@ -3,7 +3,7 @@ describe('Esc.ChemDoodleColumn', function() {
 	var caffeineMolFile = 'Molecule Name\n  CHEMDOOD08070920033D 0   0.00000     0.00000     0\n[Insert Comment Here]\n 14 15  0  0  0  0  0  0  0  0  1 V2000\n   -0.3318    2.0000    0.0000   O 0  0  0  1  0  0  0  0  0  0  0  0\n   -0.3318    1.0000    0.0000   C 0  0  0  1  0  0  0  0  0  0  0  0\n   -1.1980    0.5000    0.0000   N 0  0  0  1  0  0  0  0  0  0  0  0\n    0.5342    0.5000    0.0000   C 0  0  0  1  0  0  0  0  0  0  0  0\n   -1.1980   -0.5000    0.0000   C 0  0  0  1  0  0  0  0  0  0  0  0\n   -2.0640    1.0000    0.0000   C 0  0  0  4  0  0  0  0  0  0  0  0\n    1.4804    0.8047    0.0000   N 0  0  0  1  0  0  0  0  0  0  0  0\n    0.5342   -0.5000    0.0000   C 0  0  0  1  0  0  0  0  0  0  0  0\n   -2.0640   -1.0000    0.0000   O 0  0  0  1  0  0  0  0  0  0  0  0\n   -0.3318   -1.0000    0.0000   N 0  0  0  1  0  0  0  0  0  0  0  0\n    2.0640   -0.0000    0.0000   C 0  0  0  2  0  0  0  0  0  0  0  0\n    1.7910    1.7553    0.0000   C 0  0  0  4  0  0  0  0  0  0  0  0\n    1.4804   -0.8047    0.0000   N 0  0  0  1  0  0  0  0  0  0  0  0\n   -0.3318   -2.0000    0.0000   C 0  0  0  4  0  0  0  0  0  0  0  0\n  1  2  2  0  0  0  0\n  3  2  1  0  0  0  0\n  4  2  1  0  0  0  0\n  3  5  1  0  0  0  0\n  3  6  1  0  0  0  0\n  7  4  1  0  0  0  0\n  4  8  2  0  0  0  0\n  9  5  2  0  0  0  0\n 10  5  1  0  0  0  0\n 10  8  1  0  0  0  0\n  7 11  1  0  0  0  0\n  7 12  1  0  0  0  0\n 13  8  1  0  0  0  0\n 13 11  2  0  0  0  0\n 10 14  1  0  0  0  0\nM  END\n> <DATE>\n07-08-2009\n';
 
 	function createDefault() {
-		return Ext.create('Ext.esc.ChemDoodleColumn',{
+		return Ext.create('Esc.chemdoodle.Column',{
 			text: 'Molecule', dataIndex: 'mol',
 			width: 162
 		});
@@ -18,7 +18,7 @@ describe('Esc.ChemDoodleColumn', function() {
 		});
 
 		it('custom', function() {
-			var col = Ext.create('Ext.esc.ChemDoodleColumn',{
+			var col = Ext.create('Esc.chemdoodle.Column',{
 				text: 'Molecule', dataIndex: 'mol',
 				width: 162, canvasWidth: 250, canvasHeight:200,
 				canvasClass: 'x-chemdoodle-cols2'
@@ -118,7 +118,7 @@ describe('Esc.ChemDoodleColumn', function() {
 			var hlspecs = new ChemDoodle.structures.VisualSpecifications();
 			hlspecs.bonds_color = 'black';
 			hlspecs.atoms_color = 'black';
-			var col = Ext.create('Ext.esc.ChemDoodleColumn', {
+			var col = Ext.create('Esc.chemdoodle.Column', {
 				text: 'Molecule', dataIndex: 'mol', atomIndex:'atoms',
 				canvasClass: 'x-chemdoodle-cols2',  width: 162,
 				initCanvas:function(id, width, height, value,record) {

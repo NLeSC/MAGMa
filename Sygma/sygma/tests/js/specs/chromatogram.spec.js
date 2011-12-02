@@ -1,4 +1,4 @@
-describe('Ext.esc.Chromatogram', function() {
+describe('Esc.d3.Chromatogram', function() {
   var data = [{rt:1, intensity: 100, id:4}, {rt:2, intensity: 50, id:5}];
 
   function mockSvg() {
@@ -27,7 +27,7 @@ describe('Ext.esc.Chromatogram', function() {
   }
 
   it('create', function() {
-    var chart = Ext.create('Ext.esc.Chromatogram', {
+    var chart = Ext.create('Esc.d3.Chromatogram', {
       width: 500, height: 400
     });
     expect(chart.cutoffCls).toEqual('cutoffline');
@@ -37,7 +37,7 @@ describe('Ext.esc.Chromatogram', function() {
   });
 
   it('initScales', function() {
-    var chart = Ext.create('Ext.esc.Chromatogram', {
+    var chart = Ext.create('Esc.d3.Chromatogram', {
       width: 500, height: 400, data: data
     });
     // mock initSvg
@@ -57,7 +57,7 @@ describe('Ext.esc.Chromatogram', function() {
   });
 
   it('initAxes', function() {
-    var chart = Ext.create('Ext.esc.Chromatogram', {
+    var chart = Ext.create('Esc.d3.Chromatogram', {
       width: 500, height: 400, data: data
     });
     // mock initSvg
@@ -77,7 +77,7 @@ describe('Ext.esc.Chromatogram', function() {
 
   describe('onDataReady', function() {
     it('!markers', function() {
-      var chart = Ext.create('Ext.esc.Chromatogram', {
+      var chart = Ext.create('Esc.d3.Chromatogram', {
         width: 500, height: 400, data: data, cutoff: 10
       });
       // mock initSvg
@@ -100,7 +100,7 @@ describe('Ext.esc.Chromatogram', function() {
     });
 
     it('markers', function() {
-      var chart = Ext.create('Ext.esc.Chromatogram', {
+      var chart = Ext.create('Esc.d3.Chromatogram', {
         width: 500, height: 400, data: data,
         cutoff: 10, markers: [data[0]]
       });
@@ -116,7 +116,7 @@ describe('Ext.esc.Chromatogram', function() {
   });
 
   it('setData', function() {
-    var chart = Ext.create('Ext.esc.Chromatogram', {
+    var chart = Ext.create('Esc.d3.Chromatogram', {
       width: 500, height: 400
     });
     // mock initSvg
@@ -134,7 +134,7 @@ describe('Ext.esc.Chromatogram', function() {
 
   describe('selectScans', function() {
     it('select1', function() {
-      var chart = Ext.create('Ext.esc.Chromatogram', {
+      var chart = Ext.create('Esc.d3.Chromatogram', {
         width: 500, height: 400, data: data,
         cutoff: 10, markers: data
       });
@@ -151,7 +151,7 @@ describe('Ext.esc.Chromatogram', function() {
     });
 
     it('select0', function() {
-      var chart = Ext.create('Ext.esc.Chromatogram', {
+      var chart = Ext.create('Esc.d3.Chromatogram', {
         width: 500, height: 400, data: data,
         cutoff: 10, markers: data
       });
@@ -169,7 +169,7 @@ describe('Ext.esc.Chromatogram', function() {
   });
 
   it('clearScanSelection', function() {
-    var chart = Ext.create('Ext.esc.Chromatogram', {
+    var chart = Ext.create('Esc.d3.Chromatogram', {
       width: 500, height: 400, data: data,
       cutoff: 3, markers: data
     });
@@ -188,7 +188,7 @@ describe('Ext.esc.Chromatogram', function() {
   describe('setMarkers', function() {
     it('no scan selected', function() {
       var markers = data;
-      var chart = Ext.create('Ext.esc.Chromatogram', {
+      var chart = Ext.create('Esc.d3.Chromatogram', {
         width: 500, height: 400, data: data,
         cutoff: 3
       });
@@ -210,7 +210,7 @@ describe('Ext.esc.Chromatogram', function() {
 
     it('scan selected', function() {
       var markers = data;
-      var chart = Ext.create('Ext.esc.Chromatogram', {
+      var chart = Ext.create('Esc.d3.Chromatogram', {
         width: 500, height: 400, data: data,
         cutoff: 3, markers: markers, selectedScan: data[0].id
       });
@@ -231,7 +231,7 @@ describe('Ext.esc.Chromatogram', function() {
 
   describe('hasMarkers', function() {
     it('true', function() {
-      var chart = Ext.create('Ext.esc.Chromatogram', {
+      var chart = Ext.create('Esc.d3.Chromatogram', {
         width: 500, height: 400, data: data,
         cutoff: 3, markers: data
       });
@@ -239,7 +239,7 @@ describe('Ext.esc.Chromatogram', function() {
     });
 
     it('false', function() {
-      var chart = Ext.create('Ext.esc.Chromatogram', {
+      var chart = Ext.create('Esc.d3.Chromatogram', {
         width: 500, height: 400, data: data,
         cutoff: 3
       });
@@ -249,7 +249,7 @@ describe('Ext.esc.Chromatogram', function() {
 
   describe('onMarkersReady', function() {
     it('nodata', function() {
-      var chart = Ext.create('Ext.esc.Chromatogram', {
+      var chart = Ext.create('Esc.d3.Chromatogram', {
         width: 500, height: 400,
         cutoff: 3, markers: data
       });
@@ -264,7 +264,7 @@ describe('Ext.esc.Chromatogram', function() {
     });
 
     it('withdata', function() {
-      var chart = Ext.create('Ext.esc.Chromatogram', {
+      var chart = Ext.create('Esc.d3.Chromatogram', {
         width: 500, height: 400, data: data,
         cutoff: 3, markers: data
       });
@@ -284,7 +284,7 @@ describe('Ext.esc.Chromatogram', function() {
   });
 
   it('setExtractedIonChromatogram', function() {
-    var chart = Ext.create('Ext.esc.Chromatogram', {
+    var chart = Ext.create('Esc.d3.Chromatogram', {
       width: 500, height: 400, data: data
     });
     // mock initSvg
