@@ -176,7 +176,9 @@ Ext.define('Esc.msygma.view.metabolite.List', {
         {text: 'Reaction seq.', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }, renderer: function(v) {
           return '<ol><li>'+v.replace("\n","</li><li>")+'</li></ol>';
         }},
-        {text: 'Scans', dataIndex: 'nr_scans', filter: { type: 'numeric' }},
+        {text: 'Scans', dataIndex: 'nr_scans', filter: { type: 'numeric'
+            , value:{gt:0}, active: true
+        }},
         {text: 'Smile', dataIndex: 'smiles', hidden:true},
         {text: 'Formula', dataIndex: 'molformula', filter: { type: 'string' }},
         {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
@@ -269,7 +271,9 @@ Ext.define('Esc.msygma.controller.Metabolites', {
    */
   onLaunch: function() {
       // not loaded in init because metaboliteload event is fired before listeners are registerd
-      this.getMetabolitesStore().load();
+      // the nr_scans column has an active filter
+      // so do not use list.store.load() , but trigger a filter update to load
+      this.getMetaboliteList().filters.createFilters();
   },
   /**
    * Listens for metabolite store load event.
