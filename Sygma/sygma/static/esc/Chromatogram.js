@@ -57,7 +57,17 @@ Ext.define('Ext.esc.Chromatogram', {
        * Fires when user clicks on a selected scan marker (triangle) which unselects it.
        * @param {Number} scanid Scan identifier
        */
-      'unselectscan'
+      'unselectscan',
+      /**
+       * @event
+       * Fires when mouse is moved over a vertical line of the scan
+       * @param {Object} scan
+       * @param {Number} scan.id Scan identifier
+       * @param {Number} scan.rt Retention time
+       * @param {Number} scan.intensity Intensity of base peak.
+       * @param {Number} scan.metaboliteintensity If extracted ion chromatogram is set then returns intensity of metabolite in scan.
+       */
+      'mouseoverscan'
     );
   },
   redraw: function() {
@@ -151,6 +161,14 @@ Ext.define('Ext.esc.Chromatogram', {
     .attr("y2", function(d) { return me.scales.y(d.intensity); })
     .attr("y1", this.chartHeight)
     .attr("x2", function(d) { return me.scales.x(d.rt); })
+    .on('mouseover', function(scan) {
+        if (me.metabolitedata.length) {
+            scan.metaboliteintensity = me.metabolitedata.filter(function(d) {
+               return (scan.rt == d.rt)
+            })[0].intensity;
+        }
+        me.fireEvent('mouseoverscan', scan);
+    })
     ;
 
     // line drapped over peaks

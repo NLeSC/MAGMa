@@ -26,6 +26,16 @@ Ext.define('Esc.msygma.controller.Scans', {
         unselectscan: function(scanid) {
             me.application.fireEvent('noselectscan', scanid);
         },
+        mouseoverscan: function(scan) {
+            if ('metaboliteintensity' in scan) {
+              this.getScanChromatogram().setTitle(Ext.String.format(
+                      'Chromatogram (rt={0}, basepeak intensity={1}, metabolite intensity={2}, scan={3})',
+                      scan.rt, scan.intensity, scan.metaboliteintensity, scan.id
+              ));
+            } else {
+              this.getScanChromatogram().setTitle(Ext.String.format('Chromatogram (rt={0}, intensity={1}, scan={2})', scan.rt, scan.intensity, scan.id));
+            }
+        }
       },
       'scanchromatogram tool[action=search]': {
         click: this.searchScan
