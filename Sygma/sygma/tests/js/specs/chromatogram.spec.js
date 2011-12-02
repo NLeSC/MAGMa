@@ -132,7 +132,7 @@ describe('Esc.d3.Chromatogram', function() {
     expect(chart.svg.remove.callCount).toEqual(7);
   });
 
-  describe('selectScans', function() {
+  describe('selectScan', function() {
     it('select1', function() {
       var chart = Ext.create('Esc.d3.Chromatogram', {
         width: 500, height: 400, data: data,
@@ -144,7 +144,7 @@ describe('Esc.d3.Chromatogram', function() {
       chart.svg = mockSvg();
       spyOn(chart,'markerSelect');
 
-      chart.selectScans([data[0].id]);
+      chart.selectScan(data[0].id);
 
       expect(chart.markerSelect).toHaveBeenCalled();
       expect(chart.selectedScan).toEqual(data[0].id);
@@ -161,7 +161,7 @@ describe('Esc.d3.Chromatogram', function() {
       chart.svg = mockSvg();
       spyOn(chart,'markerSelect');
 
-      chart.selectScans([]);
+      chart.selectScan(null);
 
       expect(chart.markerSelect).toHaveBeenCalled();
       expect(chart.selectedScan).toEqual(-1);
@@ -220,11 +220,11 @@ describe('Esc.d3.Chromatogram', function() {
       chart.svg = mockSvg();
       spyOn(chart, 'clearScanSelection');
       spyOn(chart, 'onMarkersReady');
-      spyOn(chart, 'selectScans');
+      spyOn(chart, 'selectScan');
 
       chart.setMarkers(markers);
 
-      expect(chart.selectScans).toHaveBeenCalledWith([data[0].id]);
+      expect(chart.selectScan).toHaveBeenCalledWith(data[0].id);
       expect(chart.selectedScan).toEqual(data[0].id);
     });
   });

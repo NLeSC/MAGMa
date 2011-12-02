@@ -146,7 +146,7 @@ Ext.define('Esc.msygma.controller.Scans', {
    * @param {Number} scanid Scan identifier
    */
   selectScan: function(scanid) {
-    this.getScanChromatogram().selectScans([scanid]);
+    this.getScanChromatogram().selectScan(scanid);
     this.application.fireEvent('selectscan', scanid);
   },
   /**
@@ -184,7 +184,7 @@ Ext.define('Esc.msygma.controller.Scans', {
        ) {
          var selectedScan = chromatogram.selectedScan;
          chromatogram.setMarkers(scans);
-         chromatogram.selectScans([selectedScan]);
+         chromatogram.selectScan(selectedScan);
        } else {
          chromatogram.setMarkers(scans);
        }

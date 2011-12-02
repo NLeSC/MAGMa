@@ -223,18 +223,18 @@ Ext.define('Esc.d3.Chromatogram', {
     ;
   },
   /**
-   * Select scans by their id
-   * @param scanids Array of scan ids
+   * Select scan by their id
+   * @param {Number} scanid Scan identifier.
    */
-  selectScans: function(scanids) {
+  selectScan: function(scanid) {
     this.markerSelect(function(d) {
-      return !(scanids.indexOf(d.id) == -1);
+      return (scanid == d.id);
     });
-    if (scanids.length == 1) {
-       this.selectedScan = scanids[0];
-     } else if (scanids.length == 0) {
-       this.selectedScan = -1;
-     }
+    if (scanid) {
+      this.selectedScan = scanid;
+    } else {
+      this.selectedScan = -1;
+    }
   },
   /**
    * Clears any selected scans
@@ -257,7 +257,7 @@ Ext.define('Esc.d3.Chromatogram', {
     this.markers = data;
     this.onMarkersReady();
     if (selectedScan) {
-    	this.selectScans([selectedScan]);
+    	this.selectScan(selectedScan);
     }
   },
   hasMarkers: function() {

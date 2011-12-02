@@ -12,7 +12,7 @@ describe('Scans controller', function() {
       setData: function() {},
       setExtractedIonChromatogram: function() {},
       clearScanSelection: function() {},
-      selectScans: function() {},
+      selectScan: function() {},
       hasData: function() {},
       setMarkers: function() {},
     };
@@ -104,11 +104,11 @@ describe('Scans controller', function() {
     var f = { callback: function() {} };
     spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
     Ext.util.Observable.capture(ctrl.application, f.callback);
-    spyOn(mocked_chromatogram, 'selectScans');
+    spyOn(mocked_chromatogram, 'selectScan');
 
     ctrl.selectScan(1133);
 
-    expect(mocked_chromatogram.selectScans).toHaveBeenCalledWith([1133]);
+    expect(mocked_chromatogram.selectScan).toHaveBeenCalledWith(1133);
     expect(f.callback).toHaveBeenCalledWith('selectscan', 1133);
     Ext.util.Observable.releaseCapture(ctrl.application);
   });
@@ -156,7 +156,7 @@ describe('Scans controller', function() {
     it('one scan, not prev selected', function() {
       spyOn(mocked_chromatogram, 'hasData').andReturn(true);
       spyOn(mocked_chromatogram, 'setMarkers');
-      spyOn(mocked_chromatogram, 'selectScans');
+      spyOn(mocked_chromatogram, 'selectScan');
       spyOn(ctrl, 'selectScan');
       var f = { callback: function() {} };
       spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
@@ -170,7 +170,7 @@ describe('Scans controller', function() {
 
       expect(ctrl.selectScan).toHaveBeenCalledWith(1133);
       expect(mocked_chromatogram.setMarkers).toHaveBeenCalledWith(scans);
-      expect(mocked_chromatogram.selectScans).not.toHaveBeenCalled();
+      expect(mocked_chromatogram.selectScan).not.toHaveBeenCalled();
       expect(f.callback).not.toHaveBeenCalledWith('noscansfound');
       Ext.util.Observable.releaseCapture(ctrl.application);
     });
@@ -178,7 +178,7 @@ describe('Scans controller', function() {
     it('one scan, prev selected', function() {
       spyOn(mocked_chromatogram, 'hasData').andReturn(true);
       spyOn(mocked_chromatogram, 'setMarkers');
-      spyOn(mocked_chromatogram, 'selectScans');
+      spyOn(mocked_chromatogram, 'selectScan');
       spyOn(ctrl, 'selectScan');
       var f = { callback: function() {} };
       spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
@@ -193,7 +193,7 @@ describe('Scans controller', function() {
 
       expect(ctrl.selectScan).not.toHaveBeenCalledWith(1133);
       expect(mocked_chromatogram.setMarkers).toHaveBeenCalledWith(scans);
-      expect(mocked_chromatogram.selectScans).toHaveBeenCalledWith([1133]);
+      expect(mocked_chromatogram.selectScan).toHaveBeenCalledWith(1133);
       expect(f.callback).not.toHaveBeenCalledWith('noscansfound');
       Ext.util.Observable.releaseCapture(ctrl.application);
     });
@@ -201,7 +201,7 @@ describe('Scans controller', function() {
     it('selected scan', function() {
       spyOn(mocked_chromatogram, 'hasData').andReturn(true);
       spyOn(mocked_chromatogram, 'setMarkers');
-      spyOn(mocked_chromatogram, 'selectScans');
+      spyOn(mocked_chromatogram, 'selectScan');
       spyOn(ctrl, 'selectScan');
       var f = { callback: function() {} };
       spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
@@ -219,7 +219,7 @@ describe('Scans controller', function() {
 
       expect(ctrl.selectScan).not.toHaveBeenCalledWith(1133);
       expect(mocked_chromatogram.setMarkers).toHaveBeenCalledWith(scans);
-      expect(mocked_chromatogram.selectScans).toHaveBeenCalledWith([1133]);
+      expect(mocked_chromatogram.selectScan).toHaveBeenCalledWith(1133);
       expect(f.callback).not.toHaveBeenCalledWith('noscansfound');
       Ext.util.Observable.releaseCapture(ctrl.application);
     });
@@ -227,7 +227,7 @@ describe('Scans controller', function() {
     it('no selected scan', function() {
       spyOn(mocked_chromatogram, 'hasData').andReturn(true);
       spyOn(mocked_chromatogram, 'setMarkers');
-      spyOn(mocked_chromatogram, 'selectScans');
+      spyOn(mocked_chromatogram, 'selectScan');
       spyOn(ctrl, 'selectScan');
       var f = { callback: function() {} };
       spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
@@ -244,7 +244,7 @@ describe('Scans controller', function() {
 
       expect(ctrl.selectScan).not.toHaveBeenCalledWith(1133);
       expect(mocked_chromatogram.setMarkers).toHaveBeenCalledWith(scans);
-      expect(mocked_chromatogram.selectScans).not.toHaveBeenCalled();
+      expect(mocked_chromatogram.selectScan).not.toHaveBeenCalled();
       expect(f.callback).not.toHaveBeenCalledWith('noscansfound');
       Ext.util.Observable.releaseCapture(ctrl.application);
     });
