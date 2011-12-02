@@ -773,10 +773,10 @@ Ext.define('Esc.msygma.resultsApp', {
       Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' scan '+scanid);
     });
     this.on('mspectraclear', function(mslevel) {
-      Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' Scan ...');
+      Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' scan ...');
     });
     this.on('peakmouseover', function(peak, mslevel, scanid) {
-      Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' Scan '+scanid+' (m/z='+peak.mz+', intensity='+peak.intensity+')');
+      Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' scan '+scanid+' (m/z='+peak.mz+', intensity='+peak.intensity+')');
     });
 
     console.log('Launch app');
