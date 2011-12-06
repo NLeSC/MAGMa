@@ -183,6 +183,7 @@ class MetabolitesView(unittest.TestCase):
     def test_filteredon_scanid(self):
         params = dict(start=0, limit=10, scanid=641)
         response = self._callFUT(params)
+        self.assertIn('score', response['rows'][0])
         self.assertEqual(response['total'], 1)
 
     def test_filteredon_nrscanseq(self):
@@ -215,6 +216,17 @@ class MetabolitesView(unittest.TestCase):
         response = self._callFUT(params)
         self.assertEqual(response['total'], 2)
 
+    def test_filteredon_score(self):
+        params = dict(start=0, limit=10, scanid=641, filter='[{"type":"numeric","comparison":"eq","value":200,"field":"score"}]')
+        response = self._callFUT(params)
+        self.assertEqual(response['total'], 1)
+
+    def test_filteredon_score_without_scan(self):
+        from sygma.views import ScanRequiredError
+        with self.assertRaises(ScanRequiredError):
+            params = dict(start=0, limit=10, filter='[{"type":"numeric","comparison":"eq","value":200,"field":"score"}]')
+            response = self._callFUT(params)
+
     def test_sort_probmet(self):
         params = dict(start=0, limit=10, sort='[{"property":"probability","direction":"DESC"},{"property":"metid","direction":"ASC"}]')
         response = self._callFUT(params)
@@ -224,6 +236,17 @@ class MetabolitesView(unittest.TestCase):
         params = dict(start=0, limit=10, sort='[{"property":"nr_scans","direction":"DESC"}]')
         response = self._callFUT(params)
         self.assertEqual(response['total'], 2)
+
+    def test_sort_score(self):
+        params = dict(start=0, limit=10, scanid=641, sort='[{"property":"score","direction":"DESC"}]')
+        response = self._callFUT(params)
+        self.assertEqual(response['total'], 1)
+
+    def test_sort_score_without_scan(self):
+        from sygma.views import ScanRequiredError
+        with self.assertRaises(ScanRequiredError):
+            params = dict(start=0, limit=10, sort='[{"property":"score","direction":"DESC"}]')
+            response = self._callFUT(params)
 
 class extracted_ion_chromatogram_QueryHelper(unittest.TestCase):
     def setUp(self):
@@ -268,6 +291,13 @@ class extracted_ion_chromatogram_QueryHelper(unittest.TestCase):
         self.assertEqual(response, [
             {'id': 641, 'rt': 933.317},
             {'id': 870, 'rt': 1254.15}
+        ])
+
+    def test_score(self):
+        params = dict(filter='[{"type":"numeric","value":"200", "comparison":"eq","field":"score"}]')
+        response = self._callFUT(params)
+        self.assertEqual(response, [
+            {'id': 641, 'rt': 933.317}
         ])
 
 class ChromatogramView(unittest.TestCase):

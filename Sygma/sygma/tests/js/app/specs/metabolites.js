@@ -146,8 +146,13 @@ describe('Metabolites', function() {
      it('apply scan filter', function() {
        // mock list
        var sm = { hasSelection: function() {} };
-       var list = { getSelectionModel: function() { return sm; } };
+       var scorecol = { show: function() {} };
+       var list = {
+         getSelectionModel: function() { return sm; },
+         getFragmentScoreColumn: function() { return scorecol; }
+       };
        spyOn(ctrl, 'getMetaboliteList').andReturn(list);
+       spyOn(scorecol, 'show');
        spyOn(sm, 'hasSelection').andReturn(false);
 
        // mock store
@@ -158,35 +163,61 @@ describe('Metabolites', function() {
        var scanid = 1133;
        ctrl.applyScanFilter(scanid);
 
+       expect(scorecol.show).toHaveBeenCalled();
        expect(mockedstore.setScanFilter).toHaveBeenCalledWith(scanid);
        expect(sm.hasSelection).toHaveBeenCalled();
-       Ext.util.Observable.releaseCapture(ctrl.application);
      });
 
-     it('clear scan filter', function() {
-       // mock list
-       var sm = { hasSelection: function() {} };
-       var list = { getSelectionModel: function() { return sm; } };
-       spyOn(ctrl, 'getMetaboliteList').andReturn(list);
-       spyOn(sm, 'hasSelection').andReturn(false);
+     describe('clear scan filter', function() {
+       var mockedstore, scorecol, sm;
+       beforeEach(function() {
+           // mock list
+           sm = { hasSelection: function() {} };
+           scorecol = { show: function() {}, hide: function() {} };
+           var list = {
+               getSelectionModel: function() { return sm; },
+               getFragmentScoreColumn: function() { return scorecol; }
+           };
+           spyOn(ctrl, 'getMetaboliteList').andReturn(list);
+           spyOn(sm, 'hasSelection').andReturn(false);
 
-       // mock store
-       var mockedstore = {
-           setScanFilter: function() {},
-           removeScanFilter: function() {}
-       };
-       spyOn(ctrl, 'getMetabolitesStore').andReturn(mockedstore);
-       spyOn(mockedstore, 'setScanFilter');
-       spyOn(mockedstore, 'removeScanFilter');
+           // mock store
+           mockedstore = {
+               setScanFilter: function() {},
+               removeScanFilter: function() {}
+           };
+           spyOn(ctrl, 'getMetabolitesStore').andReturn(mockedstore);
+           spyOn(scorecol, 'hide');
+           spyOn(mockedstore, 'setScanFilter');
+           spyOn(mockedstore, 'removeScanFilter');
+       });
 
-       var scanid = 1133;
-       ctrl.applyScanFilter(scanid);
+       it('without score filter and sort', function() {
 
-       ctrl.clearScanFilter();
+           var scanid = 1133;
+           ctrl.applyScanFilter(scanid);
 
-       expect(mockedstore.removeScanFilter).toHaveBeenCalled();
-       expect(sm.hasSelection).toHaveBeenCalled();
-       Ext.util.Observable.releaseCapture(ctrl.application);
+           ctrl.clearScanFilter();
+
+           expect(scorecol.hide).toHaveBeenCalled();
+           expect(mockedstore.removeScanFilter).toHaveBeenCalled();
+           expect(sm.hasSelection).toHaveBeenCalled();
+       });
+
+       it('with score filter and sort', function() {
+           mockedstore.sorters = new Ext.util.MixedCollection();
+           mockedstore.sorters.add('score', [1, 2, 3]);
+           mockedstore.filters = new Ext.util.MixedCollection();
+           mockedstore.filters.add('score', [4, 5, 6]);
+
+           var scanid = 1133;
+           ctrl.applyScanFilter(scanid);
+
+           ctrl.clearScanFilter();
+
+           expect(mockedstore.filters.containsKey('score')).toBeFalsy();
+           expect(mockedstore.sorters.containsKey('score')).toBeFalsy();
+       });
      });
 
      it('clear filters', function() {

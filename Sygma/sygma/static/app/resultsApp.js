@@ -31,6 +31,8 @@ Ext.define('Esc.msygma.model.Metabolite', {
     name: 'nr_scans', type:'number'
   },{
     name: 'scans', defaultValue: [] // Filled when metabolite is selected
+  },{
+    name: 'score', type:'number' // Only filled when scan is selected
   }]
 });
 
@@ -143,7 +145,7 @@ Ext.define('Esc.msygma.view.metabolite.List', {
   }),
   scroll: false,
   viewConfig: {
-    autoScroll: true,
+    autoScroll: true
   },
   dockedItems: [{
     xtype: 'pagingtoolbar',
@@ -164,7 +166,7 @@ Ext.define('Esc.msygma.view.metabolite.List', {
 
     var mfilters = Ext.create('Ext.ux.grid.FiltersFeature',{
       id: 'mfilter',
-      encode: true,
+      encode: true
     });
 
     Ext.apply(this, {
@@ -183,9 +185,10 @@ Ext.define('Esc.msygma.view.metabolite.List', {
         {text: 'Formula', dataIndex: 'molformula', filter: { type: 'string' }},
         {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
         {text: 'Name', dataIndex: 'origin', hidden: true, filter: { type: 'string' }},
+        {text: 'Fragment score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }}
       ],
       plugins: [molcol],
-      features: [mfilters],
+      features: [mfilters]
     });
     this.callParent(arguments);
   },
@@ -194,6 +197,12 @@ Ext.define('Esc.msygma.view.metabolite.List', {
    */
   clearFilters: function() {
     this.getView().getFeature('mfilter').clearFilters();
+  },
+  /**
+   * @return {Ext.grid.column.Column}
+   */
+  getFragmentScoreColumn: function() {
+      return this.columns.filter(function(c) { return (c.dataIndex == "score")})[0];
   }
 });
 
@@ -332,6 +341,7 @@ Ext.define('Esc.msygma.controller.Metabolites', {
   },
   /**
    * Apply scan filter to metabolite store.
+   * And shows fragment score column.
    * Tries to keep selection.
    *
    * @param {Number} scanid Scan identifier to filter on.
@@ -339,13 +349,25 @@ Ext.define('Esc.msygma.controller.Metabolites', {
   applyScanFilter: function(scanid) {
       this.reselectAfterLoad();
       this.getMetabolitesStore().setScanFilter(scanid);
+      this.getMetaboliteList().getFragmentScoreColumn().show();
       // TODO in spectra add markers for metabolites present in scan
   },
   /**
    * Removes scan filter from metabolite store.
+   * And hides fragment score column.
+   * And deactivates filters on fragment score column if any
+   * And resets sort if store is sorted on fragment score.
    */
   clearScanFilter: function() {
-      this.getMetabolitesStore().removeScanFilter();
+      var store = this.getMetabolitesStore();
+      if ('filters' in store) {
+          store.filters.removeAtKey('score');
+      }
+      if ('sorters' in store) {
+          store.sorters.removeAtKey('score');
+      }
+      store.removeScanFilter();
+      this.getMetaboliteList().getFragmentScoreColumn().hide();
   }
 });
 
