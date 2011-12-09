@@ -2,11 +2,11 @@ import unittest
 from pyramid.config import Configurator
 from pyramid import testing
 
-def _initTestingDB():
+def _initTestingDB(url = 'sqlite://'):
     """Creates testing db and populates with test data"""
     from sqlalchemy import create_engine
     from sygma.models import initialize_sql, DBSession, Base
-    engine = create_engine('sqlite://') # in memory db
+    engine = create_engine(url) # default in memory db
     initialize_sql(engine)
     Base.metadata.create_all(engine)
     session = DBSession
@@ -102,18 +102,49 @@ def _populateTestingDB(session):
 
 class HomeView(unittest.TestCase):
     def setUp(self):
-        self.config = testing.setUp()
-        self.session = _initTestingDB()
+        import tempfile
+        settings = { 'jobrootdir': tempfile.mkdtemp() }
+        self.config = testing.setUp(settings=settings)
+        self.config.add_route('results', '/results')
 
     def tearDown(self):
-        self.session.remove()
+        import shutil
+        shutil.rmtree(self.config.registry.settings['jobrootdir'])
         testing.tearDown()
 
-    def test_it(self):
+    def test_get(self):
         request = testing.DummyRequest()
         from sygma.views import home
         response = home(request)
         self.assertEqual(response, {})
+
+    def test_post(self):
+        import os
+        # post requires a sqlite db as file upload
+        qdb = os.tmpnam()
+        dbsession = _initTestingDB('sqlite:///'+qdb)
+        dbsession.flush()
+        dbsession.close()
+        dbsession.remove()
+
+        class FileUpload:
+            pass
+
+        post = { 'db': FileUpload() }
+        post['db'].file = open(qdb,'r') # reopen tmpfile in readmode
+        request = testing.DummyRequest(post=post)
+
+        from sygma.views import home
+        response = home(request)
+
+        self.assertEqual(response.code, 302, 'Redirect')
+        self.assertRegexpMatches(response.headers['Location'], '/results$', 'Redirected to results action')
+        self.assertIn('id', request.session, 'Session has id')
+        self.assertRegexpMatches(request.session['dbname'], 'results\.db$', 'Session has dbname')
+        import filecmp
+        rdbname = os.path.join(self.config.registry.settings['jobrootdir'], str(request.session['id']), 'results.db')
+        self.assertTrue(filecmp.cmp(qdb, rdbname ), 'jobdir/<id>/results.db should be same as mocked input')
+        os.remove(qdb)
 
 class ResultsView(unittest.TestCase):
     def setUp(self):
@@ -259,7 +290,7 @@ class extracted_ion_chromatogram_QueryHelper(unittest.TestCase):
 
     def _callFUT(self, params):
         from sygma.views import filteredscans
-        return filteredscans(params)
+        return filteredscans(testing.DummyRequest(), params)
 
     def test_metid(self):
         params = dict(metid=72)

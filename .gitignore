@@ -9,5 +9,6 @@ Sygma/cover
 Sygma/.coverage
 Sygma/docs/_build/
 Sygma/jsdoc
+Sygma/data
 env/
-/env64
+env64/

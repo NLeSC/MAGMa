@@ -4,6 +4,16 @@
   <title>MSygma - Homepage</title>
 </head>
 <body>
+% if 'dbname' in request.session:
 <a href="${request.route_url('results')}">Results</a>
+% endif
+<form action="${request.route_url('home')}" method="post" accept-charset="utf-8"
+      enctype="multipart/form-data">
+
+    <label for="db">Sqlite results database</label>
+    <input id="db" name="db" type="file" value="" />
+
+    <input type="submit" value="submit" />
+</form>
 </body>
 </html>
