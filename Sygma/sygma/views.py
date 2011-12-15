@@ -11,35 +11,20 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import aliased
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-class ScanRequiredError(Exception):
-    """ Raised when a scan identifier is required, but non is supplied"""
-    pass
+"""Views for pyramid based web application"""
 
 def fetch_job(request):
     """ Fetched job using jobid from request.session.id"""
     if ('id' in request.session):
-        from sygma.job import JobFactory
-        job_factory = JobFactory(request.registry.settings['jobrootdir'], 'results.db')
-        return job_factory.fromId(request.session['id'])
+        return job_factory(request).fromId(request.session['id'])
     # TODO use request.params['jobid'] to construct job aswell
     else:
         raise HTTPNotFound()
 
-def resultsdb_connection(request):
-    """Uses request.session['dbname'] to connect to results db
-    Returns a sqlalchemy session
-    """
-    if ('dbname' in request.session):
-        url = 'sqlite:///'+request.session['dbname']
-        engine = create_engine(url)
-        session = sessionmaker(bind=engine)
-        Base.metadata.bind = engine
-        return session()
-    else:
-        return DBSession()
-
-"""Views for pyramid based web application"""
+def job_factory(request):
+    """ Returns a job factory"""
+    from sygma.job import JobFactory
+    return JobFactory(request.registry.settings['jobrootdir'], 'results.db')
 
 @view_config(route_name='home', renderer='home.mak')
 def home(request):
@@ -53,24 +38,8 @@ def home(request):
     if (request.method == 'POST'):
         # TODO remove results db if it exists
 
-        request.session['id'] = uuid.uuid1()
-        jobdir = os.path.join(
-            request.registry.settings['jobrootdir'],
-            str(request.session['id'])
-        )
-        os.makedirs(jobdir)
-
-        request.session['dbname'] = os.path.join(jobdir, 'results.db')
-        job_results = open(request.session['dbname'], 'wb')
-        input_file = request.POST['db'].file
-        input_file.seek(0)
-        while 1:
-            data = input_file.read(2<<16)
-            if not data:
-               break
-            job_results.write(data)
-        job_results.close()
-
+        job = job_factory(request).fromQuery(request.POST['db'].file)
+        request.session['id'] = job.id
         return HTTPFound(location = request.route_url('results'))
 
     return dict()
@@ -80,22 +49,6 @@ def results(request):
     """Returns results page"""
     job = fetch_job(request)
     return dict(run=job.runInfo(), maxmslevel=job.maxMSLevel())
-
-def extjsgridfilter(q,column,filter):
-    """Query helper to convert a extjs grid filter to a sqlalchemy query filter"""
-    if (filter['type'] == 'numeric'):
-        if (filter['comparison'] == 'eq'):
-            return q.filter(column==filter['value'])
-        if (filter['comparison'] == 'gt'):
-            return q.filter(column>filter['value'])
-        if (filter['comparison'] == 'lt'):
-            return q.filter(column<filter['value'])
-    elif (filter['type'] == 'string'):
-        return q.filter(column.contains(filter['value']))
-    elif (filter['type'] == 'list'):
-        return q.filter(column.in_(filter['value']))
-    elif (filter['type'] == 'boolean'):
-        return q.filter(column==filter['value'])
 
 @view_config(route_name='metabolites.json', renderer='json')
 def metabolitesjson(request):
@@ -115,132 +68,23 @@ def metabolitesjson(request):
         How to sort metabolites. Json encoded string which is an array of objects. Eg.
             [{"property":"probability","direction":"DESC"},{"property":"metid","direction":"ASC"}]
     """
-    dbsession = resultsdb_connection(request)
-    mets = []
-    start = int(request.params['start'])
-    limit = int(request.params['limit'])
-    q = dbsession.query(Metabolite)
-
-    # custom filters
-    fragal = aliased(Fragment)
-    if ('scanid' in request.params):
-        # TODO add score column + order by score
-        q = q.add_column(fragal.score).join(fragal.metabolite).filter(
-            fragal.parentfragid==0).filter(fragal.scanid==request.params['scanid'])
-
-    # add nr_scans column
-    stmt = dbsession.query(Fragment.metid,func.count('*').label('nr_scans')).filter(
-        Fragment.parentfragid==0).group_by(Fragment.metid).subquery()
-    q = q.add_column(stmt.c.nr_scans).outerjoin(stmt, Metabolite.metid==stmt.c.metid)
-
-    if ('filter' in request.params):
-        for filter in json.loads(request.params['filter']):
-            # generic filters
-            if (filter['field'] == 'nr_scans'):
-                col = stmt.c.nr_scans
-            elif (filter['field'] == 'score'):
-                if ('scanid' in request.params):
-                    col = fragal.score
-                else:
-                    raise ScanRequiredError()
-            else:
-                col = Metabolite.__dict__[filter['field']]
-            q = extjsgridfilter(q, col, filter)
-
-    total = q.count()
-
-    if ('sort' in request.params):
-        for col in json.loads(request.params['sort']):
-            if (col['property'] == 'nr_scans'):
-                col2 = stmt.c.nr_scans
-            elif (col['property'] == 'score'):
-                if ('scanid' in request.params):
-                    col2 = fragal.score
-                else:
-                    raise ScanRequiredError()
-            else:
-                col2 = Metabolite.__dict__[col['property']]
-            if (col['direction'] == 'DESC'):
-                q = q.order_by(desc(col2))
-            elif (col['direction'] == 'ASC'):
-                q = q.order_by(asc(col2))
-    else:
-        # default sort
-        q = q.order_by(desc(Metabolite.probability), Metabolite.metid)
-
-    for r in q[start:(limit+start)]:
-        met = r.Metabolite
-        row = {
-            'metid': met.metid,
-            'mol': met.mol,
-            'level': met.level,
-            'probability': met.probability,
-            'reactionsequence': met.reactionsequence,
-            'smiles': met.smiles,
-            'molformula': met.molformula,
-            'isquery': met.isquery,
-            'origin': met.origin,
-            'nhits': met.nhits,
-            'nr_scans': r.nr_scans
-        }
-        if ('score' in r.keys()):
-            row['score'] = r.score
-        mets.append(row)
-
-    return { 'total': total, 'rows': mets, 'scans': filteredscans(request, request.params) }
-
-def filteredscans(request, params):
-    """Returns id and rt of lvl1 scans which have a fragment in it and for which the filters in params pass
-
-    params:
-
-    scanid
-        Only return scans that has this identifier
-    metid
-        Only return scans that have hits with metabolotie with this identifier
-    filter
-        Json encoded string which is generated by ExtJS component Ext.ux.grid.FiltersFeature
-    """
-    # use all scans where metabolite fragments hit
-    dbsession = resultsdb_connection(request)
-    fq = dbsession.query(Fragment.scanid).filter(Fragment.parentfragid==0)
-    if (params):
-        if ('metid' in params):
-            fq = fq.filter(Fragment.metid==params['metid'])
-        if ('scanid' in params):
-            fq = fq.filter(Fragment.scanid==params['scanid'])
-        if ('filter' in params):
-            fq = fq.join(Metabolite)
-            for filter in json.loads(params['filter']):
-                if (filter['field'] == 'score'):
-                    fq = extjsgridfilter(fq, Fragment.score, filter)
-                elif (filter['field'] != 'nr_scans'):
-                    fq = extjsgridfilter(fq, Metabolite.__dict__[filter['field']], filter)
-
-    hits = []
-    for hit in dbsession.query(Scan.rt,Scan.scanid).filter_by(mslevel=1).filter(Scan.scanid.in_(fq)):
-        hits.append({
-            'id': hit.scanid,
-            'rt': hit.rt
-        })
-
-    return hits
-
+    scanid = request.params['scanid'] if ('scanid' in request.params) else None
+    filters = json.loads(request.params['filter']) if ('filter' in request.params) else []
+    sorts = json.loads(request.params['sort']) if ('sort' in request.params) else []
+    job = fetch_job(request)
+    metabolites = job.metabolites(
+        start=int(request.params['start']),
+        limit=int(request.params['limit']),
+        scanid=scanid, filters=filters, sorts=sorts
+    )
+    scans = job.scansWithMetabolites(scanid=scanid, filters=filters)
+    return { 'total':metabolites['total'], 'rows':metabolites['rows'], 'scans':scans}
 
 @view_config(route_name='chromatogram.json', renderer='json')
 def chromatogramjson(request):
     """Returns json object with the id, rt and basepeakintensity for each lvl1 scan"""
-    dbsession = resultsdb_connection(request)
-    scans = []
-    # TODO add left join to find if scan has metabolite hit
-    for scan in dbsession.query(Scan).filter_by(mslevel=1):
-        scans.append({
-            'id': scan.scanid,
-            'rt': scan.rt,
-            'intensity': scan.basepeakintensity
-        })
-
-    return scans
+    job = fetch_job(request)
+    return job.chromatogram()
 
 @view_config(route_name='mspectra.json', renderer='json')
 def mspectrajson(request):
@@ -256,31 +100,17 @@ def mspectrajson(request):
         Ms level on which the scan must be. Optional.
 
     """
-    dbsession = resultsdb_connection(request)
+    job = fetch_job(request)
     scanid = request.matchdict['scanid']
-    scanq = dbsession.query(Scan).filter(Scan.scanid==scanid)
+    mslevel = None
     if ('mslevel' in request.params):
-        scanq = scanq.filter(Scan.mslevel==request.params['mslevel'])
-
+        mslevel = request.params['mslevel']
+    from sygma.job import ScanNotFound
     try:
-        scan = scanq.one()
-    except NoResultFound:
-        return HTTPNotFound()
-
-    # lvl1 scans use absolute cutoff, lvl>1 use ratio of basepeak as cutoff
-    if (scan.mslevel == 1):
-        cutoff = dbsession.query(Run.ms_intensity_cutoff).scalar()
-    else:
-        cutoff = dbsession.query(Scan.basepeakintensity*Run.msms_intensity_cutoff).filter(Scan.scanid==scanid).scalar()
-
-    peaks = []
-    for peak in dbsession.query(Peak).filter_by(scanid=scanid):
-        peaks.append({
-            'mz': peak.mz,
-            'intensity': peak.intensity
-        })
-
-    return { 'peaks': peaks, 'cutoff': cutoff, 'mslevel': scan.mslevel, 'precursor': { 'id': scan.precursorscanid, 'mz': scan.precursormz } }
+        mspectra = job.mspectra(scanid, mslevel)
+        return mspectra
+    except ScanNotFound:
+        raise HTTPNotFound()
 
 @view_config(route_name='extractedionchromatogram.json', renderer='json')
 def extractedionchromatogram(request):
@@ -290,21 +120,10 @@ def extractedionchromatogram(request):
         Metabolite identifier
     """
     metid = request.matchdict['metid']
-    chromatogram = []
-    # fetch avg mz of metabolite fragment
-    dbsession = resultsdb_connection(request)
-    mzq = dbsession.query(func.avg(Fragment.mz)).filter(Fragment.metid==metid).filter(Fragment.parentfragid==0).scalar()
-    if (mzq):
-        mzoffset = dbsession.query(Run.mz_precision).scalar()
-        # fetch max intensity of peaks with mz = mzq+-mzoffset
-        for (rt,intens) in dbsession.query(Scan.rt,func.max(Peak.intensity)).outerjoin(Peak, and_(Peak.scanid==Scan.scanid,Peak.mz.between(mzq-mzoffset,mzq+mzoffset))).filter(Scan.mslevel==1).group_by(Scan.rt).order_by(asc(Scan.rt)):
-            chromatogram.append({
-                'rt': rt,
-                'intensity': intens or 0
-            })
+    job = fetch_job(request)
     return {
-        'chromatogram': chromatogram,
-        'scans': filteredscans(request, { 'metid': metid })
+        'chromatogram': job.extractedIonChromatogram(metid),
+        'scans': job.scansWithMetabolites(metid=metid )
     }
 
 @view_config(route_name='fragments.json', renderer='json')
@@ -321,54 +140,16 @@ def fragments(request):
         Fragments of metabolite with this identifier
 
     request.params['node']
-        The fragment identifier to fetch children fragments for. Optional.
+        The fragment identifier to fetch children fragments for.
     """
-    node = request.params['node']
-    dbsession = resultsdb_connection(request)
-    def q():
-        return dbsession.query(Fragment,Metabolite.mol,Scan.mslevel).join(Metabolite).join(Scan)
-
-    def fragment2json(row):
-        (frag, mol, mslevel) = row
-        f = {
-            'fragid': frag.fragid,
-            'scanid': frag.scanid,
-            'metid': frag.metid,
-            'score': frag.score,
-            'mol': mol,
-            'atoms': frag.atoms,
-            'mz': frag.mz,
-            'mass': frag.mass,
-            'deltah': frag.deltah,
-            'mslevel': mslevel,
-        }
-        if (len(frag.children)>0):
-            f['expanded'] = False
-            f['leaf'] = False
-        else:
-            f['expanded'] = True
-            f['leaf'] = True
-        return f
-
-    # parent metabolite
-    if (node == ''):
-        try:
-            row = q().filter(
-                Fragment.scanid==request.matchdict['scanid']).filter(
-                Fragment.metid==request.matchdict['metid']).filter(
-                Fragment.parentfragid==0).one()
-        except NoResultFound:
-            return HTTPNotFound()
-        metabolite = fragment2json(row)
-        metabolite['children'] = []
-        for frow in q().filter(Fragment.parentfragid==metabolite['fragid']):
-            metabolite['expanded'] = True
-            metabolite['children'].append(fragment2json(frow))
-        return { 'children': metabolite, 'expanded': True}
-    # fragments
-    else:
-        fragments = []
-        for row in q().filter(Fragment.parentfragid==node):
-            fragments.append(fragment2json(row))
+    job = fetch_job(request)
+    from sygma.job import FragmentNotFound
+    try:
+        fragments = job.fragments(
+            scanid=request.matchdict['scanid'],
+            metid=request.matchdict['metid'],
+            node=request.params['node']
+        )
         return fragments
-
+    except FragmentNotFound:
+        raise HTTPNotFound()

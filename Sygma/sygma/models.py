@@ -94,8 +94,3 @@ class Run(Base):
     msms_intensity_cutoff = Column(Float) #: Ratio of basepeak intensity
     mz_precision = Column(Float) #: M/z offset which is allowed for matching a metabolite mass to m/z of a peak
     use_msms_only = Column(Boolean)
-
-def initialize_sql(engine):
-    """Initializes orm, does not create tables and does not add data to it"""
-    DBSession.configure(bind=engine)
-    Base.metadata.bind = engine
