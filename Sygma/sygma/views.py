@@ -16,14 +16,22 @@ class ScanRequiredError(Exception):
     """ Raised when a scan identifier is required, but non is supplied"""
     pass
 
+def fetch_job(request):
+    """ Fetched job using jobid from request.session.id"""
+    if ('id' in request.session):
+        from sygma.job import JobFactory
+        job_factory = JobFactory(request.registry.settings['jobrootdir'], 'results.db')
+        return job_factory.fromId(request.session['id'])
+    # TODO use request.params['jobid'] to construct job aswell
+    else:
+        raise HTTPNotFound()
+
 def resultsdb_connection(request):
     """Uses request.session['dbname'] to connect to results db
     Returns a sqlalchemy session
     """
     if ('dbname' in request.session):
         url = 'sqlite:///'+request.session['dbname']
-        # TODO only create engine when url is different then current
-        # TODO test how connection works with 2 users
         engine = create_engine(url)
         session = sessionmaker(bind=engine)
         Base.metadata.bind = engine
@@ -70,10 +78,8 @@ def home(request):
 @view_config(route_name='results', renderer='results.mak')
 def results(request):
     """Returns results page"""
-    dbsession = resultsdb_connection(request);
-    run = dbsession.query(Run).one()
-    maxmslevel = dbsession.query(func.max(Scan.mslevel)).scalar()
-    return dict(run=run, maxmslevel=maxmslevel)
+    job = fetch_job(request)
+    return dict(run=job.runInfo(), maxmslevel=job.maxMSLevel())
 
 def extjsgridfilter(q,column,filter):
     """Query helper to convert a extjs grid filter to a sqlalchemy query filter"""

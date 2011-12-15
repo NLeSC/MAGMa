@@ -1,6 +1,7 @@
 import unittest
 from pyramid.config import Configurator
 from pyramid import testing
+from mock import patch
 
 def _initTestingDB(url = 'sqlite://'):
     """Creates testing db and populates with test data"""
@@ -146,21 +147,47 @@ class HomeView(unittest.TestCase):
         self.assertTrue(filecmp.cmp(qdb, rdbname ), 'jobdir/<id>/results.db should be same as mocked input')
         os.remove(qdb)
 
+def mock_job():
+    """ Returns a mocked sygma.job.Job which can be used as return value in a patched fetch_job()
+
+    Example:
+    @patch('sygma.views.fetch_job')
+    def test_it(self, mocked_fetch_job):
+        job = mock_job()
+        job.maxMSLevel.return_value = 3
+        mocked_fetch_job.return_value = job
+
+        ... do action
+
+        assert job.maxMSLevel.called
+
+    """
+    from sygma.job import Job
+    from mock import Mock
+    job = Mock(Job)
+    return job
+
 class ResultsView(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()
-        self.session = _initTestingDB()
 
     def tearDown(self):
-        self.session.remove()
         testing.tearDown()
 
-    def test_it(self):
+    @patch('sygma.views.fetch_job')
+    def test_it(self, mocked_fetch_job):
+        job = mock_job()
+        job.runInfo.return_value = 'bla'
+        job.maxMSLevel.return_value = 3
+        mocked_fetch_job.return_value = job
+
         request = testing.DummyRequest()
-        from sygma.views import results
+        from sygma.views import results, fetch_job
         response = results(request)
-        self.assertEqual(response['run'].ms_intensity_cutoff, 200000.0)
-        self.assertEqual(response['maxmslevel'], 3)
+
+        self.assertEqual(response, dict(run='bla', maxmslevel=3))
+        assert job.runInfo.called
+        assert job.maxMSLevel.called
 
 class MetabolitesView(unittest.TestCase):
     def setUp(self):
