@@ -19,6 +19,8 @@ session.data_dir = %(here)s/data/sessions/data
 session.lock_dir = %(here)s/data/sessions/lock
 session.key = mssygma
 session.secret = la9gaew0YofeKohngeiloof0us8Joo
+session.cookie_expires = false
+session.path = '/msygma'
 
 [server:main]
 use = egg:Paste#http
