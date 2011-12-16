@@ -90,6 +90,8 @@ app = Ext.create('Esc.msygma.resultsApp', {
   maxmslevel: ${maxmslevel},
   ms_intensity_cutoff: ${run.ms_intensity_cutoff},
   urls: {
+    nlesclogo: '${request.static_url('sygma:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}',
+    home: '${request.route_url('home')}',
     fragments: '${request.application_url}/fragments/{0}/{1}.json',
     mspectra: '${request.application_url}/mspectra/{0}.json?mslevel={1}',
     extractedionchromatogram: '${request.application_url}/extractedionchromatogram/{0}.json',

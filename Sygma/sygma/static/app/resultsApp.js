@@ -700,6 +700,16 @@ Ext.define('Esc.msygma.resultsApp', {
      */
     urls: {
         /**
+         * Homepage.
+         * @cfg {String} urls.home
+         */
+        home: null,
+        /**
+         * NLeSC logo.
+         * @cfg {String} urls.nlesclogo
+         */
+        nlesclogo: null,
+        /**
          * Fragments endpoint.
          * Tokenized string with scanid and metid tokens.
          * @cfg {String} urls.fragments
@@ -740,6 +750,7 @@ Ext.define('Esc.msygma.resultsApp', {
    * Creates mspectraspanels and viewport and fires/listens for mspectra events
    */
   launch: function() {
+    var me = this;
     this.addEvents(
       /**
        * @event
@@ -814,6 +825,32 @@ Ext.define('Esc.msygma.resultsApp', {
       });
     }
 
+    // header
+    var header_side = Ext.create('Ext.panel.Panel', {
+      region: 'north',
+      border: false,
+      tbar: {
+        height: 44,
+        plain: true,
+        items: [{
+          text: 'Start over',
+          handler: function() {
+            window.location = me.urls.home;
+          },
+          tooltip: 'Upload a new dataset'
+//        },{
+//          xtype: 'splitbutton',
+//          text: 'Download',
+//          tooltip: 'Download the different results files'
+//        },{
+//          text: 'Refine',
+//          tooltip: 'Redo the analysis with additional metabolites and/or other settings'
+        }
+        , '-', '<h1 style="font-size: 300%">MSygma</h1>', '->', { xtype:'image', src: this.urls.nlesclogo, width: 500 }
+        ]
+      }
+    });
+
     var master_side = Ext.create('Ext.panel.Panel', {
       // master side
       region: 'center',
@@ -875,7 +912,7 @@ Ext.define('Esc.msygma.resultsApp', {
 
     Ext.create('Ext.Viewport', {
       layout: 'border',
-      items:[ master_side, detail_side ]
+      items:[ master_side, detail_side, header_side ]
     });
   }
 });
