@@ -8,6 +8,7 @@ class HelperTestCase(unittest.TestCase):
         self.settings = { 'jobrootdir': tempfile.mkdtemp() }
         self.config = testing.setUp(settings=self.settings)
         self.config.add_route('results', '/results')
+        self.config.add_route('home', '/homepage')
 
     def tearDown(self):
         import shutil
@@ -43,8 +44,8 @@ class HelperTestCase(unittest.TestCase):
         request = testing.DummyRequest()
 
         from sygma.views import fetch_job
-        from pyramid.httpexceptions import HTTPNotFound
-        with self.assertRaises(HTTPNotFound):
+        from pyramid.httpexceptions import HTTPFound
+        with self.assertRaises(HTTPFound):
             fetch_job(request)
 
 class HomeView(unittest.TestCase):

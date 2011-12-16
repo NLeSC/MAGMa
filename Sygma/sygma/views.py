@@ -19,7 +19,7 @@ def fetch_job(request):
         return job_factory(request).fromId(request.session['id'])
     # TODO use request.params['jobid'] to construct job aswell
     else:
-        raise HTTPNotFound()
+        raise HTTPFound(location = request.route_url('home'))
 
 def job_factory(request):
     """ Returns a job factory"""
