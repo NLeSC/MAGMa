@@ -11,9 +11,6 @@ pyramid.includes = pyramid_tm
                    pyramid_beaker
 
 mako.directories = sygma:templates
-
-jobrootdir = %(here)s/data/jobs
-
 session.type = file
 session.data_dir = %(here)s/data/sessions/data
 session.lock_dir = %(here)s/data/sessions/lock
@@ -21,6 +18,9 @@ session.key = mssygma
 session.secret = la9gaew0YofeKohngeiloof0us8Joo
 session.cookie_expires = false
 session.path = '/msygma'
+
+extjsroot = ext-4.0.7-gpl
+jobrootdir = %(here)s/data/jobs
 
 [server:main]
 use = egg:Paste#http

@@ -4,10 +4,10 @@
   <title>MSygma - Results</title>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
 <link rel="stylesheet" href="${request.static_url('sygma:static/ChemDoodleWeb/ChemDoodleWeb.css')}" type="text/css"></link>
-<link rel="stylesheet" href="${request.static_url('sygma:static/ext-4.0.7-gpl/resources/css/ext-all.css')}" type="text/css"></link>
-<link rel="stylesheet" type="text/css" href="${request.static_url('sygma:static/ext-4.0.7-gpl/examples/ux/grid/css/GridFilters.css')}" />
-<link rel="stylesheet" type="text/css" href="${request.static_url('sygma:static/ext-4.0.7-gpl/examples/ux/grid/css/RangeMenu.css')}" />
-<script type="text/javascript" src="${request.static_url('sygma:static/ext-4.0.7-gpl/bootstrap.js')}"></script>
+<link rel="stylesheet" href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
+<link rel="stylesheet" type="text/css" href="${request.extjsroot}/examples/ux/grid/css/GridFilters.css" />
+<link rel="stylesheet" type="text/css" href="${request.extjsroot}/examples/ux/grid/css/RangeMenu.css" />
+<script type="text/javascript" src="${request.extjsroot}/bootstrap.js"></script>
 <script type="text/javascript" src="${request.static_url('sygma:static/ChemDoodleWeb/ChemDoodleWeb-libs.js')}"></script>
 <script type="text/javascript" src="${request.static_url('sygma:static/ChemDoodleWeb/ChemDoodleWeb.js')}"></script>
 <script type="text/javascript" src="${request.static_url('sygma:static/d3/d3.js')}"></script>
@@ -81,7 +81,7 @@ Ext.Loader.setConfig({
   paths: {
     'Esc.msygma': '${request.static_url('sygma:static/app')}',
     'Esc': '${request.static_url('sygma:static/esc')}',
-    'Ext.ux': '${request.static_url('sygma:static/ext-4.0.7-gpl/examples/ux')}'
+    'Ext.ux': '${request.extjsroot}/examples/ux'
   }
 });
 

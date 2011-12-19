@@ -1,6 +1,12 @@
 import os.path
 from pyramid.config import Configurator
 from pyramid_beaker import session_factory_from_settings
+from pyramid.events import subscriber, NewRequest
+
+@subscriber(NewRequest)
+def extjsurl(event):
+    """ Adds extjsroot url to request using extjsroot setting"""
+    event.request.extjsroot = event.request.static_url('sygma:static/'+event.request.registry.settings['extjsroot'])
 
 def main(global_config, **settings):
     """ This function returns the MSygma WSGI application.
