@@ -27,11 +27,11 @@ class Metabolite(Base):
     """Metabolite model for metabolites table"""
     __tablename__ = 'metabolites'
     metid = Column(Integer, primary_key=True) #: Id of a metabolite
-    mol = Column(Unicode, unique=True) #: molfile as string
+    mol = Column(Unicode) #: molfile as string
     level = Column(Integer)
     probability = Column(Float)
     reactionsequence = Column(Unicode) #: A newline seperated list of reactions
-    smiles = Column(Unicode) #: Smile string
+    smiles = Column(Unicode, unique=True) #: Smile string
     molformula = Column(Unicode) #: Molecular formula
     isquery = Column(Boolean) #: Whether metabolite was given as query or is a result a of reaction
     origin = Column(Unicode) #: Name of molecule
@@ -48,7 +48,7 @@ class Scan(Base):
     highmz = Column(Float) #: Highest m/z
     basepeakmz = Column(Float) #: M/z with highest intensity
     basepeakintensity = Column(Float) #: Highest intensity
-    totioncurrent = Column(Integer)
+    totioncurrent = Column(Float)
     precursormz = Column(Float) #: m/z of peak in precursorscanid which was fragmented resulting in this scan
     precursorintensity = Column(Float) #: intensity belonging to precursorintensity
     precursorscanid = Column(Integer, ForeignKey('scans.scanid')) #: Parent scan identifier
