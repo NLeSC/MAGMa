@@ -88,8 +88,8 @@ class HomeView(unittest.TestCase):
         from sygma.views import home, job_factory
         response = home(request)
 
-        self.assertEqual(response.code, 302, 'Redirect')
-        self.assertRegexpMatches(response.headers['Location'], '/results$', 'Redirected to results action')
+        self.assertEqual(response.body, '{"success": true}')
+        self.assertEqual(response.content_type, 'text/html')
         self.assertEqual(request.session['id'], job.id)
         mocked_jobfactory.assert_called_with(request)
         jobf.fromQuery.assert_called_with(dbfile)

@@ -40,7 +40,7 @@ def home(request):
 
         job = job_factory(request).fromQuery(request.POST['db'].file)
         request.session['id'] = job.id
-        return HTTPFound(location = request.route_url('results'))
+        return Response(json.dumps({"success": True}), content_type='text/html')
 
     return dict()
 
