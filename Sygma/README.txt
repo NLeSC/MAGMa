@@ -31,7 +31,7 @@ Python documentation generation with
   make html
 
 Javascript documentation generation with
-  jsduck sygma/static/ext-4.0.7-gpl/src sygma/static/ext-4.0.7-gpl/examples/ux sygma/static/d3/d3.js sygma/static/esc sygma/static/app --builtin-classes --output jsdoc --images sygma/static/ext-4.0.7-gpl/docs/images
+  jsduck sygma/static/ext-4.0.7/src sygma/static/ext-4.0.7/examples/ux sygma/static/d3/d3.js sygma/static/esc sygma/static/app --builtin-classes --output jsdoc --images sygma/static/ext-4.0.7/docs/images
 or minimal
   jsduck sygma/static/esc sygma/static/app --output jsdoc
 

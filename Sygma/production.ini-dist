@@ -19,7 +19,7 @@ session.secret = la9gaew0YofeKohngeiloof0us8Joo
 session.cookie_expires = false
 session.path = '/msygma'
 
-extjsroot = ext-4.0.7-gpl
+extjsroot = ext-4.0.7
 jobrootdir = %(here)s/data/jobs
 
 [server:main]
