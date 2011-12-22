@@ -53,7 +53,7 @@ class JobFactory:
 
         TODO replace with arguments with submit form values like mzxml file, metabolite smiles and sygma config
         """
-        jobid = uuid.uuid1()
+        jobid = uuid.uuid4()
 
         # create job dir
         os.makedirs(self.id2jobdir(jobid))
