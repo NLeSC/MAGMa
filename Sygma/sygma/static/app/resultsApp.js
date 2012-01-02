@@ -667,6 +667,26 @@ Ext.define('Esc.msygma.controller.Fragments', {
 /**
  * MSygma results application
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
+ *
+ *
+ * Example config:
+ *
+ *     @example
+ *     app = Ext.create('Esc.msygma.resultsApp', {
+ *       maxmslevel: 3,
+ *       ms_intensity_cutoff: 20000,
+ *       urls: {
+ *         nlesclogo: 'static/ESCIENCE_log_B_nl_long_cyanblack.jpg',
+ *         home: '/',
+ *         fragments: '/fragments/{0}/{1}.json',
+ *         mspectra: '/mspectra/{0}.json?mslevel={1}',
+ *         extractedionchromatogram: '/extractedionchromatogram/{0}.json',
+ *         metabolites: '/metabolites.json',
+ *         chromatogram: '/chromatogram.json'
+ *       }
+ *     });
+ *
+ * Note! Example requires that Esc.mysygma, Esc namespaces to be resolvable.
  */
 Ext.define('Esc.msygma.resultsApp', {
   extend:'Ext.app.Application',
