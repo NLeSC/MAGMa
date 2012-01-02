@@ -2,9 +2,9 @@
  * @class Esc.chemdoodle.Column
  * @extends Ext.grid.column.Column
  *
- * <p>A Column definition class which renders a chemdoodle canvas</p>
+ * A Column definition class which renders a chemdoodle canvas
  *
- * ## Code
+ *     @example
  *     Ext.create('Ext.data.Store', {
  *        storeId:'sampleStore',
  *        fields:[
@@ -44,6 +44,8 @@
  *         plugins:[molcol],
  *         renderTo: Ext.getBody()
  *     });
+ *
+ * Note! Example requires ChemDoodleWeb.js to be sourced.
  *
  */
 Ext.define('Esc.chemdoodle.Column', {

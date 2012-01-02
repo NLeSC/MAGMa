@@ -1,8 +1,25 @@
 /**
  * A chromatogram viewer
  * @class Esc.d3.Chromatogram
- * @extends Ext.Panel
+ * @extends Esc.d3.Abstract
  * @author Stefan Verhoeven
+ *
+ * A example with 2 peaks, a marker at the first peak, an extracted ion chromatogram and a select of a scan:
+ *
+ *     @example
+ *     var chromatogram = Ext.create('Esc.d3.Chromatogram', {
+ *       renderTo: Ext.getBody(),
+ *       title: 'Chromatogram',
+ *       width: 400, height: 300,
+ *       axesPadding: [16, 5, 58, 80],
+ *       data: [{rt:1, intensity: 100, id:4}, {rt:2, intensity: 50, id:5}],
+ *       markers: [{rt:1, intensity: 100, id:4}],
+ *       cutoff: 10
+ *     });
+ *     chromatogram.setExtractedIonChromatogram([{rt:1, intensity: 45, id:4}, {rt:2, intensity: 60, id:5}]);
+ *     chromatogram.selectScan(4);
+ *
+ * Note! This example requires d3.js to be sourced.
  */
 Ext.define('Esc.d3.Chromatogram', {
   extend: 'Esc.d3.Abstract',
@@ -25,7 +42,7 @@ Ext.define('Esc.d3.Chromatogram', {
         /**
          * Scan identifier of selected scan.
          * When no scans are selected then it is set to -1.
-         * @prop {Number}
+         * @property {Number}
          * @readonly
          */
         selectedScan: -1,
@@ -70,6 +87,9 @@ Ext.define('Esc.d3.Chromatogram', {
       'mouseoverscan'
     );
   },
+  /**
+   * @inheritdoc Esc.d3.Abstract#redraw
+   */
   redraw: function() {
     var me = this;
     if (d3.event && d3.event.translate[0] != 0 && d3.event.translate[1] != 0) {
@@ -104,8 +124,7 @@ Ext.define('Esc.d3.Chromatogram', {
     this.scales.y = d3.scale.linear().domain([this.ranges.y.min, this.ranges.y.max]).range([this.chartHeight, 0]);
     var me = this;
     /**
-     * Line factory for basepeakintensity and extractedionchromatogram
-     * @cfg line
+     * @property {d3.svg.line} line Line factory for basepeakintensity and extractedionchromatogram
      */
     this.line = d3.svg.line()
     .interpolate('linear')
@@ -244,7 +263,8 @@ Ext.define('Esc.d3.Chromatogram', {
     this.selectedScan = -1;
   },
   /**
-   * @param data array of markers.
+   * Set markers on rt's which can be selected.
+   * @param {Array} data array of markers.
    *
    * When a scan has been selected scan it is reselected if scan is still marked
    */
@@ -302,6 +322,7 @@ Ext.define('Esc.d3.Chromatogram', {
     ;
   },
   /**
+   * Overlay the extracted ion chromatogram of a metabolite on the chromatogram.
    * @param data Array of rt and max intensity of a metabolite
    */
   setExtractedIonChromatogram: function(data) {
