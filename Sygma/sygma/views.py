@@ -14,10 +14,14 @@ from sqlalchemy.orm import sessionmaker
 """Views for pyramid based web application"""
 
 def fetch_job(request):
-    """ Fetched job using jobid from request.session.id"""
+    """ Fetched job using jobid from request.session[id] or request.params[jobid]"""
     if ('id' in request.session):
         return job_factory(request).fromId(request.session['id'])
-    # TODO use request.params['jobid'] to construct job aswell
+    elif ('jobid' in request.params):
+        # use request.params['jobid'] to construct job aswell, so job can be bookmarked/shared
+        # all following requests use jobid as session['id'], so we dont have to change all urls
+        request.session['id'] = request.params['jobid']
+        return job_factory(request).fromId(request.params['jobid'])
     else:
         raise HTTPFound(location = request.route_url('home'))
 
