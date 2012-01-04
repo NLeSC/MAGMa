@@ -5,6 +5,8 @@ Sygma/development.ini
 Sygma/production.ini
 *py[co]
 Sygma/sygma/static/ext-*
+Sygma/sygma/static/all-classes.js
+Sygma/sygma/static/app-all.js
 Sygma/cover
 Sygma/.coverage
 Sygma/docs/_build/

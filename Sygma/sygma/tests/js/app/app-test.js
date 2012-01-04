@@ -4,7 +4,7 @@ Ext.Loader.setConfig({
   paths: {
     'Esc.msygma': '../../../static/app',
     'Esc': '../../../static/esc',
-    'Ext.ux': '../../../static/ext-4.0.7-gpl/examples/ux'
+    'Ext.ux': '../../../static/ext-4.0.7/examples/ux'
   }
 });
 

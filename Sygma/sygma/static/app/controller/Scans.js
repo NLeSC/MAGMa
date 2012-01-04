@@ -103,6 +103,7 @@ Ext.define('Esc.msygma.controller.Scans', {
     this.getScanChromatogram().setExtractedIonChromatogram([]);
   },
   /**
+   * Download the extracted ion chromatogram of a metabolite on the chromatogram.
    * @param {Number} metid Metobolite identifier
    */
   loadExtractedIonChromatogram: function(metid) {
@@ -115,6 +116,7 @@ Ext.define('Esc.msygma.controller.Scans', {
     );
   },
   /**
+   * Callback for loading a extracted ion chromatogram
    * @param {Object} data
    * @param {Array} data.scans Scans in which metabolite has hits
    * @param {Array} data.chromatogram Foreach scan the intensity of the peak with metabolite m/z

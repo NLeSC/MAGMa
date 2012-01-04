@@ -7,10 +7,6 @@
 <link rel="stylesheet" href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
 <link rel="stylesheet" type="text/css" href="${request.extjsroot}/examples/ux/grid/css/GridFilters.css" />
 <link rel="stylesheet" type="text/css" href="${request.extjsroot}/examples/ux/grid/css/RangeMenu.css" />
-<script type="text/javascript" src="${request.extjsroot}/bootstrap.js"></script>
-<script type="text/javascript" src="${request.static_url('sygma:static/ChemDoodleWeb/ChemDoodleWeb-libs.js')}"></script>
-<script type="text/javascript" src="${request.static_url('sygma:static/ChemDoodleWeb/ChemDoodleWeb.js')}"></script>
-<script type="text/javascript" src="${request.static_url('sygma:static/d3/d3.js')}"></script>
 <style type="text/css">
 
 path.line {
@@ -73,11 +69,15 @@ line.mspeak {
     height: 106px !important;
 }
 
-</style><script type="text/javascript">
-
+</style>
+<script type="text/javascript" src="${request.static_url('sygma:static/ChemDoodleWeb/ChemDoodleWeb-libs.js')}"></script>
+<script type="text/javascript" src="${request.static_url('sygma:static/ChemDoodleWeb/ChemDoodleWeb.js')}"></script>
+<script type="text/javascript" src="${request.static_url('sygma:static/d3/d3.min.js')}"></script>
+<script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
+<script type="text/javascript">
 Ext.Loader.setConfig({
   enabled: true,
-//  disableCaching: false, // uncomment to use firebug breakpoints
+  //disableCaching: false, // uncomment to use firebug breakpoints
   paths: {
     'Esc.msygma': '${request.static_url('sygma:static/app')}',
     'Esc': '${request.static_url('sygma:static/esc')}',
@@ -85,23 +85,32 @@ Ext.Loader.setConfig({
   }
 });
 
-app = Ext.create('Esc.msygma.resultsApp', {
-  appFolder: "${request.static_url('sygma:static/app')}",
-  maxmslevel: ${maxmslevel},
-  ms_intensity_cutoff: ${run.ms_intensity_cutoff},
-  urls: {
-    nlesclogo: '${request.static_url('sygma:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}',
-    home: '${request.route_url('home')}',
-    fragments: '${request.application_url}/fragments/{0}/{1}.json',
-    mspectra: '${request.application_url}/mspectra/{0}.json?mslevel={1}',
-    extractedionchromatogram: '${request.application_url}/extractedionchromatogram/{0}.json',
-    metabolites: '${request.route_url('metabolites.json')}',
-    chromatogram: '${request.route_url('chromatogram.json')}'
-  }
+</script>
+## Comment app-all.js out for development or when running sencha build, every class is loaded when commented out
+<script type="text/javascript" src="${request.static_url('sygma:static/app-all.js')}"></script>
+<script type="text/javascript">
+
+Ext.require('Esc.msygma.resultsApp');
+
+Ext.onReady(function() {
+    Ext.create('Esc.msygma.resultsApp', {
+      appFolder: "${request.static_url('sygma:static/app')}",
+      maxmslevel: ${maxmslevel},
+      ms_intensity_cutoff: ${run.ms_intensity_cutoff},
+      urls: {
+        nlesclogo: '${request.static_url('sygma:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}',
+        home: '${request.route_url('home')}',
+        fragments: '${request.application_url}/fragments/{0}/{1}.json',
+        mspectra: '${request.application_url}/mspectra/{0}.json?mslevel={1}',
+        extractedionchromatogram: '${request.application_url}/extractedionchromatogram/{0}.json',
+        metabolites: '${request.route_url('metabolites.json')}',
+        chromatogram: '${request.route_url('chromatogram.json')}'
+      }
+    });
 });
+
 </script>
 </head>
 <body>
 </body>
 </html>
-

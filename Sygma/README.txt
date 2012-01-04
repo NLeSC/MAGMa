@@ -31,10 +31,23 @@ Python documentation generation with
   make html
 
 Javascript documentation generation with
-  jsduck sygma/static/ext-4.0.7-gpl/src sygma/static/ext-4.0.7-gpl/examples/ux sygma/static/d3/d3.js sygma/static/esc sygma/static/app --builtin-classes --output jsdoc --images sygma/static/ext-4.0.7-gpl/docs/images
+  jsduck sygma/static/ext-4.0.7/src sygma/static/ext-4.0.7/examples/ux sygma/static/d3/d3.js sygma/static/esc sygma/static/app --builtin-classes --output jsdoc --images sygma/static/ext-4.0.7/docs/images
 or minimal
   jsduck sygma/static/esc sygma/static/app --output jsdoc
 
+
+Minimize js
+-----------
+
+export PATH=$PATH:/home/stefanv/SenchaSDKTools-1.2.3/:/home/stefanv/SenchaSDKTools-1.2.3/command/:/home/stefanv/SenchaSDKTools-1.2.3/lib/:home/stefanv/SenchaSDKTools-1.2.3/command/:/home/stefanv/SenchaSDKTools-1.2.3/appbuilder/:/home/stefanv/SenchaSDKTools-1.2.3/jsbuilder/
+cd Sygma/sygma
+# in results.mak comment app-all.js
+sencha create jsb -v -p msygma.jsb3 -a 'http://192.168.1.140/msygma/results?jobid=2a398f64-3522-11e1-ac1a-0800272c0b38'
+# create jsb exits with error, but output file is ok
+# Set static/ as path of all-classes.js file of app-all.js target
+# Otherwise all-classes.js can not be found
+sencha build -v -d static -p msygma.jsb3
+# in results.mak uncomment app-all.js
 
 SQL cookbook
 ------------

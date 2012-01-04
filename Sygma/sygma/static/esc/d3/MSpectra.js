@@ -1,8 +1,25 @@
 /**
  * A Mass spectra viewer
  * @class Esc.d3.MSpectra
- * @extends Ext.Panel
+ * @extends Esc.d3.Abstract
  * @author Stefan Verhoeven
+ *
+ * A example with 2 peaks, a marker at the first peak and select of first peak:
+ *
+ *     @example
+ *     var mass_spectra = Ext.create('Esc.d3.MSpectra', {
+ *       renderTo: Ext.getBody(),
+ *       title: 'Mass spectra',
+ *       width: 400, height: 300,
+ *       axesPadding: [16, 5, 58, 80],
+ *       data: [{mz:1,intensity:2},{mz:3,intensity:4}],
+ *       markers: [{mz: 3}],
+ *       cutoff: 1
+ *     });
+ *     mass_spectra.selectPeak(1);
+ *
+ * Note! This example requires d3.js to be sourced.
+ *
  */
 Ext.define('Esc.d3.MSpectra', {
   extend: 'Esc.d3.Abstract',
@@ -12,11 +29,12 @@ Ext.define('Esc.d3.MSpectra', {
         /**
          * @cfg {Array} data array of objects with mz and intensity and hashit properties.
          */
-        // mz of selectedPeak
-        selectedPeak: -1,
         /**
-         * @cfg {String} selectedPeakCls The CSS class applied to markers of a selected peak.
+         * @property {Number} selectedPeak mz of selectedPeak.
+         * When no peaks are selected then it is set to -1.
+         * @readonly
          */
+        selectedPeak: -1,
         /**
          * @cfg {Number} cutoff intensity under which peaks where disregarded
          */
@@ -25,6 +43,9 @@ Ext.define('Esc.d3.MSpectra', {
          * @cfg {String} cutoffCls The CSS class applied to cutoff line.
          */
         cutoffCls: 'cutoffline',
+        /**
+         * @cfg {String} selectedPeakCls The CSS class applied to markers of a selected peak.
+         */
         selectedPeakCls: 'selectedpeak',
         markers: [],
         chartWidth: 0,
@@ -60,7 +81,7 @@ Ext.define('Esc.d3.MSpectra', {
     );
   },
   /**
-   * @inheritdoc
+   * @inheritdoc Esc.d3.Abstract#redraw
    */
   redraw: function() {
     var me = this;
@@ -200,7 +221,7 @@ Ext.define('Esc.d3.MSpectra', {
     this.selectedpeak = -1;
   },
   /**
-   *
+   * Set markers on mz's which can be selected
    * @param data array of objects with mz prop
    */
   setMarkers: function(data) {

@@ -1,36 +1,32 @@
 /**
  * Ext wrapper around a D3 visualization.
  * @class Esc.d3.Abstract
- * @extends Ext.Panel
  * @author Stefan Verhoeven
  *
  * @private
  */
 Ext.define('Esc.d3.Abstract', {
   extend: 'Ext.Panel',
-
   initComponent: function() {
     var defConfig = {
         plain: true,
         border: false,
+        /**
+         * @property {Object} scales Scales
+         * @property {d3.scale} scales.x X scale
+         * @property {d3.scale} scales.y Y scale
+         */
         scales: {
-          /**
-           * @cfg {d3.scale} scales.x X scale
-           */
           x: null,
-          /**
-           * @cfg {d3.scale} scales.y Y scale
-           */
           y: null
         },
+        /**
+         * @property {Object} axes Axes
+         * @property {d3.svg.axis} axes.x X axis
+         * @property {d3.svg.axis} axes.y Y axis
+         */
         axes: {
-          /**
-           * @cfg {d3.svg.axis} axes.x X axis
-           */
           x: null,
-          /**
-           * @cfg {d3.svg.axis} axes.y Y axis
-           */
           y: null
         },
         /**
@@ -38,25 +34,22 @@ Ext.define('Esc.d3.Abstract', {
          */
         data: [],
         emptyText: '',
+        /**
+         * @property {Object} ranges Range of axes
+         * @property {Object} ranges.x Range of X axis
+         * @property {Number} ranges.x.min Minimal x value. Default is 0.
+         * @property {Number} ranges.x.min Maximal x value.
+         * @property {Object} ranges.y Range of Y axis
+         * @property {Number} ranges.y.min Minimal y value. Default is 0.
+         * @property {Number} ranges.y.min Maximal y value.
+         */
         ranges: {
           x: {
-            /**
-             * @cfg {Number} ranges.x.min Minimal x value. Default is 0.
-             */
             min: 0,
-            /**
-             * @cfg {Number} ranges.x.min Maximal x value. Default is max rt in this.data.
-             */
             max: 0
           },
           y: {
-            /**
-             * @cfg {Number} ranges.x.min Minimal y value. Default is 0.
-             */
             min: 0,
-            /**
-             * @cfg {Number} ranges.x.min Maximal y value. Default is max intensity in this.data.
-             */
             max: 0
           },
         },
@@ -64,14 +57,13 @@ Ext.define('Esc.d3.Abstract', {
          * @cfg {Array} axesPadding Padding around axes. [top, right, left, bottom]
          */
         axesPadding: [16, 5, 38, 80],
+        /**
+         * @cfg {Object} ticks Number of ticks on axes.
+         * @cfg {Number} [ticks.x=10] Number of ticks on x-axis.
+         * @cfg {Number} [ticks.y=4] Number of ticks on y-axis.
+         */
         ticks: {
-          /**
-           * @cfg {Number} ticks.x=10 Number of ticks on x-axis.
-           */
           x:10,
-          /**
-           * @cfg {Number} ticks.y=10 Number of ticks on y-axis.
-           */
           y:4
         },
         chartWidth: 0,

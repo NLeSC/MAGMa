@@ -2,9 +2,9 @@
  * @class Esc.chemdoodle.Column
  * @extends Ext.grid.column.Column
  *
- * <p>A Column definition class which renders a chemdoodle canvas</p>
+ * A Column definition class which renders a chemdoodle canvas
  *
- * ## Code
+ *     @example
  *     Ext.create('Ext.data.Store', {
  *        storeId:'sampleStore',
  *        fields:[
@@ -45,6 +45,8 @@
  *         renderTo: Ext.getBody()
  *     });
  *
+ * Note! Example requires ChemDoodleWeb.js to be sourced.
+ *
  */
 Ext.define('Esc.chemdoodle.Column', {
   extend: 'Ext.grid.column.Column',
@@ -52,20 +54,23 @@ Ext.define('Esc.chemdoodle.Column', {
   config: {
     /**
      * @cfg {Number} canvasWidth
+     * @accessor
      * The width of the chemdoodle canvas in pixels.
      * If width is set then set this a little bit smaller (12pixels) so its not collapsed into an ellipsis.
      */
     canvasWidth:150,
     /**
      * @cfg {Number} canvasHeight
+     * @accessor
      * The height of the chemdoodle canvas in pixels.
      */
     canvasHeight:100,
     /**
      * @cfg {String} canvasClass
+     * @accessor
      * Class of the chemdoodle canvas tag.
      *
-     *  Change when more then one different chemdoodle columns in grid
+     * Change when more then one different chemdoodle columns in grid.
      */
     canvasClass: 'x-chemdoodle-cols'
   },
