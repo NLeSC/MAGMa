@@ -7,6 +7,7 @@
  */
 Ext.define('Esc.msygma.controller.MSpectras', {
   extend: 'Ext.app.Controller',
+  requires: [ 'Esc.d3.MSpectra' ],
   config: {
     /**
      * Maximum MS level or nr of MS levels.
