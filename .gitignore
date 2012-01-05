@@ -12,5 +12,6 @@ Sygma/.coverage
 Sygma/docs/_build/
 Sygma/jsdoc
 Sygma/data
+Sygma/logs
 env/
 env64/

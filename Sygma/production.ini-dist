@@ -26,6 +26,13 @@ jobrootdir = %(here)s/data/jobs
 use = egg:pyramid#wsgiref
 host = 0.0.0.0
 port = 6543
+# toggle gunicorn as server
+#use = egg:gunicorn#main
+#host = 0.0.0.0
+#port = 6543
+#workers = 4
+#accesslog = logs/access.log
+#errorlog = logs/error.log
 
 [composite:main]
 use = egg:Paste#urlmap

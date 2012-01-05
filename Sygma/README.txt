@@ -23,6 +23,35 @@ from sqlalchemy import create_engine, and_
 from sqlalchemy.sql import exists, func
 initialize_sql(create_engine('sqlite:///tea_metabolites2_scans_fragments.db'))
 
+Production deployment
+----------
+
+1. Minimize js
+2. Start wsgi server using production.ini
+  pserve production.ini
+3. Configure reverse proxy webserver like nginx or lighttpd:
+
+Example lighttpd example:
+
+# add expire module before compress module in server.modules
+
+# msygma
+# for development disable expire
+compress.filetype += ( "application/javascript", "applicaton/json" )
+alias.url += ( "/msygma/static" => "/home/stefanv/workspace/sygma_pyramid/Sygma/sygma/static" )
+$HTTP["url"] =~ "/msygma" {
+  $HTTP["url"] !~ "/msygma/static" {
+    proxy.server = (
+      "/" => (
+        "application" => ( "host" => "127.0.0.1", "port" => 6543 )
+      )
+    )
+  }
+  $HTTP["url"] =~ "/msygma/static" {
+    expire.url = ( "" => "access plus 7 days" )
+  }
+}
+
 Documentation
 -------------
 
