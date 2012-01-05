@@ -3,18 +3,27 @@
 <head>
   <title>MSygma - Homepage</title>
 <link rel="stylesheet" href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
-<script type="text/javascript" src="${request.extjsroot}/bootstrap.js"></script>
+<script type="text/javascript" src="${request.extjsroot}/ext-all.js"></script>
 <script type="text/javascript">
 
 Ext.Loader.setConfig({
   enabled: true,
 //  disableCaching: false, // uncomment to use firebug breakpoints
   paths: {
-    'Esc.msygma': '${request.static_url('sygma:static/app')}',
     'Esc': '${request.static_url('sygma:static/esc')}',
     'Ext.ux': '${request.extjsroot}/examples/ux'
   }
 });
+
+Ext.require([
+  'Ext.form.Panel',
+  'Ext.layout.container.Column',
+  'Ext.form.FieldSet',
+  'Ext.form.RadioGroup',
+  'Ext.form.field.File',
+  'Ext.form.field.Number',
+  'Ext.form.field.Radio'
+]);
 
 Ext.onReady(function() {
   Ext.QuickTips.init();
