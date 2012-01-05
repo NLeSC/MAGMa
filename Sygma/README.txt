@@ -68,15 +68,28 @@ or minimal
 Minimize js
 -----------
 
+Create msygma.results.jsb3 file
+===============================
+
+This only needs to be done if msygma.results.jsb3 does not yet create.
+
 export PATH=$PATH:/home/stefanv/SenchaSDKTools-1.2.3/:/home/stefanv/SenchaSDKTools-1.2.3/command/:/home/stefanv/SenchaSDKTools-1.2.3/lib/:home/stefanv/SenchaSDKTools-1.2.3/command/:/home/stefanv/SenchaSDKTools-1.2.3/appbuilder/:/home/stefanv/SenchaSDKTools-1.2.3/jsbuilder/
 cd Sygma/sygma
-# in results.mak comment app-all.js
-sencha create jsb -v -p msygma.jsb3 -a 'http://192.168.1.140/msygma/results?jobid=2a398f64-3522-11e1-ac1a-0800272c0b38'
+# in results.mak comment resultsApp-all.js, so all dependencies are dynamicly loaded
+sencha create jsb -v -p msygma.results.jsb3 -a 'http://192.168.1.140/msygma/results?jobid=2a398f64-3522-11e1-ac1a-0800272c0b38'
 # create jsb exits with error, but output file is ok
-# Set static/ as path of all-classes.js file of app-all.js target
-# Otherwise all-classes.js can not be found
-sencha build -v -d static -p msygma.jsb3
-# in results.mak uncomment app-all.js
+
+Edit msygma.results.jsb3
+- Alter projectName and license
+- Remove app-all.js section
+- Rename all-classes.js to app/resultsApp-all.js
+- Add '"compress": true,' to 'All classes' build
+
+Build msygma.results.jsb3
+=========================
+
+sencha build -v -d static/app -p msygma.results.jsb3
+# in results.mak uncomment resultsApp-all.js
 
 SQL cookbook
 ------------

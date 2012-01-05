@@ -4,10 +4,8 @@
     "builds": [
         {
             "name": "All Classes",
-            "target": "all-classes.js",
-            "options": {
-                "debug": true
-            },
+            "target": "resultsApp-all.js",
+            "compress": true,
             "files": [
                 {
                     "path": "static/ext-4.0.7/src/util/",
@@ -934,21 +932,6 @@
                     "name": "Date.js"
                 }
              ]
-        },
-        {
-            "name": "Application - Production",
-            "target": "app-all.js",
-            "compress": true,
-            "files": [
-                {
-                    "path": "static/",
-                    "name": "all-classes.js"
-                },
-                {
-                    "path": "",
-                    "name": "app.js"
-                }
-            ]
         }
     ],
     "resources": []

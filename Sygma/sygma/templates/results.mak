@@ -86,8 +86,8 @@ Ext.Loader.setConfig({
 });
 
 </script>
-## Comment app-all.js out for development or when running sencha build, every class is loaded when commented out
-<script type="text/javascript" src="${request.static_url('sygma:static/app-all.js')}"></script>
+## Comment out below for development or when running sencha build, every class is loaded when commented out
+<script type="text/javascript" src="${request.static_url('sygma:static/app/resultsApp-all.js')}"></script>
 <script type="text/javascript">
 
 Ext.require('Esc.msygma.resultsApp');
