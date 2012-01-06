@@ -14,7 +14,8 @@ requires = [
     'pyramid_tm',
     'pyramid_debugtoolbar',
     'zope.sqlalchemy',
-    'pyramid_beaker'
+    'pyramid_beaker',
+    'gunicorn'
     ]
 
 tests_require = [

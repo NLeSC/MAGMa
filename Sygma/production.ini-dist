@@ -23,7 +23,7 @@ extjsroot = ext-4.0.7
 jobrootdir = %(here)s/data/jobs
 
 [server:main]
-use = egg:pyramid#wsgiref
+use = egg:waitress#main
 host = 0.0.0.0
 port = 6543
 # toggle gunicorn as server
