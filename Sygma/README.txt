@@ -26,10 +26,11 @@ initialize_sql(create_engine('sqlite:///tea_metabolites2_scans_fragments.db'))
 Production deployment
 ----------
 
-1. Minimize js
-2. Start wsgi server using production.ini
+1. Minimize js, see chapter below
+2. Create logs subdir in Sygma dir for wsgi server logs
+3. Start wsgi server using production.ini
   pserve production.ini
-3. Configure reverse proxy webserver like nginx or lighttpd:
+4. Configure reverse proxy webserver like nginx or lighttpd:
 
 Example lighttpd example:
 
