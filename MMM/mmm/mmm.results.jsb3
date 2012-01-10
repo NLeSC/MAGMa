@@ -688,6 +688,22 @@
                     "name": "Text.js"
                 },
                 {
+                    "name": "TextArea.js",
+                    "path": "static/ext-4.0.7/src/layout/component/field/"
+                },
+                {
+                    "name": "Anchor.js",
+                    "path": "static/ext-4.0.7/src/layout/container/"
+                },
+                {
+                    "name": "ProgressBar.js",
+                    "path": "static/ext-4.0.7/src/layout/component/"
+                },
+                {
+                    "name": "ProgressBar.js",
+                    "path": "static/ext-4.0.7/src/"
+                },
+                {
                     "path": "static/ext-4.0.7/src/form/",
                     "name": "Labelable.js"
                 },
@@ -802,6 +818,10 @@
                 {
                     "path": "static/ext-4.0.7/src/form/field/",
                     "name": "Text.js"
+                },
+                {
+                    "name": "TextArea.js",
+                    "path": "static/ext-4.0.7/src/form/field/"
                 },
                 {
                     "path": "static/ext-4.0.7/src/form/field/",
