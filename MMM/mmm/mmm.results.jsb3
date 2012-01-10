@@ -930,6 +930,10 @@
                 {
                     "path": "static/ext-4.0.7/src/picker/",
                     "name": "Date.js"
+                },
+                {
+                    "path": "static/ext-4.0.7/src/window/",
+                    "name": "MessageBox.js"
                 }
              ]
         }

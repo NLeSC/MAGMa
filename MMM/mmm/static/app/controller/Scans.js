@@ -10,6 +10,7 @@ Ext.define('Esc.mmm.controller.Scans', {
   refs: [{
     ref: 'scanChromatogram', selector: 'scanchromatogram'
   }],
+  uses: [ 'Ext.window.MessageBox' ],
   /**
    * Cached scans which belong to (filtered) metabolites
    */
