@@ -81,7 +81,7 @@ def metabolitesjson(request):
         limit=int(request.params['limit']),
         scanid=scanid, filters=filters, sorts=sorts
     )
-    scans = job.scansWithMetabolites(scanid=scanid, filters=filters)
+    scans = job.scansWithMetabolites(filters=filters)
     return { 'total':metabolites['total'], 'rows':metabolites['rows'], 'scans':scans}
 
 @view_config(route_name='chromatogram.json', renderer='json')

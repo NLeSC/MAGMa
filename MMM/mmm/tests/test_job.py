@@ -316,12 +316,12 @@ class JobScansWithMetabolitesTestCase(unittest.TestCase):
             'id': 641
         }])
 
-    def test_scanid(self):
-        response = self.job.scansWithMetabolites(scanid=641)
-        self.assertEqual(response, [{
-            'rt': 933.317,
-            'id': 641
-        }])
+    def test_all(self):
+        response = self.job.scansWithMetabolites()
+        self.assertEqual(response, [
+            {'id': 641, 'rt': 933.317},
+            {'id': 870, 'rt': 1254.15}
+        ])
 
     def test_molformula(self):
         response = self.job.scansWithMetabolites(filters=[{"type":"string","value":"C6","field":"molformula"}])
