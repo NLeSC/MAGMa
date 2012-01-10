@@ -1,9 +1,9 @@
-Sygma README
+MMM README
 
 Requirements
 ------------
 
-- Extjs installed in Sygma/sygma/static/
+- Extjs installed in MMM/mmm/static/
 - Add config based on production.ini-dist
 
 Run server
@@ -18,7 +18,7 @@ deactivate
 
 To work with models on Python shell
 python
-from sygma.models import *
+from mmm.models import *
 from sqlalchemy import create_engine, and_
 from sqlalchemy.sql import exists, func
 initialize_sql(create_engine('sqlite:///tea_metabolites2_scans_fragments.db'))
@@ -27,7 +27,7 @@ Production deployment
 ----------
 
 1. Minimize js, see chapter below
-2. Create logs subdir in Sygma dir for wsgi server logs
+2. Create logs subdir in MMM dir for wsgi server logs
 3. Start wsgi server using production.ini
   pserve production.ini
 4. Configure reverse proxy webserver like nginx or lighttpd:
@@ -36,19 +36,19 @@ Example lighttpd example:
 
 # add expire module before compress module in server.modules
 
-# msygma
+# mmm
 # for development disable expire
 compress.filetype += ( "application/javascript", "applicaton/json" )
-alias.url += ( "/msygma/static" => "/home/stefanv/workspace/sygma_pyramid/Sygma/sygma/static" )
-$HTTP["url"] =~ "/msygma" {
-  $HTTP["url"] !~ "/msygma/static" {
+alias.url += ( "/mmm/static" => "/home/stefanv/workspace/MMM/MMM/mmm/static" )
+$HTTP["url"] =~ "/mmm" {
+  $HTTP["url"] !~ "/mmm/static" {
     proxy.server = (
       "/" => (
         "application" => ( "host" => "127.0.0.1", "port" => 6543 )
       )
     )
   }
-  $HTTP["url"] =~ "/msygma/static" {
+  $HTTP["url"] =~ "/mmm/static" {
     expire.url = ( "" => "access plus 7 days" )
   }
 }
@@ -61,35 +61,35 @@ Python documentation generation with
   make html
 
 Javascript documentation generation with
-  jsduck sygma/static/ext-4.0.7/src sygma/static/ext-4.0.7/examples/ux sygma/static/d3/d3.js sygma/static/esc sygma/static/app --builtin-classes --output jsdoc --images sygma/static/ext-4.0.7/docs/images
+  jsduck mmm/static/ext-4.0.7/src mmm/static/ext-4.0.7/examples/ux mmm/static/d3/d3.js mmm/static/esc mmm/static/app --builtin-classes --output jsdoc --images mmm/static/ext-4.0.7/docs/images
 or minimal
-  jsduck sygma/static/esc sygma/static/app --output jsdoc
+  jsduck mmm/static/esc mmm/static/app --output jsdoc
 
 
 Minimize js
 -----------
 
-Create msygma.results.jsb3 file
+Create mmm.results.jsb3 file
 ===============================
 
-This only needs to be done if msygma.results.jsb3 does not yet create.
+This only needs to be done if mmm.results.jsb3 does not yet create.
 
 export PATH=$PATH:/home/stefanv/SenchaSDKTools-1.2.3/:/home/stefanv/SenchaSDKTools-1.2.3/command/:/home/stefanv/SenchaSDKTools-1.2.3/lib/:home/stefanv/SenchaSDKTools-1.2.3/command/:/home/stefanv/SenchaSDKTools-1.2.3/appbuilder/:/home/stefanv/SenchaSDKTools-1.2.3/jsbuilder/
-cd Sygma/sygma
+cd MMM/mmm
 # in results.mak comment resultsApp-all.js, so all dependencies are dynamicly loaded
-sencha create jsb -v -p msygma.results.jsb3 -a 'http://192.168.1.140/msygma/results?jobid=2a398f64-3522-11e1-ac1a-0800272c0b38'
+sencha create jsb -v -p mmm.results.jsb3 -a 'http://192.168.1.140/mmm/results?jobid=2a398f64-3522-11e1-ac1a-0800272c0b38'
 # create jsb exits with error, but output file is ok
 
-Edit msygma.results.jsb3
+Edit mmm.results.jsb3
 - Alter projectName and license
 - Remove app-all.js section
 - Rename all-classes.js to app/resultsApp-all.js
 - Add '"compress": true,' to 'All classes' build
 
-Build msygma.results.jsb3
+Build mmm.results.jsb3
 =========================
 
-sencha build -v -d static/app -p msygma.results.jsb3
+sencha build -v -d static/app -p mmm.results.jsb3
 # in results.mak uncomment resultsApp-all.js
 
 SQL cookbook

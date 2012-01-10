@@ -1,12 +1,12 @@
 API Documentation
 =================
 
-.. automodule:: sygma
+.. automodule:: mmm
     :members:
 
-.. automodule:: sygma.views
+.. automodule:: mmm.views
     :members:
 
-.. automodule:: sygma.models
+.. automodule:: mmm.models
     :members:
 

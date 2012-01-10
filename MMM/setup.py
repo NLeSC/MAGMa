@@ -26,9 +26,9 @@ tests_require = [
 if sys.version_info[:3] < (2,5,0):
     requires.append('pysqlite')
 
-setup(name='Sygma',
+setup(name='MMM',
       version='0.0',
-      description='Sygma',
+      description='MMM',
       long_description=README + '\n\n' +  CHANGES,
       classifiers=[
         "Programming Language :: Python",
@@ -43,12 +43,12 @@ setup(name='Sygma',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
-      test_suite='sygma.tests',
+      test_suite='mmm.tests',
       install_requires = requires,
       tests_require = tests_require,
       entry_points = """\
       [paste.app_factory]
-      main = sygma:main
+      main = mmm:main
       """,
       paster_plugins=['pyramid'],
       )
