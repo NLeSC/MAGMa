@@ -20,7 +20,7 @@
  *       }
  *     });
  *
- * Note! Example requires that Esc.mymmm, Esc namespaces to be resolvable.
+ * Note! Example requires that Esc.mmm, Esc namespaces to be resolvable.
  */
 Ext.define('Esc.mmm.resultsApp', {
   extend:'Ext.app.Application',
