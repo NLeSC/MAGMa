@@ -177,7 +177,7 @@ class MetabolitesView(unittest.TestCase):
 
         self.assertEqual(response, { 'total':3, 'rows':[1,2,3], 'scans':[4,5]})
         self.job.metabolites.assert_called_with(start=0, limit=10, sorts=[],scanid=None, filters=[])
-        self.job.scansWithMetabolites.assert_called_with(scanid=None, filters=[])
+        self.job.scansWithMetabolites.assert_called_with(filters=[])
 
     @patch('mmm.views.fetch_job')
     def test_filteredon_scanid(self, mocked_fetch_job):
@@ -188,7 +188,7 @@ class MetabolitesView(unittest.TestCase):
 
         self.assertEqual(response, { 'total':3, 'rows':[1,2,3], 'scans':[4,5]})
         self.job.metabolites.assert_called_with(start=0, limit=10, scanid=641, sorts=[], filters=[])
-        self.job.scansWithMetabolites.assert_called_with(scanid=641, filters=[])
+        self.job.scansWithMetabolites.assert_called_with(filters=[])
 
     @patch('mmm.views.fetch_job')
     def test_filteredon_nrscanseq(self, mocked_fetch_job):
@@ -199,7 +199,7 @@ class MetabolitesView(unittest.TestCase):
 
         self.assertEqual(response, { 'total':3, 'rows':[1,2,3], 'scans':[4,5]})
         self.job.metabolites.assert_called_with(start=0, limit=10, scanid=None, sorts=[], filters=[{"type":"numeric","comparison":"eq","value":1,"field":"nr_scans"}])
-        self.job.scansWithMetabolites.assert_called_with(scanid=None, filters=[{"type":"numeric","comparison":"eq","value":1,"field":"nr_scans"}])
+        self.job.scansWithMetabolites.assert_called_with(filters=[{"type":"numeric","comparison":"eq","value":1,"field":"nr_scans"}])
 
     @patch('mmm.views.fetch_job')
     def test_sort_score(self, mocked_fetch_job):
@@ -210,7 +210,7 @@ class MetabolitesView(unittest.TestCase):
 
         self.assertEqual(response, { 'total':3, 'rows':[1,2,3], 'scans':[4,5]})
         self.job.metabolites.assert_called_with(start=0, limit=10, scanid=641, sorts=[{"property":"score","direction":"DESC"}], filters=[])
-        self.job.scansWithMetabolites.assert_called_with(scanid=641, filters=[])
+        self.job.scansWithMetabolites.assert_called_with(filters=[])
 
 class ChromatogramView(unittest.TestCase):
     def setUp(self):
