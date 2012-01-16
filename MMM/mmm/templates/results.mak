@@ -112,5 +112,33 @@ Ext.onReady(function() {
 </script>
 </head>
 <body>
+<div class="x-hidden" id="resultsinfo">
+Maximum number of reaction steps: ${run.n_reaction_steps}<br/>
+Use phase 1:
+% if run.use_phase1:
+Yes
+% else:
+No
+% endif
+<br/>
+Use phase 2:
+% if run.use_phase2:
+Yes
+% else:
+No
+% endif
+<br/>
+Ionisation: ${run.ionisation} <br/>
+Use defragmentation:
+% if run.use_fragmentation:
+Yes
+% else:
+No
+% endif
+<br/>
+Absolute intensity minimum of lvl1 scan peaks which are matched with metabolites: ${run.ms_intensity_cutoff}<br/>
+Ratio of basepeak intensity: ${run.msms_intensity_cutoff}<br/>
+M/z offset which is allowed for matching a metabolite mass to m/z of a peak: ${run.mz_precision}<br/>
+</div>
 </body>
 </html>

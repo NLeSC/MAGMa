@@ -205,8 +205,20 @@ Ext.define('Esc.mmm.resultsApp', {
 //        },{
 //          text: 'Refine',
 //          tooltip: 'Redo the analysis with additional metabolites and/or other settings'
+        }, {
+          text: 'Info',
+          handler: function() {
+            Ext.create('Ext.window.Window', {
+              title: 'Info',
+              width: 600,
+              height: 200,
+              contentEl: 'resultsinfo'
+            }).show();
+          }
         }
-        , '-', '<h1 style="font-size: 300%">Metabolite Mass Matcher (working title)</h1>', '->', { xtype:'image', src: this.urls.nlesclogo, width: 500 }
+        , '-',
+        '<h1 style="font-size: 300%">Metabolite Mass Matcher (working title)</h1>'
+        , '->', { xtype:'image', src: this.urls.nlesclogo, width: 500 }
         ]
       }
     });
