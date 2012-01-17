@@ -13,6 +13,7 @@ describe('Metabolites', function() {
       expect(store).toBeDefined();
       expect(store.getProxy().url).toBeUndefined();
       expect(store.isLoaded).toBeFalsy();
+      expect(store.pageSize).toEqual(25);
     });
 
     it('setUrl', function() {
@@ -53,6 +54,16 @@ describe('Metabolites', function() {
 
       expect(store.loadPage).toHaveBeenCalledWith(1);
       expect(store.getProxy().extraParams.scanid).toEqual(scanid);
+    });
+
+    it('setPageSize', function() {
+      spyOn(store, 'loadPage');
+      expect(store.pageSize).toEqual(25); // default value
+
+      store.setPageSize(10);
+
+      expect(store.pageSize).toEqual(10);
+      expect(store.loadPage).toHaveBeenCalledWith(1);
     });
   });
 
@@ -97,6 +108,16 @@ describe('Metabolites', function() {
        store.removeScanFilter();
        expect(store.getProxy().extraParams).toEqual({});
        expect(store.loadPage).toHaveBeenCalledWith(1);
+     });
+
+     it('change page size', function() {
+         spyOn(store, 'setPageSize');
+
+         ctrl.onPageSizeChange({
+             getValue: function() { return 123; }
+         });
+
+         expect(store.setPageSize).toHaveBeenCalledWith(123);
      });
 
      it('select metabolite', function() {
@@ -274,6 +295,5 @@ describe('Metabolites', function() {
        expect(f.callback).toHaveBeenCalledWith('metaboliteload', jasmine.any(Object));
        Ext.util.Observable.releaseCapture(ctrl.application);
     });
-
   });
 });

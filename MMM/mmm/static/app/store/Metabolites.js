@@ -56,5 +56,14 @@ Ext.define('Esc.mmm.store.Metabolites', {
   setScanFilter: function(scanid) {
     this.getProxy().extraParams.scanid = scanid;
     this.loadPage(1);
+  },
+  /**
+   * Sets the pagesize of the store and reloads store to first page.
+   *
+   * @param {Number} pageSize Nr of metabolites to show on one page.
+   */
+  setPageSize: function(pageSize) {
+    this.pageSize = pageSize;
+    this.loadPage(1);
   }
 });

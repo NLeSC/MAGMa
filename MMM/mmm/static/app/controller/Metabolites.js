@@ -22,9 +22,6 @@ Ext.define('Esc.mmm.controller.Metabolites', {
     store.setUrl(this.application.getUrls().metabolites);
     store.on('load', this.onLoad, this);
 
-    var grid = this.getMetaboliteListView();
-    grid.pageSize = this.application.getPageSize();
-
     this.control({
       'metabolitelist': {
         select: this.onSelect,
@@ -34,6 +31,9 @@ Ext.define('Esc.mmm.controller.Metabolites', {
       'metabolitelist button[action=clear]': {
         click: this.clearFilters
       },
+      'metabolitelist component[action=pagesize]': {
+        select: this.onPageSizeChange
+      }
     });
 
     this.application.on('selectscan', this.applyScanFilter, this);
@@ -75,6 +75,8 @@ Ext.define('Esc.mmm.controller.Metabolites', {
       // the nr_scans column has an active filter
       // so do not use list.store.load() , but trigger a filter update to load
       this.getMetaboliteList().filters.createFilters();
+      // combo isnt available during init to select pagesize in onlaunch
+      Ext.ComponentQuery.query("metabolitelist combo[action=pagesize]")[0].select(this.getMetabolitesStore().pageSize);
   },
   /**
    * Listens for metabolite store load event.
@@ -160,6 +162,9 @@ Ext.define('Esc.mmm.controller.Metabolites', {
       }
       store.removeScanFilter();
       this.getMetaboliteList().getFragmentScoreColumn().hide();
+  },
+  onPageSizeChange: function(combo) {
+      this.getMetabolitesStore().setPageSize(combo.getValue());
   }
 });
 

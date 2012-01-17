@@ -22,6 +22,21 @@ Ext.define('Esc.mmm.view.metabolite.List', {
     dock: 'bottom',
     displayInfo: true,
     items: [{
+      xtype: 'combo',
+      width: 170,
+      store: [
+        [10, '10 metabolites per page'],
+        [25, '25 metabolites per page'],
+        [50, '50 metabolites per page'],
+        [100, '100 metabolites per page'],
+        [250, '250 metabolites per page'],
+        [500, '500 metabolites per page'],
+        [1000, '1000 metabolites per page'],
+      ],
+      forceSelection: true,
+      triggerAction: 'all',
+      action: 'pagesize'
+    }, {
       text: 'Clear filters',
       action: 'clear'
     }]
