@@ -812,6 +812,10 @@
                     "name": "Trigger.js"
                 },
                 {
+                    "path": "static/ext-4.0.7/src/layout/component/",
+                    "name": "BoundList.js"
+                },
+                {
                     "path": "static/ext-4.0.7/src/form/field/",
                     "name": "Base.js"
                 },
@@ -829,6 +833,10 @@
                 },
                 {
                     "path": "static/ext-4.0.7/src/form/field/",
+                    "name": "Picker.js"
+                },
+                {
+                    "path": "static/ext-4.0.7/src/form/field/",
                     "name": "Spinner.js"
                 },
                 {
@@ -838,6 +846,18 @@
                 {
                     "path": "static/ext-4.0.7/src/toolbar/",
                     "name": "Paging.js"
+                },
+                {
+                    "path": "static/ext-4.0.7/src/view/",
+                    "name": "BoundList.js"
+                },
+                {
+                    "path": "static/ext-4.0.7/src/view/",
+                    "name": "BoundListKeyNav.js"
+                },
+                {
+                    "path": "static/ext-4.0.7/src/form/field/",
+                    "name": "ComboBox.js"
                 },
                 {
                     "path": "static/app/view/metabolite/",

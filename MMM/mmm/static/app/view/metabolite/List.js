@@ -7,7 +7,7 @@ Ext.define('Esc.mmm.view.metabolite.List', {
   alias: 'widget.metabolitelist',
   title: 'Query molecules & Metabolites',
   store: 'Metabolites',
-  requires: ['Ext.ux.grid.FiltersFeature', 'Esc.chemdoodle.Column', 'Ext.toolbar.Paging', 'Ext.grid.column.Boolean' ],
+  requires: ['Ext.ux.grid.FiltersFeature', 'Esc.chemdoodle.Column', 'Ext.toolbar.Paging', 'Ext.grid.column.Boolean', 'Ext.form.field.ComboBox' ],
   selModel: Ext.create('Ext.selection.CheckboxModel', {
     allowDeselect: true,
     mode: 'SINGLE'
