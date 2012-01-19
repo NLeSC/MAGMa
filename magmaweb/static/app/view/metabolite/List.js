@@ -12,10 +12,6 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
     allowDeselect: true,
     mode: 'SINGLE'
   }),
-  scroll: false,
-  viewConfig: {
-    autoScroll: true
-  },
   tools: [{
      type:'save',
      tooltip: 'Save metabolites as comma seperated file',

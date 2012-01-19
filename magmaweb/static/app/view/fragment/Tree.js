@@ -13,7 +13,6 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
   multiSelect: false,
   rootVisible: false,
   singleExpand: true,
-  scroll: false,
   requires: [ 'Esc.chemdoodle.Column' ],
   viewConfig: {
     // animate is default true causing refresh event to be blocked
@@ -21,7 +20,6 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
     // so after expanding a node the refresh was not fired causing all prev. rendered mols to disappear
     // now we turn off animate, so refresh events are fired and mols can be rendered
     animate: false,
-    autoScroll: true,
     blockRefresh: false,
     emptyText: 'Select a metabolite and scan, to show its fragments',
   },
