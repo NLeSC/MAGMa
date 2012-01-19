@@ -3,8 +3,8 @@ from mock import patch
 
 class FunctionalTests(unittest.TestCase):
     def setUp(self):
-        from mmm import main
-        settings = { 'mako.directories': 'mmm:templates', 'extjsroot': 'ext' }
+        from magmaweb import main
+        settings = { 'mako.directories': 'magmaweb:templates', 'extjsroot': 'ext' }
         app = main({}, **settings)
         from webtest import TestApp
         self.testapp = TestApp(app)
@@ -16,11 +16,11 @@ class FunctionalTests(unittest.TestCase):
         res = self.testapp.get('/', status=200)
         self.assertTrue('Homepage' in res.body)
 
-    @patch('mmm.views.fetch_job')
+    @patch('magmaweb.views.fetch_job')
     def test_metabolites(self, mocked_fetch_job):
         import uuid
         from test_job import initTestingDB
-        from mmm.job import Job
+        from magmaweb.job import Job
         job = Job(uuid.uuid1(), initTestingDB())
         mocked_fetch_job.return_value = job
 

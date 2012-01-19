@@ -26,9 +26,9 @@ tests_require = [
 if sys.version_info[:3] < (2,5,0):
     requires.append('pysqlite')
 
-setup(name='MMM',
+setup(name='MAGMaWeb',
       version='0.0',
-      description='MMM',
+      description='MAGMaWeb',
       long_description=README + '\n\n' +  CHANGES,
       classifiers=[
         "Programming Language :: Python",
@@ -43,12 +43,12 @@ setup(name='MMM',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
-      test_suite='mmm.tests',
+      test_suite='magmaweb.tests',
       install_requires = requires,
       tests_require = tests_require,
       entry_points = """\
       [paste.app_factory]
-      main = mmm:main
+      main = magmaweb:main
       """,
       paster_plugins=['pyramid'],
       )

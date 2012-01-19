@@ -6,7 +6,7 @@ from pyramid.events import subscriber, NewRequest
 @subscriber(NewRequest)
 def extjsurl(event):
     """ Adds extjsroot url to request using extjsroot setting"""
-    event.request.extjsroot = event.request.static_url('mmm:static/'+event.request.registry.settings['extjsroot'])
+    event.request.extjsroot = event.request.static_url('magmaweb:static/'+event.request.registry.settings['extjsroot'])
 
 def main(global_config, **settings):
     """ This function returns the MMM WSGI application.
@@ -14,7 +14,7 @@ def main(global_config, **settings):
     session_factory = session_factory_from_settings(settings)
     config = Configurator(settings=settings)
     config.set_session_factory(session_factory)
-    config.add_static_view('static', 'mmm:static', cache_max_age=3600)
+    config.add_static_view('static', 'magmaweb:static', cache_max_age=3600)
     config.add_route('home','/')
     config.add_route('results','/results')
     config.add_route('metabolites.json', '/metabolites.json')
@@ -23,5 +23,5 @@ def main(global_config, **settings):
     config.add_route('chromatogram.json', '/chromatogram.json')
     config.add_route('mspectra.json', '/mspectra/{scanid}.json')
     config.add_route('extractedionchromatogram.json','/extractedionchromatogram/{metid}.json')
-    config.scan('mmm')
+    config.scan('magmaweb')
     return config.make_wsgi_app()

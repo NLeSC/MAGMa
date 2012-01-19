@@ -10,7 +10,7 @@ Ext.Loader.setConfig({
   enabled: true,
 //  disableCaching: false, // uncomment to use firebug breakpoints
   paths: {
-    'Esc': '${request.static_url('mmm:static/esc')}',
+    'Esc': '${request.static_url('magmaweb:static/esc')}',
     'Ext.ux': '${request.extjsroot}/examples/ux'
   }
 });

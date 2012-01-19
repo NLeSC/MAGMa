@@ -3,7 +3,7 @@
 <head>
   <title>MMM - Results</title>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
-<link rel="stylesheet" href="${request.static_url('mmm:static/ChemDoodleWeb/ChemDoodleWeb.css')}" type="text/css"></link>
+<link rel="stylesheet" href="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb.css')}" type="text/css"></link>
 <link rel="stylesheet" href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
 <link rel="stylesheet" type="text/css" href="${request.extjsroot}/examples/ux/grid/css/GridFilters.css" />
 <link rel="stylesheet" type="text/css" href="${request.extjsroot}/examples/ux/grid/css/RangeMenu.css" />
@@ -70,35 +70,35 @@ line.mspeak {
 }
 
 </style>
-<script type="text/javascript" src="${request.static_url('mmm:static/ChemDoodleWeb/ChemDoodleWeb-libs.js')}"></script>
-<script type="text/javascript" src="${request.static_url('mmm:static/ChemDoodleWeb/ChemDoodleWeb.js')}"></script>
-<script type="text/javascript" src="${request.static_url('mmm:static/d3/d3.min.js')}"></script>
+<script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb-libs.js')}"></script>
+<script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb.js')}"></script>
+<script type="text/javascript" src="${request.static_url('magmaweb:static/d3/d3.min.js')}"></script>
 <script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
 <script type="text/javascript">
 Ext.Loader.setConfig({
   enabled: true,
   //disableCaching: false, // uncomment to use firebug breakpoints
   paths: {
-    'Esc.mmm': '${request.static_url('mmm:static/app')}',
-    'Esc': '${request.static_url('mmm:static/esc')}',
+    'Esc.magmaweb': '${request.static_url('magmaweb:static/app')}',
+    'Esc': '${request.static_url('magmaweb:static/esc')}',
     'Ext.ux': '${request.extjsroot}/examples/ux'
   }
 });
 
 </script>
 ## Comment out below for development or when running sencha build, every class is loaded when commented out
-<script type="text/javascript" src="${request.static_url('mmm:static/app/resultsApp-all.js')}"></script>
+<script type="text/javascript" src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script>
 <script type="text/javascript">
 
-Ext.require('Esc.mmm.resultsApp');
+Ext.require('Esc.magmaweb.resultsApp');
 
 Ext.onReady(function() {
-    Ext.create('Esc.mmm.resultsApp', {
-      appFolder: "${request.static_url('mmm:static/app')}",
+    Ext.create('Esc.magmaweb.resultsApp', {
+      appFolder: "${request.static_url('magmaweb:static/app')}",
       maxmslevel: ${maxmslevel},
       ms_intensity_cutoff: ${run.ms_intensity_cutoff},
       urls: {
-        nlesclogo: '${request.static_url('mmm:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}',
+        nlesclogo: '${request.static_url('magmaweb:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}',
         home: '${request.route_url('home')}',
         fragments: '${request.application_url}/fragments/{0}/{1}.json',
         mspectra: '${request.application_url}/mspectra/{0}.json?mslevel={1}',

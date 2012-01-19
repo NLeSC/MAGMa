@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import desc, asc
 from sqlalchemy.orm.exc import NoResultFound
-from mmm.models import Metabolite, Scan, Peak, Fragment, Run, Base
+from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run, Base
 
 class ScanRequiredError(Exception):
     """ Raised when a scan identifier is required, but non is supplied"""
@@ -54,7 +54,7 @@ class JobFactory:
         dbfile
             The sqlite result db
 
-        TODO replace with arguments with submit form values like mzxml file, metabolite smiles and mmm config
+        TODO replace with arguments with submit form values like mzxml file, metabolite smiles and magmaweb config
         """
         jobid = uuid.uuid4()
 

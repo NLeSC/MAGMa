@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# MMM documentation build configuration file, created by
+# MAGMaWeb documentation build configuration file, created by
 # sphinx-quickstart on Tue Nov 15 15:35:20 2011.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -41,7 +41,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'MMM'
+project = u'MAGMaWeb'
 copyright = u'2011, Stefan Verhoeven & Lars Ridder'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -165,7 +165,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'MMMdoc'
+htmlhelp_basename = 'MAGMaWebdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -184,7 +184,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'MMM.tex', u'MMM Documentation',
+  ('index', 'MAGMaWeb.tex', u'MAGMaWeb Documentation',
    u'Stefan Verhoeven \\& Lars Ridder', 'manual'),
 ]
 
@@ -214,7 +214,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'mmmm', u'MMM Documentation',
+    ('index', 'magmawebm', u'MAGMaWeb Documentation',
      [u'Stefan Verhoeven & Lars Ridder'], 1)
 ]
 
@@ -228,8 +228,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'MMM', u'MMM Documentation',
-   u'Stefan Verhoeven & Lars Ridder', 'MMM', 'One line description of project.',
+  ('index', 'MAGMaWeb', u'MAGMaWeb Documentation',
+   u'Stefan Verhoeven & Lars Ridder', 'MAGMaWeb', 'One line description of project.',
    'Miscellaneous'),
 ]
 

@@ -1,12 +1,12 @@
 API Documentation
 =================
 
-.. automodule:: mmm
+.. automodule:: magmaweb
     :members:
 
-.. automodule:: mmm.views
+.. automodule:: magmaweb.views
     :members:
 
-.. automodule:: mmm.models
+.. automodule:: magmaweb.models
     :members:
 

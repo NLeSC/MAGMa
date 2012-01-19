@@ -1,5 +1,5 @@
 import unittest
-from mmm.job import JobFactory, Job
+from magmaweb.job import JobFactory, Job
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -8,7 +8,7 @@ def initTestingDB(url = 'sqlite://'):
     engine = create_engine(url) # default in memory db
     session = sessionmaker(bind=engine)
     dbh = session()
-    from mmm.models import Base
+    from magmaweb.models import Base
     Base.metadata.create_all(engine)
     populateTestingDB(dbh)
     return dbh
@@ -23,7 +23,7 @@ def populateTestingDB(session):
     session
         session connection to db
     """
-    from mmm.models import Metabolite, Scan, Peak, Fragment, Run
+    from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
     session.add(Run(
         n_reaction_steps=2, use_phase1=True, use_phase2=True,
         ionisation=-1, use_fragmentation=True,
@@ -283,7 +283,7 @@ class JobMetabolitesTestCase(unittest.TestCase):
         self.assertEqual(response['total'], 1)
 
     def test_filteredon_score_without_scan(self):
-        from mmm.job import ScanRequiredError
+        from magmaweb.job import ScanRequiredError
         with self.assertRaises(ScanRequiredError):
             self.job.metabolites(filters=[{"type":"numeric","comparison":"eq","value":200,"field":"score"}])
 
@@ -300,7 +300,7 @@ class JobMetabolitesTestCase(unittest.TestCase):
         self.assertEqual(response['total'], 1)
 
     def test_sort_score_without_scan(self):
-        from mmm.job import ScanRequiredError
+        from magmaweb.job import ScanRequiredError
         with self.assertRaises(ScanRequiredError):
             self.job.metabolites(sorts=[{"property":"score","direction":"DESC"}])
 
@@ -429,7 +429,7 @@ class JobMSpectraTestCase(unittest.TestCase):
         )
 
     def test_notfound(self):
-        from mmm.job import ScanNotFound
+        from magmaweb.job import ScanNotFound
         with self.assertRaises(ScanNotFound):
             self.job.mspectra(123)
 
@@ -534,6 +534,6 @@ class JobFragmentsTestCase(unittest.TestCase):
         }])
 
     def test_badfragment(self):
-        from mmm.job import FragmentNotFound
+        from magmaweb.job import FragmentNotFound
         with self.assertRaises(FragmentNotFound):
             self.job.fragments(metid=70002, scanid=641)

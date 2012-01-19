@@ -1,7 +1,7 @@
 import transaction
 
 """
-Sqlalchemy models for mmm result database
+Sqlalchemy models for magmaweb result database
 """
 
 from sqlalchemy import Column

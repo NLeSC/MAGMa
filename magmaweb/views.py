@@ -1,6 +1,6 @@
 import uuid, os, json
-from mmm.models import DBSession
-from mmm.models import Metabolite, Scan, Peak, Fragment, Run, Base
+from magmaweb.models import DBSession
+from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run, Base
 from pyramid.response import Response
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPNotFound, HTTPFound
@@ -27,7 +27,7 @@ def fetch_job(request):
 
 def job_factory(request):
     """ Returns a job factory"""
-    from mmm.job import JobFactory
+    from magmaweb.job import JobFactory
     return JobFactory(request.registry.settings['jobrootdir'], 'results.db')
 
 @view_config(route_name='home', renderer='home.mak')
@@ -119,7 +119,7 @@ def mspectrajson(request):
     mslevel = None
     if ('mslevel' in request.params):
         mslevel = request.params['mslevel']
-    from mmm.job import ScanNotFound
+    from magmaweb.job import ScanNotFound
     try:
         mspectra = job.mspectra(scanid, mslevel)
         return mspectra
@@ -157,7 +157,7 @@ def fragments(request):
         The fragment identifier to fetch children fragments for.
     """
     job = fetch_job(request)
-    from mmm.job import FragmentNotFound
+    from magmaweb.job import FragmentNotFound
     try:
         fragments = job.fragments(
             scanid=request.matchdict['scanid'],
