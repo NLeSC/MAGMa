@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
-  <title>MMM - Homepage</title>
+  <title>MAGMa - Homepage</title>
 <link rel="stylesheet" href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
 <script type="text/javascript" src="${request.extjsroot}/ext-all.js"></script>
 <script type="text/javascript">
@@ -31,7 +31,7 @@ Ext.onReady(function() {
   var form = Ext.create('Ext.form.Panel', {
     frame: true,
     width: 600,
-    title: 'MMM submit form',
+    title: 'MAGMa submit form',
     bodyPadding: '10 10 0',
     renderTo: Ext.getBody(),
     layout: 'column',

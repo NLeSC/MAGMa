@@ -217,7 +217,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
           }
         }
         , '-',
-        '<h1 style="font-size: 300%">Metabolite Mass Matcher (working title)</h1>'
+        '<h1 style="font-size: 300%">MAGMa</h1>'
         , '->', { xtype:'image', src: this.urls.nlesclogo, width: 500 }
         ]
       }
