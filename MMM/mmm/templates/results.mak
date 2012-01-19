@@ -104,6 +104,7 @@ Ext.onReady(function() {
         mspectra: '${request.application_url}/mspectra/{0}.json?mslevel={1}',
         extractedionchromatogram: '${request.application_url}/extractedionchromatogram/{0}.json',
         metabolites: '${request.route_url('metabolites.json')}',
+        metabolitescsv: '${request.route_url('metabolites.csv')}',
         chromatogram: '${request.route_url('chromatogram.json')}'
       }
     });

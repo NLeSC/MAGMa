@@ -212,6 +212,33 @@ class MetabolitesView(unittest.TestCase):
         self.job.metabolites.assert_called_with(start=0, limit=10, scanid=641, sorts=[{"property":"score","direction":"DESC"}], filters=[])
         self.job.scansWithMetabolites.assert_called_with(filters=[])
 
+class Metabolites2CsvView(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+        self.job = mock_job()
+        self.job.metabolites.return_value = {'total':3, 'rows':[{'x':'y'}]}
+        import StringIO
+        csv = StringIO.StringIO()
+        csv.write('bla')
+        self.job.metabolites2csv.return_value = csv
+
+    def tearDown(self):
+        testing.tearDown()
+
+    @patch('mmm.views.fetch_job')
+    def test_it(self,  mocked_fetch_job):
+        mocked_fetch_job.return_value = self.job
+
+        from mmm.views import metabolitescsv, fetch_job
+        params = dict(start=0, limit=10)
+        request = testing.DummyRequest(params=params)
+        response = metabolitescsv(request)
+
+        self.assertMultiLineEqual(response.body, 'bla')
+        self.assertEqual(response.content_type, 'text/csv')
+        self.job.metabolites.assert_called_with(start=0, sorts=[], limit=10, scanid=None, filters=[])
+        self.job.metabolites2csv.assert_called_with(self.job.metabolites.return_value['rows'])
+
 class ChromatogramView(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()

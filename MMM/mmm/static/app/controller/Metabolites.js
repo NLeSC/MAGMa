@@ -26,13 +26,16 @@ Ext.define('Esc.mmm.controller.Metabolites', {
       'metabolitelist': {
         select: this.onSelect,
         deselect: this.onDeselect,
-        beforeselect: this.beforeSelect,
+        beforeselect: this.beforeSelect
       },
       'metabolitelist button[action=clear]': {
         click: this.clearFilters
       },
       'metabolitelist component[action=pagesize]': {
         select: this.onPageSizeChange
+      },
+      'metabolitelist tool[action=download]': {
+        click: this.download
       }
     });
 
@@ -71,7 +74,7 @@ Ext.define('Esc.mmm.controller.Metabolites', {
    * Loads metabolite store
    */
   onLaunch: function() {
-      // not loaded in init because metaboliteload event is fired before listeners are registerd
+      // store not loaded in init because metaboliteload event is fired before listeners of views are registerd
       // the nr_scans column has an active filter
       // so do not use list.store.load() , but trigger a filter update to load
       this.getMetaboliteList().filters.createFilters();
@@ -165,6 +168,38 @@ Ext.define('Esc.mmm.controller.Metabolites', {
   },
   onPageSizeChange: function(combo) {
       this.getMetabolitesStore().setPageSize(combo.getValue());
+  },
+  /**
+   * Open a new window with metabolites as comma seperated file.
+   * Uses application.urls.metabolitescsv as url.
+   * Uses store/proxy/gridfilter state to construct queryString so what you see in grid is what in csv file.
+   */
+  download: function() {
+    // download needs to make an url with has the same query parameters as the store.load()
+    // for load() the store builds an operation object, we need to build this aswell
+    var store = this.getMetabolitesStore();
+    var proxy = store.getProxy();
+    var config = {
+        action: 'read',
+        groupers: store.groupers.items,
+        limit: store.pageSize,
+        page: store.currentPage,
+        start: (store.currentPage-1)*store.pageSize,
+        sorters: store.getSorters()
+    };
+    var operation = Ext.create('Ext.data.Operation', config);
+    var request = proxy.buildRequest(operation);
+    var params = request.params;
+    // Ext.ux.grid.FiltersFeature adds filters to request.params in store.beforeLoad event handler
+    // so we do the same to get the filter query string
+    var filter = this.getMetaboliteList().getView().getFeature('mfilter');
+    Ext.apply(params, filter.buildQuery(filter.getFilterData()));
+
+    var url = Ext.urlAppend(
+        this.application.getUrls().metabolitescsv,
+        Ext.Object.toQueryString(params)
+    );
+    window.open(url, 'metabolites.csv');
   }
 });
 

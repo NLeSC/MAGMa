@@ -84,6 +84,16 @@ def metabolitesjson(request):
     scans = job.scansWithMetabolites(filters=filters)
     return { 'total':metabolites['total'], 'rows':metabolites['rows'], 'scans':scans}
 
+@view_config(route_name='metabolites.csv')
+def metabolitescsv(request):
+    """ Same as metabolitesjson(), but returns csv file instead of a json document """
+    mets = metabolitesjson(request)
+    csv = fetch_job(request).metabolites2csv(mets['rows'])
+    response = Response(content_type='text/csv', body=csv.getvalue())
+    # response.app_iter does not work on StringIO, so use response.body
+    # response.app_iter = csv
+    return response
+
 @view_config(route_name='chromatogram.json', renderer='json')
 def chromatogramjson(request):
     """Returns json object with the id, rt and basepeakintensity for each lvl1 scan"""

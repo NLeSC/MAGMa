@@ -16,6 +16,11 @@ Ext.define('Esc.mmm.view.metabolite.List', {
   viewConfig: {
     autoScroll: true
   },
+  tools: [{
+     type:'save',
+     tooltip: 'Save metabolites as comma seperated file',
+     action: 'download'
+  }],
   dockedItems: [{
     xtype: 'pagingtoolbar',
     store: 'Metabolites',   // same store GridPanel is using
@@ -82,6 +87,7 @@ Ext.define('Esc.mmm.view.metabolite.List', {
   clearFilters: function() {
     this.getView().getFeature('mfilter').clearFilters();
   },
+
   /**
    * @return {Ext.grid.column.Column}
    */

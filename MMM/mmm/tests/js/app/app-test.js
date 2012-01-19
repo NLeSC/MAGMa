@@ -22,6 +22,7 @@ Ext.onReady(function() {
         mspectra: 'data/mspectra.{0}.json?mslevel={1}',
         extractedionchromatogram: 'data/extractedionchromatogram.{0}.json',
         metabolites: 'data/metabolites.json',
+        metabolitescsv: 'data/metabolites.csv',
         chromatogram: 'data/chromatogram.json'
       },
       launch: function() {

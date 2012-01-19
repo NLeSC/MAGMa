@@ -1,9 +1,12 @@
+import uuid
+import os
+import csv
+import StringIO
 from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import desc, asc
 from sqlalchemy.orm.exc import NoResultFound
-import uuid, os
 from mmm.models import Metabolite, Scan, Peak, Fragment, Run, Base
 
 class ScanRequiredError(Exception):
@@ -203,6 +206,32 @@ class Job:
             mets.append(row)
 
         return { 'total': total, 'rows': mets }
+
+    def metabolites2csv(self, metabolites):
+        """
+        Converts array of metabolites to csv file handler
+
+        Params:
+        metabolites array like metabolites()['rows']
+
+        Return
+        StringIO
+        """
+        csvstr = StringIO.StringIO()
+        headers = [
+                   'name', 'smiles', 'probability', 'reactionsequence',
+                   'nr_scans', 'molformula', 'isquery'
+                   ]
+        if ('score' in metabolites[0].keys()):
+            headers.append('score')
+
+        csvwriter = csv.DictWriter(csvstr, headers, extrasaction='ignore')
+        csvwriter.writeheader()
+        for m in metabolites:
+            m['name'] = m['origin']
+            csvwriter.writerow(m)
+
+        return csvstr
 
     def scansWithMetabolites(self, filters=[], metid=None):
         """Returns id and rt of lvl1 scans which have a fragment in it and for which the filters in params pass

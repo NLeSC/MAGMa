@@ -304,6 +304,58 @@ class JobMetabolitesTestCase(unittest.TestCase):
         with self.assertRaises(ScanRequiredError):
             self.job.metabolites(sorts=[{"property":"score","direction":"DESC"}])
 
+
+class JobMetabolites2csvTestCase(unittest.TestCase):
+    def setUp(self):
+        import uuid
+        self.job = Job(uuid.uuid1(), initTestingDB())
+
+    def test_it(self):
+        csvfile = self.job.metabolites2csv(self.job.metabolites()['rows'])
+        import csv, StringIO
+        expected_csvfile = StringIO.StringIO()
+        csvwriter = csv.DictWriter(expected_csvfile, [
+                                                  'name', 'smiles', 'probability',
+                                                  'reactionsequence',
+                                                  'nr_scans', 'molformula',
+                                                  'isquery'
+                                                  ])
+        csvwriter.writeheader()
+        csvwriter.writerow({
+                            'name': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
+                            'probability': 1.0, 'reactionsequence': 'PARENT',
+                            'nr_scans': 1, 'molformula': 'C6H6O2',
+                            'isquery': True
+                            })
+        csvwriter.writerow({
+                            'name': 'dihydroxyphenyl-valerolactone',
+                            'smiles': 'O=C1OC(Cc2ccc(O)c(O)c2)CC1',
+                            'probability': 1.0, 'reactionsequence': 'PARENT',
+                            'nr_scans': 1, 'molformula': 'C11H12O4',
+                            'isquery': True
+                            })
+        self.assertMultiLineEqual(csvfile.getvalue(), expected_csvfile.getvalue())
+
+    def test_with_score(self):
+        csvfile = self.job.metabolites2csv(self.job.metabolites(scanid=641)['rows'])
+        import csv, StringIO
+        expected_csvfile = StringIO.StringIO()
+        csvwriter = csv.DictWriter(expected_csvfile, [
+                                                  'name', 'smiles', 'probability',
+                                                  'reactionsequence',
+                                                  'nr_scans', 'molformula',
+                                                  'isquery', 'score'
+                                                  ])
+        csvwriter.writeheader()
+        csvwriter.writerow({
+                            'name': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
+                            'probability': 1.0, 'reactionsequence': 'PARENT',
+                            'nr_scans': 1, 'molformula': 'C6H6O2',
+                            'isquery': True, 'score': 200.0
+                            })
+        self.assertMultiLineEqual(csvfile.getvalue(), expected_csvfile.getvalue())
+
+
 class JobScansWithMetabolitesTestCase(unittest.TestCase):
     def setUp(self):
         import uuid
@@ -343,7 +395,7 @@ class JobScansWithMetabolitesTestCase(unittest.TestCase):
             {'id': 641, 'rt': 933.317}
         ])
 
-class jobMSpectraTestCase(unittest.TestCase):
+class JobMSpectraTestCase(unittest.TestCase):
     def setUp(self):
         import uuid
         self.job = Job(uuid.uuid1(), initTestingDB())
@@ -393,7 +445,7 @@ class jobMSpectraTestCase(unittest.TestCase):
             'precursor': { 'id': 870, 'mz': 207.0663147 }
         })
 
-class jobFragmentsTestCase(unittest.TestCase):
+class JobFragmentsTestCase(unittest.TestCase):
     def setUp(self):
         import uuid
         self.job = Job(uuid.uuid1(), initTestingDB())

@@ -295,5 +295,87 @@ describe('Metabolites', function() {
        expect(f.callback).toHaveBeenCalledWith('metaboliteload', jasmine.any(Object));
        Ext.util.Observable.releaseCapture(ctrl.application);
     });
+
+    describe('download metabolites', function() {
+      it('default', function() {
+          spyOn(window, 'open');
+
+          // create fake filter
+          spyOn(ctrl, 'getMetaboliteList').andReturn({
+              getView: function() {
+                  return {
+                      getFeature: function() {
+                          return {
+                              getFilterData: function() {},
+                              buildQuery: function() {
+                                  return {};
+                              }
+                          }
+                      }
+                  }
+              }
+          })
+
+          ctrl.download();
+          var url = Ext.urlAppend('data/metabolites.csv', Ext.Object.toQueryString({
+              page: 1,
+              start: 0,
+              limit: 10,
+              sort: Ext.JSON.encode([{
+                property: 'probability',
+                direction: 'DESC'
+              },{
+                property: 'metid',
+                direction: 'ASC'
+              }])
+          }));
+          expect(window.open).toHaveBeenCalledWith(url ,'metabolites.csv');
+      });
+
+      it('filtered', function() {
+          var proxy = store.getProxy();
+          proxy.extraParams.scanid = 50;
+
+          // create fake filter
+          var filter = Ext.JSON.encode([{
+              field: 'nr_scans',
+              value: 1,
+              type: 'numeric',
+              comparison: 'gt'
+          }])
+          spyOn(ctrl, 'getMetaboliteList').andReturn({
+              getView: function() {
+                  return {
+                      getFeature: function() {
+                          return {
+                              getFilterData: function() {},
+                              buildQuery: function() {
+                                  return { filter: filter };
+                              }
+                          }
+                      }
+                  }
+              }
+          })
+
+          spyOn(window, 'open');
+          ctrl.download();
+          var url = Ext.urlAppend('data/metabolites.csv', Ext.Object.toQueryString({
+              scanid: 50,
+              page: 1,
+              start: 0,
+              limit: 10,
+              sort: Ext.JSON.encode([{
+                property: 'probability',
+                direction: 'DESC'
+              },{
+                property: 'metid',
+                direction: 'ASC'
+              }]),
+              filter: filter
+          }));
+          expect(window.open).toHaveBeenCalledWith(url ,'metabolites.csv');
+      });
+    });
   });
 });

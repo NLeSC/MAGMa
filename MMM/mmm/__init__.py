@@ -18,6 +18,7 @@ def main(global_config, **settings):
     config.add_route('home','/')
     config.add_route('results','/results')
     config.add_route('metabolites.json', '/metabolites.json')
+    config.add_route('metabolites.csv', '/metabolites.csv')
     config.add_route('fragments.json', '/fragments/{scanid}/{metid}.json')
     config.add_route('chromatogram.json', '/chromatogram.json')
     config.add_route('mspectra.json', '/mspectra/{scanid}.json')
