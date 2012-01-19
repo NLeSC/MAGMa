@@ -36,7 +36,7 @@ port = 6543
 
 [composite:main]
 use = egg:Paste#urlmap
-/magmaweb = MAGMaWeb
+/magma = MAGMaWeb
 
 # Begin logging configuration
 

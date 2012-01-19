@@ -1,6 +1,6 @@
 .project
 .pydevproject
-MMM.egg-info/
+*.egg-info/
 development.ini
 production.ini
 *py[co]

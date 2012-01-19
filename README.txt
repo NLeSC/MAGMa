@@ -39,16 +39,16 @@ Example lighttpd example:
 # magmaweb
 # for development disable expire
 compress.filetype += ( "application/javascript", "applicaton/json" )
-alias.url += ( "/magmaweb/static" => "/home/stefanv/workspace/MAGMaWeb/magmaweb/static" )
-$HTTP["url"] =~ "/magmaweb" {
-  $HTTP["url"] !~ "/magmaweb/static" {
+alias.url += ( "/magma/static" => "/home/stefanv/workspace/MAGMaWeb/magmaweb/static" )
+$HTTP["url"] =~ "/magma" {
+  $HTTP["url"] !~ "/magma/static" {
     proxy.server = (
       "/" => (
         "application" => ( "host" => "127.0.0.1", "port" => 6543 )
       )
     )
   }
-  $HTTP["url"] =~ "/magmaweb/static" {
+  $HTTP["url"] =~ "/magma/static" {
     expire.url = ( "" => "access plus 7 days" )
   }
 }
