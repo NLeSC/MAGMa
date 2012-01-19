@@ -5,7 +5,7 @@ describe('Fragments', function() {
 
     beforeEach(function() {
       if (!store) {
-        store = Ext.create('Esc.mmm.store.Fragments');
+        store = Ext.create('Esc.magmaweb.store.Fragments');
       }
     });
 

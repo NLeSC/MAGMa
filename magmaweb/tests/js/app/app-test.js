@@ -2,7 +2,7 @@ Ext.Loader.setConfig({
   enabled: true,
 //  disableCaching: false, // otherwise can not use firebug breakpoint
   paths: {
-    'Esc.mmm': '../../../static/app',
+    'Esc.magmaweb': '../../../static/app',
     'Esc': '../../../static/esc',
     'Ext.ux': '../../../static/ext-4.0.7/examples/ux'
   }
@@ -11,7 +11,7 @@ Ext.Loader.setConfig({
 var Application = null;
 
 Ext.onReady(function() {
-  Application = Ext.create('Esc.mmm.resultsApp', {
+  Application = Ext.create('Esc.magmaweb.resultsApp', {
       appFolder: "../../../static/app",
       maxmslevel: 3,
       ms_intensity_cutoff: 2000000,

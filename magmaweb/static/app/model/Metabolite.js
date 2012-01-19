@@ -2,7 +2,7 @@
  * Metabolite model.
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.mmm.model.Metabolite', {
+Ext.define('Esc.magmaweb.model.Metabolite', {
   idProperty: 'metid',
   extend:'Ext.data.Model',
   fields: [{

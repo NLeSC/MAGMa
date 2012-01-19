@@ -3,7 +3,7 @@
  *
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.mmm.view.scan.Chromatogram', {
+Ext.define('Esc.magmaweb.view.scan.Chromatogram', {
   extend: 'Esc.d3.Chromatogram',
   alias: 'widget.scanchromatogram',
   title: 'Chromatogram',

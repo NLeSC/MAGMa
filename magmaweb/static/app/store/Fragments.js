@@ -4,9 +4,9 @@
  * Fragments are loaded when a scan and metabolite are selected.
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.mmm.store.Fragments', {
+Ext.define('Esc.magmaweb.store.Fragments', {
   extend: 'Ext.data.TreeStore',
-  model: 'Esc.mmm.model.Fragment',
+  model: 'Esc.magmaweb.model.Fragment',
   autoLoad: false,
   root: { children : [] }, // prevent tree from autoloading
   /**

@@ -4,7 +4,7 @@
  * Handles actions performed on the fragment views.
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.mmm.controller.Fragments', {
+Ext.define('Esc.magmaweb.controller.Fragments', {
   extend: 'Ext.app.Controller',
   stores: [ 'Fragments' ],
   models: [ 'Fragment' ],
@@ -36,31 +36,31 @@ Ext.define('Esc.mmm.controller.Fragments', {
       /**
        * @event
        * Triggered when a fragment node is collapsed.
-       * @param {Esc.mmm.model.Fragment} fragment Fragment which has been collapsed.
+       * @param {Esc.magmaweb.model.Fragment} fragment Fragment which has been collapsed.
        */
       'fragmentcollapse',
       /**
        * @event
        * Triggered when a fragment node is expanded.
-       * @param {Esc.mmm.model.Fragment} fragment Fragment which has been expanded.
+       * @param {Esc.magmaweb.model.Fragment} fragment Fragment which has been expanded.
        */
       'fragmentexpand',
       /**
        * @event
        * Triggered when a fragment node is selected.
-       * @param {Esc.mmm.model.Fragment} fragment Fragment which has been selected.
+       * @param {Esc.magmaweb.model.Fragment} fragment Fragment which has been selected.
        */
       'fragmentselect',
       /**
        * @event
        * Triggered when a fragment node is deselected.
-       * @param {Esc.mmm.model.Fragment} fragment Fragment which has been deselected.
+       * @param {Esc.magmaweb.model.Fragment} fragment Fragment which has been deselected.
        */
       'fragmentdeselect',
       /**
        * @event
        * Triggered when a children of a fragment node are loaded.
-       * @param {Esc.mmm.model.Fragment} parent
+       * @param {Esc.magmaweb.model.Fragment} parent
        * @param {Array} children Array of fragment children.
        */
       'fragmentload'

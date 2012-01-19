@@ -2,9 +2,9 @@
  * Metabolite store.
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.mmm.store.Metabolites', {
+Ext.define('Esc.magmaweb.store.Metabolites', {
   extend: 'Ext.data.Store',
-  model: 'Esc.mmm.model.Metabolite',
+  model: 'Esc.magmaweb.model.Metabolite',
   proxy: {
     type: 'ajax',
     reader: {

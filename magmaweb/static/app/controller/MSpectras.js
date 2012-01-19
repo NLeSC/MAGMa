@@ -5,7 +5,7 @@
  *
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.mmm.controller.MSpectras', {
+Ext.define('Esc.magmaweb.controller.MSpectras', {
   extend: 'Ext.app.Controller',
   requires: [ 'Esc.d3.MSpectra' ],
   config: {
@@ -187,7 +187,7 @@ Ext.define('Esc.mmm.controller.MSpectras', {
   /**
    * Loads a MSpectra of a fragment.
    *
-   * @param {Esc.mmm.model.Fragment} fragment MSpectra of fragments firstchild  is loaded
+   * @param {Esc.magmaweb.model.Fragment} fragment MSpectra of fragments firstchild  is loaded
    */
   loadMSpectraFromFragment: function(fragment) {
     var mslevel = fragment.firstChild.data.mslevel;
@@ -205,7 +205,7 @@ Ext.define('Esc.mmm.controller.MSpectras', {
    * Depending on which mslevel the fragment was found and if has children
    * MSpectra are loaded and peaks selected.
    *
-   * @param {Esc.mmm.model.Fragment} parent
+   * @param {Esc.magmaweb.model.Fragment} parent
    * @param {Array} children child fragments
    */
   loadMSpectrasFromFragment: function(parent, children) {
@@ -270,7 +270,7 @@ Ext.define('Esc.mmm.controller.MSpectras', {
   },
   /**
    * When fragment is collapsed the mspectra of its children must be cleared.
-   * @param {Esc.mmm.model.Fragment} fragment
+   * @param {Esc.magmaweb.model.Fragment} fragment
    */
   clearMSpectraFromFragment: function(fragment) {
     this.clearMSpectraFrom(fragment.data.mslevel+1);
@@ -280,7 +280,7 @@ Ext.define('Esc.mmm.controller.MSpectras', {
    * Peaks of fragments parents are also selected.
    * And peaks in child mspectras are unselected
    *
-   * @param {Esc.mmm.model.Fragment} fragment Fragment of peak to select.
+   * @param {Esc.magmaweb.model.Fragment} fragment Fragment of peak to select.
    */
   selectPeakFromFragment: function(fragment) {
     var mslevel = fragment.data.mslevel;
@@ -302,7 +302,7 @@ Ext.define('Esc.mmm.controller.MSpectras', {
   /**
    * Deselect a peak using a fragment.
    *
-   * @param {Esc.mmm.model.Fragment} fragment Fragment of peak to deselect.
+   * @param {Esc.magmaweb.model.Fragment} fragment Fragment of peak to deselect.
    */
   deselectPeakFromFragment: function(fragment) {
     this.getMSpectra(fragment.data.mslevel).clearPeakSelection();

@@ -4,7 +4,7 @@
  * Handles actions performed in metabolites views.
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.mmm.controller.Metabolites', {
+Ext.define('Esc.magmaweb.controller.Metabolites', {
   extend: 'Ext.app.Controller',
   views: [ 'metabolite.List' ],
   stores: [ 'Metabolites' ],
@@ -53,14 +53,14 @@ Ext.define('Esc.mmm.controller.Metabolites', {
          * @event
          * Triggered when metabolite is selected.
          * @param {Number} metid Metabolite identifier
-         * @param {Esc.mmm.model.Metabolite} metabolite
+         * @param {Esc.magmaweb.model.Metabolite} metabolite
          */
         'metaboliteselect',
         /**
          * @event
          * Triggered when metabolite is deselected.
          * @param {Number} metid Metabolite identifier
-         * @param {Esc.mmm.model.Metabolite} metabolite
+         * @param {Esc.magmaweb.model.Metabolite} metabolite
          */
         'metabolitedeselect',
         /**

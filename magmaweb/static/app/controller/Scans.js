@@ -4,7 +4,7 @@
  * Handles actions performed on the scan views.
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.mmm.controller.Scans', {
+Ext.define('Esc.magmaweb.controller.Scans', {
   extend: 'Ext.app.Controller',
   views: [ 'scan.Chromatogram' ],
   refs: [{
@@ -156,7 +156,7 @@ Ext.define('Esc.mmm.controller.Scans', {
    * Each time the metabolite grid is loaded the response also contains a list of scans
    * where the filtered metabolites have hits, we use this to mark the scans that can be selected
    *
-   * @param {Esc.mmm.store.Metabolites} metabolitestore rawdata of store reader has scans
+   * @param {Esc.magmaweb.store.Metabolites} metabolitestore rawdata of store reader has scans
    */
   setScansOfMetabolites: function(metabolitestore) {
       this.scans_of_metabolites = metabolitestore.getProxy().getReader().rawData.scans;

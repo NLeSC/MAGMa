@@ -5,7 +5,7 @@ describe('Metabolites', function() {
 
     beforeEach(function() {
       if (!store) {
-        store = Ext.create('Esc.mmm.store.Metabolites');
+        store = Ext.create('Esc.magmaweb.store.Metabolites');
       }
     });
 

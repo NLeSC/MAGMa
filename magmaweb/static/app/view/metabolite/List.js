@@ -2,7 +2,7 @@
  * Grid of metabolites.
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.mmm.view.metabolite.List', {
+Ext.define('Esc.magmaweb.view.metabolite.List', {
   extend: 'Ext.grid.Panel',
   alias: 'widget.metabolitelist',
   title: 'Query molecules & Metabolites',

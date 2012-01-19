@@ -3,7 +3,7 @@
  *
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.mmm.view.fragment.Tree', {
+Ext.define('Esc.magmaweb.view.fragment.Tree', {
   extend: 'Ext.tree.Panel',
   alias: 'widget.fragmenttree',
   title: 'Fragments',

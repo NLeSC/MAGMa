@@ -1,12 +1,12 @@
 /**
- * MMM results application
+ * MAGMaWeb results application
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  *
  *
  * Example config:
  *
  *     @example
- *     app = Ext.create('Esc.mmm.resultsApp', {
+ *     app = Ext.create('Esc.magmaweb.resultsApp', {
  *       maxmslevel: 3,
  *       ms_intensity_cutoff: 20000,
  *       urls: {
@@ -20,9 +20,9 @@
  *       }
  *     });
  *
- * Note! Example requires that Esc.mmm, Esc namespaces to be resolvable.
+ * Note! Example requires that Esc.magmaweb, Esc namespaces to be resolvable.
  */
-Ext.define('Esc.mmm.resultsApp', {
+Ext.define('Esc.magmaweb.resultsApp', {
   extend:'Ext.app.Application',
   constructor: function(config) {
     console.log('Construct app');
@@ -30,7 +30,7 @@ Ext.define('Esc.mmm.resultsApp', {
     this.callParent(arguments);
     return this;
   },
-  name: 'Esc.mmm',
+  name: 'Esc.magmaweb',
   controllers: [ 'Metabolites', 'Fragments', 'Scans', 'MSpectras' ],
   requires: [
     'Ext.panel.Panel',
