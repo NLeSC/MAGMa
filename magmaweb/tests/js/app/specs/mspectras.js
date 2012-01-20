@@ -40,16 +40,19 @@ describe('MSpectras controller', function() {
     it('notfound', function() {
       var mslevel = 1, scanid = 1133, markers = [];
       var mspectra = ctrl.getMSpectra(mslevel);
-      spyOn(mspectra, 'setLoading');
-      spyOn(Ext.MessageBox, 'show');
+      var oldhandle = Ext.Error.handle;
+      Ext.Error.handle = function(err) {
+          return true;
+      };
+      spyOn(Ext.Error, 'handle').andCallThrough();
+
       ctrl.onLoadMSpectra(mslevel, scanid, markers, null);
-      expect(mspectra.setLoading).toHaveBeenCalledWith(false);
-      expect(Ext.MessageBox.show).toHaveBeenCalledWith({
-        title: 'Unable to find scan',
-        msg: 'Level '+mslevel+' scan with id '+scanid+' was not found',
-        buttons: Ext.MessageBox.OK,
-        icon: Ext.MessageBox.ERROR
+
+      expect(Ext.Error.handle).toHaveBeenCalledWith({
+          msg: 'Unable to find mspectra scan on level '+mslevel+' with id '+scanid,
+          sourceMethod : 'onLoadMSpectra', sourceClass : 'Esc.magmaweb.controller.MSpectras'
       });
+      Ext.Error.handle = oldhandle;
     });
 
     it('found', function() {

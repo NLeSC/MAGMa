@@ -90,6 +90,15 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     return Ext.create('Ext.data.proxy.Ajax', {
       // url is build when scan and metabolite are selected
       url: Ext.String.format(this.application.getUrls().fragments, scanid, metid),
+      listeners: {
+        exception: function(proxy, response, operation) {
+          Ext.Error.raise({
+            msg: 'Failed to load fragments from server',
+            response: response,
+            operation: operation
+          });
+        }
+      },
       reader: {
           type: 'json',
           root: 'children',

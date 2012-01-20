@@ -107,9 +107,26 @@ Ext.define('Esc.magmaweb.resultsApp', {
    */
   selected: { scanid: false, metid: false },
   /**
+   * Logs error in console and shows a error message box to user
+   *
+   * @param {Ext.Error} err The raised error
+   */
+  errorHandle: function(err) {
+      console.error(err);
+      Ext.Msg.show({
+          title: 'Error',
+          msg: err.msg,
+          buttons: Ext.Msg.OK,
+          icon: Ext.Msg.ERROR
+      });
+      return true;
+  },
+  /**
    * Creates mspectraspanels and viewport and fires/listens for mspectra events
+   * Registers error handle
    */
   launch: function() {
+    Ext.Error.handle = this.errorHandle;
     var me = this;
     this.addEvents(
       /**

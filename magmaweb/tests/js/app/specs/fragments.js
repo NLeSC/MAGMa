@@ -319,5 +319,23 @@ describe('Fragments', function() {
 
       expect(tree.initMolecules).toHaveBeenCalled();
     });
+
+    it('proxy exception', function() {
+        var oldhandle = Ext.Error.handle;
+        Ext.Error.handle = function(err) {
+            return true;
+        };
+        spyOn(Ext.Error, 'handle').andCallThrough();
+
+        var proxy = ctrl.fragmentProxyFactory(2,3);
+        proxy.fireEvent('exception', proxy, 'bla', 'foo');
+
+        expect(Ext.Error.handle).toHaveBeenCalledWith({
+            msg: 'Failed to load fragments from server',
+            response: 'bla',
+            operation: 'foo'
+        });
+        Ext.Error.handle = oldhandle;
+    });
   });
 });

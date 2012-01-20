@@ -42,6 +42,22 @@ describe('Scans controller', function() {
     expect(ctrl.resetScans).toHaveBeenCalled();
   });
 
+  it('loadChromatogramCallback error', function() {
+    var oldhandle = Ext.Error.handle;
+    Ext.Error.handle = function(err) {
+        return true;
+    };
+    spyOn(Ext.Error, 'handle').andCallThrough();
+
+    ctrl.loadChromatogramCallback(null);
+
+    expect(Ext.Error.handle).toHaveBeenCalledWith({
+        msg: 'Failed to load chromatogram from server',
+        sourceMethod : 'loadChromatogramCallback', sourceClass : 'Esc.magmaweb.controller.Scans'
+    });
+    Ext.Error.handle = oldhandle;
+  });
+
   it('clearExtractedIonChromatogram', function() {
     spyOn(mocked_chromatogram, 'setExtractedIonChromatogram');
     ctrl.clearExtractedIonChromatogram();
@@ -75,6 +91,22 @@ describe('Scans controller', function() {
     expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(false);
     expect(mocked_chromatogram.setExtractedIonChromatogram).toHaveBeenCalledWith(data.chromatogram);
     expect(ctrl.setScans).toHaveBeenCalledWith(data.scans);
+  });
+
+  it('loadExtractedIonChromatogramCallback error', function() {
+      var oldhandle = Ext.Error.handle;
+      Ext.Error.handle = function(err) {
+          return true;
+      };
+      spyOn(Ext.Error, 'handle').andCallThrough();
+
+      ctrl.loadExtractedIonChromatogramCallback(null);
+
+      expect(Ext.Error.handle).toHaveBeenCalledWith({
+          msg: 'Failed to load extracted ion chromatogram from server',
+          sourceMethod : 'loadExtractedIonChromatogramCallback', sourceClass : 'Esc.magmaweb.controller.Scans'
+      });
+      Ext.Error.handle = oldhandle;
   });
 
   it('searchScan', function() {

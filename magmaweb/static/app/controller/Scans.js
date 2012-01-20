@@ -93,6 +93,12 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * @params {Array} data Array of scans with rt, id and itensity props
    */
   loadChromatogramCallback: function(data) {
+    if (data === null) {
+      Ext.Error.raise({
+         msg: 'Failed to load chromatogram from server'
+      });
+      return false;
+    }
     var me = this;
     var chromatogram = this.getScanChromatogram();
     chromatogram.setLoading(false);
@@ -123,6 +129,12 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * @param {Array} data.chromatogram Foreach scan the intensity of the peak with metabolite m/z
    */
   loadExtractedIonChromatogramCallback: function(data) {
+    if (data === null) {
+      Ext.Error.raise({
+         msg: 'Failed to load extracted ion chromatogram from server'
+      });
+      return false;
+    }
     this.getScanChromatogram().setLoading(false);
     this.getScanChromatogram().setExtractedIonChromatogram(data.chromatogram);
     this.setScans(data.scans);

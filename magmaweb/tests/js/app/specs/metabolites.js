@@ -65,6 +65,24 @@ describe('Metabolites', function() {
       expect(store.pageSize).toEqual(10);
       expect(store.loadPage).toHaveBeenCalledWith(1);
     });
+
+    it('proxy exception', function() {
+        var oldhandle = Ext.Error.handle;
+        Ext.Error.handle = function(err) {
+            return true;
+        };
+        spyOn(Ext.Error, 'handle').andCallThrough();
+
+        var proxy = store.getProxy();
+        proxy.fireEvent('exception', proxy, 'bla', 'foo');
+
+        expect(Ext.Error.handle).toHaveBeenCalledWith({
+            msg: 'Failed to load metabolites from server',
+            response: 'bla',
+            operation: 'foo'
+        });
+        Ext.Error.handle = oldhandle;
+    });
   });
 
   describe('controller', function() {

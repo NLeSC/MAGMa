@@ -7,6 +7,15 @@ Ext.define('Esc.magmaweb.store.Metabolites', {
   model: 'Esc.magmaweb.model.Metabolite',
   proxy: {
     type: 'ajax',
+    listeners: {
+      exception: function(proxy, response, operation) {
+          Ext.Error.raise({
+              msg: 'Failed to load metabolites from server',
+              response: response,
+              operation: operation
+          });
+      }
+    },
     reader: {
       type: 'json',
       root: 'rows',

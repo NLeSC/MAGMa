@@ -151,16 +151,13 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
    */
   onLoadMSpectra: function(mslevel, scanid, markers, data) {
     var mspectra = this.getMSpectra(mslevel);
-    mspectra.setLoading(false);
     if (!data) {
-      Ext.MessageBox.show({
-        title: 'Unable to find scan',
-        msg: 'Level '+mslevel+' scan with id '+scanid+' was not found',
-        buttons: Ext.MessageBox.OK,
-        icon: Ext.MessageBox.ERROR
+      Ext.Error.raise({
+          msg: 'Unable to find mspectra scan on level '+mslevel+' with id '+scanid,
       });
       return;
     }
+    mspectra.setLoading(false);
     mspectra.scanid = scanid;
     mspectra.cutoff = data.cutoff;
     mspectra.setData(data.peaks);
