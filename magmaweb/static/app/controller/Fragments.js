@@ -136,6 +136,10 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
       this.getFragmentTree().getSelectionModel().deselectAll();
   },
   onLoad: function(t, parent, children) {
+    // when parent is root node then expand it
+    if (parent.isRoot()) {
+        parent.expand();
+    }
     this.application.fireEvent('fragmentload', parent, children);
   },
   selectFragment: function(fragment) {

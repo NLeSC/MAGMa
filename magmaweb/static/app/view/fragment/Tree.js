@@ -13,6 +13,7 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
   multiSelect: false,
   rootVisible: false,
   singleExpand: true,
+  useArrows: true,
   requires: [ 'Esc.chemdoodle.Column' ],
   viewConfig: {
     // animate is default true causing refresh event to be blocked
