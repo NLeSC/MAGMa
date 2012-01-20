@@ -66,7 +66,21 @@ line.mspeak {
 }
 
 .fragmenttree .x-grid-cell-inner{
-    height: 106px !important;
+  height: 106px !important;
+}
+
+.x-logo a {
+  font-size: 40px;
+  font-weight: bold;
+  color: #333;
+  text-decoration:none;
+  padding-left: 520px;
+  padding-top: 3px; /* aligns app title with text in logo  */
+  background: url(${request.static_url('magmaweb:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}) no-repeat 5px 4px;
+}
+
+#resultsinfo {
+  padding: 5px;
 }
 
 </style>

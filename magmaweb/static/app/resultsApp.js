@@ -185,42 +185,69 @@ Ext.define('Esc.magmaweb.resultsApp', {
       });
     }
 
+    var infoWindow = Ext.create('Ext.window.Window', {
+        title: 'Information',
+        width: 600,
+        height: 200,
+        closeAction: 'hide',
+        contentEl: 'resultsinfo'
+    });
+
     // header
     var header_side = Ext.create('Ext.panel.Panel', {
       region: 'north',
-      border: false,
-      tbar: {
-        height: 44,
-        plain: true,
-        items: [{
-          text: 'Start over',
-          handler: function() {
-            window.location = me.urls.home;
-          },
-          tooltip: 'Upload a new dataset'
-//        },{
-//          xtype: 'splitbutton',
-//          text: 'Download',
-//          tooltip: 'Download the different results files'
-//        },{
-//          text: 'Refine',
-//          tooltip: 'Redo the analysis with additional metabolites and/or other settings'
-        }, {
-          text: 'Info',
-          handler: function() {
-            Ext.create('Ext.window.Window', {
-              title: 'Info',
-              width: 600,
-              height: 200,
-              contentEl: 'resultsinfo'
-            }).show();
-          }
-        }
-        , '-',
-        '<h1 style="font-size: 300%">MAGMa</h1>'
-        , '->', { xtype:'image', src: this.urls.nlesclogo, width: 500 }
-        ]
-      }
+      layout: {
+        type: 'hbox',
+        align: 'middle',
+        padding: 2
+      },
+      items: [{
+        xtype: 'component',
+        cls: 'x-logo',
+        html: '<a href="'+me.urls.home+'" data-qtip="<b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites">MAGMa</a>',
+      }, {
+        xtype:'tbspacer',
+        flex:1 // aligns buttongroup right
+      }, {
+          xtype: 'buttongroup',
+          columns: 3,
+          items: [{
+              text: 'Restart',
+              handler: function() {
+                window.location = me.urls.home;
+              },
+              tooltip: 'Upload a new dataset'
+            },{
+              text: 'Download',
+              tooltip: 'Download the different results files',
+              menu: {
+                  items: [{
+                      text: 'Metabolites',
+                      handler: function() {
+                          // TODO replace handler with action
+                          me.getController('Metabolites').download();
+                      }
+                  }, {
+                      text: 'Fragments',
+                      disabled: true
+                  }]
+              }
+            },{
+              text: 'Refine',
+              tooltip: 'Redo the analysis with additional metabolites and/or other settings',
+              disabled: true
+            },{
+              text: 'Help',
+              tooltip: 'Goto help pages',
+              disabled: true
+            }, {
+              text: 'Information',
+              tooltip: 'Information about analysis parameters',
+              handler: function() {
+                  infoWindow.show();
+              }
+            }]
+        }]
     });
 
     var master_side = Ext.create('Ext.panel.Panel', {
