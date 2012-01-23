@@ -308,18 +308,6 @@
                     "name": "Header.js"
                 },
                 {
-                    "path": "static/ext-4.0.7/src/layout/container/",
-                    "name": "Table.js"
-                },
-                {
-                    "path": "static/ext-4.0.7/src/container/",
-                    "name": "ButtonGroup.js"
-                },
-                {
-                    "path": "static/ext-4.0.7/src/toolbar/",
-                    "name": "Spacer.js"
-                },
-                {
                     "path": "static/ext-4.0.7/src/toolbar/",
                     "name": "Fill.js"
                 },
@@ -726,6 +714,18 @@
                 {
                     "path": "static/ext-4.0.7/src/data/",
                     "name": "HasManyAssociation.js"
+                },
+                {
+                    "path": "static/ext-4.0.7/src/layout/container/",
+                    "name": "Table.js"
+                },
+                {
+                    "path": "static/ext-4.0.7/src/container/",
+                    "name": "ButtonGroup.js"
+                },
+                {
+                    "path": "static/ext-4.0.7/src/toolbar/",
+                    "name": "Spacer.js"
                 },
                 {
                     "path": "static/app/model/",
