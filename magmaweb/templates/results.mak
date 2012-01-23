@@ -101,7 +101,7 @@ Ext.Loader.setConfig({
 
 </script>
 ## Comment out below for development or when running sencha build, every class is loaded when commented out
-<!-- <script type="text/javascript" src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script> -->
+<script type="text/javascript" src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script>
 <script type="text/javascript">
 
 Ext.require('Esc.magmaweb.resultsApp');

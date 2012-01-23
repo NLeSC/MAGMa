@@ -1,5 +1,5 @@
 {
-    "projectName": "MMM results",
+    "projectName": "MAGMaWeb results",
     "licenseText": "Copyright(c) 2011 Netherlands eScience Center",
     "builds": [
         {
@@ -306,6 +306,18 @@
                 {
                     "path": "static/ext-4.0.7/src/panel/",
                     "name": "Header.js"
+                },
+                {
+                    "path": "static/ext-4.0.7/src/layout/container/",
+                    "name": "Table.js"
+                },
+                {
+                    "path": "static/ext-4.0.7/src/container/",
+                    "name": "ButtonGroup.js"
+                },
+                {
+                    "path": "static/ext-4.0.7/src/toolbar/",
+                    "name": "Spacer.js"
                 },
                 {
                     "path": "static/ext-4.0.7/src/toolbar/",
