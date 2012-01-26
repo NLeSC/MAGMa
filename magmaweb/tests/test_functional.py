@@ -24,7 +24,7 @@ class FunctionalTests(unittest.TestCase):
         job = Job(uuid.uuid1(), initTestingDB())
         mocked_fetch_job.return_value = job
 
-        res = self.testapp.get('/metabolites.json?limit=10&start=0', status=200)
+        res = self.testapp.get('/results/'+str(job.id)+'/metabolites.json?limit=10&start=0', status=200)
         import json
         self.assertEqual(json.loads(res.body),{
             'total': 2,

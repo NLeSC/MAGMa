@@ -114,12 +114,12 @@ Ext.onReady(function() {
       urls: {
         nlesclogo: '${request.static_url('magmaweb:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}',
         home: '${request.route_url('home')}',
-        fragments: '${request.application_url}/fragments/{0}/{1}.json',
-        mspectra: '${request.application_url}/mspectra/{0}.json?mslevel={1}',
-        extractedionchromatogram: '${request.application_url}/extractedionchromatogram/{0}.json',
-        metabolites: '${request.route_url('metabolites.json')}',
-        metabolitescsv: '${request.route_url('metabolites.csv')}',
-        chromatogram: '${request.route_url('chromatogram.json')}'
+        fragments: '${request.application_url}/results/${jobid}/fragments/{0}/{1}.json',
+        mspectra: '${request.application_url}/results/${jobid}/mspectra/{0}.json?mslevel={1}',
+        extractedionchromatogram: '${request.application_url}/results/${jobid}/extractedionchromatogram/{0}.json',
+        metabolites: '${request.route_url('metabolites.json',jobid=jobid)}',
+        metabolitescsv: '${request.route_url('metabolites.csv',jobid=jobid)}',
+        chromatogram: '${request.route_url('chromatogram.json',jobid=jobid)}'
       }
     });
 });

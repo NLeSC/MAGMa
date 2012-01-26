@@ -114,7 +114,7 @@ Ext.onReady(function() {
                   url: '${request.route_url('home')}',
                   waitMsg: 'Uploading your data...',
                   success: function(fp, o) {
-                     window.location = '${request.route_url('results')}';
+                      window.location = '${request.application_url}/results/'+o.result.jobid;
                   }
               });
           }

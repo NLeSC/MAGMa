@@ -15,13 +15,8 @@ from sqlalchemy.orm import sessionmaker
 
 def fetch_job(request):
     """ Fetched job using jobid from request.session[id] or request.params[jobid]"""
-    if ('id' in request.session):
-        return job_factory(request).fromId(request.session['id'])
-    elif ('jobid' in request.params):
-        # use request.params['jobid'] to construct job aswell, so job can be bookmarked/shared
-        # all following requests use jobid as session['id'], so we dont have to change all urls
-        request.session['id'] = request.params['jobid']
-        return job_factory(request).fromId(request.params['jobid'])
+    if ('jobid' in request.matchdict):
+        return job_factory(request).fromId(request.matchdict['jobid'])
     else:
         raise HTTPFound(location = request.route_url('home'))
 
@@ -43,8 +38,7 @@ def home(request):
         # TODO remove results db if it exists
 
         job = job_factory(request).fromQuery(request.POST['db'].file)
-        request.session['id'] = job.id
-        return Response(json.dumps({"success": True}), content_type='text/html')
+        return Response(json.dumps({"success": True, "jobid": str(job.id) }), content_type='text/html')
 
     return dict()
 
@@ -52,7 +46,7 @@ def home(request):
 def results(request):
     """Returns results page"""
     job = fetch_job(request)
-    return dict(run=job.runInfo(), maxmslevel=job.maxMSLevel())
+    return dict(run=job.runInfo(), maxmslevel=job.maxMSLevel(), jobid=job.id)
 
 @view_config(route_name='metabolites.json', renderer='json')
 def metabolitesjson(request):

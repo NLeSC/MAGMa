@@ -7,7 +7,7 @@ class HelperTestCase(unittest.TestCase):
         import tempfile
         self.settings = { 'jobrootdir': tempfile.mkdtemp() }
         self.config = testing.setUp(settings=self.settings)
-        self.config.add_route('results', '/results')
+        self.config.add_route('results', '/results/{jobid}')
         self.config.add_route('home', '/homepage')
 
     def tearDown(self):
@@ -23,7 +23,7 @@ class HelperTestCase(unittest.TestCase):
         self.assertEqual(jf.dbname, 'results.db')
 
     @patch('magmaweb.views.job_factory')
-    def test_fetch_job_session(self, mocked_jobfactory):
+    def test_fetch_job(self, mocked_jobfactory):
         from magmaweb.job import JobFactory
         from mock import Mock
         jobf = Mock(JobFactory)
@@ -32,31 +32,13 @@ class HelperTestCase(unittest.TestCase):
         jobf.fromId.return_value = job
         mocked_jobfactory.return_value = jobf
         request = testing.DummyRequest()
-        request.session['id'] = job.id
+        request.matchdict['jobid'] = job.id
 
         from magmaweb.views import fetch_job
         out = fetch_job(request)
 
         self.assertEqual(out, job)
-        jobf.fromId.assert_called_with(request.session['id'])
-
-    @patch('magmaweb.views.job_factory')
-    def test_fetch_job_with_jobid_in_get(self, mocked_jobfactory):
-        from magmaweb.job import JobFactory
-        from mock import Mock
-        jobf = Mock(JobFactory)
-        job = mock_job()
-        job.id = 'foobar'
-        jobf.fromId.return_value = job
-        mocked_jobfactory.return_value = jobf
-        request = testing.DummyRequest()
-        request.params['jobid'] = job.id
-
-        from magmaweb.views import fetch_job
-        out = fetch_job(request)
-
-        self.assertEqual(out, job)
-        jobf.fromId.assert_called_with(request.session['id'])
+        jobf.fromId.assert_called_with(request.matchdict['jobid'])
 
     def test_fetch_job_without_id(self):
         request = testing.DummyRequest()
@@ -106,9 +88,8 @@ class HomeView(unittest.TestCase):
         from magmaweb.views import home, job_factory
         response = home(request)
 
-        self.assertEqual(response.body, '{"success": true}')
+        self.assertEqual(response.body, '{"success": true, "jobid": "'+str(job.id)+'"}')
         self.assertEqual(response.content_type, 'text/html')
-        self.assertEqual(request.session['id'], job.id)
         mocked_jobfactory.assert_called_with(request)
         jobf.fromQuery.assert_called_with(dbfile)
 
@@ -147,10 +128,11 @@ class ResultsView(unittest.TestCase):
         mocked_fetch_job.return_value = job
 
         request = testing.DummyRequest()
+        request.matchdict['jobid'] = job.id
         from magmaweb.views import results, fetch_job
         response = results(request)
 
-        self.assertEqual(response, dict(run='bla', maxmslevel=3))
+        self.assertEqual(response, dict(jobid=job.id, run='bla', maxmslevel=3))
         job.runInfo.assert_called_with()
         job.maxMSLevel.assert_called_with()
 
