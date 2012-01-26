@@ -46,7 +46,8 @@ class FunctionalTests(unittest.TestCase):
                 'origin': u'pyrocatechol',
                 'probability': 1.0,
                 'reactionsequence': u'PARENT',
-                'smiles': u'Oc1ccccc1O'
+                'smiles': u'Oc1ccccc1O',
+                'mim': 110.03677
             },{
                 'isquery': True, 'level': 0, 'metid': 352, 'mol': "Molfile of dihydroxyphenyl-valerolactone",
                 'molformula': "C11H12O4",
@@ -54,6 +55,7 @@ class FunctionalTests(unittest.TestCase):
                 'nr_scans': 1,
                 'origin': "dihydroxyphenyl-valerolactone",
                 'probability': 1, 'reactionsequence': "PARENT",
-                'smiles': "O=C1OC(Cc2ccc(O)c(O)c2)CC1"
+                'smiles': "O=C1OC(Cc2ccc(O)c(O)c2)CC1",
+                'mim': 208.07355
             }]
         })

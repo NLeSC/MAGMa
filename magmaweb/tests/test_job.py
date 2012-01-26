@@ -34,7 +34,7 @@ def populateTestingDB(session):
         metid=72, mol='Molfile', level=0, probability=1.0,
         reactionsequence='PARENT', smiles='Oc1ccccc1O',
         molformula='C6H6O2', isquery=True,
-        origin='pyrocatechol'
+        origin='pyrocatechol', mim=110.03677
     ))
     session.add(Scan(
         scanid=641, mslevel=1, rt=933.317, lowmz=90.3916, highmz=1197.78,
@@ -61,7 +61,8 @@ def populateTestingDB(session):
         molformula="C11H12O4",
         origin="dihydroxyphenyl-valerolactone",
         probability=1.0, reactionsequence="PARENT",
-        smiles="O=C1OC(Cc2ccc(O)c(O)c2)CC1"
+        smiles="O=C1OC(Cc2ccc(O)c(O)c2)CC1",
+        mim=208.07355
     ))
     session.add_all([Scan(
         scanid=870, mslevel=1, rt=1254.15, lowmz=91.0302, highmz=1171.51,
@@ -236,7 +237,8 @@ class JobMetabolitesTestCase(unittest.TestCase):
                     'origin': u'pyrocatechol',
                     'probability': 1.0,
                     'reactionsequence': u'PARENT',
-                    'smiles': u'Oc1ccccc1O'
+                    'smiles': u'Oc1ccccc1O',
+                    'mim': 110.03677
                 },{
                     'isquery': True, 'level': 0, 'metid': 352, 'mol': u"Molfile of dihydroxyphenyl-valerolactone",
                     'molformula': u"C11H12O4",
@@ -244,7 +246,8 @@ class JobMetabolitesTestCase(unittest.TestCase):
                     'nr_scans': 1,
                     'origin': u"dihydroxyphenyl-valerolactone",
                     'probability': 1, 'reactionsequence': u"PARENT",
-                    'smiles': u"O=C1OC(Cc2ccc(O)c(O)c2)CC1"
+                    'smiles': u"O=C1OC(Cc2ccc(O)c(O)c2)CC1",
+                    'mim': 208.07355
                 }]
             }
         )
@@ -317,7 +320,7 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
         csvwriter = csv.DictWriter(expected_csvfile, [
                                                   'name', 'smiles', 'probability',
                                                   'reactionsequence',
-                                                  'nr_scans', 'molformula',
+                                                  'nr_scans', 'molformula', 'mim',
                                                   'isquery'
                                                   ])
         csvwriter.writeheader()
@@ -325,14 +328,14 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
                             'name': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
                             'probability': 1.0, 'reactionsequence': 'PARENT',
                             'nr_scans': 1, 'molformula': 'C6H6O2',
-                            'isquery': True
+                            'isquery': True, 'mim': 110.03677
                             })
         csvwriter.writerow({
                             'name': 'dihydroxyphenyl-valerolactone',
                             'smiles': 'O=C1OC(Cc2ccc(O)c(O)c2)CC1',
                             'probability': 1.0, 'reactionsequence': 'PARENT',
                             'nr_scans': 1, 'molformula': 'C11H12O4',
-                            'isquery': True
+                            'isquery': True, 'mim': 208.07355
                             })
         self.assertMultiLineEqual(csvfile.getvalue(), expected_csvfile.getvalue())
 
@@ -343,7 +346,7 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
         csvwriter = csv.DictWriter(expected_csvfile, [
                                                   'name', 'smiles', 'probability',
                                                   'reactionsequence',
-                                                  'nr_scans', 'molformula',
+                                                  'nr_scans', 'molformula', 'mim',
                                                   'isquery', 'score'
                                                   ])
         csvwriter.writeheader()
@@ -351,7 +354,7 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
                             'name': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
                             'probability': 1.0, 'reactionsequence': 'PARENT',
                             'nr_scans': 1, 'molformula': 'C6H6O2',
-                            'isquery': True, 'score': 200.0
+                            'isquery': True, 'score': 200.0, 'mim': 110.03677
                             })
         self.assertMultiLineEqual(csvfile.getvalue(), expected_csvfile.getvalue())
 

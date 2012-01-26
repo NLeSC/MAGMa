@@ -36,6 +36,7 @@ class Metabolite(Base):
     isquery = Column(Boolean) #: Whether metabolite was given as query or is a result a of reaction
     origin = Column(Unicode) #: Name of molecule
     nhits = Column(Integer)
+    mim = Column(Float) # Monoisotopic mass
     fragments = relationship('Fragment', backref='metabolite') #: each metabolite is fragmented into fragments
 
 class Scan(Base):

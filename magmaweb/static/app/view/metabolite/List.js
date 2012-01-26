@@ -68,6 +68,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         }},
         {text: 'Smile', dataIndex: 'smiles', hidden:true},
         {text: 'Formula', dataIndex: 'molformula', filter: { type: 'string' }},
+        {text: 'Monoisotopic mass', dataIndex: 'mim', filter: { type: 'numeric' }, hidden: true},
         {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
         {text: 'Name', dataIndex: 'origin', hidden: true, filter: { type: 'string' }},
         {text: 'Fragment score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }}

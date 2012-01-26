@@ -33,5 +33,7 @@ Ext.define('Esc.magmaweb.model.Metabolite', {
     name: 'scans', defaultValue: [] // Filled when metabolite is selected
   },{
     name: 'score', type:'number' // Only filled when scan is selected
+  }, {
+    name: 'mim', type:'number'
   }]
 });
