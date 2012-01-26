@@ -1,1 +1,13 @@
 /Magma.egg-info
+/PKG-INFO
+.project
+.pydevproject
+*.pyc
+*.pyo
+*.swp
+*~
+dist/
+build/
+.coverage
+*.egg
+
