@@ -1,0 +1,2 @@
+include magma/script/reactor
+include magma/data/*
