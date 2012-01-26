@@ -101,7 +101,7 @@ Ext.Loader.setConfig({
 
 </script>
 ## Comment out below for development or when running sencha build, every class is loaded when commented out
-<script type="text/javascript" src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script>
+<!-- <script type="text/javascript" src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script> -->
 <script type="text/javascript">
 
 Ext.require('Esc.magmaweb.resultsApp');
@@ -154,6 +154,7 @@ No
 Absolute intensity minimum of lvl1 scan peaks which are matched with metabolites: ${run.ms_intensity_cutoff}<br/>
 Ratio of basepeak intensity: ${run.msms_intensity_cutoff}<br/>
 M/z offset which is allowed for matching a metabolite mass to m/z of a peak: ${run.mz_precision}<br/>
+MS Filename: ${run.ms_filename}<br/>
 </div>
 </body>
 </html>
