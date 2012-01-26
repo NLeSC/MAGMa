@@ -8,7 +8,7 @@ setup(
     author_email='lars.ridder@esciencecenter.nl>',
     url='http://www.esciencecenter.nl',
     packages=find_packages(),
-    install_requires = [ 'sqlalchemy', 'lxml' ],
+    install_requires = [ 'sqlalchemy', 'zope.sqlalchemy', 'lxml', 'numpy', 'transaction' ],
     dependency_links = [ 'http://www.rdkit.org' ],
     package_data = {
         'magma': ['data/*.smirks', 'script/reactor'],
