@@ -48,6 +48,15 @@ class HelperTestCase(unittest.TestCase):
         with self.assertRaises(HTTPFound):
             fetch_job(request)
 
+    def test_fetch_job_withwrong_id(self):
+        request = testing.DummyRequest()
+        request.matchdict['jobid'] = '11111111-1111-1111-1111-111111111111'
+
+        from magmaweb.views import fetch_job
+        from pyramid.httpexceptions import HTTPNotFound
+        with self.assertRaises(HTTPNotFound):
+            fetch_job(request)
+
 class HomeView(unittest.TestCase):
     def setUp(self):
         import tempfile

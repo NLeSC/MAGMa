@@ -1,6 +1,4 @@
 import uuid, os, json
-from magmaweb.models import DBSession
-from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run, Base
 from pyramid.response import Response
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPNotFound, HTTPFound
@@ -11,18 +9,23 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import aliased
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from magmaweb.models import DBSession
+from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run, Base
+from magmaweb.job import JobFactory, JobNotFound
 """Views for pyramid based web application"""
 
 def fetch_job(request):
     """ Fetched job using jobid from request.session[id] or request.params[jobid]"""
     if ('jobid' in request.matchdict):
-        return job_factory(request).fromId(request.matchdict['jobid'])
+        try:
+            return job_factory(request).fromId(request.matchdict['jobid'])
+        except JobNotFound:
+            raise HTTPNotFound()
     else:
         raise HTTPFound(location = request.route_url('home'))
 
 def job_factory(request):
     """ Returns a job factory"""
-    from magmaweb.job import JobFactory
     return JobFactory(request.registry.settings['jobrootdir'], 'results.db')
 
 @view_config(route_name='home', renderer='home.mak')

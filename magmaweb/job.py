@@ -3,6 +3,7 @@ import os
 import csv
 import StringIO
 from sqlalchemy import create_engine, and_
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import desc, asc
@@ -20,6 +21,11 @@ class ScanNotFound(Exception):
 class FragmentNotFound(Exception):
     """ Raised when a fragment is not found"""
     pass
+
+class JobNotFound(Exception):
+    """ Raised when a job with a identifier is not found"""
+    def __init__(self, jobid):
+        self.jobid = jobid
 
 class JobFactory:
     """ Factory which can create jobs """
@@ -42,8 +48,15 @@ class JobFactory:
 
         jobid
             Job identifier
+
+        Raises JobNotFound exception when job is not found by jobid
         """
-        session = sessionmaker(bind=create_engine(self.id2url(jobid)))
+        engine = create_engine(self.id2url(jobid))
+        try:
+            engine.connect()
+        except OperationalError as e:
+            raise JobNotFound(jobid)
+        session = sessionmaker(bind=engine)
         return Job(jobid, session())
 
     def fromQuery(self, dbfile):

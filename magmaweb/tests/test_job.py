@@ -158,16 +158,37 @@ class JobFactoryTestCase(unittest.TestCase):
         )
 
     def test_fromid(self):
-        import uuid
+        import uuid, os
         jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
+        os.mkdir(self.factory.id2jobdir(jobid))
+        expected_job_dburl = self.factory.id2url(jobid)
+        expected_job = initTestingDB(expected_job_dburl)
+
         job = self.factory.fromId(jobid)
+
         self.assertIsInstance(job, Job)
         self.assertEqual(job.id, jobid)
         self.assertEqual(
             str(job.session.get_bind().url),
-            self.factory.id2url(jobid),
+            expected_job_dburl,
             'job has dbsession set to sqlite file in job dir'
         )
+
+    def test_fromid_notfound(self):
+        import uuid
+        jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
+        from magmaweb.job import JobNotFound
+        with self.assertRaises(JobNotFound) as exc:
+            job = self.factory.fromId(jobid)
+        self.assertEqual(exc.exception.jobid, jobid)
+
+class JobNotFound(unittest.TestCase):
+    def test_it(self):
+        from magmaweb.job import JobNotFound
+        import uuid
+        jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
+        e = JobNotFound(jobid)
+        self.assertEqual(e.jobid, jobid)
 
 class JobTestCase(unittest.TestCase):
     def setUp(self):
