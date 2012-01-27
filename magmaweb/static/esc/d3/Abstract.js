@@ -56,7 +56,7 @@ Ext.define('Esc.d3.Abstract', {
         /**
          * @cfg {Array} axesPadding Padding around axes. [top, right, left, bottom]
          */
-        axesPadding: [16, 5, 38, 80],
+        axesPadding: [10, 10, 38, 80],
         /**
          * @cfg {Object} ticks Number of ticks on axes.
          * @cfg {Number} [ticks.x=10] Number of ticks on x-axis.
