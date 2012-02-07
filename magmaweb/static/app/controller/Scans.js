@@ -43,6 +43,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       },
       'scanchromatogram tool[action=clearselection]': {
         click: this.clearScanSelection
+      },
+      'scanchromatogram tool[action=center]': {
+        click: this.center
       }
     });
 
@@ -76,7 +79,6 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    */
   onLaunch: function() {
     var me = this;
-    console.log('Scans contr launch');
     // config chromatogram,
     // must be done after viewport so canvas is avaliable
     var chromatogram = this.getScanChromatogram();
@@ -210,5 +212,10 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     } else {
       this.application.fireEvent('noscansfound');
     }
+  },
+  center: function() {
+      var chromatogram = this.getScanChromatogram();
+      chromatogram.resetScales();
+      chromatogram.redraw();
   }
 });

@@ -181,6 +181,7 @@ Ext.define('Esc.d3.Chromatogram', {
     .attr("y1", this.chartHeight)
     .attr("x2", function(d) { return me.scales.x(d.rt); })
     .on('mouseover', function(scan) {
+        // fetch intensity of metabolite if available
         if (me.metabolitedata.length) {
             scan.metaboliteintensity = me.metabolitedata.filter(function(d) {
                return (scan.rt == d.rt)

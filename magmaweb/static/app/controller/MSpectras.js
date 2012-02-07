@@ -84,6 +84,12 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
        */
       'peakmouseover'
     );
+
+    // register controls foreach mspectra
+    for (var mslevel = 1; mslevel <= this.getMaxmslevel(); mslevel++) {
+        var centerquery = '#mspectra'+mslevel+'panel tool[action=center]';
+        this.control(centerquery, { click: this.center });
+    }
   },
   /**
    * Initializes MSpectra views
@@ -162,6 +168,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     mspectra.cutoff = data.cutoff;
     mspectra.setData(data.peaks);
     mspectra.setMarkers(markers);
+    mspectra.up('panel').down('tool[action=center]').enable();
     this.application.fireEvent('mspectraload', scanid, mslevel);
   },
   /**
@@ -242,6 +249,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     mspectra.setData([]);
     mspectra.scanid = -1;
     this.application.fireEvent('mspectraclear', mslevel);
+    mspectra.up('panel').down('tool[action=center]').disable();
   },
   /**
    * Clear MSpectra lvl 1
@@ -304,4 +312,9 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   deselectPeakFromFragment: function(fragment) {
     this.getMSpectra(fragment.data.mslevel).clearPeakSelection();
   },
+  center: function(tool) {
+      var mspectra = tool.up('panel').down('mspectra');
+      mspectra.resetScales();
+      mspectra.redraw();
+  }
 });

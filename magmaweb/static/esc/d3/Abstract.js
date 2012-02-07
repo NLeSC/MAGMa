@@ -178,5 +178,12 @@ Ext.define('Esc.d3.Abstract', {
     } else {
       this.onDataEmpty();
     }
+  },
+  /**
+   * Resets scales back to their original ranges
+   */
+  resetScales: function() {
+    this.scales.x.domain([this.ranges.x.min, this.ranges.x.max]);
+    this.scales.y.domain([this.ranges.y.min, this.ranges.y.max]);
   }
 });

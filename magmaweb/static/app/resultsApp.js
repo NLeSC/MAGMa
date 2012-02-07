@@ -198,6 +198,12 @@ Ext.define('Esc.magmaweb.resultsApp', {
         title: 'Level '+mslevel+' scan ...',
         id: 'mspectra'+mslevel+'panel',
         collapsible: true,
+        tools: [{
+          type: 'restore',
+          tooltip: 'Center level '+mslevel+' scan',
+          disabled: true,
+          action: 'center'
+        }],
         items: mspectras[mslevel]
       });
     }

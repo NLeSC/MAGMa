@@ -13,9 +13,13 @@ Ext.define('Esc.magmaweb.view.scan.Chromatogram', {
     type:'search',
     tooltip: 'Select lvl1 scan by identifier',
     action: 'search'
-  },{
+  }, {
     type:'refresh',
     tooltip:'Clear scan selection',
-    action: 'clearselection',
+    action: 'clearselection'
+  }, {
+    type: 'restore',
+    tooltip: 'Center chromatogram',
+    action: 'center'
   }]
 });

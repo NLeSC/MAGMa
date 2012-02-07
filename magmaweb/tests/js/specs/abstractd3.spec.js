@@ -5,7 +5,7 @@ describe('Esc.d3.Abstract', function() {
       var chart = Ext.create('Esc.d3.Abstract', {
         width: 400, height: 500
       });
-      expect(chart.axesPadding).toEqual([16, 5, 38, 80]);
+      expect(chart.axesPadding).toEqual([10, 10, 38, 80]);
       expect(chart.ticks).toEqual({x:10, y:4});
       expect(chart.data).toEqual([]);
       expect(chart.hasData()).toBeFalsy();
@@ -150,5 +150,21 @@ describe('Esc.d3.Abstract', function() {
     chart.onDataReady();
     expect(chart.initScales).toHaveBeenCalled();
     expect(chart.initAxes).toHaveBeenCalled();
+  });
+
+  it('resetScales', function() {
+    var chart = Ext.create('Esc.d3.Abstract', {
+      width: 400, height: 500
+    });
+    chart.ranges = { x: {min: 0, max: 100}, y: {min: 200, max: 300} };
+    chart.scales.x = { domain: function() { return this; } };
+    chart.scales.y = { domain: function() { return this; } };
+    spyOn(chart.scales.x, 'domain');
+    spyOn(chart.scales.y, 'domain');
+
+    chart.resetScales();
+
+    expect(chart.scales.x.domain).toHaveBeenCalledWith([0, 100]);
+    expect(chart.scales.y.domain).toHaveBeenCalledWith([200, 300]);
   });
 });

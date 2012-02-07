@@ -71,6 +71,11 @@ describe('MSpectras controller', function() {
       spyOn(mspectra, 'setLoading');
       spyOn(mspectra, 'setData');
       spyOn(mspectra, 'setMarkers');
+      spyOn(mspectra, 'up').andCallFake(function() {
+          return { down: function() {
+              return { enable: function() { return true} };
+          }};
+      });
       spyOn(Ext.MessageBox, 'show');
       var f = { callback: function() {} };
       spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
@@ -83,6 +88,7 @@ describe('MSpectras controller', function() {
       expect(mspectra.setMarkers).toHaveBeenCalledWith(markers);
       expect(mspectra.scanid).toEqual(scanid);
       expect(mspectra.cutoff).toEqual(data.cutoff);
+      expect(mspectra.up).toHaveBeenCalled();
       expect(Ext.MessageBox.show).not.toHaveBeenCalled();
       expect(f.callback).toHaveBeenCalledWith('mspectraload', scanid, mslevel);
       Ext.util.Observable.releaseCapture(ctrl.application);
@@ -200,6 +206,11 @@ describe('MSpectras controller', function() {
     var mslevel = 2;
     var mspectra = ctrl.getMSpectra(mslevel);
     spyOn(mspectra, 'setData');
+    spyOn(mspectra, 'up').andCallFake(function() {
+        return { down: function() {
+            return { disable: function() { return true} };
+        }};
+    });
     var f = { callback: function() {} };
     spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
     Ext.util.Observable.capture(ctrl.application, f.callback);
@@ -209,6 +220,7 @@ describe('MSpectras controller', function() {
     expect(mspectra.setData).toHaveBeenCalledWith([]);
     expect(mspectra.scanid).toEqual(-1);
     expect(f.callback).toHaveBeenCalledWith('mspectraclear', mslevel);
+    expect(mspectra.up).toHaveBeenCalled();
     Ext.util.Observable.releaseCapture(ctrl.application);
   });
 
@@ -296,5 +308,22 @@ describe('MSpectras controller', function() {
     ctrl.deselectPeakFromFragment({ data: {mslevel:1, mz: 123}});
 
     expect(mspectra.clearPeakSelection).toHaveBeenCalled();
+  });
+
+  it('center', function() {
+      var mspectra = ctrl.getMSpectra(1);
+      spyOn(mspectra, 'resetScales');
+      spyOn(mspectra, 'redraw');
+      var tool = {
+        up: function() {
+            return {
+              down: function() { return mspectra; }
+            };
+        }
+      };
+      ctrl.center(tool);
+
+      expect(mspectra.resetScales).toHaveBeenCalled();
+      expect(mspectra.redraw).toHaveBeenCalled();
   });
 });

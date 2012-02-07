@@ -15,6 +15,8 @@ describe('Scans controller', function() {
       selectScan: function() {},
       hasData: function() {},
       setMarkers: function() {},
+      redraw: function() {},
+      resetScales: function() {},
     };
     spyOn(ctrl, 'getScanChromatogram').andReturn(mocked_chromatogram);
   });
@@ -280,5 +282,21 @@ describe('Scans controller', function() {
       expect(f.callback).not.toHaveBeenCalledWith('noscansfound');
       Ext.util.Observable.releaseCapture(ctrl.application);
     });
+  });
+
+  it('center', function() {
+      spyOn(mocked_chromatogram, 'resetScales');
+      spyOn(mocked_chromatogram, 'redraw');
+      var tool = {
+        up: function() {
+            return {
+              down: function() { return mocked_chromatogram; }
+            };
+        }
+      };
+      ctrl.center(tool);
+
+      expect(mocked_chromatogram.resetScales).toHaveBeenCalled();
+      expect(mocked_chromatogram.redraw).toHaveBeenCalled();
   });
 });
