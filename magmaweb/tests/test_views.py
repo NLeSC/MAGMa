@@ -132,6 +132,7 @@ class ResultsView(unittest.TestCase):
     @patch('magmaweb.views.fetch_job')
     def test_it(self, mocked_fetch_job):
         job = mock_job()
+        job.id = 'foo'
         job.runInfo.return_value = 'bla'
         job.maxMSLevel.return_value = 3
         mocked_fetch_job.return_value = job

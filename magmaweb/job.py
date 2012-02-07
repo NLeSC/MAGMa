@@ -27,9 +27,8 @@ class JobNotFound(Exception):
     def __init__(self, jobid):
         self.jobid = jobid
 
-class JobFactory:
+class JobFactory(object):
     """ Factory which can create jobs """
-    dbname = 'results.db'
     def __init__(self, jobrootdir, dbname):
         """
         jobrootdir
@@ -38,6 +37,7 @@ class JobFactory:
         dbname
             Sqlite db file name in job directory
         """
+        self.dbname = 'results.db'
         self.jobrootdir = jobrootdir
         self.dbname = dbname
 
@@ -98,12 +98,10 @@ class JobFactory:
         # 3rd / is for username:pw@host which sqlite does not need
         return 'sqlite:///'+self.id2db(id)
 
-class Job:
+class Job(object):
     """
     Job contains query and results of MMM calculation run
     """
-    id = None
-    session = None
     def __init__(self, id, session):
         """
         id

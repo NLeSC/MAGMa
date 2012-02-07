@@ -9,7 +9,7 @@ def extjsurl(event):
     event.request.extjsroot = event.request.static_url('magmaweb:static/'+event.request.registry.settings['extjsroot'])
 
 def main(global_config, **settings):
-    """ This function returns the MMM WSGI application.
+    """ This function returns the Magma WSGI application.
     """
     session_factory = session_factory_from_settings(settings)
     config = Configurator(settings=settings)
