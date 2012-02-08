@@ -10,3 +10,5 @@ API Documentation
 .. automodule:: magmaweb.models
     :members:
 
+.. automodule:: magmaweb.job
+    :members:
