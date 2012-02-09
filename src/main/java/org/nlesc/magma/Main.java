@@ -12,7 +12,13 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.gridlab.gat.GAT;
 
+/**
+ * curl -d '{"jobdir":"bla", "jobtype":"foo"}' -H 'Content-Type: application/json' http://localhost:9998/job
+ * @author stefanv
+ *
+ */
 public class Main {
 
 	private static URI getBaseURI() {
@@ -28,11 +34,13 @@ public class Main {
 	}
 
 	public static void main(String[] args) throws IOException {
+		System.setProperty("gat.adaptor.path", "/home/stefanv/ibisworkspace/javagat_sara/lib/adaptors");
 	    HttpServer httpServer = startServer();
 	    System.out.println(String.format("Jersey app started with WADL available at "
 	            + "%sapplication.wadl\nTry out %sjob\nHit enter to stop it...",
 	            BASE_URI, BASE_URI));
 	    System.in.read();
 	    httpServer.stop();
+		GAT.end();
 	}
 }

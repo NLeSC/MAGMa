@@ -50,6 +50,7 @@
 					<target>1.6</target>
 				</configuration>
 			</plugin>
+			<!-- Run the application using "mvn exec:java" -->
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
