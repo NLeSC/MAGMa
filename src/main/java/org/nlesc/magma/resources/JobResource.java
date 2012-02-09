@@ -6,6 +6,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
+import org.nlesc.magma.JobSubmitCallback;
 import org.nlesc.magma.entities.JobSubmitRequest;
 import org.nlesc.magma.entities.JobSubmitResponse;
 
@@ -18,8 +19,6 @@ import org.gridlab.gat.resources.Job;
 import org.gridlab.gat.resources.JobDescription;
 import org.gridlab.gat.resources.ResourceBroker;
 import org.gridlab.gat.resources.SoftwareDescription;
-import org.gridlab.gat.resources.Job.JobState;
-
 
 @Path("/job")
 public class JobResource {
@@ -29,20 +28,25 @@ public class JobResource {
 	public JobSubmitResponse submitJob(JobSubmitRequest jobsubmission) throws GATObjectCreationException, URISyntaxException, GATInvocationException, InterruptedException {
 
 		SoftwareDescription sd = new SoftwareDescription();
-        sd.setExecutable("/bin/hostname");
-        File stdout = GAT.createFile("hostname.txt");
-        sd.setStdout(stdout);
+        sd.setExecutable("/bin/sleep");
+        String[] args = { "30" };
+        sd.setArguments(args);
+//        File stdout = GAT.createFile("hostname.txt");
+//        sd.setStdout(stdout);
 
         JobDescription jd = new JobDescription(sd);
         ResourceBroker broker = GAT.createResourceBroker(new URI(
                 "any://localhost"));
-        Job job = broker.submitJob(jd);
 
-        while ((job.getState() != JobState.STOPPED)
-                && (job.getState() != JobState.SUBMISSION_ERROR))
-            Thread.sleep(1000);
+        JobSubmitCallback cb = new JobSubmitCallback(jobsubmission.jobdir);
+        Job job = broker.submitJob(jd, cb, "job.status");
 
-		System.err.println(jobsubmission.jobdir + " + " + jobsubmission.jobtype + " == " + job.getJobID());
+        // use callback to finalize job
+//        while ((job.getState() != JobState.STOPPED)
+//                && (job.getState() != JobState.SUBMISSION_ERROR))
+//            Thread.sleep(1000);
+//
+//		System.err.println(jobsubmission.jobdir + " + " + jobsubmission.jobtype + " == " + job.getJobID());
 
 		String jobidstr = Integer.toString(job.getJobID());
 		return new JobSubmitResponse(jobidstr);
