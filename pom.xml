@@ -117,28 +117,31 @@
 				</configuration>
 			</plugin>
 
+			<!-- To run ws as standalone use 'mvn clean package;java -jar target/magmajobmanager-1.0-SNAPSHOT.jar'
+				PS. gat.adaptor.path is still hardcoded, so must exist -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<configuration>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-					<archive>
-						<manifest>
-							<mainClass>org.nlesc.magma.Main</mainClass>
-						</manifest>
-					</archive>
-				</configuration>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>1.5</version>
 				<executions>
 					<execution>
-						<id>make-assembly</id>
 						<phase>package</phase>
 						<goals>
-							<goal>single</goal>
+							<goal>shade</goal>
 						</goals>
+						<configuration>
+							<transformers>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<Main-Class>org.nlesc.magma.Main</Main-Class>
+								</transformer>
+							</transformers>
+						</configuration>
 					</execution>
 				</executions>
+
 			</plugin>
 		</plugins>
 	</build>
