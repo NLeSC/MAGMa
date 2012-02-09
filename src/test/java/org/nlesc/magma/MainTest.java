@@ -1,15 +1,11 @@
 package org.nlesc.magma;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.nlesc.magma.entities.JobSubmitRequest;
+import org.gridlab.gat.GAT;
 
 import com.sun.jersey.core.header.MediaTypes;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 
@@ -28,6 +24,7 @@ public class MainTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
+		System.setProperty("gat.adaptor.path", "/home/stefanv/ibisworkspace/javagat_sara/lib/adaptors");
 
 		// start the Grizzly2 web container
 		httpServer = Main.startServer();
@@ -42,6 +39,7 @@ public class MainTest extends TestCase {
 		super.tearDown();
 
 		httpServer.stop();
+		GAT.end();
 	}
 
 	/**
@@ -54,7 +52,7 @@ public class MainTest extends TestCase {
 
 		JSONObject responseMsg = r.path("job").post(JSONObject.class, requestMsg);
 
-		assertEquals("12345", responseMsg.get("jobid"));
+		assertEquals("0", responseMsg.get("jobid")); // first job == 0 and GAT is restarted each time
 	}
 
 	/**

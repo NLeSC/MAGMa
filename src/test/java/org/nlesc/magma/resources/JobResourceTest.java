@@ -6,14 +6,12 @@ import java.net.URISyntaxException;
 
 import junit.framework.TestCase;
 
+import org.gridlab.gat.GAT;
 import org.gridlab.gat.GATInvocationException;
 import org.gridlab.gat.GATObjectCreationException;
 import org.junit.Test;
-import org.nlesc.magma.Main;
 import org.nlesc.magma.entities.JobSubmitRequest;
 import org.nlesc.magma.entities.JobSubmitResponse;
-
-import com.sun.jersey.api.client.Client;
 
 public class JobResourceTest extends TestCase {
 	JobResource resource;
@@ -21,7 +19,14 @@ public class JobResourceTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
+		System.setProperty("gat.adaptor.path", "/home/stefanv/ibisworkspace/javagat_sara/lib/adaptors");
 		resource = new JobResource();
+	}
+
+	@Override
+	protected void tearDown() throws Exception {
+		GAT.end();
+		super.tearDown();
 	}
 
 	@Test
