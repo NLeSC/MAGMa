@@ -6,16 +6,5 @@
 	<classpathentry excluding="**" kind="src" output="target/test-classes" path="src/test/resources"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.5"/>
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER"/>
-	<classpathentry kind="lib" path="/home/stefanv/ibisworkspace/javagat_sara/lib/castor-1.1.1-xml.jar"/>
-	<classpathentry kind="lib" path="/home/stefanv/ibisworkspace/javagat_sara/lib/commons-logging-1.1.jar"/>
-	<classpathentry kind="lib" path="/home/stefanv/ibisworkspace/javagat_sara/lib/GAT-API.jar" sourcepath="/javagat_sara/api/src"/>
-	<classpathentry kind="lib" path="/home/stefanv/ibisworkspace/javagat_sara/lib/GAT-engine.jar" sourcepath="/javagat_sara/engine/src"/>
-	<classpathentry kind="lib" path="/home/stefanv/ibisworkspace/javagat_sara/lib/GAT-tests.jar"/>
-	<classpathentry kind="lib" path="/home/stefanv/ibisworkspace/javagat_sara/lib/ibis-util-2.3-pre.jar"/>
-	<classpathentry kind="lib" path="/home/stefanv/ibisworkspace/javagat_sara/lib/log4j-1.2.13.jar"/>
-	<classpathentry kind="lib" path="/home/stefanv/ibisworkspace/javagat_sara/lib/slf4j-api-1.5.3.jar"/>
-	<classpathentry kind="lib" path="/home/stefanv/ibisworkspace/javagat_sara/lib/slf4j-log4j12-1.5.3.jar"/>
-	<classpathentry kind="lib" path="/home/stefanv/ibisworkspace/javagat_sara/lib/xercesImpl.jar"/>
-	<classpathentry kind="lib" path="/home/stefanv/ibisworkspace/javagat_sara/lib/xmlParserAPIs.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
