@@ -19,7 +19,6 @@ public class JobResourceTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		System.setProperty("gat.adaptor.path", "/home/stefanv/ibisworkspace/javagat_sara/lib/adaptors");
 		resource = new JobResource();
 	}
 

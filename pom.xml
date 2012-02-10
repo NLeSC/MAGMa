@@ -4,7 +4,7 @@
 	<groupId>org.nlesc</groupId>
 	<artifactId>magmajobmanager</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0-SNAPSHOT</version>
+	<version>1.1-SNAPSHOT</version>
 	<name>Magma Job Manager</name>
 	<dependencies>
 		<dependency>
@@ -113,12 +113,19 @@
 					</execution>
 				</executions>
 				<configuration>
+					<systemProperties>
+						<systemProperty>
+							<key>gat.adaptor.path</key>
+							<value>lib/adaptors</value>
+						</systemProperty>
+					</systemProperties>
 					<mainClass>org.nlesc.magma.Main</mainClass>
 				</configuration>
 			</plugin>
 
-			<!-- To run ws as standalone use 'mvn clean package;java -jar target/magmajobmanager-1.0-SNAPSHOT.jar'
-				PS. gat.adaptor.path is still hardcoded, so must exist -->
+			<!-- To run ws as standalone use 'mvn clean package;java -Dgat.adaptor.path=lib/adaptors
+				-jar target/magmajobmanager-1.0-SNAPSHOT.jar' PS. gat.adaptor.path is still
+				hardcoded, so must exist -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
@@ -143,6 +150,17 @@
 				</executions>
 
 			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.12</version>
+				<configuration>
+					<systemPropertyVariables>
+						<gat.adaptor.path>lib/adaptors</gat.adaptor.path>
+					</systemPropertyVariables>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 	<properties>
@@ -162,9 +180,33 @@
 			<layout>default</layout>
 		</repository>
 		<repository>
-			<id>my-repo</id>
-			<name>My repo</name>
-			<url>file:///home/stefanv/.m2javagat</url>
+			<!-- Repo can be generated with: mvn install:install-file -Dfile=lib/castor-1.1.1-xml.jar
+				-DgroupId=javagat -DartifactId=castor-1.1.1-xml -Dversion=r2337 -Dpackaging=jar
+				-DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file -Dfile=lib/commons-logging-1.1.jar
+				-DgroupId=javagat -DartifactId=commons-logging-1.1 -Dversion=r2337 -Dpackaging=jar
+				-DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file -Dfile=lib/GAT-API.jar
+				-DgroupId=javagat -DartifactId=GAT-API -Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo
+				;mvn install:install-file -Dfile=lib/GAT-engine.jar -DgroupId=javagat -DartifactId=GAT-engine
+				-Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file
+				-Dfile=lib/GAT-tests.jar -DgroupId=javagat -DartifactId=GAT-tests -Dversion=r2337
+				-Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file
+				-Dfile=lib/ibis-util-2.3-pre.jar -DgroupId=javagat -DartifactId=ibis-util-2.3-pre
+				-Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file
+				-Dfile=lib/log4j-1.2.13.jar -DgroupId=javagat -DartifactId=log4j-1.2.13 -Dversion=r2337
+				-Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file
+				-Dfile=lib/slf4j-api-1.5.3.jar -DgroupId=javagat -DartifactId=slf4j-api-1.5.3
+				-Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file
+				-Dfile=lib/slf4j-log4j12-1.5.3.jar -DgroupId=javagat -DartifactId=slf4j-log4j12-1.5.3
+				-Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file
+				-Dfile=lib/xercesImpl.jar -DgroupId=javagat -DartifactId=xercesImpl -Dversion=r2337
+				-Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file
+				-Dfile=lib/xmlParserAPIs.jar -DgroupId=javagat -DartifactId=xmlParserAPIs
+				-Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mv /tmp/my-repo
+				m2javagat -->
+			<id>my-javagat-repo</id>
+			<name>My javagat repo</name>
+			<url>file://m2javagat</url>
+			<!-- <url>file:///home/stefanv/.m2javagat</url> -->
 			<layout>default</layout>
 		</repository>
 	</repositories>

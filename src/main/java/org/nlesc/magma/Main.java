@@ -31,7 +31,6 @@ public class Main {
 	}
 
 	public static void main(String[] args) throws IOException {
-		System.setProperty("gat.adaptor.path", "/home/stefanv/ibisworkspace/javagat_sara/lib/adaptors");
 	    HttpServer httpServer = startServer();
 	    System.out.println(String.format("Jersey app started with WADL available at "
 	            + "%sapplication.wadl\nTry out %sjob\nHit enter to stop it...",
