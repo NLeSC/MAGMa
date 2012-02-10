@@ -13,12 +13,15 @@ import org.gridlab.gat.GAT;
 
 /**
  * curl -d '{"jobdir":"bla", "jobtype":"foo"}' -H 'Content-Type: application/json' http://localhost:9998/job
+ * curl -d '{"jobdir":"/tmp", "jobtype":"mzxmllocal", "arguments":{ "precision":"0.01", "mscutoff":"2e5", "msmscutoff":"0.1", "ionisation":"pos", "nsteps":"2", "phase":"12" }}' -H 'Content-Type: application/json' http://localhost:9998/job
+ *
  * @author stefanv
  *
  */
 public class Main {
 
 	private static URI getBaseURI() {
+		// TODO move port to config file
 	    return UriBuilder.fromUri("http://localhost/").port(9998).build();
 	}
 
@@ -32,7 +35,7 @@ public class Main {
 
 	public static void main(String[] args) throws IOException {
 	    HttpServer httpServer = startServer();
-	    System.out.println(String.format("Jersey app started with WADL available at "
+	    System.out.println(String.format("MaGMA Job manager available at "
 	            + "%sapplication.wadl\nTry out %sjob\nHit enter to stop it...",
 	            BASE_URI, BASE_URI));
 	    System.in.read();
