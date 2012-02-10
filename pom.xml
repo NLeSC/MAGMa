@@ -116,14 +116,14 @@
 					<systemProperties>
 						<systemProperty>
 							<key>gat.adaptor.path</key>
-							<value>lib/adaptors</value>
+							<value>${gat-adaptor-path}</value>
 						</systemProperty>
 					</systemProperties>
 					<mainClass>org.nlesc.magma.Main</mainClass>
 				</configuration>
 			</plugin>
 
-			<!-- To run ws as standalone use 'mvn clean package;java -Dgat.adaptor.path=lib/adaptors
+			<!-- To run ws as standalone use 'mvn clean package;java -Dgat.adaptor.path=${gat-adaptor-path}
 				-jar target/magmajobmanager-1.0-SNAPSHOT.jar' PS. gat.adaptor.path is still
 				hardcoded, so must exist -->
 			<plugin>
@@ -157,7 +157,7 @@
 				<version>2.12</version>
 				<configuration>
 					<systemPropertyVariables>
-						<gat.adaptor.path>lib/adaptors</gat.adaptor.path>
+						<gat.adaptor.path>${gat-adaptor-path}</gat.adaptor.path>
 					</systemPropertyVariables>
 				</configuration>
 			</plugin>
@@ -165,6 +165,7 @@
 	</build>
 	<properties>
 		<jersey-version>1.11</jersey-version>
+		<gat-adaptor-path>lib/adaptors</gat-adaptor-path>
 	</properties>
 	<repositories>
 		<repository>
