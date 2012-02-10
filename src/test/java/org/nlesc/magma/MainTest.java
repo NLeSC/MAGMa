@@ -42,12 +42,13 @@ public class MainTest extends TestCase {
 	}
 
 	/**
-	 * Test to see that the message "Got it!" is sent in the response.
+	 * Test to see if a job can be submitted
+	 * This is a integration test, testing webservice and javagat local submitjob together
 	 * @throws JSONException
 	 */
-	public void testJobResource() throws JSONException {
+	public void testJobResourcePOST() throws JSONException {
 		JSONObject requestMsg = new JSONObject();
-		requestMsg.put("jobdir", "/somepath").put("jobtype", "mzxml");
+		requestMsg.put("jobdir", "/somepath").put("jobtype", "sleep");
 
 		JSONObject responseMsg = r.path("job").post(JSONObject.class, requestMsg);
 
