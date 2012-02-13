@@ -6,33 +6,46 @@ import java.io.IOException;
 import org.gridlab.gat.io.File;
 import org.gridlab.gat.monitoring.MetricEvent;
 import org.gridlab.gat.monitoring.MetricListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JobStateListener implements MetricListener {
-	private File jobdir;
+    protected final static Logger logger = LoggerFactory
+            .getLogger(JobStateListener.class);
+    protected File jobdir;
 
-	public File getJobdir() {
-		return jobdir;
-	}
+    /**
+     * Getter for job directory
+     * @return File
+     */
+    public File getJobdir() {
+        return jobdir;
+    }
 
-	public JobStateListener(File jobdir) throws IOException {
-		if (!jobdir.isDirectory()) {
-			throw new IOException("Jobdir must be directory");
-		}
-		this.jobdir = jobdir;
-	}
+    /**
+     * Constructor
+     * @param jobdir
+     * @throws IOException when jobdir is no directory
+     */
+    public JobStateListener(File jobdir) throws IOException {
+        if (!jobdir.isDirectory()) {
+            throw new IOException("Jobdir must be directory");
+        }
+        this.jobdir = jobdir;
+    }
 
-	public void processMetricEvent(MetricEvent event) {
-		// write job status into file in jobdir so website can report it to user
-		FileWriter fw;
-		try {
-			fw = new FileWriter(jobdir.getPath()+"/job.state");
-			fw.write(event.getValue().toString());
-			fw.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		System.err.println("received state change: " + event.getValue() + " of " + jobdir);
-	}
+    @Override
+    public void processMetricEvent(MetricEvent event) {
+        // write job status into file in jobdir so website can report it to user
+        FileWriter fw;
+        try {
+            fw = new FileWriter(jobdir.getPath() + "/job.state");
+            fw.write(event.getValue().toString());
+            fw.close();
+        } catch (IOException e) {
+            logger.info("Unable to write job state to file");
+        }
+        logger.debug("received state change: " + event.getValue() + " of "
+                + jobdir);
+    }
 }

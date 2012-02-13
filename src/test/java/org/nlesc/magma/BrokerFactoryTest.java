@@ -15,16 +15,16 @@ import org.junit.Test;
 
 public class BrokerFactoryTest extends TestCase {
 
-	@Test
-	public void testGetBroker() throws GATObjectCreationException, URISyntaxException {
-		BrokerFactory fact = new BrokerFactory();
-		ResourceBroker broker = fact.getBroker();
-		assertEquals(broker.toString(), "any://localhost");
-	}
+    @Test
+    public void testGetBroker() throws GATObjectCreationException, URISyntaxException {
+        BrokerFactory fact = new BrokerFactory();
+        ResourceBroker broker = fact.getBroker();
+        assertEquals(broker.toString(), "any://localhost");
+    }
 
-	@Test
-	public void testGetBrokerWithEmptyPassphrase() throws GATObjectCreationException, URISyntaxException {
-		GATContext oldcontext = GAT.getDefaultGATContext();
+    @Test
+    public void testGetBrokerWithEmptyPassphrase() throws GATObjectCreationException, URISyntaxException {
+        GATContext oldcontext = GAT.getDefaultGATContext();
         CertificateSecurityContext securityContext = new CertificateSecurityContext(
                 new URI(System.getProperty("user.home") + "/.globus/userkey.pem"),
                 new URI(System.getProperty("user.home") + "/.globus/usercert.pem"),
@@ -32,17 +32,17 @@ public class BrokerFactoryTest extends TestCase {
 
         GATContext context = new GATContext();
         context.addSecurityContext(securityContext);
-		GAT.setDefaultGATContext(context);
-		BrokerFactory fact = new BrokerFactory();
+        GAT.setDefaultGATContext(context);
+        BrokerFactory fact = new BrokerFactory();
 
-		ResourceBroker broker = fact.getBroker();
-		assertEquals(broker.toString(), "any://localhost");
-		GAT.setDefaultGATContext(oldcontext);
-	}
+        ResourceBroker broker = fact.getBroker();
+        assertEquals(broker.toString(), "any://localhost");
+        GAT.setDefaultGATContext(oldcontext);
+    }
 
-	@Test
-	public void testGetBrokerWithPassphrase() throws GATObjectCreationException, URISyntaxException {
-		GATContext oldcontext = GAT.getDefaultGATContext();
+    @Test
+    public void testGetBrokerWithPassphrase() throws GATObjectCreationException, URISyntaxException {
+        GATContext oldcontext = GAT.getDefaultGATContext();
         CertificateSecurityContext securityContext = new CertificateSecurityContext(
                 new URI(System.getProperty("user.home") + "/.globus/userkey.pem"),
                 new URI(System.getProperty("user.home") + "/.globus/usercert.pem"),
@@ -50,11 +50,11 @@ public class BrokerFactoryTest extends TestCase {
 
         GATContext context = new GATContext();
         context.addSecurityContext(securityContext);
-		GAT.setDefaultGATContext(context);
-		BrokerFactory fact = new BrokerFactory();
+        GAT.setDefaultGATContext(context);
+        BrokerFactory fact = new BrokerFactory();
 
-		ResourceBroker broker = fact.getBroker();
-		assertEquals(broker.toString(), "glite://wms4.grid.sara.nl:7443/glite_wms_wmproxy_server");
-		GAT.setDefaultGATContext(oldcontext);
-	}
+        ResourceBroker broker = fact.getBroker();
+        assertEquals(broker.toString(), "glite://wms4.grid.sara.nl:7443/glite_wms_wmproxy_server");
+        GAT.setDefaultGATContext(oldcontext);
+    }
 }

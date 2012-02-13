@@ -16,41 +16,33 @@ import org.gridlab.gat.resources.ResourceBroker;
 
 @Path("/job")
 public class JobResource {
-	protected JobDescriptionFactory jobdescriptionfactory;
-	protected BrokerFactory brokerfactory;
+    protected JobDescriptionFactory jobdescriptionfactory;
+    protected BrokerFactory brokerfactory;
 
-	public JobResource() {
-		super();
-		this.jobdescriptionfactory = new JobDescriptionFactory();
-		this.brokerfactory = new BrokerFactory();
-	}
+    public JobResource() {
+        super();
+        this.jobdescriptionfactory = new JobDescriptionFactory();
+        this.brokerfactory = new BrokerFactory();
+    }
 
-	public BrokerFactory getBrokerFactory() {
-		return brokerfactory;
-	}
+    public void setBroker(BrokerFactory broker) {
+        this.brokerfactory = broker;
+    }
 
-	public void setBroker(BrokerFactory broker) {
-		this.brokerfactory = broker;
-	}
+    @POST
+    public JobSubmitResponse submitJob(JobSubmitRequest jobsubmission)
+            throws Exception {
 
-	public JobDescriptionFactory getJobdescriptionfactory() {
-		return jobdescriptionfactory;
-	}
-
-	public void setJobdescriptionfactory(JobDescriptionFactory jobdescriptionfactory) {
-		this.jobdescriptionfactory = jobdescriptionfactory;
-	}
-
-	@POST
-	public JobSubmitResponse submitJob(JobSubmitRequest jobsubmission) throws Exception {
-
-        JobDescription jd = this.jobdescriptionfactory.getJobDescription(jobsubmission);
+        JobDescription jd = this.jobdescriptionfactory
+                .getJobDescription(jobsubmission);
         ResourceBroker broker = this.brokerfactory.getBroker();
 
-        JobStateListener cb = new JobStateListener(GAT.createFile(jobsubmission.jobdir));
+        JobStateListener cb = new JobStateListener(
+                GAT.createFile(jobsubmission.jobdir));
         Job job = broker.submitJob(jd, cb, "job.status");
 
-		// TODO Store [jobid] = state, update it in callback so GET /job/{jobid} returns state
-		return new JobSubmitResponse(Integer.toString(job.getJobID()));
-	}
+        // TODO Store somevar[jobid] = state,
+        // update it in callback so GET /job/{jobid} returns state
+        return new JobSubmitResponse(Integer.toString(job.getJobID()));
+    }
 }
