@@ -55,6 +55,10 @@ public class JobDescriptionFactoryTest extends TestCase {
         // 1. run mscore_mzxml with parameters in config file and files in jobdir
         // 2. run sygma with parameters from rest arguments
         // 3. write completed flag to jobdir
+        //
+        // shell script contains:
+        // . /home/stefanv/workspace/MAGMaJob/env/bin/activate
+        // mscore_mzxml $@
 
         String jobdir = System.getProperty("java.io.tmpdir")+"/"+UUID.randomUUID().toString();
 
@@ -72,9 +76,10 @@ public class JobDescriptionFactoryTest extends TestCase {
         try {
             JobDescription jd = fact.getJobDescription(jobsubmission);
 
-            assertEquals(jd.getSoftwareDescription().getExecutable(), "/usr/bin/env");
+            SoftwareDescription sd = jd.getSoftwareDescription();
+            assertEquals(sd.getExecutable(), "/bin/sh");
             String[] jobargs = {
-                    "mscore_mzxml",
+                    "mscore_mzxml-local.sh",
                     "-p", arguments.precision,
                     "-c", arguments.mscutoff,
                     "-d", arguments.msmscutoff,
@@ -85,9 +90,14 @@ public class JobDescriptionFactoryTest extends TestCase {
                     "-s", jobdir+"/smiles.sd",
                     "-o", jobdir+"/results.db"
             };
-            assertArrayEquals(jd.getSoftwareDescription().getArguments(), jobargs);
-            assertEquals(jd.getSoftwareDescription().getStdout().getAbsolutePath(), jobdir+"/stdout.txt");
-            assertEquals(jd.getSoftwareDescription().getStderr().getAbsolutePath(), jobdir+"/stderr.txt");
+            assertArrayEquals(sd.getArguments(), jobargs);
+            assertEquals(sd.getStdout().getAbsolutePath(), jobdir+"/stdout.txt");
+            assertEquals(sd.getStderr().getAbsolutePath(), jobdir+"/stderr.txt");
+
+            HashMap<File, File> expectedPreStaged = new HashMap<File, File>();
+            expectedPreStaged.put(GAT.createFile("mscore_mzxml-local.sh"), null);
+            assertEquals(expectedPreStaged, sd.getPreStaged());
+
         } catch (Exception e) {
             fail("Mzxml local job type must exist");
         }
@@ -112,7 +122,7 @@ public class JobDescriptionFactoryTest extends TestCase {
         //
         // shell script contains:
         // tar -zxf Magma-1.1.tar.gz
-        // Magma-1.1/mscore_mzxml.sh $@
+        // Magma-1.1/mscore_mzxml $@
 
         String jobdir = System.getProperty("java.io.tmpdir")+"/"+UUID.randomUUID().toString();
 

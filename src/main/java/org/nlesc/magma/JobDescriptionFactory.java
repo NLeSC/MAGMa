@@ -27,9 +27,9 @@ public class JobDescriptionFactory {
         } else if (jobsubmission.jobtype.equals("mzxmllocal")) {
 
             SoftwareDescription sd = new SoftwareDescription();
-            sd.setExecutable("/usr/bin/env");
+            sd.setExecutable("/bin/sh");
             String [] args = {
-                    "mscore_mzxml", // expects mscore_mzxml to be in path
+                    "mscore_mzxml-local.sh", // expects mscore_mzxml to be in path
                     // "echo",
                     "-p", jobsubmission.arguments.precision,
                     "-c", jobsubmission.arguments.mscutoff,
@@ -47,6 +47,8 @@ public class JobDescriptionFactory {
 
             sd.setStdout(GAT.createFile(jobsubmission.jobdir + "/stdout.txt"));
             sd.setStderr(GAT.createFile(jobsubmission.jobdir + "/stderr.txt"));
+
+            sd.addPreStagedFile(GAT.createFile("mscore_mzxml-local.sh"));
 
             JobDescription jd = new JobDescription(sd);
             return jd;
