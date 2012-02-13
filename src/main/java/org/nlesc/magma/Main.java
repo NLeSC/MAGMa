@@ -6,10 +6,15 @@ import com.sun.jersey.api.core.ResourceConfig;
 import org.glassfish.grizzly.http.server.HttpServer;
 
 import javax.ws.rs.core.UriBuilder;
+
+import java.io.Console;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.gridlab.gat.GAT;
+import org.gridlab.gat.GATContext;
+import org.gridlab.gat.security.CertificateSecurityContext;
 
 /**
  * curl -d '{"jobdir":"bla", "jobtype":"foo"}' -H 'Content-Type: application/json' http://localhost:9998/job
@@ -33,7 +38,8 @@ public class Main {
 	    return GrizzlyServerFactory.createHttpServer(BASE_URI, rc);
 	}
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, URISyntaxException {
+		setupGATContext();
 	    HttpServer httpServer = startServer();
 	    System.out.println(String.format("MaGMA Job manager available at "
 	            + "%sapplication.wadl\nTry out %sjob\nHit enter to stop it...",
@@ -41,5 +47,31 @@ public class Main {
 	    System.in.read();
 	    httpServer.stop();
 		GAT.end();
+	}
+
+    // Ask the user for the password needed to perform grid-proxy-init
+    private static String getPassphrase() {
+    	Console cons = System.console();
+    	return new String(cons.readPassword("Enter password for %s (leave empty to use localhost broker):", "Glite certificate"));
+    }
+
+	private static void setupGATContext() throws URISyntaxException {
+        CertificateSecurityContext securityContext = new CertificateSecurityContext(
+                new org.gridlab.gat.URI(System.getProperty("user.home") + "/.globus/userkey.pem"),
+                new org.gridlab.gat.URI(System.getProperty("user.home") + "/.globus/usercert.pem"),
+                getPassphrase());
+
+        // Store this SecurityContext in a GATContext
+        GATContext context = new GATContext();
+        context.addSecurityContext(securityContext);
+
+        context.addPreference("VirtualOrganisation", "nlesc.nl");
+        context.addPreference("vomsServerUrl", "voms.grid.sara.nl");
+        context.addPreference("vomsServerPort", "30025");
+        context.addPreference("vomsHostDN", "/O=dutchgrid/O=hosts/OU=sara.nl/CN=voms.grid.sara.nl");
+        context.addPreference("LfcServer", "lfc.grid.sara.nl");
+        context.addPreference("bdiiURI", "ldap://bdii.grid.sara.nl:2170");
+
+        GAT.setDefaultGATContext(context);
 	}
 }
