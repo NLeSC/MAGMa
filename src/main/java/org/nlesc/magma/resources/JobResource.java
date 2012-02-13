@@ -39,6 +39,12 @@ public class JobResource {
 
         JobStateListener cb = new JobStateListener(
                 GAT.createFile(jobsubmission.jobdir));
+
+        // TODO pre staging files are uploaded during submitjob and takes a long time
+        // as it is not done async
+        // from home it takes 90s to upload Magma-1.1.tar.gz (26M) and data.mzxml.bz2 (18M)
+        // TODO from nlesc ???s
+        // Try to fetch Magma tarball from lfn/srm instead from client
         Job job = broker.submitJob(jd, cb, "job.status");
 
         // TODO Store somevar[jobid] = state,
