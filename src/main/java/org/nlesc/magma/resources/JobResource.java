@@ -5,10 +5,11 @@ import javax.ws.rs.Path;
 
 import org.nlesc.magma.BrokerFactory;
 import org.nlesc.magma.JobDescriptionFactory;
-import org.nlesc.magma.JobSubmitCallback;
+import org.nlesc.magma.JobStateListener;
 import org.nlesc.magma.entities.JobSubmitRequest;
 import org.nlesc.magma.entities.JobSubmitResponse;
 
+import org.gridlab.gat.GAT;
 import org.gridlab.gat.resources.Job;
 import org.gridlab.gat.resources.JobDescription;
 import org.gridlab.gat.resources.ResourceBroker;
@@ -46,7 +47,7 @@ public class JobResource {
         JobDescription jd = this.jobdescriptionfactory.getJobDescription(jobsubmission);
         ResourceBroker broker = this.brokerfactory.getBroker();
 
-        JobSubmitCallback cb = new JobSubmitCallback(jobsubmission.jobdir);
+        JobStateListener cb = new JobStateListener(GAT.createFile(jobsubmission.jobdir));
         Job job = broker.submitJob(jd, cb, "job.status");
 
 		// TODO Store [jobid] = state, update it in callback so GET /job/{jobid} returns state

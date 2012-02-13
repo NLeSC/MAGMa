@@ -1,9 +1,14 @@
 package org.nlesc.magma;
 
+import java.util.UUID;
+
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.gridlab.gat.GAT;
+import org.gridlab.gat.GATInvocationException;
+import org.gridlab.gat.GATObjectCreationException;
+import org.gridlab.gat.io.File;
 
 import com.sun.jersey.core.header.MediaTypes;
 import com.sun.jersey.api.client.Client;
@@ -36,23 +41,31 @@ public class MainTest extends TestCase {
 	@Override
 	protected void tearDown() throws Exception {
 		super.tearDown();
-
 		httpServer.stop();
-		GAT.end();
 	}
 
 	/**
 	 * Test to see if a job can be submitted
 	 * This is a integration test, testing webservice and javagat local submitjob together
 	 * @throws JSONException
+	 * @throws GATObjectCreationException
+	 * @throws GATInvocationException
 	 */
-	public void testJobResourcePOST() throws JSONException {
+	public void testJobResourcePOST() throws JSONException, GATObjectCreationException, GATInvocationException {
+		// states of job are written to jobdir, so need an temp dir
+		String jobdir = System.getProperty("java.io.tmpdir")+"/"+UUID.randomUUID().toString();
+		File jobdirfile = GAT.createFile(jobdir);
+		jobdirfile.mkdir();
+
 		JSONObject requestMsg = new JSONObject();
-		requestMsg.put("jobdir", "/somepath").put("jobtype", "sleep");
+		requestMsg.put("jobdir", jobdir).put("jobtype", "sleep");
 
 		JSONObject responseMsg = r.path("job").post(JSONObject.class, requestMsg);
 
 		assertEquals("0", responseMsg.get("jobid")); // first job == 0 and GAT is restarted each time
+
+		GAT.end(); // stop job
+		jobdirfile.recursivelyDeleteDirectory(); // clean up job dir with state file written by state listener
 	}
 
 	/**

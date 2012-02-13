@@ -2,19 +2,21 @@ package org.nlesc.magma.resources;
 
 import static org.mockito.Mockito.*;
 import java.net.URISyntaxException;
+import java.util.UUID;
 
 import junit.framework.TestCase;
 
 import org.gridlab.gat.GAT;
 import org.gridlab.gat.GATInvocationException;
 import org.gridlab.gat.GATObjectCreationException;
+import org.gridlab.gat.io.File;
 import org.gridlab.gat.monitoring.MetricListener;
 import org.gridlab.gat.resources.Job;
 import org.gridlab.gat.resources.JobDescription;
 import org.gridlab.gat.resources.ResourceBroker;
 import org.junit.Test;
 import org.nlesc.magma.BrokerFactory;
-import org.nlesc.magma.JobSubmitCallback;
+import org.nlesc.magma.JobStateListener;
 import org.nlesc.magma.entities.JobSubmitRequest;
 import org.nlesc.magma.entities.JobSubmitResponse;
 
@@ -48,14 +50,20 @@ public class JobResourceTest extends TestCase {
 					mockedbroker.submitJob(any(JobDescription.class),
 							(MetricListener) anyObject(), anyString()))
 					.thenReturn(mockedjob);
-			JobSubmitRequest in = new JobSubmitRequest("/somepath", "sleep");
+			File jobdirfile = GAT.createFile(System.getProperty("java.io.tmpdir")+"/"+UUID.randomUUID().toString());
+			jobdirfile.mkdir();
+
+			JobSubmitRequest in = new JobSubmitRequest(jobdirfile.getPath(), "sleep");
 
 			JobSubmitResponse out = resource.submitJob(in);
 
 			assertEquals("12345", out.jobid);
 			// TODO verify jobdescription
 			verify(mockedbroker).submitJob(any(JobDescription.class),
-					any(JobSubmitCallback.class), eq("job.status"));
+					any(JobStateListener.class), eq("job.status"));
+
+			GAT.end();
+			jobdirfile.recursivelyDeleteDirectory();
 		} catch (GATObjectCreationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
