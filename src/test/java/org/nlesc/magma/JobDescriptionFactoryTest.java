@@ -1,17 +1,20 @@
 package org.nlesc.magma;
 
 
+import static org.junit.Assert.assertArrayEquals;
+
+import java.util.HashMap;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import junit.framework.TestCase;
 
+import org.gridlab.gat.GAT;
+import org.gridlab.gat.io.File;
 import org.gridlab.gat.resources.JobDescription;
-import org.gridlab.gat.resources.WrapperJobDescription;
+import org.gridlab.gat.resources.SoftwareDescription;
 import org.junit.Test;
 import org.nlesc.magma.entities.JobSubmitRequest;
 import org.nlesc.magma.entities.MzxmlArguments;
-
-import junit.framework.TestCase;
 
 public class JobDescriptionFactoryTest extends TestCase {
 
@@ -46,23 +49,12 @@ public class JobDescriptionFactoryTest extends TestCase {
 		JobDescriptionFactory fact = new JobDescriptionFactory();
 
 		// When user submits a magma job the website will put
-		// the user supplied mzxml file, smiles file and config file into a jobdir.
+		// the user supplied mzxml file and smiles file into a jobdir.
 		// then do a rest call to this service
 		// which should if broker is local
 		// 1. run mscore_mzxml with parameters in config file and files in jobdir
-		// 2. run sygma with parameters in config file
+		// 2. run sygma with parameters from rest arguments
 		// 3. write completed flag to jobdir
-		// if broker is glite then
-		// 1. sync jobdir to srm
-		// 2. submit wrapper job and inside wrapper job do
-		// 2.1 sync jobdir from srm to localdir
-		// 2.2 fetch program tarball from srm
-		// 2.3 unpack program tarball
-		// 2.3.1 run progs same as for local broker
-		// 2.4 sync localdir to srm
-		// 3. sync jobdir from srm
-		// 4. clean srm
-		// 5. write completed flag to jobdir
 
 		String jobdir = System.getProperty("java.io.tmpdir")+"/"+UUID.randomUUID().toString();
 
@@ -108,21 +100,19 @@ public class JobDescriptionFactoryTest extends TestCase {
 		// When user submits a magma job the website will put
 		// the user supplied mzxml file, smiles file and config file into a jobdir.
 		// then do a rest call to this service
-		// which should if broker is local
-		// 1. run mscore_mzxml with parameters in config file and files in jobdir
-		// 2. run sygma with parameters in config file
-		// 3. write completed flag to jobdir
-		// if broker is remote then
-		// 1. sync jobdir to srm
-		// 2. submit wrapper job and inside wrapper job do
-		// 2.1 sync jobdir from srm to localdir
-		// 2.2 fetch program tarball from srm
-		// 2.3 unpack program tarball
-		// 2.3.1 run progs same as for local broker
-		// 2.4 sync localdir to srm
-		// 3. sync jobdir from srm
-		// 4. clean srm
-		// 5. write completed flag to jobdir
+		// which if broker is remote then
+		// 1. Pre stage input files
+		// 2. Pre stage program tarball
+		// 3. Pre stage shell script
+		// 4. Run shell script
+		// 4.1 unpack program tarball
+		// 4.2 run progs same as for local broker
+		// 5. Post stage result file
+		// 6. write completed flag to jobdir
+		//
+		// shell script contains:
+		// tar -zxf Magma-1.1.tar.gz
+		// Magma-1.1/mscore_mzxml.sh $@
 
 		String jobdir = System.getProperty("java.io.tmpdir")+"/"+UUID.randomUUID().toString();
 
@@ -138,23 +128,48 @@ public class JobDescriptionFactoryTest extends TestCase {
 
 		JobSubmitRequest jobsubmission = new JobSubmitRequest(jobdir, "mzxmlremote", arguments);
 		try {
-			WrapperJobDescription wrappedjd = (WrapperJobDescription) fact.getJobDescription(jobsubmission);
-			JobDescription jd = wrappedjd.getJobInfos().get(0).getJobDescription();
+			JobDescription jd = fact.getJobDescription(jobsubmission);
 
-			assertEquals(jd.getSoftwareDescription().getExecutable(), "/usr/bin/env");
+			SoftwareDescription sd = jd.getSoftwareDescription();
+			assertEquals(sd.getExecutable(), "/bin/sh");
 			String[] jobargs = {
-					"mscore_mzxml",
+					"mscore_mzxml.sh",
 					"-p", arguments.precision,
 					"-c", arguments.mscutoff,
 					"-d", arguments.msmscutoff,
 					"-i", arguments.ionisation,
 					"-n", arguments.nsteps,
 					"-m", arguments.phase,
-					"-f", jobdir+"/data.mzxml",
-					"-s", jobdir+"/smiles.sd",
-					"-o", jobdir+"/results.db"
+					"-f", "data.mzxml",
+					"-s", "smiles.sd",
+					"-o", "results.db"
 			};
-			assertArrayEquals(jd.getSoftwareDescription().getArguments(), jobargs);
+			assertArrayEquals(sd.getArguments(), jobargs);
+			assertEquals(sd.getStdout().getAbsolutePath(), jobdir+"/stdout.txt");
+			assertEquals(sd.getStderr().getAbsolutePath(), jobdir+"/stderr.txt");
+			/**
+			 * assert pre and post staged files
+			 * Pre:
+			 * {
+			 * "Magma-1.1.tar.gz": null,
+			 * "mscore_mzxml.sh": null,
+			 * jobdir+"data.mzxml": null,
+			 * jobdir+"smiles.sd": null
+			 * }
+			 *
+			 * Post:
+			 * { "results.db": jobdir+"/results.db" }
+			 */
+			HashMap<File, File> expectedPreStaged = new HashMap<File, File>();
+			expectedPreStaged.put(GAT.createFile("Magma-1.1.tar.gz"), null);
+			expectedPreStaged.put(GAT.createFile("mscore_mzxml.sh"), null);
+			expectedPreStaged.put(GAT.createFile(jobdir+"/data.mzxml"), null);
+			expectedPreStaged.put(GAT.createFile(jobdir+"/smiles.sd"), null);
+			assertEquals(expectedPreStaged, sd.getPreStaged());
+
+			HashMap<File, File> expectedPostStaged = new HashMap<File, File>();
+			expectedPostStaged.put(GAT.createFile("results.db"), GAT.createFile(jobdir+"/results.db"));
+			assertEquals(expectedPostStaged, sd.getPostStaged());
 		} catch (Exception e) {
 			fail("Mzxml local job type must exist");
 		}
