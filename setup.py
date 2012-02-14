@@ -1,4 +1,11 @@
 from setuptools import setup, find_packages
+import os
+
+here = os.path.abspath(os.path.dirname(__file__))
+try:
+    README = open(os.path.join(here, 'README.rst')).read()
+except IOError:
+    README = ''
 
 setup(
     name='Magma',
@@ -8,6 +15,7 @@ setup(
     author_email='lars.ridder@esciencecenter.nl>',
     url='http://www.esciencecenter.nl',
     description='Ms Annotation based on in silico Generated Metabolites',
+    long_description=README,
     packages=find_packages(),
     install_requires=[ 'sqlalchemy', 'zope.sqlalchemy', 'lxml', 'numpy', 'transaction' ],
     dependency_links=[ 'http://www.rdkit.org' ],
