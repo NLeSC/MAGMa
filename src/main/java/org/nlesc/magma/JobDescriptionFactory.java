@@ -30,18 +30,18 @@ public class JobDescriptionFactory {
             sd.setExecutable("/bin/sh");
             String [] args = {
                     "mscore_mzxml-local.sh", // expects mscore_mzxml to be in path
-                    // "echo",
+                    "allinone",
                     "-p", jobsubmission.arguments.precision,
                     "-c", jobsubmission.arguments.mscutoff,
                     "-d", jobsubmission.arguments.msmscutoff,
                     "-i", jobsubmission.arguments.ionisation,
                     "-n", jobsubmission.arguments.nsteps,
-                    "-m", jobsubmission.arguments.phase,
+                    "-b", jobsubmission.arguments.phase,
                     // input files
-                    "-f", jobsubmission.jobdir + "/data.mzxml",
-                    "-s", jobsubmission.jobdir + "/smiles.sd",
+                    jobsubmission.jobdir + "/data.mzxml",
+                    jobsubmission.jobdir + "/smiles.txt",
                     // output file
-                    "-o", jobsubmission.jobdir + "/results.db"
+                    jobsubmission.jobdir + "/results.db"
             };
             sd.setArguments(args);
 
@@ -58,18 +58,18 @@ public class JobDescriptionFactory {
             sd.setExecutable("/bin/sh");
             String [] args = {
                     "mscore_mzxml.sh", // expects mscore_mzxml to be in path
-                    // "echo",
+                    "allinone",
                     "-p", jobsubmission.arguments.precision,
                     "-c", jobsubmission.arguments.mscutoff,
                     "-d", jobsubmission.arguments.msmscutoff,
                     "-i", jobsubmission.arguments.ionisation,
                     "-n", jobsubmission.arguments.nsteps,
-                    "-m", jobsubmission.arguments.phase,
+                    "-b", jobsubmission.arguments.phase,
                     // input files
-                    "-f", "data.mzxml",
-                    "-s", "smiles.sd",
+                    "data.mzxml",
+                    "smiles.txt",
                     // output file
-                    "-o", "results.db"
+                    "results.db"
             };
             sd.setArguments(args);
 
