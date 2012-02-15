@@ -71,7 +71,7 @@ public class JobDescriptionFactoryTest extends TestCase {
         arguments.precision = "0.01";
         arguments.mscutoff = "2e5";
         arguments.msmscutoff = "0.1";
-        arguments.ionisation = "pos";
+        arguments.ionisation = "1";
         // arguments for sygma
         arguments.nsteps = "2";
         arguments.phase = "12";
@@ -128,7 +128,7 @@ public class JobDescriptionFactoryTest extends TestCase {
         arguments.precision = "0.01";
         arguments.mscutoff = "2e5";
         arguments.msmscutoff = "0.1";
-        arguments.ionisation = "pos";
+        arguments.ionisation = "1";
         // arguments for sygma
         arguments.nsteps = "2";
         arguments.phase = "12";

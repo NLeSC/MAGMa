@@ -20,9 +20,10 @@ import org.gridlab.gat.security.CertificateSecurityContext;
  * REST webservice to submit magma jobs to grid.
  *
  * mkdir /tmp/jobdir
+ * put inputfiles in /tmp/jobdir
  * curl -d '{"jobdir":"/tmp/jobdir", "jobtype":"sleep"}' -H 'Content-Type: application/json' http://localhost:9998/job
- * curl -d '{"jobdir":"/tmp/jobdir", "jobtype":"mzxmllocal", "arguments":{ "precision":"0.01", "mscutoff":"2e5", "msmscutoff":"0.1", "ionisation":"pos", "nsteps":"2", "phase":"12" }}' -H 'Content-Type: application/json' http://localhost:9998/job
- * curl -d '{"jobdir":"/tmp/jobdir", "jobtype":"mzxmlremote", "arguments":{ "precision":"0.01", "mscutoff":"2e5", "msmscutoff":"0.1", "ionisation":"pos", "nsteps":"2", "phase":"12" }}' -H 'Content-Type: application/json' http://localhost:9998/job
+ * curl -d '{"jobdir":"/tmp/jobdir", "jobtype":"mzxmllocal", "arguments":{ "precision":"0.01", "mscutoff":"2e5", "msmscutoff":"0.1", "ionisation":"1", "nsteps":"2", "phase":"12" }}' -H 'Content-Type: application/json' http://localhost:9998/job
+ * curl -d '{"jobdir":"/tmp/jobdir", "jobtype":"mzxmlremote", "arguments":{ "precision":"0.01", "mscutoff":"2e5", "msmscutoff":"0.1", "ionisation":"1", "nsteps":"2", "phase":"12" }}' -H 'Content-Type: application/json' http://localhost:9998/job
  *
  * @author stefanv
  *
