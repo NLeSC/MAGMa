@@ -1,6 +1,7 @@
 import argparse
 from rdkit import Chem
 from rdkit.Chem import AllChem
+import magma
 
 def main():
     "Entry point for magma script"
@@ -12,7 +13,7 @@ class MagmaCommand(object):
 
     def __init__(self):
         self.parser = argparse.ArgumentParser(description=self.__doc__)
-        self.parser.add_argument('--version', action='version', version='%(prog)s '+self.version())
+        self.parser.add_argument('--version', action='version', version='%(prog)s ' + self.version())
         subparsers = self.parser.add_subparsers(title='Sub-commands')
 
         sc = subparsers.add_parser("allinone", help=self.allinone.__doc__, description=self.allinone.__doc__)
@@ -66,21 +67,38 @@ class MagmaCommand(object):
 
     def allinone(self, args):
         """Reads metabolite seed file and MS/MS datafile, generates metabolites and matches them to peaks"""
-        print 'allinone'
-        print args
-        # TODO implement
+        magma.set_DB(args.db.name)
+        for mol in self.smiles2mols(args.seed):
+            magma.add_metabolite(
+                                 Chem.MolToMolBlock(mol),
+                                 mol.GetProp('_Name'),
+                                 1.0, 0, 'PARENT', 1)
+        magma.metabolize_all(args.biotransformations, args.nsteps)
+        magma.commit_DB()
+        magma.add_run_data(args.nsteps, '1' in args.biotransformations, '2' in args.biotransformations, args.mzxml.name, args.ionisation, True, args.msfilter, args.msmsfilter, args.precision, True)
+        magma.storeMZxmlFile(args.mzxml)
+        magma.commit_DB()
+        magma.buildspectra()
+        magma.searchAllMetabolites()
+        magma.commit_DB()
 
     def metabolize(self, args):
         """Reads metabolite seed file and existing result database, generates metabolites and matches them to peaks"""
-        print 'metabolize'
-        print args
-        # TODO implement
+        magma.set_DB(args.db.name)
+        for mol in self.smiles2mols(args.seed):
+            magma.add_metabolite(
+                                 Chem.MolToMolBlock(mol),
+                                 mol.GetProp('_Name'),
+                                 1.0, 0, 'PARENT', 1)
+        magma.metabolize_all(args.biotransformations, args.nsteps)
+        magma.commit_DB()
 
     def mzxml(self, args):
         """Reads MS/MS datafile"""
-        print 'mzxml'
-        print args
-        # TODO implement
+        magma.set_DB(args.db.name)
+        magma.add_run_data(0, 0, 0, args.mzxml.name, args.ionisation, True, args.msfilter, args.msmsfilter, args.precision, True)
+        magma.storeMZxmlFile(args.mzxml)
+        magma.commit_DB()
 
     def sd2smiles(self, args):
         """ Convert sd file to smiles """
@@ -108,7 +126,18 @@ class MagmaCommand(object):
             mol.SetProp('_Name', molname)
             w.write(mol)
 
+    def smiles2mols(self, smiles):
+        mols = []
+        for line in smiles:
+            line = line.strip()
+            (smilestring, molname) = line.split('|')
+            mol = Chem.MolFromSmiles(smilestring)
+            mol.SetProp('_Name', molname)
+            AllChem.Compute2DCoords(mol)
+            mols.append(mol)
+        return mols
+
     def run(self):
-        """Parse arguments"""
-        args =  self.parser.parse_args()
+        """Parse arguments and runs subcommand"""
+        args = self.parser.parse_args()
         return args.func(args)
