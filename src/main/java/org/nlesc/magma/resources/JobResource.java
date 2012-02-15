@@ -41,10 +41,11 @@ public class JobResource {
                 GAT.createFile(jobsubmission.jobdir));
 
         // TODO pre staging files are uploaded during submitjob and takes a long time
-        // as it is not done async
         // from home it takes 90s to upload Magma-1.1.tar.gz (26M) and data.mzxml.bz2 (18M)
-        // TODO from nlesc ???s
-        // Try to fetch Magma tarball from lfn/srm instead from client
+        // from nlesc it takes 15s, this is acceptable when there is only one jobsubmission running at the same time
+        // Possible solutions:
+        // - Try to fetch Magma tarball from lfn/srm instead from client
+        // - Perform submitjob in a new thread, so response can be returned directly, write 'PRE_STAGING' to job state file
         Job job = broker.submitJob(jd, cb, "job.status");
 
         // TODO Store somevar[jobid] = state,
