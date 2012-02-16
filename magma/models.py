@@ -1,5 +1,3 @@
-import transaction
-
 """
 Sqlalchemy models for msygma result database
 """
@@ -11,7 +9,6 @@ from sqlalchemy import Float
 from sqlalchemy import Boolean
 from sqlalchemy import ForeignKey
 
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 
 from sqlalchemy.orm import scoped_session
@@ -85,13 +82,23 @@ class Run(Base):
     __tablename__ = 'run'
     # TODO run consists of 1 row so doesn't need a pk
     # but sqlalchemy requires one
-    n_reaction_steps = Column(Integer, primary_key=True) #: Maximum number of reaction steps a query molecule can do
-    use_phase1 = Column(Boolean)
-    use_phase2 = Column(Boolean)
+
+    # SyGMa parameters, TODO remove: metabolism type info will be part of reacton sequence of metabolites
+    n_reaction_steps = Column(Integer, primary_key=True) #: Maximum number of reaction steps applied to reactants
+    metabolism_types = Column(Unicode) #: Comma separated list of metabolism types, like "phase1"
+    
+    # ms data parsing parameters
     ms_filename = Column(Unicode)
+    abs_peak_cutoff = Column(Float) #: abs intensity threshold for storing peaks in database
+    rel_peak_cutoff = Column(Float) #: fraction of basepeak intensity threshold for storing peaks in database
+
+    # parameters for matching metabolites and fragments with peaks
     ionisation = Column(Unicode)
     use_fragmentation = Column(Boolean)
+    max_broken_bonds = Column(Integer) #: max number of bonds broken in substructures generated from metabolites
     ms_intensity_cutoff = Column(Float) #: Absolute intensity minimum of lvl1 scan peaks which are matched with metabolites
     msms_intensity_cutoff = Column(Float) #: Ratio of basepeak intensity
-    mz_precision = Column(Float) #: M/z offset which is allowed for matching a metabolite mass to m/z of a peak
+    mz_precision = Column(Float) #: precision for matching a metabolite mim to m/z of a peak
+    precursor_mz_precision = Column(Float) #: precision for matching precursor mz with peak mz in parent scan
     use_msms_only = Column(Boolean)
+    
