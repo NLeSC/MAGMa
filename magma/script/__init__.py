@@ -24,7 +24,7 @@ class MagmaCommand(object):
         sc.add_argument('-d', '--msms_intensity_cutoff', help="cutoff value to filter MSMS peaks (relative to basepeak) (default: %(default)s)", default=0.1,type=float)
         sc.add_argument('-i', '--ionisation', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
         # sygma arguments
-        sc.add_argument('reactants', type=argparse.FileType('r'), help="File with smiles used as reactants")
+        sc.add_argument('structures', type=argparse.FileType('rb'), help="File with smiles used as structures")
         sc.add_argument('-n', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=2,type=int)
         sc.add_argument('-m', '--metabolism_types', help="1 and/or 2 for phase 1 and 2 biotransformations (default: %(default)s)", nargs='+', default=["phase1", "phase2"], choices=["phase1", "phase2"])
         # output arguments
@@ -41,7 +41,7 @@ class MagmaCommand(object):
         sc = subparsers.add_parser("metabolize", help=self.metabolize.__doc__, description=self.metabolize.__doc__)
         sc.add_argument('db', type=argparse.FileType('r'), help="Sqlite database file with results")
         # sygma arguments
-        sc.add_argument('reactants', type=argparse.FileType('r'), help="File with smiles used as reactants")
+        sc.add_argument('structures', type=argparse.FileType('rb'), help="File with smiles used as structures")
         sc.add_argument('-n', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=2)
         sc.add_argument('-m', '--metabolism_types', help="1 and/or 2 for phase 1 and 2 biotransformations (default: %(default)s)", default="12", choices=["1", "2", "12"])
         # output arguments
@@ -74,34 +74,34 @@ class MagmaCommand(object):
 
     def allinone(self, args):
         """Reads reactants file and MS/MS datafile, generates metabolites from reactants and matches them to peaks"""
-        magma.set_DB(args.db.name)
-        for mol in self.smiles2mols(args.reactants):
-            magma.add_metabolite(
-                                 Chem.MolToMolBlock(mol).encode('ascii'),
+        
+        magma_session = magma.MagmaSession(args.db.name)
+        struct_engine = magma_session.get_structure_engine(args.metabolism_types, args.n_reaction_steps) # TODO remove arguments
+        for mol in self.smiles2mols(args.structures):
+            struct_engine.add_structure(
+                                 Chem.MolToMolBlock(mol),
                                  mol.GetProp('_Name'),
                                  1.0, 0, 'PARENT', 1)
-        magma.metabolize_all(args.metabolism_types, args.n_reaction_steps)
-        magma.commit_DB()
-        magma.set_run_data(
-                           n_reaction_steps=args.n_reaction_steps,
-                           metabolism_types=args.metabolism_types,
-                           ms_filename=args.mzxml.name,
-                           ionisation=args.ionisation,
-                           use_fragmentation=args.use_fragmentation,
-                           max_broken_bonds=args.max_broken_bonds,
-                           abs_peak_cutoff=args.abs_peak_cutoff,
-                           rel_peak_cutoff=args.rel_peak_cutoff,
-                           mz_precision=args.mz_precision,
-                           precursor_mz_precision=args.precursor_mz_precision,
-                           ms_intensity_cutoff=args.ms_intensity_cutoff,
-                           msms_intensity_cutoff=args.msms_intensity_cutoff,
-                           use_msms_only=args.use_msms_only
-                           )        
-        magma.storeMZxmlFile(args.mzxml.name)
-        magma.commit_DB()
-        magma.buildspectra()
-        magma.searchAllMetabolites()
-        magma.commit_DB()
+        struct_engine.metabolize_all_structures(args.metabolism_types, args.n_reaction_steps)
+
+        ms_data_engine = magma_session.get_ms_data_engine(
+                                                    abs_peak_cutoff=args.abs_peak_cutoff,
+                                                    rel_peak_cutoff=args.rel_peak_cutoff
+                                                    )
+        ms_data_engine.storeMZxmlFile(args.mzxml.name)
+        annotate_engine = magma_session.get_annotate_engine(
+                                                    ionisation_mode=args.ionisation_mode,
+                                                    use_fragmentation=args.use_fragmentation,
+                                                    max_broken_bonds=args.max_broken_bonds,
+                                                    ms_intensity_cutoff=args.ms_intensity_cutoff,
+                                                    msms_intensity_cutoff=args.msms_intensity_cutoff,
+                                                    mz_precision=args.mz_precision,
+                                                    precursor_mz_precision=args.precursor_mz_precision,
+                                                    use_msms_only=args.use_msms_only
+                                                    )
+        annotate_engine.build_spectra()
+        annotate_engine.search_all_structures()
+        
 
     def metabolize(self, args):
         """Reads reactants file and existing result database, generates metabolites from reactants and matches them to peaks"""
@@ -155,7 +155,7 @@ class MagmaCommand(object):
                 continue
             (smilestring, molname) = line.split('|')
             mol = Chem.MolFromSmiles(smilestring)
-            mol.SetProp('_Name', molname.encode('ascii','xmlcharrefreplace'))
+            mol.SetProp('_Name', molname)
             AllChem.Compute2DCoords(mol)
             mols.append(mol)
         return mols

@@ -93,7 +93,7 @@ class Run(Base):
     rel_peak_cutoff = Column(Float) #: fraction of basepeak intensity threshold for storing peaks in database
 
     # parameters for matching metabolites and fragments with peaks
-    ionisation = Column(Unicode)
+    ionisation_mode = Column(Unicode)
     use_fragmentation = Column(Boolean)
     max_broken_bonds = Column(Integer) #: max number of bonds broken in substructures generated from metabolites
     ms_intensity_cutoff = Column(Float) #: Absolute intensity minimum of lvl1 scan peaks which are matched with metabolites
