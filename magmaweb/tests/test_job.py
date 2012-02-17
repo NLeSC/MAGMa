@@ -242,6 +242,29 @@ class JobFactoryTestCase(unittest.TestCase):
         self.assertEquals(req.get_full_url(), self.factory.jobmanagerurl+"/job")
         self.assertEquals(req.get_header('Content-type'), 'application/json')
 
+    def test_state(self):
+        import uuid, os
+        jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
+        jobdir = self.factory.id2jobdir(jobid)
+        os.mkdir(jobdir)
+        jobstatefile = open(os.path.join(jobdir,'job.state'),'w')
+        jobstatefile.write('STOPPED')
+        jobstatefile.close()
+
+        state = self.factory.state(jobid)
+
+        self.assertEquals(state, 'STOPPED')
+
+    def test_stateNotExisting(self):
+        import uuid, os
+        jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
+        jobdir = self.factory.id2jobdir(jobid)
+        os.mkdir(jobdir)
+
+        state = self.factory.state(jobid)
+
+        self.assertEquals(state, 'UNKNOWN')
+
 class JobNotFound(unittest.TestCase):
     def test_it(self):
         from magmaweb.job import JobNotFound

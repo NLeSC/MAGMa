@@ -56,6 +56,7 @@ class JobFactory(object):
         self.jobrootdir = jobrootdir
         self.dbname = dbname
         self.jobmanagerurl = 'http://localhost:9998'
+        self.jobstatefilename = 'job.state'
 
     def fromId(self, jobid):
         """
@@ -161,6 +162,15 @@ class JobFactory(object):
         self.submitJob2Manager(body)
 
         return jobid
+
+    def state(self, id):
+        try:
+            jobstatefile = open(os.path.join(self.id2jobdir(id), self.jobstatefilename))
+            jobstate = jobstatefile.readline()
+            jobstatefile.close()
+            return jobstate
+        except IOError:
+            return 'UNKNOWN'
 
     def id2jobdir(self, id):
         """ Returns job directory based on id and jobrootdir """
