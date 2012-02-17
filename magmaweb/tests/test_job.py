@@ -1,7 +1,8 @@
 import unittest
-from magmaweb.job import JobFactory, Job
+from magmaweb.job import JobFactory, Job, JobQuery
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from mock import Mock, patch
 
 def initTestingDB(url = 'sqlite://'):
     """Creates testing db and populates with test data"""
@@ -137,12 +138,12 @@ class JobFactoryTestCase(unittest.TestCase):
         jobdbfn = os.path.join(self.jobrootdir, str(jobid), self.dbname)
         self.assertEqual(self.factory.id2db(jobid), jobdbfn)
 
-    def test_fromquery(self):
+    def test_fromdb(self):
         import os, uuid
         dbfile = os.tmpfile()
         dbfile.write('bla')
 
-        job = self.factory.fromQuery(dbfile)
+        job = self.factory.fromDb(dbfile)
 
         self.assertIsInstance(job, Job)
         self.assertIsInstance(job.id, uuid.UUID)
@@ -162,7 +163,7 @@ class JobFactoryTestCase(unittest.TestCase):
         jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
         os.mkdir(self.factory.id2jobdir(jobid))
         expected_job_dburl = self.factory.id2url(jobid)
-        expected_job = initTestingDB(expected_job_dburl)
+        initTestingDB(expected_job_dburl)
 
         job = self.factory.fromId(jobid)
 
@@ -179,8 +180,67 @@ class JobFactoryTestCase(unittest.TestCase):
         jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
         from magmaweb.job import JobNotFound
         with self.assertRaises(JobNotFound) as exc:
-            job = self.factory.fromId(jobid)
+            self.factory.fromId(jobid)
         self.assertEqual(exc.exception.jobid, jobid)
+
+    def test_submitQuery(self):
+        import tempfile, uuid, os
+        q = JobQuery()
+        q.n_reaction_steps = 2
+        q.ionisation = '1'
+        q.ms_intensity_cutoff = 2e5
+        q.msms_intensity_cutoff = 0.1
+        q.use_phase1 = True
+        q.use_phase2 = True
+        q.use_fragmentation = True
+        q.mz_precision = 0.001
+        q.metabolites = 'C1CCCC1|comp1'
+        q.mzxml_file = tempfile.NamedTemporaryFile()
+        q.mzxml_file.write('foo')
+        q.mzxml_file.flush();
+        q.mzxml_filename = q.mzxml_file.name
+
+        self.factory.submitJob2Manager = Mock()
+        jobid = self.factory.submitQuery(q)
+
+        self.assertIsInstance(jobid, uuid.UUID)
+        self.assertEqual(
+            open(os.path.join(self.factory.id2jobdir(jobid), 'data.mzxml')).read(),
+            'foo',
+            'query mzxml file content has been copied to job dir'
+        )
+        self.assertEqual(
+            open(os.path.join(self.factory.id2jobdir(jobid), 'smiles.txt')).read(),
+            q.metabolites,
+            'query mzxml file content has been copied to job dir'
+        )
+        self.factory.submitJob2Manager.assert_called_with({
+                'jobdir': os.path.join(self.factory.id2jobdir(jobid)),
+                'jobtype': "mzxmllocal",
+                'arguments': {
+                              "precision" : q.mz_precision,
+                              "mscutoff": q.ms_intensity_cutoff,
+                              "msmscutoff": q.ms_intensity_cutoff,
+                              "ionisation": q.ionisation,
+                              "nsteps": q.n_reaction_steps,
+                              "phase": '12'
+                              }
+                })
+
+        q.mzxml_file.close()
+
+    @patch('urllib2.urlopen')
+    def test_submitJob2Manager(self, ua):
+        import json
+        body = { 'foo': 'bar'}
+
+        self.factory.submitJob2Manager(body)
+
+        # TODO replace with ua.assert_called_once_with(<hamcrest matcher>)
+        req = ua.call_args[0][0]
+        self.assertEquals(req.get_data(), json.dumps(body))
+        self.assertEquals(req.get_full_url(), self.factory.jobmanagerurl+"/job")
+        self.assertEquals(req.get_header('Content-type'), 'application/json')
 
 class JobNotFound(unittest.TestCase):
     def test_it(self):

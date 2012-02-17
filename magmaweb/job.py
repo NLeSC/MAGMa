@@ -2,13 +2,15 @@ import uuid
 import os
 import csv
 import StringIO
+import urllib2
+import json
 from sqlalchemy import create_engine, and_
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import desc, asc
 from sqlalchemy.orm.exc import NoResultFound
-from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run, Base
+from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
 
 class ScanRequiredError(Exception):
     """ Raised when a scan identifier is required, but non is supplied"""
@@ -27,6 +29,19 @@ class JobNotFound(Exception):
     def __init__(self, jobid):
         self.jobid = jobid
 
+class JobQuery(object):
+    metabolites = None
+    mzxml_filename = None
+    mzxml_file = None
+    n_reaction_steps = None
+    use_phase1 = None
+    use_phase2 = None
+    ionisation = None
+    use_fragmentation = None
+    ms_intensity_cutoff = None
+    msms_intensity_cutoff = None
+    mz_precision = None
+
 class JobFactory(object):
     """ Factory which can create jobs """
     def __init__(self, jobrootdir, dbname):
@@ -40,6 +55,7 @@ class JobFactory(object):
         self.dbname = 'results.db'
         self.jobrootdir = jobrootdir
         self.dbname = dbname
+        self.jobmanagerurl = 'http://localhost:9998'
 
     def fromId(self, jobid):
         """
@@ -54,12 +70,12 @@ class JobFactory(object):
         engine = create_engine(self.id2url(jobid))
         try:
             engine.connect()
-        except OperationalError as e:
+        except OperationalError:
             raise JobNotFound(jobid)
         session = sessionmaker(bind=engine)
         return Job(jobid, session())
 
-    def fromQuery(self, dbfile):
+    def fromDb(self, dbfile):
         """
         A job directory is created and the dbfile is copied into it
         Returns a Job instance
@@ -67,7 +83,6 @@ class JobFactory(object):
         dbfile
             The sqlite result db
 
-        TODO replace with arguments with submit form values like mzxml file, metabolite smiles and magmaweb config
         """
         jobid = uuid.uuid4()
 
@@ -77,13 +92,75 @@ class JobFactory(object):
         jobdb = open(self.id2db(jobid), 'wb')
         dbfile.seek(0)
         while 1:
-            data = dbfile.read(2<<16)
+            data = dbfile.read(2 << 16)
             if not data:
-               break
+                break
             jobdb.write(data)
         jobdb.close()
 
         return self.fromId(jobid)
+
+
+    def submitJob2Manager(self, body):
+        request = urllib2.Request(
+                                  self.jobmanagerurl+"/job",
+                                  json.dumps(body),
+                                  { 'Content-Type': 'application/json' }
+                                  )
+        return urllib2.urlopen(request)
+
+    def submitQuery(self, query):
+        """
+        A job directory is created, the query input files are written to directory and job is submitted to job manager
+
+        query is JobQuery object
+
+        Returns job identifier
+        """
+
+        jobid = uuid.uuid4()
+        jobdir = self.id2jobdir(jobid)
+        os.makedirs(jobdir)
+
+        # copy mzxml file
+        jobmzxml = open(os.path.join(jobdir ,'data.mzxml'), 'wb')
+        query.mzxml_file.seek(0)
+        while 1:
+            data = query.mzxml_file.read(2 << 16)
+            if not data:
+                break
+            jobmzxml.write(data)
+        jobmzxml.close()
+
+        # copy metabolites string to file
+        metsfile = file(os.path.join(jobdir, 'smiles.txt'), 'w')
+        metsfile.write(query.metabolites)
+        metsfile.close()
+
+        # call job manager
+        # {"jobdir":"/tmp/jobdir", "jobtype":"mzxmllocal", "arguments":{
+        # "precision":"0.01", "mscutoff":"2e5", "msmscutoff":"0.1",
+        # "ionisation":"1", "nsteps":"2", "phase":"12" }}
+        phase = ''
+        if (query.use_phase1):
+            phase+='1'
+        if (query.use_phase1):
+            phase+='2'
+        body = {
+                'jobdir': jobdir,
+                'jobtype': "mzxmllocal",
+                'arguments': {
+                              "precision" : query.mz_precision,
+                              "mscutoff": query.ms_intensity_cutoff,
+                              "msmscutoff": query.ms_intensity_cutoff,
+                              "ionisation": query.ionisation,
+                              "nsteps": query.n_reaction_steps,
+                              "phase": phase
+                              }
+                }
+        self.submitJob2Manager(body)
+
+        return jobid
 
     def id2jobdir(self, id):
         """ Returns job directory based on id and jobrootdir """
@@ -96,7 +173,7 @@ class JobFactory(object):
     def id2url(self, id):
         """ Returns sqlalchemy url of sqlite db of job with id """
         # 3rd / is for username:pw@host which sqlite does not need
-        return 'sqlite:///'+self.id2db(id)
+        return 'sqlite:///' + self.id2db(id)
 
 class Job(object):
     """
@@ -104,7 +181,7 @@ class Job(object):
     """
     def __init__(self, id, session):
         """
-        id
+        jobid
             A UUID of the job
         session
             Sqlalchemy session to read/write to job db
@@ -120,23 +197,23 @@ class Job(object):
         """ Returns run info"""
         return self.session.query(Run).one()
 
-    def extjsgridfilter(self, q,column,filter):
+    def extjsgridfilter(self, q, column, filter):
         """Query helper to convert a extjs grid filter to a sqlalchemy query filter"""
         if (filter['type'] == 'numeric'):
             if (filter['comparison'] == 'eq'):
-                return q.filter(column==filter['value'])
+                return q.filter(column == filter['value'])
             if (filter['comparison'] == 'gt'):
-                return q.filter(column>filter['value'])
+                return q.filter(column > filter['value'])
             if (filter['comparison'] == 'lt'):
-                return q.filter(column<filter['value'])
+                return q.filter(column < filter['value'])
         elif (filter['type'] == 'string'):
             return q.filter(column.contains(filter['value']))
         elif (filter['type'] == 'list'):
             return q.filter(column.in_(filter['value']))
         elif (filter['type'] == 'boolean'):
-            return q.filter(column==filter['value'])
+            return q.filter(column == filter['value'])
 
-    def metabolites(self, start=0, limit=10, sorts=[{"property":"probability","direction":"DESC"},{"property":"metid","direction":"ASC"}], scanid=None, filters=[]):
+    def metabolites(self, start=0, limit=10, sorts=[{"property":"probability", "direction":"DESC"}, {"property":"metid", "direction":"ASC"}], scanid=None, filters=[]):
         """
         Returns dict with total and rows attribute
 
@@ -160,12 +237,12 @@ class Job(object):
         if (scanid != None):
             # TODO add score column + order by score
             q = q.add_column(fragal.score).join(fragal.metabolite).filter(
-                fragal.parentfragid==0).filter(fragal.scanid==scanid)
+                fragal.parentfragid == 0).filter(fragal.scanid == scanid)
 
         # add nr_scans column
-        stmt = self.session.query(Fragment.metid,func.count('*').label('nr_scans')).filter(
-            Fragment.parentfragid==0).group_by(Fragment.metid).subquery()
-        q = q.add_column(stmt.c.nr_scans).outerjoin(stmt, Metabolite.metid==stmt.c.metid)
+        stmt = self.session.query(Fragment.metid, func.count('*').label('nr_scans')).filter(
+            Fragment.parentfragid == 0).group_by(Fragment.metid).subquery()
+        q = q.add_column(stmt.c.nr_scans).outerjoin(stmt, Metabolite.metid == stmt.c.metid)
 
         for filter in filters:
             # generic filters
@@ -177,7 +254,7 @@ class Job(object):
                 else:
                     raise ScanRequiredError()
             else:
-                col = Metabolite.__dict__[filter['field']]
+                col = Metabolite.__dict__[filter['field']] #@UndefinedVariable
             q = self.extjsgridfilter(q, col, filter)
 
         total = q.count()
@@ -191,13 +268,13 @@ class Job(object):
                 else:
                     raise ScanRequiredError()
             else:
-                col2 = Metabolite.__dict__[col['property']]
+                col2 = Metabolite.__dict__[col['property']] #@UndefinedVariable
             if (col['direction'] == 'DESC'):
                 q = q.order_by(desc(col2))
             elif (col['direction'] == 'ASC'):
                 q = q.order_by(asc(col2))
 
-        for r in q[start:(limit+start)]:
+        for r in q[start:(limit + start)]:
             met = r.Metabolite
             row = {
                 'metid': met.metid,
@@ -255,18 +332,21 @@ class Job(object):
         filters
             List which is generated by ExtJS component Ext.ux.grid.FiltersFeature, with columns from Metabolite grid
         """
-        fq = self.session.query(Fragment.scanid).filter(Fragment.parentfragid==0)
+        fq = self.session.query(Fragment.scanid).filter(Fragment.parentfragid == 0)
         if (metid != None):
-            fq = fq.filter(Fragment.metid==metid)
+            fq = fq.filter(Fragment.metid == metid)
         fq = fq.join(Metabolite)
         for filter in filters:
             if (filter['field'] == 'score'):
                 fq = self.extjsgridfilter(fq, Fragment.score, filter)
             elif (filter['field'] != 'nr_scans'):
-                fq = self.extjsgridfilter(fq, Metabolite.__dict__[filter['field']], filter)
+                fq = self.extjsgridfilter(
+                                          fq,
+                                          Metabolite.__dict__[filter['field']], #@UndefinedVariable
+                                          filter)
 
         hits = []
-        for hit in self.session.query(Scan.rt,Scan.scanid).filter_by(mslevel=1).filter(Scan.scanid.in_(fq)):
+        for hit in self.session.query(Scan.rt, Scan.scanid).filter_by(mslevel=1).filter(Scan.scanid.in_(fq)):
             hits.append({
                 'id': hit.scanid,
                 'rt': hit.rt
@@ -277,10 +357,10 @@ class Job(object):
     def extractedIonChromatogram(self, metid):
         """ Returns extracted ion chromatogram of metabolite with id metid """
         chromatogram = []
-        mzq = self.session.query(func.avg(Fragment.mz)).filter(Fragment.metid==metid).filter(Fragment.parentfragid==0).scalar()
+        mzq = self.session.query(func.avg(Fragment.mz)).filter(Fragment.metid == metid).filter(Fragment.parentfragid == 0).scalar()
         mzoffset = self.session.query(Run.mz_precision).scalar()
         # fetch max intensity of peaks with mz = mzq+-mzoffset
-        for (rt,intens) in self.session.query(Scan.rt,func.max(Peak.intensity)).outerjoin(Peak, and_(Peak.scanid==Scan.scanid,Peak.mz.between(mzq-mzoffset,mzq+mzoffset))).filter(Scan.mslevel==1).group_by(Scan.rt).order_by(asc(Scan.rt)):
+        for (rt, intens) in self.session.query(Scan.rt, func.max(Peak.intensity)).outerjoin(Peak, and_(Peak.scanid == Scan.scanid, Peak.mz.between(mzq - mzoffset, mzq + mzoffset))).filter(Scan.mslevel == 1).group_by(Scan.rt).order_by(asc(Scan.rt)):
             chromatogram.append({
                 'rt': rt,
                 'intensity': intens or 0
@@ -314,9 +394,9 @@ class Job(object):
             If scanid not on mslevel raises ScanNotFound
 
         """
-        scanq = self.session.query(Scan).filter(Scan.scanid==scanid)
+        scanq = self.session.query(Scan).filter(Scan.scanid == scanid)
         if (mslevel != None):
-            scanq = scanq.filter(Scan.mslevel==mslevel)
+            scanq = scanq.filter(Scan.mslevel == mslevel)
 
         try:
             scan = scanq.one()
@@ -327,7 +407,7 @@ class Job(object):
         if (scan.mslevel == 1):
             cutoff = self.session.query(Run.ms_intensity_cutoff).scalar()
         else:
-            cutoff = self.session.query(Scan.basepeakintensity*Run.msms_intensity_cutoff).filter(Scan.scanid==scanid).scalar()
+            cutoff = self.session.query(Scan.basepeakintensity * Run.msms_intensity_cutoff).filter(Scan.scanid == scanid).scalar()
 
         peaks = []
         for peak in self.session.query(Peak).filter_by(scanid=scanid):
@@ -356,7 +436,7 @@ class Job(object):
         Raises FragmentNotFound when no fragment is found with scanid/metid combination
         """
         def q():
-            return self.session.query(Fragment,Metabolite.mol,Scan.mslevel).join(Metabolite).join(Scan)
+            return self.session.query(Fragment, Metabolite.mol, Scan.mslevel).join(Metabolite).join(Scan)
 
         def fragment2json(row):
             (frag, mol, mslevel) = row
@@ -372,7 +452,7 @@ class Job(object):
                 'deltah': frag.deltah,
                 'mslevel': mslevel,
             }
-            if (len(frag.children)>0):
+            if (len(frag.children) > 0):
                 f['expanded'] = False
                 f['leaf'] = False
             else:
@@ -384,20 +464,20 @@ class Job(object):
         if (node == ''):
             try:
                 row = q().filter(
-                    Fragment.scanid==scanid).filter(
-                    Fragment.metid==metid).filter(
-                    Fragment.parentfragid==0).one()
+                    Fragment.scanid == scanid).filter(
+                    Fragment.metid == metid).filter(
+                    Fragment.parentfragid == 0).one()
             except NoResultFound:
                 raise FragmentNotFound()
             metabolite = fragment2json(row)
             metabolite['children'] = []
-            for frow in q().filter(Fragment.parentfragid==metabolite['fragid']):
+            for frow in q().filter(Fragment.parentfragid == metabolite['fragid']):
                 metabolite['expanded'] = True
                 metabolite['children'].append(fragment2json(frow))
             return { 'children': metabolite, 'expanded': True}
         # fragments
         else:
             fragments = []
-            for row in q().filter(Fragment.parentfragid==node):
+            for row in q().filter(Fragment.parentfragid == node):
                 fragments.append(fragment2json(row))
             return fragments
