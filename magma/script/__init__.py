@@ -100,7 +100,6 @@ class MagmaCommand(object):
         annotate_engine.build_spectra()
         annotate_engine.search_all_structures()
 
-
     def metabolize(self, args):
         """Reads reactants file and existing result database, generates metabolites from reactants and matches them to peaks"""
         magma_session = magma.MagmaSession(args.db.name)
