@@ -318,7 +318,6 @@ class MsDataEngine():
             self.db_session.add(Peak(scanid=scanid+1,mz=peak[0],intensity=peak[1]))
 
 
-
 class AnnotateEngine:
     def __init__(self,db_session,ionisation_mode,use_fragmentation,max_broken_bonds,
                  ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,precursor_mz_precision,use_msms_only):
@@ -355,7 +354,6 @@ class AnnotateEngine:
         self.use_msms_only=rundata.use_msms_only
 
         self.scans=[]
-
 
     def build_spectra(self):
         me=self
