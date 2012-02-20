@@ -91,9 +91,10 @@ class Run(Base):
     ms_filename = Column(Unicode)
     abs_peak_cutoff = Column(Float) #: abs intensity threshold for storing peaks in database
     rel_peak_cutoff = Column(Float) #: fraction of basepeak intensity threshold for storing peaks in database
+    max_ms_level = Column(Integer) #: maximum ms level to be included in the analysis
 
     # parameters for matching metabolites and fragments with peaks
-    ionisation = Column(Unicode)
+    ionisation_mode = Column(Integer)
     use_fragmentation = Column(Boolean)
     max_broken_bonds = Column(Integer) #: max number of bonds broken in substructures generated from metabolites
     ms_intensity_cutoff = Column(Float) #: Absolute intensity minimum of lvl1 scan peaks which are matched with metabolites
