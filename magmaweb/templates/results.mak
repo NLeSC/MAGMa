@@ -129,21 +129,8 @@ Ext.onReady(function() {
 <body>
 <div class="x-hidden" id="resultsinfo">
 Maximum number of reaction steps: ${run.n_reaction_steps}<br/>
-Use phase 1:
-% if run.use_phase1:
-Yes
-% else:
-No
-% endif
-<br/>
-Use phase 2:
-% if run.use_phase2:
-Yes
-% else:
-No
-% endif
-<br/>
-Ionisation: ${run.ionisation} <br/>
+Metabolism types: ${run.metabolism_types}<br/>
+Ionisation mode: ${run.ionisation_mode} <br/>
 Use defragmentation:
 % if run.use_fragmentation:
 Yes

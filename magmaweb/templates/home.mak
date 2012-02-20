@@ -105,12 +105,12 @@ Ext.onReady(function() {
 	            minValue: 0,
 	            decimalPrecision: 0
 	        },{
-	            fieldLabel: 'Ionisation',
+	            fieldLabel: 'Ionisation mode',
 	            xtype: 'radiogroup',
 	            columns: 2,
 	            items: [
-	              { boxLabel:'-', checked: true, name:'ionisation', inputValue: -1 },
-	              { boxLabel:'+', checked: false, name:'ionisation', inputValue: 1 }
+	              { boxLabel:'Negative', checked: true, name:'ionisation_mode', inputValue: -1 },
+	              { boxLabel:'Positve', checked: false, name:'ionisation_mode', inputValue: 1 }
 	            ]
 	        },{
 	            xtype:'checkbox',

@@ -45,7 +45,7 @@ def home(request):
         q.mz_precision=post['mz_precision']
         q.ms_intensity_cutoff=post['ms_intensity_cutoff']
         q.msms_intensity_cutoff=post['msms_intensity_cutoff']
-        q.ionisation=post['ionisation']
+        q.ionisation_mode=post['ionisation_mode']
         q.structures=post['structures']
         q.n_reaction_steps=post['n_reaction_steps']
         q.metabolism_types=post['metabolism_types'].split(', ')

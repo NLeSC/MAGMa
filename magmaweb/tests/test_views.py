@@ -93,7 +93,7 @@ class HomeView(unittest.TestCase):
                 'mz_precision': 0.01,
                 'ms_intensity_cutoff': 2e5,
                 'msms_intensity_cutoff': 0.1,
-                'ionisation': 1,
+                'ionisation_mode': 1,
                 'structures': 'CCO|Ethanol',
                 'n_reaction_steps' : 2,
                 'metabolism_types' : 'phase1, phase2',
@@ -113,7 +113,7 @@ class HomeView(unittest.TestCase):
         q.mz_precision=post['mz_precision']
         q.ms_intensity_cutoff=post['ms_intensity_cutoff']
         q.msms_intensity_cutoff=post['msms_intensity_cutoff']
-        q.ionisation=post['ionisation']
+        q.ionisation_mode=post['ionisation_mode']
         q.structures=post['structures']
         q.n_reaction_steps=post['n_reaction_steps']
         q.metabolism_types=post['metabolism_types'].split(', ')
@@ -151,7 +151,6 @@ def mock_job():
 
     """
     from magmaweb.job import Job
-    from mock import Mock
     job = Mock(Job)
     return job
 

@@ -37,7 +37,7 @@ class JobQuery(object):
     n_reaction_steps = None
     metabolism_types = None
     max_broken_bonds = None
-    ionisation = None
+    ionisation_mode = None
     use_fragmentation = None
     use_msms_only = None
     ms_intensity_cutoff = None
@@ -60,7 +60,7 @@ class JobQuery(object):
                 and
                 self.max_broken_bonds == other.max_broken_bonds
                 and
-                self.ionisation == other.ionisation
+                self.ionisation_mode == other.ionisation_mode
                 and
                 self.use_fragmentation == other.use_fragmentation
                 and
@@ -183,7 +183,7 @@ class JobFactory(object):
                               "n_reaction_steps": query.n_reaction_steps,
                               "metabolism_types": query.metabolism_types,
                               "max_broken_bonds": query.max_broken_bonds,
-                              "ionisation": query.ionisation,
+                              "ionisation_mode": query.ionisation_mode,
                               "use_fragmentation": query.use_fragmentation,
                               "use_msms_only": query.use_msms_only,
                               "ms_intensity_cutoff": query.ms_intensity_cutoff,

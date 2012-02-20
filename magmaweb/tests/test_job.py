@@ -26,8 +26,8 @@ def populateTestingDB(session):
     """
     from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
     session.add(Run(
-        n_reaction_steps=2, use_phase1=True, use_phase2=True,
-        ionisation=-1, use_fragmentation=True,
+        n_reaction_steps=2, metabolism_types='phase1,phase2' ,
+        ionisation_mode=-1, use_fragmentation=True,
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
         mz_precision=0.01, use_msms_only=True
     ))
@@ -187,7 +187,7 @@ class JobFactoryTestCase(unittest.TestCase):
         import tempfile, uuid, os
         q = JobQuery()
         q.n_reaction_steps = 2
-        q.ionisation = '1'
+        q.ionisation_mode = 1
         q.ms_intensity_cutoff = 2e5
         q.msms_intensity_cutoff = 0.1
         q.use_fragmentation = True
@@ -227,7 +227,7 @@ class JobFactoryTestCase(unittest.TestCase):
                               "n_reaction_steps": query.n_reaction_steps,
                               "metabolism_types": query.metabolism_types,
                               "max_broken_bonds": query.max_broken_bonds,
-                              "ionisation": query.ionisation,
+                              "ionisation_mode": query.ionisation_mode,
                               "use_fragmentation": query.use_fragmentation,
                               "use_msms_only": query.use_msms_only,
                               "ms_intensity_cutoff": query.ms_intensity_cutoff,
@@ -300,9 +300,8 @@ class JobTestCase(unittest.TestCase):
     def test_runInfo(self):
         runInfo = self.job.runInfo()
         self.assertEqual(runInfo.n_reaction_steps, 2)
-        self.assertEqual(runInfo.use_phase1, True)
-        self.assertEqual(runInfo.use_phase2, True)
-        self.assertEqual(runInfo.ionisation, u'-1')
+        self.assertEqual(runInfo.metabolism_types, "phase1,phase2")
+        self.assertEqual(runInfo.ionisation_mode, -1)
         self.assertEqual(runInfo.use_fragmentation, True)
         self.assertEqual(runInfo.ms_intensity_cutoff, 200000.0)
         self.assertEqual(runInfo.msms_intensity_cutoff, 0.5)
