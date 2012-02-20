@@ -70,8 +70,16 @@ Ext.onReady(function() {
           }]
       },{
           xtype: 'fieldset',
-          title: 'MSpectra options',
+          title: 'MS data options',
           items: [{
+              xtype: 'numberfield',
+              name: 'max_ms_level',
+              fieldLabel: 'Maximum MS level',
+              value: 3,
+              minValue: 1,
+              maxValue: 5,
+              decimalPrecision: 0
+          },{
               xtype: 'numberfield',
               name: 'precursor_mz_precision',
               fieldLabel: 'Precision for matching precursor mz with peak mz in parent scan',
@@ -86,7 +94,7 @@ Ext.onReady(function() {
           },{
               xtype: 'numberfield',
               name: 'rel_peak_cutoff',
-              fieldLabel: 'Absolute intensity threshold for storing peaks in database',
+              fieldLabel: 'Fraction of basepeak intensity threshold threshold for storing peaks in database',
               value: 0.01,
               decimalPrecision: 5
           }]
@@ -121,7 +129,7 @@ Ext.onReady(function() {
 	            xtype:'checkbox',
 	            fieldLabel: 'Annotate only peaks with fragmentation data',
 	            checked: 'checked',
-	            name: 'use_fragmentation'
+	            name: 'use_msms_only'
 	        },{
 	            xtype: 'numberfield',
 	            name: 'ms_intensity_cutoff',

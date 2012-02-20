@@ -100,6 +100,7 @@ class HomeView(unittest.TestCase):
                 'max_broken_bonds' : 4,
                 'abs_peak_cutoff' : 1000,
                 'rel_peak_cutoff': 0.01,
+                'max_ms_level': 3,
                 'precursor_mz_precision': 0.001,
                 'use_msms_only': 1,
                 'use_fragmentation': 1
@@ -120,6 +121,7 @@ class HomeView(unittest.TestCase):
         q.max_broken_bonds=post['max_broken_bonds']
         q.abs_peak_cutoff=post['abs_peak_cutoff']
         q.rel_peak_cutoff=post['rel_peak_cutoff']
+        q.max_ms_level=post['max_ms_level']
         q.precursor_mz_precision=post['precursor_mz_precision']
         q.use_msms_only=post['use_msms_only']
         q.use_fragmentation=post['use_fragmentation']

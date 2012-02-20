@@ -46,6 +46,7 @@ class JobQuery(object):
     precursor_mz_precision = None
     abs_peak_cutoff = None
     rel_peak_cutoff = None
+    max_ms_level = None
 
     def __eq__(self, other):
         """ Compares all attributes except file objects"""
@@ -77,6 +78,8 @@ class JobQuery(object):
                 self.mz_precision == other.mz_precision
                 and
                 self.precursor_mz_precision == other.precursor_mz_precision
+                and
+                self.max_ms_level == other.max_ms_level
                 )
 
 class JobFactory(object):
@@ -191,7 +194,8 @@ class JobFactory(object):
                               "mz_precision" : query.mz_precision,
                               "precursor_mz_precision" : query.precursor_mz_precision,
                               "abs_peak_cutoff": query.abs_peak_cutoff,
-                              "rel_peak_cutoff": query.rel_peak_cutoff
+                              "rel_peak_cutoff": query.rel_peak_cutoff,
+                              "max_ms_level": query.max_ms_level
                               }
                 }
         self.submitJob2Manager(body)

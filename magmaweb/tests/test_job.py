@@ -29,7 +29,9 @@ def populateTestingDB(session):
         n_reaction_steps=2, metabolism_types='phase1,phase2' ,
         ionisation_mode=-1, use_fragmentation=True,
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
-        mz_precision=0.01, use_msms_only=True
+        mz_precision=0.01, use_msms_only=True,
+        ms_filename = 'F123456.mzxml', abs_peak_cutoff=1000,
+        rel_peak_cutoff=0.001, max_ms_level=3
     ))
     session.add(Metabolite(
         metid=72, mol='Molfile', level=0, probability=1.0,
@@ -198,6 +200,7 @@ class JobFactoryTestCase(unittest.TestCase):
         q.max_broken_bonds = 4
         q.mz_precision = 0.001
         q.metabolism_types = [ 'phase1', 'phase2' ]
+        q.max_ms_level = 3
         q.structures = 'C1CCCC1|comp1'
         q.mzxml_file = tempfile.NamedTemporaryFile()
         q.mzxml_file.write('foo')
@@ -235,6 +238,7 @@ class JobFactoryTestCase(unittest.TestCase):
                               "mz_precision" : query.mz_precision,
                               "precursor_mz_precision" : query.precursor_mz_precision,
                               "abs_peak_cutoff": query.abs_peak_cutoff,
+                              "max_ms_level": query.max_ms_level,
                               "rel_peak_cutoff": query.rel_peak_cutoff
                               }
                 })
@@ -301,6 +305,12 @@ class JobTestCase(unittest.TestCase):
         runInfo = self.job.runInfo()
         self.assertEqual(runInfo.n_reaction_steps, 2)
         self.assertEqual(runInfo.metabolism_types, "phase1,phase2")
+
+        self.assertEqual(runInfo.max_ms_level, 3)
+        self.assertEqual(runInfo.ms_filename, 'F123456.mzxml')
+        self.assertEqual(runInfo.abs_peak_cutoff, 1000)
+        self.assertEqual(runInfo.rel_peak_cutoff, 0.001)
+
         self.assertEqual(runInfo.ionisation_mode, -1)
         self.assertEqual(runInfo.use_fragmentation, True)
         self.assertEqual(runInfo.ms_intensity_cutoff, 200000.0)

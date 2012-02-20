@@ -52,6 +52,7 @@ def home(request):
         q.max_broken_bonds=post['max_broken_bonds']
         q.abs_peak_cutoff=post['abs_peak_cutoff']
         q.rel_peak_cutoff=post['rel_peak_cutoff']
+        q.max_ms_level=post['max_ms_level']
         q.precursor_mz_precision=post['precursor_mz_precision']
         q.use_msms_only=post['use_msms_only']
         q.use_fragmentation=post['use_fragmentation']
