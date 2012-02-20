@@ -37,13 +37,10 @@ Ext.onReady(function() {
     layout: 'column',
     items:[{
        xtype: 'container',
-       columnWidth:.5,
        items:[{
-         xtype: 'container',
-         layout: 'column',
           xtype: 'textarea',
           fieldLabel: 'Metabolites (one SMILES string per line)',
-          name: 'metabolites',
+          name: 'structures',
           height: 300,
         }, {
           fieldLabel: 'MS/MS data (mzxml)',
@@ -51,59 +48,100 @@ Ext.onReady(function() {
           xtype: 'filefield'
         }]
     }, {
-      columnWidth:.5,
-      xtype: 'fieldset',
-      title: 'Options',
-      items: [{
-        fieldLabel: 'Maximum number of reaction steps',
-        name: 'n_reaction_steps',
-        xtype: 'numberfield',
-        value: 2,
-        maxValue: 10,
-        minValue: 0,
-        decimalPrecision: 0
+        xtype: 'container',
+        items: [{
+          xtype: 'fieldset',
+          title: 'Generate metabolite options',
+          items: [{
+              fieldLabel: 'Maximum number of reaction steps',
+              name: 'n_reaction_steps',
+              xtype: 'numberfield',
+              value: 2,
+              maxValue: 10,
+              minValue: 0,
+              decimalPrecision: 0
+          },{
+              xtype:'combobox',
+              fieldLabel: 'Metabolism types',
+              store:['phase1', 'phase2'],
+              multiSelect: true,
+              value: 'phase1, phase2',
+              name: 'metabolism_types'
+          }]
       },{
-          xtype:'checkbox',
-          fieldLabel: 'Use phase 1',
-          checked: 'checked',
-          name: 'use_phase1'
-      },{
-        xtype:'checkbox',
-        fieldLabel: 'Use phase 2',
-        checked: 'checked',
-        name: 'use_phase2'
-      },{
-        fieldLabel: 'Ionisation',
-        xtype: 'radiogroup',
-        columns: 2,
-        items: [
-          { boxLabel:'-', checked: true, name:'ionisation', inputValue: -1 },
-          { boxLabel:'+', checked: false, name:'ionisation', inputValue: 1 }
-        ]
-      },{
-          xtype:'checkbox',
-          fieldLabel: 'Use fragmentation',
-          checked: 'checked',
-          name: 'use_fragmentation'
-      },{
-          xtype: 'numberfield',
-          name: 'ms_intensity_cutoff',
-          fieldLabel: 'Absolute intensity minimum of lvl1 scan peaks which are matched with metabolites',
-          value: 200000.0,
-          decimalPrecision: 5
-      },{
-          xtype: 'numberfield',
-          name: 'msms_intensity_cutoff',
-          fieldLabel: 'Ratio of basepeak intensity',
-          value: 0.1,
-          decimalPrecision: 5
-      },{
-          xtype: 'numberfield',
-          name: 'mz_precision',
-          fieldLabel: 'M/z offset which is allowed for matching a metabolite mass to m/z of a peak',
-          value: 0.001,
-          decimalPrecision: 5
+          xtype: 'fieldset',
+          title: 'MSpectra options',
+          items: [{
+              xtype: 'numberfield',
+              name: 'precursor_mz_precision',
+              fieldLabel: 'Precision for matching precursor mz with peak mz in parent scan',
+              value: 0.001,
+              decimalPrecision: 5
+          },{
+              xtype: 'numberfield',
+              name: 'abs_peak_cutoff',
+              fieldLabel: 'Absolute intensity threshold for storing peaks in database',
+              value: 1000,
+              decimalPrecision: 5
+          },{
+              xtype: 'numberfield',
+              name: 'rel_peak_cutoff',
+              fieldLabel: 'Absolute intensity threshold for storing peaks in database',
+              value: 0.01,
+              decimalPrecision: 5
+          }]
       }]
+    }, {
+        xtype: 'container',
+        items: [{
+	        xtype: 'fieldset',
+	        title: 'Annotate options',
+	        items: [{
+	            fieldLabel: 'Maximum number of bonds broken in substructures generated from metabolites',
+	            name: 'max_broken_bonds',
+	            xtype: 'numberfield',
+	            value: 4,
+	            maxValue: 10,
+	            minValue: 0,
+	            decimalPrecision: 0
+	        },{
+	            fieldLabel: 'Ionisation',
+	            xtype: 'radiogroup',
+	            columns: 2,
+	            items: [
+	              { boxLabel:'-', checked: true, name:'ionisation', inputValue: -1 },
+	              { boxLabel:'+', checked: false, name:'ionisation', inputValue: 1 }
+	            ]
+	        },{
+	            xtype:'checkbox',
+	            fieldLabel: 'Use fragmentation',
+	            checked: 'checked',
+	            name: 'use_fragmentation'
+	        },{
+	            xtype:'checkbox',
+	            fieldLabel: 'Annotate only peaks with fragmentation data',
+	            checked: 'checked',
+	            name: 'use_fragmentation'
+	        },{
+	            xtype: 'numberfield',
+	            name: 'ms_intensity_cutoff',
+	            fieldLabel: 'Absolute intensity minimum of lvl1 scan peaks which are matched with metabolites',
+	            value: 200000.0,
+	            decimalPrecision: 5
+	        },{
+	            xtype: 'numberfield',
+	            name: 'msms_intensity_cutoff',
+	            fieldLabel: 'Ratio of basepeak intensity',
+	            value: 0.1,
+	            decimalPrecision: 5
+	        },{
+	            xtype: 'numberfield',
+	            name: 'mz_precision',
+	            fieldLabel: 'M/z offset which is allowed for matching a metabolite mass to m/z of a peak',
+	            value: 0.01,
+	            decimalPrecision: 5
+	        }]
+	    }]
     }],
     buttons: [{
       text: 'Submit',
@@ -114,7 +152,7 @@ Ext.onReady(function() {
                   url: '${request.route_url('home')}',
                   waitMsg: 'Uploading your data...',
                   success: function(fp, o) {
-                      window.location = '${request.application_url}/results/'+o.result.jobid;
+                      window.location = '${request.application_url}/status/'+o.result.jobid;
                   }
               });
           }

@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from magmaweb.models import DBSession
 from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run, Base
-from magmaweb.job import JobFactory, JobNotFound
+from magmaweb.job import JobFactory, JobNotFound, JobQuery
 """Views for pyramid based web application"""
 
 def fetch_job(request):
@@ -38,10 +38,26 @@ def home(request):
     """
 
     if (request.method == 'POST'):
-        # TODO remove results db if it exists
+        post = request.POST
+        q = JobQuery()
+        q.mzxml_filename=post['db'].name
+        q.mzxml=post['db']
+        q.mz_precision=post['mz_precision']
+        q.ms_intensity_cutoff=post['ms_intensity_cutoff']
+        q.msms_intensity_cutoff=post['msms_intensity_cutoff']
+        q.ionisation=post['ionisation']
+        q.structures=post['structures']
+        q.n_reaction_steps=post['n_reaction_steps']
+        q.metabolism_types=post['metabolism_types'].split(', ')
+        q.max_broken_bonds=post['max_broken_bonds']
+        q.abs_peak_cutoff=post['abs_peak_cutoff']
+        q.rel_peak_cutoff=post['rel_peak_cutoff']
+        q.precursor_mz_precision=post['precursor_mz_precision']
+        q.use_msms_only=post['use_msms_only']
+        q.use_fragmentation=post['use_fragmentation']
 
-        job = job_factory(request).fromQuery(request.POST['db'].file)
-        return Response(json.dumps({"success": True, "jobid": str(job.id) }), content_type='text/html')
+        jobid = job_factory(request).submitQuery(q)
+        return Response(json.dumps({"success": True, "jobid": str(jobid) }), content_type='text/html')
 
     return dict()
 
@@ -50,6 +66,13 @@ def results(request):
     """Returns results page"""
     job = fetch_job(request)
     return dict(run=job.runInfo(), maxmslevel=job.maxMSLevel(), jobid=job.id)
+
+@view_config(route_name='status', renderer='status.mak')
+def job_status(request):
+    """Returns status of a job"""
+    jobid = request.matchdict['jobid']
+    jobstate = job_factory(request).state(jobid)
+    return dict(status=jobstate, jobid=jobid)
 
 @view_config(route_name='metabolites.json', renderer='json')
 def metabolitesjson(request):

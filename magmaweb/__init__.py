@@ -17,6 +17,7 @@ def main(global_config, **settings):
     config.add_static_view('static', 'magmaweb:static', cache_max_age=3600)
     config.add_route('home','/')
     config.add_route('results','/results/{jobid}')
+    config.add_route('status','/status/{jobid}')
     config.add_route('metabolites.json', '/results/{jobid}/metabolites.json')
     config.add_route('metabolites.csv', '/results/{jobid}/metabolites.csv')
     config.add_route('fragments.json', '/results/{jobid}/fragments/{scanid}/{metid}.json')

@@ -1,6 +1,6 @@
 import unittest
 from pyramid import testing
-from mock import patch
+from mock import patch, Mock
 
 class HelperTestCase(unittest.TestCase):
     def setUp(self):
@@ -25,7 +25,6 @@ class HelperTestCase(unittest.TestCase):
     @patch('magmaweb.views.job_factory')
     def test_fetch_job(self, mocked_jobfactory):
         from magmaweb.job import JobFactory
-        from mock import Mock
         jobf = Mock(JobFactory)
         job = mock_job()
         job.id = 'foobar'
@@ -77,30 +76,64 @@ class HomeView(unittest.TestCase):
 
     @patch('magmaweb.views.job_factory')
     def test_post(self, mocked_jobfactory):
-        job = mock_job()
-        job.id = 'x'
-        from magmaweb.job import JobFactory
-        from mock import Mock
+        import uuid
+        jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
+        from magmaweb.job import JobFactory, JobQuery
         jobf = Mock(JobFactory)
-        jobf.fromQuery.return_value = job
+        jobf.submitQuery.return_value = jobid
         mocked_jobfactory.return_value = jobf
 
-        import os
-        dbfile = os.tmpfile()
+        import tempfile
+        dbfile = tempfile.NamedTemporaryFile()
 
         class FileUpload:
             pass
-        post = { 'db': FileUpload() }
+        post = {
+                'db': FileUpload(),
+                'mz_precision': 0.01,
+                'ms_intensity_cutoff': 2e5,
+                'msms_intensity_cutoff': 0.1,
+                'ionisation': 1,
+                'structures': 'CCO|Ethanol',
+                'n_reaction_steps' : 2,
+                'metabolism_types' : 'phase1, phase2',
+                'max_broken_bonds' : 4,
+                'abs_peak_cutoff' : 1000,
+                'rel_peak_cutoff': 0.01,
+                'precursor_mz_precision': 0.001,
+                'use_msms_only': 1,
+                'use_fragmentation': 1
+                }
         post['db'].file = dbfile
+        post['db'].name = dbfile.name
+
+        q = JobQuery()
+        q.mzxml_filename=dbfile.name
+        q.mzxml=dbfile
+        q.mz_precision=post['mz_precision']
+        q.ms_intensity_cutoff=post['ms_intensity_cutoff']
+        q.msms_intensity_cutoff=post['msms_intensity_cutoff']
+        q.ionisation=post['ionisation']
+        q.structures=post['structures']
+        q.n_reaction_steps=post['n_reaction_steps']
+        q.metabolism_types=post['metabolism_types'].split(', ')
+        q.max_broken_bonds=post['max_broken_bonds']
+        q.abs_peak_cutoff=post['abs_peak_cutoff']
+        q.rel_peak_cutoff=post['rel_peak_cutoff']
+        q.precursor_mz_precision=post['precursor_mz_precision']
+        q.use_msms_only=post['use_msms_only']
+        q.use_fragmentation=post['use_fragmentation']
+
         request = testing.DummyRequest(post=post)
 
-        from magmaweb.views import home, job_factory
+        from magmaweb.views import home
         response = home(request)
 
-        self.assertEqual(response.body, '{"success": true, "jobid": "'+str(job.id)+'"}')
-        self.assertEqual(response.content_type, 'text/html')
+        self.assertEqual(response.body, '{"success": true, "jobid": "'+str(jobid)+'"}')
+        self.assertEqual(response.content_type, 'text/html') # required for extjs iframe file upload
         mocked_jobfactory.assert_called_with(request)
-        jobf.fromQuery.assert_called_with(dbfile)
+        jobf.submitQuery.assert_called_with(q)
+        dbfile.close()
 
 def mock_job():
     """ Returns a mocked magmaweb.job.Job which can be used as return value in a patched fetch_job()
@@ -145,6 +178,29 @@ class ResultsView(unittest.TestCase):
         self.assertEqual(response, dict(jobid=job.id, run='bla', maxmslevel=3))
         job.runInfo.assert_called_with()
         job.maxMSLevel.assert_called_with()
+
+class StatusView(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+
+    def tearDown(self):
+        testing.tearDown()
+
+    @patch('magmaweb.views.job_factory')
+    def test_it(self, jf):
+        from magmaweb.job import JobFactory
+        mjf = Mock(JobFactory)
+        mjf.state = Mock(return_value='STOPPED')
+        jf.return_value = mjf
+        request = testing.DummyRequest()
+        jobid = '3ad25048-26f6-11e1-851e-00012e260790'
+        request.matchdict['jobid'] = jobid
+
+        from magmaweb.views import job_status
+        response = job_status(request)
+
+        self.assertEqual(response, dict(status='STOPPED', jobid=jobid))
+        mjf.state.assert_called_once_with(jobid)
 
 class MetabolitesView(unittest.TestCase):
     def setUp(self):

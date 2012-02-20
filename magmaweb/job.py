@@ -4,6 +4,7 @@ import csv
 import StringIO
 import urllib2
 import json
+
 from sqlalchemy import create_engine, and_
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, aliased
@@ -30,17 +31,53 @@ class JobNotFound(Exception):
         self.jobid = jobid
 
 class JobQuery(object):
-    metabolites = None
+    structures = None
     mzxml_filename = None
     mzxml_file = None
     n_reaction_steps = None
-    use_phase1 = None
-    use_phase2 = None
+    metabolism_types = None
+    max_broken_bonds = None
     ionisation = None
     use_fragmentation = None
+    use_msms_only = None
     ms_intensity_cutoff = None
     msms_intensity_cutoff = None
     mz_precision = None
+    precursor_mz_precision = None
+    abs_peak_cutoff = None
+    rel_peak_cutoff = None
+
+    def __eq__(self, other):
+        """ Compares all attributes except file objects"""
+        return (
+                self.structures == other.structures
+                and
+                self.mzxml_filename == other.mzxml_filename
+                and
+                self.n_reaction_steps == other.n_reaction_steps
+                and
+                self.metabolism_types == other.metabolism_types
+                and
+                self.max_broken_bonds == other.max_broken_bonds
+                and
+                self.ionisation == other.ionisation
+                and
+                self.use_fragmentation == other.use_fragmentation
+                and
+                self.use_msms_only == other.use_msms_only
+                and
+                self.abs_peak_cutoff == other.abs_peak_cutoff
+                and
+                self.rel_peak_cutoff == other.rel_peak_cutoff
+                and
+                self.ms_intensity_cutoff == other.ms_intensity_cutoff
+                and
+                self.msms_intensity_cutoff == other.msms_intensity_cutoff
+                and
+                self.mz_precision == other.mz_precision
+                and
+                self.precursor_mz_precision == other.precursor_mz_precision
+                )
 
 class JobFactory(object):
     """ Factory which can create jobs """
@@ -135,28 +172,26 @@ class JobFactory(object):
 
         # copy metabolites string to file
         metsfile = file(os.path.join(jobdir, 'smiles.txt'), 'w')
-        metsfile.write(query.metabolites)
+        metsfile.write(query.structures)
         metsfile.close()
 
-        # call job manager
-        # {"jobdir":"/tmp/jobdir", "jobtype":"mzxmllocal", "arguments":{
-        # "precision":"0.01", "mscutoff":"2e5", "msmscutoff":"0.1",
-        # "ionisation":"1", "nsteps":"2", "phase":"12" }}
-        phase = ''
-        if (query.use_phase1):
-            phase+='1'
-        if (query.use_phase1):
-            phase+='2'
         body = {
                 'jobdir': jobdir,
                 'jobtype': "mzxmllocal",
                 'arguments': {
-                              "precision" : query.mz_precision,
-                              "mscutoff": query.ms_intensity_cutoff,
-                              "msmscutoff": query.ms_intensity_cutoff,
+                              "mzxml_filename": query.mzxml_filename,
+                              "n_reaction_steps": query.n_reaction_steps,
+                              "metabolism_types": query.metabolism_types,
+                              "max_broken_bonds": query.max_broken_bonds,
                               "ionisation": query.ionisation,
-                              "nsteps": query.n_reaction_steps,
-                              "phase": phase
+                              "use_fragmentation": query.use_fragmentation,
+                              "use_msms_only": query.use_msms_only,
+                              "ms_intensity_cutoff": query.ms_intensity_cutoff,
+                              "msms_intensity_cutoff": query.msms_intensity_cutoff,
+                              "mz_precision" : query.mz_precision,
+                              "precursor_mz_precision" : query.precursor_mz_precision,
+                              "abs_peak_cutoff": query.abs_peak_cutoff,
+                              "rel_peak_cutoff": query.rel_peak_cutoff
                               }
                 }
         self.submitJob2Manager(body)
@@ -164,9 +199,10 @@ class JobFactory(object):
         return jobid
 
     def state(self, id):
+        """ Returns state of job, see ibis org.gridlab.gat.resources.Job JobState enum for possible states."""
         try:
             jobstatefile = open(os.path.join(self.id2jobdir(id), self.jobstatefilename))
-            jobstate = jobstatefile.readline()
+            jobstate = jobstatefile.readline().strip()
             jobstatefile.close()
             return jobstate
         except IOError:

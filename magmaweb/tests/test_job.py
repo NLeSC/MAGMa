@@ -190,11 +190,15 @@ class JobFactoryTestCase(unittest.TestCase):
         q.ionisation = '1'
         q.ms_intensity_cutoff = 2e5
         q.msms_intensity_cutoff = 0.1
-        q.use_phase1 = True
-        q.use_phase2 = True
         q.use_fragmentation = True
+        q.abs_peak_cutoff = 1000
+        q.rel_peak_cutoff = 0.01
+        q.precursor_mz_precision = 0.001
+        q.use_msms_only = True
+        q.max_broken_bonds = 4
         q.mz_precision = 0.001
-        q.metabolites = 'C1CCCC1|comp1'
+        q.metabolism_types = [ 'phase1', 'phase2' ]
+        q.structures = 'C1CCCC1|comp1'
         q.mzxml_file = tempfile.NamedTemporaryFile()
         q.mzxml_file.write('foo')
         q.mzxml_file.flush();
@@ -211,19 +215,27 @@ class JobFactoryTestCase(unittest.TestCase):
         )
         self.assertEqual(
             open(os.path.join(self.factory.id2jobdir(jobid), 'smiles.txt')).read(),
-            q.metabolites,
+            q.structures,
             'query mzxml file content has been copied to job dir'
         )
+        query = q
         self.factory.submitJob2Manager.assert_called_with({
                 'jobdir': os.path.join(self.factory.id2jobdir(jobid)),
                 'jobtype': "mzxmllocal",
                 'arguments': {
-                              "precision" : q.mz_precision,
-                              "mscutoff": q.ms_intensity_cutoff,
-                              "msmscutoff": q.ms_intensity_cutoff,
-                              "ionisation": q.ionisation,
-                              "nsteps": q.n_reaction_steps,
-                              "phase": '12'
+                              "mzxml_filename": query.mzxml_filename,
+                              "n_reaction_steps": query.n_reaction_steps,
+                              "metabolism_types": query.metabolism_types,
+                              "max_broken_bonds": query.max_broken_bonds,
+                              "ionisation": query.ionisation,
+                              "use_fragmentation": query.use_fragmentation,
+                              "use_msms_only": query.use_msms_only,
+                              "ms_intensity_cutoff": query.ms_intensity_cutoff,
+                              "msms_intensity_cutoff": query.msms_intensity_cutoff,
+                              "mz_precision" : query.mz_precision,
+                              "precursor_mz_precision" : query.precursor_mz_precision,
+                              "abs_peak_cutoff": query.abs_peak_cutoff,
+                              "rel_peak_cutoff": query.rel_peak_cutoff
                               }
                 })
 
