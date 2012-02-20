@@ -2,15 +2,15 @@
 
 import sys,base64,subprocess
 import sqlite3,struct
+import pkg_resources
 from rdkit import Chem, Geometry
 from rdkit.Chem import AllChem, Descriptors
 from lxml import etree
 from sqlalchemy import create_engine,and_,desc
-sys.path.append('/home/ridderl/workspace/sygma_pyramid/Sygma/sygma')
-from models import DBSession, Base, Metabolite, Scan, Peak, Fragment, Run
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
+from models import DBSession, Base, Metabolite, Scan, Peak, Fragment, Run
 
 """
 RDkit dependencies:
@@ -170,20 +170,24 @@ class StructureEngine:
         except:
             print 'Metabolite record ',metid,' does not exist.'
             return
-        exec_reactor="/home/ridderl/rdkit_stuff/reactor -as -f 0.15 -m "+str(nsteps)
+        exec_reactor=pkg_resources.resource_filename( #@UndefinedVariable
+                                                      'magma', 'script/reactor')
+        exec_reactor+=" -as -f 0.15 -m "+str(nsteps)
         metabolism_files={
-            "phase1":"/home/ridderl/rdkit_stuff/sygma_rules.phase1.smirks",
-            "phase2":"/home/ridderl/rdkit_stuff/sygma_rules.phase2.smirks"
+            "phase1": pkg_resources.resource_filename( #@UndefinedVariable
+                                                       'magma', "data/sygma_rules.phase1.smirks"),
+            "phase2": pkg_resources.resource_filename( #@UndefinedVariable
+                                                       'magma', "data/sygma_rules.phase2.smirks")
             }
         for m in metabolism:
             if m in metabolism_files:
                 exec_reactor=exec_reactor+" -q "+metabolism_files[m]
         sys.stderr.write(exec_reactor + '\n')
-    
+
         reactor=subprocess.Popen(exec_reactor, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
         reactor.stdin.write(parent.mol+'$$$$\n')
         reactor.stdin.close()
-        
+
         line=reactor.stdout.readline()
         while line != "":
             name=line
@@ -377,7 +381,7 @@ class AnnotateEngine:
                     #    if childscan.precursorintensity >= cutoff:
                     #        self.peaks.append(peaktype(childscan.precursormz,childscan.precursorintensity,self.scanid,run))
                     #        self.peaks[-1].addchildscan(childscan)
-        
+
         class PeakType:
             def __init__(self,mz,intensity,scanid):
                 self.mz=mz
@@ -409,7 +413,7 @@ class AnnotateEngine:
     def search_all_structures(self):
         for structure in self.db_session.query(Metabolite).all():
             self.search_structure(structure)
-    
+
     def search_structure(self,structure):
         FragmentFormID={}
         FragmentForms=[] # index = a elem formula (type=list)
@@ -425,7 +429,7 @@ class AnnotateEngine:
         bondscore=[]
         mol=Chem.MolFromMolBlock(str(structure.mol))
         me=self
-    
+
         class hittype:
             def __init__(self,peak,fragment,deltaH):
                 self.mass = FragmentMass[FragmentFormID[fragment[0]][0]]
@@ -500,7 +504,7 @@ class AnnotateEngine:
                     for hit in self.besthits:
                         if hit != None: # still need to work out how to deal with missed fragments
                             hit.writeFragments(metid,currentFragid)
-    
+
         def grow(fragment,form):
             NewFragments=[]
             for bond in range(len(bondbits)):
@@ -516,15 +520,15 @@ class AnnotateEngine:
                     if NewFragment not in FragmentFormID:
                         NewForm=map(int.__add__,FragmentForms[FragmentFormID[fragment][0]],atomicForm[NewFragment^fragment])
                         grow(NewFragment,NewForm)
-    
+
         def calculateMass(form):
             mass=0.0
             for x in range(len(form)):
                 mass+=form[x]*mims[atomicnums[x]]
             return mass
-    
+
         # for peak in self.db_session.query(Peak).filter(Scan.mslevel)==1.filter(Peak.intensity>MSfilter)
-        
+
         for scan in self.scans:
             for peak in scan.peaks:
                 if not (self.use_msms_only and peak.childscan==None):
@@ -552,7 +556,7 @@ class AnnotateEngine:
                                 bondscore.append(typew[x.GetBondType()]*ringw[x.IsInRing()]*\
                                                       heterow[x.GetBeginAtom().GetAtomicNum() != 6 or \
                                                                  x.GetEndAtom().GetAtomicNum() != 6])
-    
+
                             sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+str(structure.reactionsequence)+'\n')
                             sys.stderr.write('Mim: '+str(structure.mim+Hmass))
                             for atom in atombits:
@@ -570,21 +574,21 @@ class AnnotateEngine:
                         fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
                         if fragid == None:
                             fragid = 0
-    
+
                         sys.stderr.write('Scan: '+str(scan.scanid)+' - Mz: '+str(peak.mz)+' - ')
                         # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
                         hits.append(hittype(peak,[2**len(atombits)-1,0],deltaH))
                         sys.stderr.write('Score: '+str(hits[-1].score)+'\n')
                         hits[-1].writeFragments(structure.metid,0)
         self.db_session.commit()
-    
+
     def getMetaboliteScores(self,scanid):
         return self.db_session.query(Fragment.score,Metabolite.reactionsequence).\
             join((Metabolite,and_(Fragment.metid==Metabolite.metid))).\
             filter(Fragment.parentfragid==0).\
             filter(Fragment.scanid==scanid).\
             all()
-    
+
     def printSDF(self,output):
         metabolites=self.db_session.query(Metabolite).order_by(desc(Metabolite.probability)).all()
         # for m in sorted(metabolites, key=lambda metabolite: metabolite.probability, reverse=True):
