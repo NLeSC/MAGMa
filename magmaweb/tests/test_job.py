@@ -31,7 +31,8 @@ def populateTestingDB(session):
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
         mz_precision=0.01, use_msms_only=True,
         ms_filename = 'F123456.mzxml', abs_peak_cutoff=1000,
-        rel_peak_cutoff=0.001, max_ms_level=3
+        rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=0.01,
+        max_broken_bonds=4
     ))
     session.add(Metabolite(
         metid=72, mol='Molfile', level=0, probability=1.0,
@@ -306,13 +307,15 @@ class JobTestCase(unittest.TestCase):
         self.assertEqual(runInfo.n_reaction_steps, 2)
         self.assertEqual(runInfo.metabolism_types, "phase1,phase2")
 
-        self.assertEqual(runInfo.max_ms_level, 3)
         self.assertEqual(runInfo.ms_filename, 'F123456.mzxml')
         self.assertEqual(runInfo.abs_peak_cutoff, 1000)
         self.assertEqual(runInfo.rel_peak_cutoff, 0.001)
+        self.assertEqual(runInfo.max_ms_level, 3)
+        self.assertEqual(runInfo.precursor_mz_precision, 0.01)
 
         self.assertEqual(runInfo.ionisation_mode, -1)
         self.assertEqual(runInfo.use_fragmentation, True)
+        self.assertEqual(runInfo.max_broken_bonds, 4)
         self.assertEqual(runInfo.ms_intensity_cutoff, 200000.0)
         self.assertEqual(runInfo.msms_intensity_cutoff, 0.5)
         self.assertEqual(runInfo.mz_precision, 0.01)
