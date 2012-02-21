@@ -19,19 +19,16 @@ import org.gridlab.gat.security.CertificateSecurityContext;
 /**
  * REST webservice to submit magma jobs to grid.
  *
- * mkdir /tmp/jobdir put inputfiles in /tmp/jobdir curl -d
- * '{"jobdir":"/tmp/jobdir", "jobtype":"sleep"}' -H 'Content-Type:
- * application/json' http://localhost:9998/job curl -d '{"jobdir":"/tmp/jobdir",
- * "jobtype":"mzxmllocal", "arguments":{ "precision":"0.01", "mscutoff":"2e5",
- * "msmscutoff":"0.1", "ionisation":"1", "nsteps":"2", "phase":"12" }}' -H
- * 'Content-Type: application/json' http://localhost:9998/job curl -d
- * '{"jobdir":"/tmp/jobdir", "jobtype":"mzxmlremote", "arguments":{
- * "precision":"0.01", "mscutoff":"2e5", "msmscutoff":"0.1", "ionisation":"1",
- * "nsteps":"2", "phase":"12" }}' -H 'Content-Type: application/json'
- * http://localhost:9998/job
+ * Example client usage
+ * <pre>
+ * mkdir /tmp/jobdir put inputfiles in /tmp/jobdir
+ * curl -d '{"jobdir":"/tmp/jobdir/","executable":"/bin/wc","arguments":["-l","/etc/passwd"],"stdout":"nrofusers.txt"}' -H 'Content-Type: application/json' http://localhost:9998/job
+ * </pre>
  *
- * curl -v --data @src/test/resources/submit.request.json -H 'Content-Type:
- * application/json' http://localhost:9998/job
+ * Example client call for magma (prestage files must be present):
+ * <pre>
+ * curl -d '{"jobdir":"/tmp/jobdir/","poststaged":["results.db"],"stderr":"stderr.txt","executable":"/bin/sh","prestaged":["/home/stefanv/workspace/magmajobmanager/magma.sh","/home/stefanv/workspace/magmajobmanager/Magma-1.1.tar.gz","data.mzxml","smiles.txt"],"arguments":["magma.sh","allinone","-n","1","data.mzxml","smiles.txt","results.db"],"stdout":"stdout.txt"}' -H 'Content-Type: application/json' http://localhost:9998/job
+ * </pre>
  *
  * @author Stefan Verhoeven <s.verhoeven@esciencecenter.nl>
  *
