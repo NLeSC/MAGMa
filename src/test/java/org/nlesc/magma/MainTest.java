@@ -58,7 +58,8 @@ public class MainTest extends TestCase {
         jobdirfile.mkdir();
 
         JSONObject requestMsg = new JSONObject();
-        requestMsg.put("jobdir", jobdir).put("jobtype", "sleep");
+        String[] args = { "1" };
+        requestMsg.put("jobdir", jobdir).put("executable", "sleep").put("arguments", args);
 
         JSONObject responseMsg = r.path("job").post(JSONObject.class, requestMsg);
 

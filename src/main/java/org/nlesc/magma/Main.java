@@ -19,13 +19,21 @@ import org.gridlab.gat.security.CertificateSecurityContext;
 /**
  * REST webservice to submit magma jobs to grid.
  *
- * mkdir /tmp/jobdir
- * put inputfiles in /tmp/jobdir
- * curl -d '{"jobdir":"/tmp/jobdir", "jobtype":"sleep"}' -H 'Content-Type: application/json' http://localhost:9998/job
- * curl -d '{"jobdir":"/tmp/jobdir", "jobtype":"mzxmllocal", "arguments":{ "precision":"0.01", "mscutoff":"2e5", "msmscutoff":"0.1", "ionisation":"1", "nsteps":"2", "phase":"12" }}' -H 'Content-Type: application/json' http://localhost:9998/job
- * curl -d '{"jobdir":"/tmp/jobdir", "jobtype":"mzxmlremote", "arguments":{ "precision":"0.01", "mscutoff":"2e5", "msmscutoff":"0.1", "ionisation":"1", "nsteps":"2", "phase":"12" }}' -H 'Content-Type: application/json' http://localhost:9998/job
+ * mkdir /tmp/jobdir put inputfiles in /tmp/jobdir curl -d
+ * '{"jobdir":"/tmp/jobdir", "jobtype":"sleep"}' -H 'Content-Type:
+ * application/json' http://localhost:9998/job curl -d '{"jobdir":"/tmp/jobdir",
+ * "jobtype":"mzxmllocal", "arguments":{ "precision":"0.01", "mscutoff":"2e5",
+ * "msmscutoff":"0.1", "ionisation":"1", "nsteps":"2", "phase":"12" }}' -H
+ * 'Content-Type: application/json' http://localhost:9998/job curl -d
+ * '{"jobdir":"/tmp/jobdir", "jobtype":"mzxmlremote", "arguments":{
+ * "precision":"0.01", "mscutoff":"2e5", "msmscutoff":"0.1", "ionisation":"1",
+ * "nsteps":"2", "phase":"12" }}' -H 'Content-Type: application/json'
+ * http://localhost:9998/job
  *
- * @author stefanv
+ * curl -v --data @src/test/resources/submit.request.json -H 'Content-Type:
+ * application/json' http://localhost:9998/job
+ *
+ * @author Stefan Verhoeven <s.verhoeven@esciencecenter.nl>
  *
  */
 public class Main {
@@ -39,7 +47,8 @@ public class Main {
 
     protected static HttpServer startServer() throws IOException {
         System.out.println("Starting grizzly...");
-        ResourceConfig rc = new PackagesResourceConfig("org.nlesc.magma.resources");
+        ResourceConfig rc = new PackagesResourceConfig(
+                "org.nlesc.magma.resources");
         return GrizzlyServerFactory.createHttpServer(BASE_URI, rc);
     }
 
@@ -50,7 +59,8 @@ public class Main {
      * @throws IOException
      * @throws URISyntaxException
      */
-    public static void main(String[] args) throws IOException, URISyntaxException {
+    public static void main(String[] args) throws IOException,
+            URISyntaxException {
         setupGATContext();
         HttpServer httpServer = startServer();
         System.out.println(String.format("MaGMA Job manager available at "
@@ -65,14 +75,17 @@ public class Main {
     protected static String getPassphrase() {
         // console() does not work within Eclipse
         Console cons = System.console();
-        return new String(cons.readPassword("Enter password for %s (leave empty to use localhost broker):", "Glite certificate"));
+        return new String(cons.readPassword(
+                "Enter password for %s (leave empty to use localhost broker):",
+                "Glite certificate"));
     }
 
     protected static void setupGATContext() throws URISyntaxException {
         CertificateSecurityContext securityContext = new CertificateSecurityContext(
-                new org.gridlab.gat.URI(System.getProperty("user.home") + "/.globus/userkey.pem"),
-                new org.gridlab.gat.URI(System.getProperty("user.home") + "/.globus/usercert.pem"),
-                getPassphrase());
+                new org.gridlab.gat.URI(System.getProperty("user.home")
+                        + "/.globus/userkey.pem"), new org.gridlab.gat.URI(
+                        System.getProperty("user.home")
+                                + "/.globus/usercert.pem"), getPassphrase());
 
         // Store this SecurityContext in a GATContext
         GATContext context = new GATContext();
@@ -81,7 +94,8 @@ public class Main {
         context.addPreference("VirtualOrganisation", "nlesc.nl");
         context.addPreference("vomsServerUrl", "voms.grid.sara.nl");
         context.addPreference("vomsServerPort", "30025");
-        context.addPreference("vomsHostDN", "/O=dutchgrid/O=hosts/OU=sara.nl/CN=voms.grid.sara.nl");
+        context.addPreference("vomsHostDN",
+                "/O=dutchgrid/O=hosts/OU=sara.nl/CN=voms.grid.sara.nl");
         context.addPreference("LfcServer", "lfc.grid.sara.nl");
         context.addPreference("bdiiURI", "ldap://bdii.grid.sara.nl:2170");
 

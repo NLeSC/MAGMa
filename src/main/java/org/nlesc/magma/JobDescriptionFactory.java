@@ -1,6 +1,8 @@
 package org.nlesc.magma;
 
 import org.gridlab.gat.GAT;
+import org.gridlab.gat.GATObjectCreationException;
+import org.gridlab.gat.io.File;
 import org.gridlab.gat.resources.JobDescription;
 import org.gridlab.gat.resources.SoftwareDescription;
 import org.nlesc.magma.entities.JobSubmitRequest;
@@ -8,86 +10,32 @@ import org.nlesc.magma.entities.JobSubmitRequest;
 public class JobDescriptionFactory {
 
     /**
-     * Based on jobsubmission.jobtype returns a job description.
+     * Convert requested jobsubmission to JobDescription which can be submitted
      *
-     * @param jobsubmission Job submission request
+     * @param jobsubmission
      * @return JobDescription
-     * @throws Exception when jobtype is not implemented
+     * @throws GATObjectCreationException
      */
-    public JobDescription getJobDescription(JobSubmitRequest jobsubmission) throws Exception {
-        if (jobsubmission.jobtype.equals("sleep")) {
-                SoftwareDescription sd = new SoftwareDescription();
-                // simulate job by sleeping a while
-                sd.setExecutable("/bin/sleep");
-                String[] args = {"30"};
-                sd.setArguments(args);
+    public JobDescription getJobDescription(
+            JobSubmitRequest jobsubmission) throws GATObjectCreationException {
 
-                JobDescription jd = new JobDescription(sd);
-                return jd;
-        } else if (jobsubmission.jobtype.equals("mzxmllocal")) {
-
-            SoftwareDescription sd = new SoftwareDescription();
-            sd.setExecutable("/bin/sh");
-            String [] args = {
-                    "mscore_mzxml-local.sh", // expects mscore_mzxml to be in path
-                    "allinone",
-                    "-p", jobsubmission.arguments.precision,
-                    "-c", jobsubmission.arguments.mscutoff,
-                    "-d", jobsubmission.arguments.msmscutoff,
-                    "-i", jobsubmission.arguments.ionisation,
-                    "-n", jobsubmission.arguments.nsteps,
-                    "-b", jobsubmission.arguments.phase,
-                    // input files
-                    jobsubmission.jobdir + "/data.mzxml",
-                    jobsubmission.jobdir + "/smiles.txt",
-                    // output file
-                    jobsubmission.jobdir + "/results.db"
-            };
-            sd.setArguments(args);
-
-            sd.setStdout(GAT.createFile(jobsubmission.jobdir + "/stdout.txt"));
-            sd.setStderr(GAT.createFile(jobsubmission.jobdir + "/stderr.txt"));
-
-            sd.addPreStagedFile(GAT.createFile("mscore_mzxml-local.sh"));
-
-            JobDescription jd = new JobDescription(sd);
-            return jd;
-        } else if (jobsubmission.jobtype.equals("mzxmlremote")) {
-            SoftwareDescription sd = new SoftwareDescription();
-
-            sd.setExecutable("/bin/sh");
-            String [] args = {
-                    "mscore_mzxml.sh", // expects mscore_mzxml to be in path
-                    "allinone",
-                    "-p", jobsubmission.arguments.precision,
-                    "-c", jobsubmission.arguments.mscutoff,
-                    "-d", jobsubmission.arguments.msmscutoff,
-                    "-i", jobsubmission.arguments.ionisation,
-                    "-n", jobsubmission.arguments.nsteps,
-                    "-b", jobsubmission.arguments.phase,
-                    // input files
-                    "data.mzxml",
-                    "smiles.txt",
-                    // output file
-                    "results.db"
-            };
-            sd.setArguments(args);
-
-            sd.setStdout(GAT.createFile(jobsubmission.jobdir + "/stdout.txt"));
-            sd.setStderr(GAT.createFile(jobsubmission.jobdir + "/stderr.txt"));
-
-            sd.addPreStagedFile(GAT.createFile("Magma-1.1.tar.gz"));
-            sd.addPreStagedFile(GAT.createFile("mscore_mzxml.sh"));
-            sd.addPreStagedFile(GAT.createFile(jobsubmission.jobdir + "/data.mzxml"));
-            sd.addPreStagedFile(GAT.createFile(jobsubmission.jobdir + "/smiles.sd"));
-
-            sd.addPostStagedFile(GAT.createFile("results.db"),
-                    GAT.createFile(jobsubmission.jobdir + "/results.db"));
-
-            JobDescription jd = new JobDescription(sd);
-            return jd;
-        } else {
-            throw new Exception("Unknown job type: '" + jobsubmission.jobtype + "'");
+        SoftwareDescription sd = new SoftwareDescription();
+        sd.setExecutable(jobsubmission.executable);
+        sd.setArguments(jobsubmission.arguments);
+        sd.setStderr(GAT.createFile(jobsubmission.jobdir + jobsubmission.stderr));
+        sd.setStdout(GAT.createFile(jobsubmission.jobdir + jobsubmission.stdout));
+        for (String prestage: jobsubmission.prestaged) {
+            File prestagefile = GAT.createFile(prestage);
+            if (!prestagefile.isAbsolute()) {
+                prestagefile = GAT.createFile(jobsubmission.jobdir + prestage);
+            }
+            sd.addPreStagedFile(prestagefile);
         }
+        for (String poststage: jobsubmission.poststaged) {
+            File poststagefile = GAT.createFile(poststage);
+            sd.addPostStagedFile(poststagefile, GAT.createFile(jobsubmission.jobdir + poststage));
+        }
+
+        return new JobDescription(sd);
     }
 }

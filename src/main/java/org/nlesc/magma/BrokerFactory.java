@@ -11,7 +11,9 @@ import org.gridlab.gat.URI;
 import org.gridlab.gat.resources.ResourceBroker;
 
 /**
- * @author stefanv Toggles between local and glite broker
+ * Factory to create resource brokers.
+ *
+ * @author Stefan Verhoeven <s.verhoeven@esciencecenter.nl>
  *
  */
 public class BrokerFactory {

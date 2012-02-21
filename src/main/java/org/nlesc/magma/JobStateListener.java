@@ -9,6 +9,12 @@ import org.gridlab.gat.monitoring.MetricListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Listener on 'job.state' metric which writes state to file in job directory.
+ *
+ * @author Stefan Verhoeven <s.verhoeven@esciencecenter.nl>
+ *
+ */
 public class JobStateListener implements MetricListener {
     protected final static Logger logger = LoggerFactory
             .getLogger(JobStateListener.class);
@@ -16,6 +22,7 @@ public class JobStateListener implements MetricListener {
 
     /**
      * Getter for job directory
+     *
      * @return File
      */
     public File getJobdir() {
@@ -24,8 +31,10 @@ public class JobStateListener implements MetricListener {
 
     /**
      * Constructor
+     *
      * @param jobdir
-     * @throws IOException when jobdir is no directory
+     * @throws IOException
+     *             when jobdir is no directory
      */
     public JobStateListener(File jobdir) throws IOException {
         if (!jobdir.isDirectory()) {
@@ -34,6 +43,9 @@ public class JobStateListener implements MetricListener {
         this.jobdir = jobdir;
     }
 
+    /**
+     * Each time a event is fired the event.value is written to jobdir/job.state file.
+     */
     @Override
     public void processMetricEvent(MetricEvent event) {
         // write job status into file in jobdir so website can report it to user

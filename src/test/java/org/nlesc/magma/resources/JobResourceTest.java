@@ -56,8 +56,10 @@ public class JobResourceTest extends TestCase {
         File jobdirfile = GAT.createFile(System.getProperty("java.io.tmpdir")
                 + "/" + UUID.randomUUID().toString());
         jobdirfile.mkdir();
+        String[] args = { "1" };
+        String[] stage = {};
         JobSubmitRequest in = new JobSubmitRequest(jobdirfile.getPath(),
-                "sleep");
+                "sleep", args, stage, stage, "stderr.txt", "stdout.txt");
 
         JobSubmitResponse out = resource.submitJob(in);
 
