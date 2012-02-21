@@ -180,24 +180,32 @@ class JobFactory(object):
 
         body = {
                 'jobdir': jobdir,
-                'jobtype': "mzxmllocal",
-                'arguments': {
-                              "mzxml_filename": query.mzxml_filename,
-                              "n_reaction_steps": query.n_reaction_steps,
-                              "metabolism_types": query.metabolism_types,
-                              "max_broken_bonds": query.max_broken_bonds,
-                              "ionisation_mode": query.ionisation_mode,
-                              "use_fragmentation": query.use_fragmentation,
-                              "use_msms_only": query.use_msms_only,
-                              "ms_intensity_cutoff": query.ms_intensity_cutoff,
-                              "msms_intensity_cutoff": query.msms_intensity_cutoff,
-                              "mz_precision" : query.mz_precision,
-                              "precursor_mz_precision" : query.precursor_mz_precision,
-                              "abs_peak_cutoff": query.abs_peak_cutoff,
-                              "rel_peak_cutoff": query.rel_peak_cutoff,
-                              "max_ms_level": query.max_ms_level
-                              }
-                }
+                'executable': "/bin/sh",
+                'prestaged': [
+                              # TODO get rid of hardcoded paths
+                              "/home/stefanv/workspace/magmajobmanager/magma.sh",
+                              "/home/stefanv/workspace/magmajobmanager/Magma-1.1.tar.gz",
+                              'data.mzxml', 'smiles.txt'
+                              ],
+                "poststaged": ["results.db"],
+                "stderr": "stderr.txt",
+                "stdout": "stdout.txt",
+                'arguments': [
+                              "--mz_precision", query.mz_precision,
+                              "--ms_intensity_cutoff", query.ms_intensity_cutoff,
+                              "--msms_intensity_cutoff", query.msms_intensity_cutoff,
+                              "--ionisation_mode", query.ionisation_mode,
+                              "--n_reaction_steps", query.n_reaction_steps,
+                              "--metabolism_types", " ".join(query.metabolism_types),
+                              "--max_broken_bonds", query.max_broken_bonds,
+                              "--abs_peak_cutoff", query.abs_peak_cutoff,
+                              "--rel_peak_cutoff", query.rel_peak_cutoff,
+                              "--precursor_mz_precision", query.precursor_mz_precision,
+                              "--use_msms_only", query.use_msms_only,
+                              "--use_fragmentation", query.use_fragmentation,
+                              'data.mzxml', 'smiles.txt', 'results.db'
+                              ]
+                 }
         self.submitJob2Manager(body)
 
         return jobid
