@@ -9,7 +9,7 @@ except IOError:
 
 setup(
     name='Magma',
-    version="1.0",
+    version="1.1",
     license='commercial',
     author='Lars Ridder',
     author_email='lars.ridder@esciencecenter.nl>',
@@ -17,7 +17,7 @@ setup(
     description='Ms Annotation based on in silico Generated Metabolites',
     long_description=README,
     packages=find_packages(),
-    install_requires=[ 'sqlalchemy', 'zope.sqlalchemy', 'lxml'],
+    install_requires=[ 'sqlalchemy', 'lxml'],
     dependency_links=[ 'http://www.rdkit.org' ],
     package_data={
         'magma': ['data/*.smirks', 'script/reactor'],

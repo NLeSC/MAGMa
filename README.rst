@@ -15,6 +15,7 @@ On head node ::
    pip install bbfreeze
    python setup.py bdist_bbfreeze
    cd dist
+   chmod +x dist/Magma-<version>/Magma-<version>-py2.7.egg/magma/script/reactor
    tar -zcf Magma-<version>.tar.gz Magma-<version>
 
 On compute node ::
