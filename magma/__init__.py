@@ -10,7 +10,7 @@ from sqlalchemy import create_engine,and_,desc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
-from models import DBSession, Base, Metabolite, Scan, Peak, Fragment, Run
+from models import Base, Metabolite, Scan, Peak, Fragment, Run
 
 """
 RDkit dependencies:
@@ -60,7 +60,6 @@ Hmass=mims[1]     # Mass of hydrogen atom
 #ionisation = -1  # positive ionisation mode TODO move to class
 #useMSMSonly=True # TODO move to class
 #maxMSlevel = 2 # TODO move to class
-
 
 class MagmaSession:
     def __init__(self,db_name):

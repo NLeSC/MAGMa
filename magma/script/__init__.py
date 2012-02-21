@@ -163,3 +163,7 @@ class MagmaCommand(object):
         """Parse arguments and runs subcommand"""
         args = self.parser.parse_args()
         return args.func(args)
+
+
+if __name__ == "__main__":
+    main()
