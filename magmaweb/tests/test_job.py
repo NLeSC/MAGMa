@@ -224,7 +224,7 @@ class JobFactoryTestCase(unittest.TestCase):
         )
         query = q
         self.factory.submitJob2Manager.assert_called_with({
-                'jobdir': os.path.join(self.factory.id2jobdir(jobid)),
+                'jobdir': os.path.join(self.factory.id2jobdir(jobid))+'/',
                 'executable': "/bin/sh",
                 'prestaged': [
                               "/home/stefanv/workspace/magmajobmanager/magma.sh",
@@ -235,6 +235,8 @@ class JobFactoryTestCase(unittest.TestCase):
                 "stderr": "stderr.txt",
                 "stdout": "stdout.txt",
                 'arguments': [
+                              "magma.sh",
+                              "allinone",
                               "--mz_precision", query.mz_precision,
                               "--ms_intensity_cutoff", query.ms_intensity_cutoff,
                               "--msms_intensity_cutoff", query.msms_intensity_cutoff,
@@ -245,9 +247,10 @@ class JobFactoryTestCase(unittest.TestCase):
                               "--abs_peak_cutoff", query.abs_peak_cutoff,
                               "--rel_peak_cutoff", query.rel_peak_cutoff,
                               "--precursor_mz_precision", query.precursor_mz_precision,
-                              "--use_msms_only", query.use_msms_only,
-                              "--use_fragmentation", query.use_fragmentation,
-                              'data.mzxml', 'smiles.txt', 'results.db'
+                              "--use_msms_only",
+                              "--use_fragmentation",
+                              'data.mzxml', 'smiles.txt',
+                              'results.db'
                               ]
                 })
 

@@ -74,18 +74,8 @@ class HomeView(unittest.TestCase):
         response = home(request)
         self.assertEqual(response, {})
 
-    @patch('magmaweb.views.job_factory')
-    def test_post(self, mocked_jobfactory):
-        import uuid
-        jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
-        from magmaweb.job import JobFactory, JobQuery
-        jobf = Mock(JobFactory)
-        jobf.submitQuery.return_value = jobid
-        mocked_jobfactory.return_value = jobf
 
-        import tempfile
-        dbfile = tempfile.NamedTemporaryFile()
-
+    def build_post_request(self, dbfile):
         class FileUpload:
             pass
         post = {
@@ -102,29 +92,46 @@ class HomeView(unittest.TestCase):
                 'rel_peak_cutoff': 0.01,
                 'max_ms_level': 3,
                 'precursor_mz_precision': 0.001,
-                'use_msms_only': 1,
-                'use_fragmentation': 1
+                'use_msms_only': 'on',
+                'use_fragmentation': 'on'
                 }
         post['db'].file = dbfile
-        post['db'].name = dbfile.name
+        post['db'].filename = dbfile.name
 
+        from magmaweb.job import JobQuery
         q = JobQuery()
-        q.mzxml_filename=dbfile.name
-        q.mzxml=dbfile
-        q.mz_precision=post['mz_precision']
-        q.ms_intensity_cutoff=post['ms_intensity_cutoff']
-        q.msms_intensity_cutoff=post['msms_intensity_cutoff']
-        q.ionisation_mode=post['ionisation_mode']
-        q.structures=post['structures']
-        q.n_reaction_steps=post['n_reaction_steps']
-        q.metabolism_types=post['metabolism_types'].split(', ')
-        q.max_broken_bonds=post['max_broken_bonds']
-        q.abs_peak_cutoff=post['abs_peak_cutoff']
-        q.rel_peak_cutoff=post['rel_peak_cutoff']
-        q.max_ms_level=post['max_ms_level']
-        q.precursor_mz_precision=post['precursor_mz_precision']
-        q.use_msms_only=post['use_msms_only']
-        q.use_fragmentation=post['use_fragmentation']
+        q.mzxml_filename = dbfile.name
+        q.mzxml_file = dbfile
+        q.mz_precision = post['mz_precision']
+        q.ms_intensity_cutoff = post['ms_intensity_cutoff']
+        q.msms_intensity_cutoff = post['msms_intensity_cutoff']
+        q.ionisation_mode = post['ionisation_mode']
+        q.structures = post['structures']
+        q.n_reaction_steps = post['n_reaction_steps']
+        q.metabolism_types = post['metabolism_types'].split(', ')
+        q.max_broken_bonds = post['max_broken_bonds']
+        q.abs_peak_cutoff = post['abs_peak_cutoff']
+        q.rel_peak_cutoff = post['rel_peak_cutoff']
+        q.max_ms_level = post['max_ms_level']
+        q.precursor_mz_precision = post['precursor_mz_precision']
+        q.use_msms_only = True
+        q.use_fragmentation = True
+
+        return (post,q)
+
+    @patch('magmaweb.views.job_factory')
+    def test_post(self, mocked_jobfactory):
+        import uuid
+        jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
+        from magmaweb.job import JobFactory
+        jobf = Mock(JobFactory)
+        jobf.submitQuery.return_value = jobid
+        mocked_jobfactory.return_value = jobf
+
+        import tempfile
+        dbfile = tempfile.NamedTemporaryFile()
+
+        (post, q) = self.build_post_request(dbfile)
 
         request = testing.DummyRequest(post=post)
 
@@ -136,6 +143,36 @@ class HomeView(unittest.TestCase):
         mocked_jobfactory.assert_called_with(request)
         jobf.submitQuery.assert_called_with(q)
         dbfile.close()
+
+    @patch('magmaweb.views.job_factory')
+    def test_postUnchecked(self, mocked_jobfactory):
+        import uuid
+        jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
+        from magmaweb.job import JobFactory
+        jobf = Mock(JobFactory)
+        jobf.submitQuery.return_value = jobid
+        mocked_jobfactory.return_value = jobf
+
+        import tempfile
+        dbfile = tempfile.NamedTemporaryFile()
+
+        (post, q) = self.build_post_request(dbfile)
+        del(post['use_msms_only'])
+        q.use_msms_only = False
+        del(post['use_fragmentation'])
+        q.use_fragmentation = False
+
+        request = testing.DummyRequest(post=post)
+
+        from magmaweb.views import home
+        response = home(request)
+
+        self.assertEqual(response.body, '{"success": true, "jobid": "'+str(jobid)+'"}')
+        self.assertEqual(response.content_type, 'text/html') # required for extjs iframe file upload
+        mocked_jobfactory.assert_called_with(request)
+        jobf.submitQuery.assert_called_with(q)
+        dbfile.close()
+
 
 def mock_job():
     """ Returns a mocked magmaweb.job.Job which can be used as return value in a patched fetch_job()

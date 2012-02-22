@@ -179,7 +179,7 @@ class JobFactory(object):
         metsfile.close()
 
         body = {
-                'jobdir': jobdir,
+                'jobdir': jobdir+'/',
                 'executable': "/bin/sh",
                 'prestaged': [
                               # TODO get rid of hardcoded paths
@@ -191,6 +191,8 @@ class JobFactory(object):
                 "stderr": "stderr.txt",
                 "stdout": "stdout.txt",
                 'arguments': [
+                              "magma.sh",
+                              "allinone",
                               "--mz_precision", query.mz_precision,
                               "--ms_intensity_cutoff", query.ms_intensity_cutoff,
                               "--msms_intensity_cutoff", query.msms_intensity_cutoff,
@@ -201,11 +203,15 @@ class JobFactory(object):
                               "--abs_peak_cutoff", query.abs_peak_cutoff,
                               "--rel_peak_cutoff", query.rel_peak_cutoff,
                               "--precursor_mz_precision", query.precursor_mz_precision,
-                              "--use_msms_only", query.use_msms_only,
-                              "--use_fragmentation", query.use_fragmentation,
-                              'data.mzxml', 'smiles.txt', 'results.db'
+                              'data.mzxml', 'smiles.txt',
+                              'results.db'
                               ]
                  }
+        if query.use_msms_only:
+            body['arguments'].insert(-3,"--use_msms_only")
+        if query.use_fragmentation:
+            body['arguments'].insert(-3,"--use_fragmentation")
+
         self.submitJob2Manager(body)
 
         return jobid

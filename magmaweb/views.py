@@ -1,17 +1,9 @@
-import uuid, os, json
+import json
 from pyramid.response import Response
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPNotFound, HTTPFound
-from sqlalchemy.sql.expression import desc, asc
-from sqlalchemy.sql import exists, func
-from sqlalchemy import and_
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import aliased
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from magmaweb.models import DBSession
-from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run, Base
 from magmaweb.job import JobFactory, JobNotFound, JobQuery
+
 """Views for pyramid based web application"""
 
 def fetch_job(request):
@@ -40,22 +32,28 @@ def home(request):
     if (request.method == 'POST'):
         post = request.POST
         q = JobQuery()
-        q.mzxml_filename=post['db'].name
-        q.mzxml=post['db']
+        q.mzxml_filename=post['db'].filename
+        q.mzxml_file=post['db'].file
         q.mz_precision=post['mz_precision']
         q.ms_intensity_cutoff=post['ms_intensity_cutoff']
         q.msms_intensity_cutoff=post['msms_intensity_cutoff']
         q.ionisation_mode=post['ionisation_mode']
         q.structures=post['structures']
         q.n_reaction_steps=post['n_reaction_steps']
-        q.metabolism_types=post['metabolism_types'].split(', ')
+        q.metabolism_types=post['metabolism_types'].split(', ') # Extjs concats multiselect with ', '
         q.max_broken_bonds=post['max_broken_bonds']
         q.abs_peak_cutoff=post['abs_peak_cutoff']
         q.rel_peak_cutoff=post['rel_peak_cutoff']
         q.max_ms_level=post['max_ms_level']
         q.precursor_mz_precision=post['precursor_mz_precision']
-        q.use_msms_only=post['use_msms_only']
-        q.use_fragmentation=post['use_fragmentation']
+        if ('use_msms_only' in post):
+            q.use_msms_only = True
+        else:
+            q.use_msms_only = False
+        if ('use_fragmentation' in post):
+            q.use_fragmentation = True
+        else:
+            q.use_fragmentation = False
 
         jobid = job_factory(request).submitQuery(q)
         return Response(json.dumps({"success": True, "jobid": str(jobid) }), content_type='text/html')
