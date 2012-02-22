@@ -1,5 +1,5 @@
 """
-Sqlalchemy models for msygma result database
+Sqlalchemy models for magma result database
 """
 
 from sqlalchemy import Column
@@ -80,7 +80,7 @@ class Run(Base):
 
     # SyGMa parameters, TODO remove: metabolism type info will be part of reacton sequence of metabolites
     n_reaction_steps = Column(Integer, primary_key=True) #: Maximum number of reaction steps applied to reactants
-    metabolism_types = Column(Unicode) #: Comma separated list of metabolism types, like "phase1"
+    metabolism_types = Column(Unicode) #: Comma separated list of metabolism types, like "phase1,phase2"
 
     # ms data parsing parameters
     ms_filename = Column(Unicode)
