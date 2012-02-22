@@ -7,20 +7,22 @@ pyramid.debug_notfound = false
 pyramid.debug_routematch = false
 pyramid.debug_templates = false
 pyramid.default_locale_name = en
-pyramid.includes = pyramid_tm
-                   pyramid_beaker
+# pyramid.includes = pyramid_debugtoolbar
 
 mako.directories = magmaweb:templates
-session.type = file
-session.data_dir = %(here)s/data/sessions/data
-session.lock_dir = %(here)s/data/sessions/lock
-session.key = magmaweb
-session.secret = la9gaew0YofeKohngeiloof0us8Joo
-session.cookie_expires = false
-session.path = '/magmaweb'
 
 extjsroot = ext-4.0.7
-jobrootdir = %(here)s/data/jobs
+
+jobfactory.root_dir = %(here)s/data/jobs
+# url to which job request is submitted
+jobfactory.submiturl = http://localhost:9998/job
+# filename where job manager will write the state of the job
+jobfactory.state = job.state
+
+# To submit job to grid a script and tarball is required
+# tarball contains frozen magma application and script untars tarball and runs magma application
+jobfactory.script = /home/stefanv/workspace/magmajobmanager/magma.sh
+jobfactory.tarball = /home/stefanv/workspace/magmajobmanager/Magma-1.1.tar.gz
 
 [server:main]
 use = egg:waitress#main

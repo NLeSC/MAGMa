@@ -18,7 +18,13 @@ def fetch_job(request):
 
 def job_factory(request):
     """ Returns a job factory"""
-    return JobFactory(request.registry.settings['jobrootdir'], 'results.db')
+    return JobFactory(
+                      submiturl=request.registry.settings['jobfactory.submiturl'],
+                      jobstatefilename=request.registry.settings['jobfactory.state'],
+                      jobrootdir=request.registry.settings['jobfactory.root_dir'],
+                      job_script=request.registry.settings['jobfactory.script'],
+                      job_tarball=request.registry.settings['jobfactory.tarball'],
+                      )
 
 @view_config(route_name='home', renderer='home.mak')
 def home(request):

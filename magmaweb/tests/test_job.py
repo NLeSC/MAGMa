@@ -111,7 +111,13 @@ class JobFactoryTestCase(unittest.TestCase):
         import tempfile
         self.jobrootdir = tempfile.mkdtemp()
         self.dbname = 'results.db'
-        self.factory = JobFactory(self.jobrootdir, self.dbname)
+        self.factory = JobFactory(
+                                  jobrootdir=self.jobrootdir,
+                                  dbname=self.dbname,
+                                  job_script="magma.sh",
+                                  job_tarball="Magma-1.1.tar.gz",
+                                  submiturl='http://localhost:9998'
+                                  )
 
     def tearDown(self):
         import shutil
@@ -227,8 +233,8 @@ class JobFactoryTestCase(unittest.TestCase):
                 'jobdir': os.path.join(self.factory.id2jobdir(jobid))+'/',
                 'executable': "/bin/sh",
                 'prestaged': [
-                              "/home/stefanv/workspace/magmajobmanager/magma.sh",
-                              "/home/stefanv/workspace/magmajobmanager/Magma-1.1.tar.gz",
+                              "magma.sh",
+                              "Magma-1.1.tar.gz",
                               'data.mzxml', 'smiles.txt'
                               ],
                 "poststaged": ["results.db"],
@@ -266,7 +272,7 @@ class JobFactoryTestCase(unittest.TestCase):
         # TODO replace with ua.assert_called_once_with(<hamcrest matcher>)
         req = ua.call_args[0][0]
         self.assertEquals(req.get_data(), json.dumps(body))
-        self.assertEquals(req.get_full_url(), self.factory.jobmanagerurl+"/job")
+        self.assertEquals(req.get_full_url(), self.factory.submiturl)
         self.assertEquals(req.get_header('Content-type'), 'application/json')
 
     def test_state(self):

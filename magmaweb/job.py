@@ -84,19 +84,35 @@ class JobQuery(object):
 
 class JobFactory(object):
     """ Factory which can create jobs """
-    def __init__(self, jobrootdir, dbname):
+    def __init__(
+                 self, jobrootdir, job_script, job_tarball, dbname = 'results.db',
+                 submiturl='http://localhost:9998', jobstatefilename = 'job.state'
+                 ):
         """
         jobrootdir
             Directory in which jobs are created, retrieved
 
         dbname
-            Sqlite db file name in job directory
+            Sqlite db file name in job directory (default results.db)
+
+        submiturl
+            Url of job manager daemon where job can be submitted (default http://localhost:9998)
+
+        job_script
+            Local absolute location of script which must be run by job manager daemon
+
+        job_tarball
+            Local absolute location of tarball which contains application which job_script will unpack and run
+
+        jobstatefilename
+            Filename where job manager daemon writes job state (default job.state)
         """
-        self.dbname = 'results.db'
         self.jobrootdir = jobrootdir
         self.dbname = dbname
-        self.jobmanagerurl = 'http://localhost:9998'
-        self.jobstatefilename = 'job.state'
+        self.submiturl = submiturl
+        self.jobstatefilename = jobstatefilename
+        self.job_script = job_script
+        self.job_tarball = job_tarball
 
     def fromId(self, jobid):
         """
@@ -144,7 +160,7 @@ class JobFactory(object):
 
     def submitJob2Manager(self, body):
         request = urllib2.Request(
-                                  self.jobmanagerurl+"/job",
+                                  self.submiturl,
                                   json.dumps(body),
                                   { 'Content-Type': 'application/json' }
                                   )
@@ -182,12 +198,11 @@ class JobFactory(object):
                 'jobdir': jobdir+'/',
                 'executable': "/bin/sh",
                 'prestaged': [
-                              # TODO get rid of hardcoded paths
-                              "/home/stefanv/workspace/magmajobmanager/magma.sh",
-                              "/home/stefanv/workspace/magmajobmanager/Magma-1.1.tar.gz",
+                              self.job_script,
+                              self.job_tarball,
                               'data.mzxml', 'smiles.txt'
                               ],
-                "poststaged": ["results.db"],
+                "poststaged": [self.dbname],
                 "stderr": "stderr.txt",
                 "stdout": "stdout.txt",
                 'arguments': [
@@ -204,7 +219,7 @@ class JobFactory(object):
                               "--rel_peak_cutoff", query.rel_peak_cutoff,
                               "--precursor_mz_precision", query.precursor_mz_precision,
                               'data.mzxml', 'smiles.txt',
-                              'results.db'
+                              self.dbname
                               ]
                  }
         if query.use_msms_only:
@@ -241,7 +256,7 @@ class JobFactory(object):
 
 class Job(object):
     """
-    Job contains query and results of MMM calculation run
+    Job contains results database of Magma calculation run
     """
     def __init__(self, id, session):
         """

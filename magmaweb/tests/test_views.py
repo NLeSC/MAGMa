@@ -5,21 +5,27 @@ from mock import patch, Mock
 class HelperTestCase(unittest.TestCase):
     def setUp(self):
         import tempfile
-        self.settings = { 'jobrootdir': tempfile.mkdtemp() }
+        self.settings = {
+                         'jobfactory.root_dir': tempfile.mkdtemp(),
+                         'jobfactory.submiturl': 'http://localhost:9998/job',
+                         'jobfactory.state': 'job.state',
+                         'jobfactory.script': 'magma.sh',
+                         'jobfactory.tarball': 'Magma-1.1.tar.gz'
+                         }
         self.config = testing.setUp(settings=self.settings)
         self.config.add_route('results', '/results/{jobid}')
         self.config.add_route('home', '/homepage')
 
     def tearDown(self):
         import shutil
-        shutil.rmtree(self.config.registry.settings['jobrootdir'])
+        shutil.rmtree(self.config.registry.settings['jobfactory.root_dir'])
         testing.tearDown()
 
     def test_job_factory(self):
         from magmaweb.views import job_factory
         request = testing.DummyRequest()
         jf = job_factory(request)
-        self.assertEqual(jf.jobrootdir, self.settings['jobrootdir'])
+        self.assertEqual(jf.jobrootdir, self.settings['jobfactory.root_dir'])
         self.assertEqual(jf.dbname, 'results.db')
 
     @patch('magmaweb.views.job_factory')
