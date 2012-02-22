@@ -13,7 +13,8 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class JobSubmitRequest {
     /**
      * Job directory where stderr/stdout/prestaged/poststaged file are relative
-     * to and where job.state file is written
+     * to and where job.state file is written.
+     * Must end with '/'
      */
     public String jobdir;
     /**
