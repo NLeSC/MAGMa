@@ -11,6 +11,8 @@ import org.nlesc.magma.JobDescriptionFactory;
 import org.nlesc.magma.JobStateListener;
 import org.nlesc.magma.entities.JobSubmitRequest;
 import org.nlesc.magma.entities.JobSubmitResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.gridlab.gat.GAT;
 import org.gridlab.gat.GATInvocationException;
@@ -29,6 +31,8 @@ import org.gridlab.gat.resources.ResourceBroker;
 public class JobResource {
     protected JobDescriptionFactory jobdescriptionfactory;
     protected BrokerFactory brokerfactory;
+    protected final static Logger logger = LoggerFactory
+            .getLogger(JobStateListener.class);
 
     public JobResource() {
         super();
@@ -95,6 +99,9 @@ public class JobResource {
         // - Perform submitjob in a new thread, so response can be returned
         // directly, write 'PRE_STAGING' to job state file
         Job job = broker.submitJob(jd, cb, "job.status");
+
+        Object ajobid = job.getInfo().get(Job.ADAPTOR_JOB_ID);
+        logger.info("Job submmited with adaptor job id: "+ajobid);
 
         // TODO Store somevar[jobid] = state,
         // update it in callback so GET /job/{jobid} returns state

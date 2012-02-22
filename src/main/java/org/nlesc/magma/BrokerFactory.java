@@ -28,7 +28,7 @@ public class BrokerFactory {
      */
     public ResourceBroker getBroker() throws GATObjectCreationException,
             URISyntaxException {
-        String brokeruri = "any://localhost";
+        String brokeruri = "localq://localhost";
         if (!GAT.getDefaultGATContext().getSecurityContexts().isEmpty()
                 && GAT.getDefaultGATContext().getSecurityContexts().get(0)
                         .getPassword().length() > 0) {

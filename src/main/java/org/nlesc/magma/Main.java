@@ -96,6 +96,8 @@ public class Main {
         context.addPreference("LfcServer", "lfc.grid.sara.nl");
         context.addPreference("bdiiURI", "ldap://bdii.grid.sara.nl:2170");
 
+        context.addPreference("localq.max.concurrent.jobs", Runtime.getRuntime().availableProcessors());
+
         GAT.setDefaultGATContext(context);
     }
 }

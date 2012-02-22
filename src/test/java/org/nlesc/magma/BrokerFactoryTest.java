@@ -19,7 +19,7 @@ public class BrokerFactoryTest extends TestCase {
     public void testGetBroker() throws GATObjectCreationException, URISyntaxException {
         BrokerFactory fact = new BrokerFactory();
         ResourceBroker broker = fact.getBroker();
-        assertEquals(broker.toString(), "any://localhost");
+        assertEquals(broker.toString(), "localq://localhost");
     }
 
     @Test
@@ -28,7 +28,7 @@ public class BrokerFactoryTest extends TestCase {
         CertificateSecurityContext securityContext = new CertificateSecurityContext(
                 new URI(System.getProperty("user.home") + "/.globus/userkey.pem"),
                 new URI(System.getProperty("user.home") + "/.globus/usercert.pem"),
-                ""); // not correct
+                "");
 
         GATContext context = new GATContext();
         context.addSecurityContext(securityContext);
@@ -36,7 +36,7 @@ public class BrokerFactoryTest extends TestCase {
         BrokerFactory fact = new BrokerFactory();
 
         ResourceBroker broker = fact.getBroker();
-        assertEquals(broker.toString(), "any://localhost");
+        assertEquals(broker.toString(), "localq://localhost");
         GAT.setDefaultGATContext(oldcontext);
     }
 
@@ -46,7 +46,7 @@ public class BrokerFactoryTest extends TestCase {
         CertificateSecurityContext securityContext = new CertificateSecurityContext(
                 new URI(System.getProperty("user.home") + "/.globus/userkey.pem"),
                 new URI(System.getProperty("user.home") + "/.globus/usercert.pem"),
-                "blabla"); // not correct
+                "blabla"); // a mocked password
 
         GATContext context = new GATContext();
         context.addSecurityContext(securityContext);
