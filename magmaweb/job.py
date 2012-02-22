@@ -130,7 +130,7 @@ class JobFactory(object):
         except OperationalError:
             raise JobNotFound(jobid)
         session = sessionmaker(bind=engine)
-        return Job(jobid, session())
+        return Job(jobid, session(), self.id2jobdir(jobid))
 
     def fromDb(self, dbfile):
         """
@@ -258,15 +258,18 @@ class Job(object):
     """
     Job contains results database of Magma calculation run
     """
-    def __init__(self, id, session):
+    def __init__(self, id, session, dir):
         """
         jobid
             A UUID of the job
         session
             Sqlalchemy session to read/write to job db
+        dir
+            Directory where input and output files reside
         """
         self.id = id
         self.session = session
+        self.dir = dir
 
     def maxMSLevel(self):
         """ Returns the maximum nr of MS levels """
@@ -560,3 +563,7 @@ class Job(object):
             for row in q().filter(Fragment.parentfragid == node):
                 fragments.append(fragment2json(row))
             return fragments
+
+    def stderr(self):
+        """Returns stderr text file"""
+        return open(os.path.join(self.dir, 'stderr.txt'), 'rb')

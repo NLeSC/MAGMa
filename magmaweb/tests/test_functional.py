@@ -18,10 +18,11 @@ class FunctionalTests(unittest.TestCase):
 
     @patch('magmaweb.views.fetch_job')
     def test_metabolites(self, mocked_fetch_job):
-        import uuid
+        import uuid, tempfile, shutil
         from test_job import initTestingDB
         from magmaweb.job import Job
-        job = Job(uuid.uuid1(), initTestingDB())
+        jobdir = tempfile.mkdtemp()
+        job = Job(uuid.uuid1(), initTestingDB(), jobdir)
         mocked_fetch_job.return_value = job
 
         res = self.testapp.get('/results/'+str(job.id)+'/metabolites.json?limit=10&start=0', status=200)
@@ -59,3 +60,5 @@ class FunctionalTests(unittest.TestCase):
                 'mim': 208.07355
             }]
         })
+
+        shutil.rmtree(jobdir)

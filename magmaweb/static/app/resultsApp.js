@@ -96,7 +96,12 @@ Ext.define('Esc.magmaweb.resultsApp', {
          * Chromatogram endpoint.
          * @cfg {String} urls.chromatogram
          */
-        chromatogram: null
+        chromatogram: null,
+        /**
+         * Stderr endpoint.
+         * @cfg {String} urls.stderr
+         */
+        stderr: null
     }
   },
   /**
@@ -253,6 +258,10 @@ Ext.define('Esc.magmaweb.resultsApp', {
                   }, {
                       text: 'Fragments',
                       disabled: true
+                  }, {
+                      text: 'Error log',
+                      href: me.urls.stderr,
+                      hrefTarget: '_new'
                   }]
               }
             },{

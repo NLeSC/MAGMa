@@ -23,7 +23,8 @@ Ext.onReady(function() {
         extractedionchromatogram: 'data/extractedionchromatogram.{0}.json',
         metabolites: 'data/metabolites.json',
         metabolitescsv: 'data/metabolites.csv',
-        chromatogram: 'data/chromatogram.json'
+        chromatogram: 'data/chromatogram.json',
+        stderr: 'data/stderr.txt'
       },
       launch: function() {
           //include the tests in the test.html head

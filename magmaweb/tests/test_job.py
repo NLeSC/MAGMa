@@ -308,15 +308,24 @@ class JobNotFound(unittest.TestCase):
 
 class JobTestCase(unittest.TestCase):
     def setUp(self):
-        import uuid
+        import uuid, tempfile, os
         self.jobid = uuid.uuid1()
         # mock job session
         self.session = initTestingDB()
-        self.job = Job(self.jobid, self.session)
+        self.jobdir = tempfile.mkdtemp()
+        stderr = open(os.path.join(self.jobdir,'stderr.txt'), 'w')
+        stderr.write('Error log')
+        stderr.close()
+        self.job = Job(self.jobid, self.session, self.jobdir)
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.jobdir)
 
     def test_construct(self):
         self.assertEqual(self.job.id, self.jobid)
         self.assertEqual(self.job.session, self.session)
+        self.assertEqual(self.job.dir, self.jobdir)
 
     def test_runInfo(self):
         runInfo = self.job.runInfo()
@@ -359,10 +368,16 @@ class JobTestCase(unittest.TestCase):
             { 'id': 870, 'rt': 1254.15, 'intensity': 1972180.0 }
         ])
 
+    def test_stderr(self):
+        log = self.job.stderr()
+        self.assertIsInstance(log, file)
+        self.assertEqual(log.name, self.jobdir+'/stderr.txt')
+        self.assertEqual(log.read(), 'Error log')
+
 class JobMetabolitesTestCase(unittest.TestCase):
     def setUp(self):
         import uuid
-        self.job = Job(uuid.uuid1(), initTestingDB())
+        self.job = Job(uuid.uuid1(), initTestingDB(), '/tmp')
 
     def test_default(self):
         response = self.job.metabolites()
@@ -455,7 +470,7 @@ class JobMetabolitesTestCase(unittest.TestCase):
 class JobMetabolites2csvTestCase(unittest.TestCase):
     def setUp(self):
         import uuid
-        self.job = Job(uuid.uuid1(), initTestingDB())
+        self.job = Job(uuid.uuid1(), initTestingDB(), '/tmp')
 
     def test_it(self):
         csvfile = self.job.metabolites2csv(self.job.metabolites()['rows'])
@@ -506,7 +521,7 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
 class JobScansWithMetabolitesTestCase(unittest.TestCase):
     def setUp(self):
         import uuid
-        self.job = Job(uuid.uuid1(), initTestingDB())
+        self.job = Job(uuid.uuid1(), initTestingDB(), '/tmp')
 
     def test_metid(self):
         response = self.job.scansWithMetabolites(metid=72)
@@ -545,7 +560,7 @@ class JobScansWithMetabolitesTestCase(unittest.TestCase):
 class JobMSpectraTestCase(unittest.TestCase):
     def setUp(self):
         import uuid
-        self.job = Job(uuid.uuid1(), initTestingDB())
+        self.job = Job(uuid.uuid1(), initTestingDB(), '/tmp')
 
     def test_scanonly(self):
         self.assertEqual(
@@ -595,7 +610,7 @@ class JobMSpectraTestCase(unittest.TestCase):
 class JobFragmentsTestCase(unittest.TestCase):
     def setUp(self):
         import uuid
-        self.job = Job(uuid.uuid1(), initTestingDB())
+        self.job = Job(uuid.uuid1(), initTestingDB(), '/tmp')
 
     def test_metabolitewithoutfragments(self):
         response = self.job.fragments(metid=72, scanid=641)

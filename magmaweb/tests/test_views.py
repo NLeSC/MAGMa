@@ -465,3 +465,30 @@ class FragmentsView(unittest.TestCase):
         from pyramid.httpexceptions import HTTPNotFound
         with self.assertRaises(HTTPNotFound):
             self._callFUT(70002, 641, dict(node=''))
+
+
+class StderrView(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+        self.job = mock_job()
+        import StringIO
+        log = StringIO.StringIO()
+        log.write('bla')
+        log.seek(0)
+        self.job.stderr.return_value = log
+
+    def tearDown(self):
+        testing.tearDown()
+
+    @patch('magmaweb.views.fetch_job')
+    def test_it(self,  mocked_fetch_job):
+        mocked_fetch_job.return_value = self.job
+
+        from magmaweb.views import stderr, fetch_job
+        request = testing.DummyRequest()
+        response = stderr(request)
+
+        self.job.stderr.assert_called_with()
+        self.assertEqual(response.content_type, 'text/plain')
+        self.assertMultiLineEqual(response.app_iter.read(), 'bla')
+

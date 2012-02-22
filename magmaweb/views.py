@@ -192,3 +192,12 @@ def fragments(request):
         return fragments
     except FragmentNotFound:
         raise HTTPNotFound()
+
+
+@view_config(route_name='stderr.txt')
+def stderr(request):
+    """ Returns file object of stderr.txt file of job"""
+    job = fetch_job(request)
+    response = Response(content_type='text/plain')
+    response.app_iter = job.stderr()
+    return response

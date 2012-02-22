@@ -10,7 +10,7 @@ cover
 .coverage
 docs/_build/
 jsdoc
-data
+/data
 logs
 env/
 env64/
