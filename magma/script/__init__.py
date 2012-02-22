@@ -33,8 +33,8 @@ class MagmaCommand(object):
         sc.add_argument('-a', '--abs_peak_cutoff', help="abs intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
         sc.add_argument('-r', '--rel_peak_cutoff', help="fraction of basepeak intensity threshold for storing peaks in database (default: %(default)s)", default=0.01,type=float)
         sc.add_argument('--precursor_mz_precision', help="precision for matching precursor mz with peak mz in parent scan (default: %(default)s)", default=0.005,type=float)
-        sc.add_argument('-u', '--use_msms_only', help="annotate only peaks with fragmentation data (default: %(default)s)", default=True)
-        sc.add_argument('-f', '--use_fragmentation', default=True)
+        sc.add_argument('-u', '--use_msms_only', help="annotate only peaks with fragmentation data (default: %(default)s)", action='store_false')
+        sc.add_argument('-f', '--use_fragmentation', action='store_false')
 
         sc.set_defaults(func=self.allinone)
 
