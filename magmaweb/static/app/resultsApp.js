@@ -211,7 +211,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
     var infoWindow = Ext.create('Ext.window.Window', {
         title: 'Information',
         width: 600,
-        height: 200,
+        autoHeight: true,
         closeAction: 'hide',
         contentEl: 'resultsinfo'
     });

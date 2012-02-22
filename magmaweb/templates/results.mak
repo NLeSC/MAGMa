@@ -101,7 +101,7 @@ Ext.Loader.setConfig({
 
 </script>
 ## Comment out below for development or when running sencha build, every class is loaded when commented out
-<script type="text/javascript" src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script>
+<!-- <script type="text/javascript" src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script> -->
 <script type="text/javascript">
 
 Ext.require('Esc.magmaweb.resultsApp');
@@ -128,21 +128,21 @@ Ext.onReady(function() {
 </head>
 <body>
 <div class="x-hidden" id="resultsinfo">
-<fieldset>
-<legend>Generate metabolite options</legend>
+<fieldset class="x-fieldset x-fieldset-default">
+<legend class="x-fieldset-header x-fieldset-header-default">Generate metabolite options</legend>
 Maximum number of reaction steps: ${run.n_reaction_steps}<br/>
 Metabolism types: ${run.metabolism_types}<br/>
 </fieldset>
-<fieldset>
-<legend>MS data options</legend>
+<fieldset class="x-fieldset x-fieldset-default">
+<legend class="x-fieldset-header x-fieldset-header-default">MS data options</legend>
 MS Filename: ${run.ms_filename}<br/>
 Maximum MS level: ${run.max_ms_level}<br/>
 Precision for matching precursor mz with peak mz in parent scan: ${run.precursor_mz_precision}<br/>
 Absolute intensity threshold for storing peaks in database: ${run.abs_peak_cutoff}<br/>
 Fraction of basepeak intensity threshold threshold for storing peaks in database: ${run.rel_peak_cutoff}<br/>
 </fieldset>
-<fieldset>
-<legend>Annotate options</legend>
+<fieldset class="x-fieldset x-fieldset-default">
+<legend class="x-fieldset-header x-fieldset-header-default">Annotate options</legend>
 Ionisation mode: ${run.ionisation_mode} <br/>
 Use defragmentation:
 % if run.use_fragmentation:
