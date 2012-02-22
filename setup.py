@@ -13,7 +13,6 @@ requires = [
     'transaction',
     'pyramid_tm',
     'pyramid_debugtoolbar',
-    'zope.sqlalchemy',
     'pyramid_beaker',
     'gunicorn'
     ]
