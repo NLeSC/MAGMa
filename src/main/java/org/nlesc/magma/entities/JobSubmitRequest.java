@@ -44,6 +44,9 @@ public class JobSubmitRequest {
      * executable is called. Must be relative to job directory
      */
     public String[] poststaged = {};
+    public long time_max = 0;
+    public int memory_min = 0;
+    public int memory_max = 0;
 
     /**
      * Constructor

@@ -24,6 +24,15 @@ public class JobDescriptionFactory {
         sd.setArguments(jobsubmission.arguments);
         sd.setStderr(GAT.createFile(jobsubmission.jobdir + jobsubmission.stderr));
         sd.setStdout(GAT.createFile(jobsubmission.jobdir + jobsubmission.stdout));
+        if (jobsubmission.time_max > 0) {
+            sd.addAttribute("time.max", jobsubmission.time_max);
+        }
+        if (jobsubmission.memory_min > 0) {
+            sd.addAttribute("memory.min", jobsubmission.memory_min);
+        }
+        if (jobsubmission.memory_max > 0) {
+            sd.addAttribute("memory.max", jobsubmission.memory_max);
+        }
         for (String prestage: jobsubmission.prestaged) {
             File prestagefile = GAT.createFile(prestage);
             if (!prestagefile.isAbsolute()) {
