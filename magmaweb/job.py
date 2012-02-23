@@ -206,7 +206,7 @@ class JobFactory(object):
                 "stderr": "stderr.txt",
                 "stdout": "stdout.txt",
                 'arguments': [
-                              "magma.sh",
+                              self.job_script,
                               "allinone",
                               "--mz_precision", query.mz_precision,
                               "--ms_intensity_cutoff", query.ms_intensity_cutoff,
