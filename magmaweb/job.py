@@ -164,6 +164,10 @@ class JobFactory(object):
                                   json.dumps(body),
                                   { 'Content-Type': 'application/json' }
                                   )
+        # log what is send to job manager
+        import logging
+        logger = logging.getLogger('magmaweb')
+        logger.info(request.data)
         return urllib2.urlopen(request)
 
     def submitQuery(self, query):
