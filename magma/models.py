@@ -29,6 +29,7 @@ class Metabolite(Base):
     origin = Column(Unicode) #: Name of molecule
     nhits = Column(Integer)
     mim = Column(Float) #: Monoisotopic mass
+    logp = Column(Float) #: Calculated logP
     fragments = relationship('Fragment', backref='metabolite') #: each metabolite is fragmented into fragments
 
 class Scan(Base):

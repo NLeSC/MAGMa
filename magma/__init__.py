@@ -83,13 +83,13 @@ class MagmaSession(object):
         return MsDataEngine(self.db_session,abs_peak_cutoff,rel_peak_cutoff,max_ms_level)
     def get_annotate_engine(self,
                  ionisation_mode=1,
-                 use_fragmentation=1,
+                 use_fragmentation=True,
                  max_broken_bonds=4,
                  ms_intensity_cutoff=1e6,
                  msms_intensity_cutoff=0.1,
                  mz_precision=0.001,
                  precursor_mz_precision=0.005,
-                 use_msms_only=1
+                 use_msms_only=True
                  ):
         return AnnotateEngine(self.db_session,ionisation_mode,use_fragmentation,max_broken_bonds,
                  ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,precursor_mz_precision,use_msms_only)
@@ -131,7 +131,8 @@ class StructureEngine(object):
             mol=unicode(mol, 'utf-8', 'xmlcharrefreplace'), level=level, probability=prob,
             reactionsequence=sequence, smiles=smiles,
             molformula=molform, isquery=isquery, origin=unicode(name, 'utf-8', 'xmlcharrefreplace'),
-            mim=mim
+            mim=mim,
+            logp=Chem.Crippen.MolLogP(m)
             )
         try:
             dupid = self.db_session.query(Metabolite).filter_by(smiles=smiles).one()
