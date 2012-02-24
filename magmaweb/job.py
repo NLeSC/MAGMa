@@ -375,7 +375,8 @@ class Job(object):
                 'origin': met.origin,
                 'nhits': met.nhits,
                 'nr_scans': r.nr_scans,
-                'mim': met.mim
+                'mim': met.mim,
+                'logp': met.logp
             }
             if ('score' in r.keys()):
                 row['score'] = r.score
@@ -396,7 +397,7 @@ class Job(object):
         csvstr = StringIO.StringIO()
         headers = [
                    'name', 'smiles', 'probability', 'reactionsequence',
-                   'nr_scans', 'molformula', 'mim' , 'isquery'
+                   'nr_scans', 'molformula', 'mim' , 'isquery', 'logp'
                    ]
         if ('score' in metabolites[0].keys()):
             headers.append('score')
