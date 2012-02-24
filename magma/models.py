@@ -80,20 +80,22 @@ class Fragment(Base):
 class Run(Base):
     """Run model for run table"""
     __tablename__ = 'run'
+    runid = Column(Integer, primary_key=True, autoincrement=True) #: Run identifier
     # TODO run consists of 1 row so doesn't need a pk
     # but sqlalchemy requires one
 
     # SyGMa parameters, TODO remove: metabolism type info will be part of reacton sequence of metabolites
-    n_reaction_steps = Column(Integer, primary_key=True) #: Maximum number of reaction steps applied to reactants
+    n_reaction_steps = Column(Integer) #: Maximum number of reaction steps applied to reactants
     metabolism_types = Column(Unicode) #: Comma separated list of metabolism types, like "phase1"
     
     # ms data parsing parameters
     ms_filename = Column(Unicode)
     abs_peak_cutoff = Column(Float) #: abs intensity threshold for storing peaks in database
     rel_peak_cutoff = Column(Float) #: fraction of basepeak intensity threshold for storing peaks in database
+    max_ms_level = Column(Integer) #: maximum ms level to be included in the analysis
 
     # parameters for matching metabolites and fragments with peaks
-    ionisation_mode = Column(Unicode)
+    ionisation_mode = Column(Integer)
     use_fragmentation = Column(Boolean)
     max_broken_bonds = Column(Integer) #: max number of bonds broken in substructures generated from metabolites
     ms_intensity_cutoff = Column(Float) #: Absolute intensity minimum of lvl1 scan peaks which are matched with metabolites
