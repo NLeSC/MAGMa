@@ -37,7 +37,6 @@ class MagmaCommand(object):
         sc.add_argument('-u', '--use_msms_only', help="annotate also peaks without fragmentation data (default: %(default)s)", action="store_false")
         sc.add_argument('-f', '--use_fragmentation', default=True)
         sc.set_defaults(func=self.all_in_one)
-
         sc = subparsers.add_parser("add_structures", help=self.add_structures.__doc__, description=self.add_structures.__doc__)
         sc.add_argument('db', type=argparse.FileType('a+b'), help="Sqlite database file with results")
         # add_structures arguments
@@ -84,7 +83,7 @@ class MagmaCommand(object):
 
     def all_in_one(self, args):
         """Reads reactants file and MS/MS datafile, generates metabolites from reactants and matches them to peaks"""
-        
+
         magma_session = magma.MagmaSession(args.db.name)
         struct_engine = magma_session.get_structure_engine(args.metabolism_types, args.n_reaction_steps) # TODO remove arguments
         for mol in self.smiles2mols(args.structures):
@@ -112,7 +111,6 @@ class MagmaCommand(object):
                             )
         annotate_engine.build_spectra()
         annotate_engine.search_all_structures()
-        
 
     def add_structures(self, args):
         """Reads reactants file and existing result database, generates metabolites from reactants and matches them to peaks"""
@@ -191,3 +189,7 @@ class MagmaCommand(object):
         """Parse arguments and runs subcommand"""
         args = self.parser.parse_args()
         return args.func(args)
+
+
+if __name__ == "__main__":
+    main()

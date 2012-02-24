@@ -1,5 +1,5 @@
 """
-Sqlalchemy models for msygma result database
+Sqlalchemy models for magma result database
 """
 
 from sqlalchemy import Column
@@ -11,13 +11,8 @@ from sqlalchemy import ForeignKey
 
 from sqlalchemy.ext.declarative import declarative_base
 
-from sqlalchemy.orm import scoped_session
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import relationship, backref
 
-from zope.sqlalchemy import ZopeTransactionExtension
-
-DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
 class Metabolite(Base):
@@ -87,7 +82,6 @@ class Run(Base):
     # SyGMa parameters, TODO remove: metabolism type info will be part of reacton sequence of metabolites
     n_reaction_steps = Column(Integer) #: Maximum number of reaction steps applied to reactants
     metabolism_types = Column(Unicode) #: Comma separated list of metabolism types, like "phase1"
-    
     # ms data parsing parameters
     ms_filename = Column(Unicode)
     abs_peak_cutoff = Column(Float) #: abs intensity threshold for storing peaks in database
@@ -103,4 +97,3 @@ class Run(Base):
     mz_precision = Column(Float) #: precision for matching a metabolite mim to m/z of a peak
     precursor_mz_precision = Column(Float) #: precision for matching precursor mz with peak mz in parent scan
     use_msms_only = Column(Boolean)
-    
