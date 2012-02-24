@@ -16,47 +16,57 @@ class MagmaCommand(object):
         self.parser.add_argument('--version', action='version', version='%(prog)s ' + self.version())
         subparsers = self.parser.add_subparsers(title='Sub-commands')
 
-        sc = subparsers.add_parser("allinone", help=self.allinone.__doc__, description=self.allinone.__doc__)
-        # mzxml arguments
+        sc = subparsers.add_parser("all_in_one", help=self.all_in_one.__doc__, description=self.all_in_one.__doc__)
+        sc.add_argument('db', type=argparse.FileType('a+b'), help="Sqlite database file with results")
+        # read_ms_data arguments
         sc.add_argument('mzxml', type=argparse.FileType('r'), help="mzXMl file with MS/MS data")
-        sc.add_argument('-p', '--mz_precision', help="precision in Dalton (default: %(default)s)", default=0.01,type=float)
-        sc.add_argument('-c', '--ms_intensity_cutoff', help="cutoff value to filter MS peaks (absolute) (default: %(default)s)", default=2e5,type=float)
-        sc.add_argument('-d', '--msms_intensity_cutoff', help="cutoff value to filter MSMS peaks (relative to basepeak) (default: %(default)s)", default=0.1,type=float)
-        sc.add_argument('-i', '--ionisation', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
-        # sygma arguments
-        sc.add_argument('structures', type=argparse.FileType('rb'), help="File with smiles used as structures")
-        sc.add_argument('-n', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=2,type=int)
-        sc.add_argument('-m', '--metabolism_types', help="1 and/or 2 for phase 1 and 2 biotransformations (default: %(default)s)", nargs='+', default=["phase1", "phase2"], choices=["phase1", "phase2"])
-        # output arguments
-        sc.add_argument('db', type=argparse.FileType('w'), help="Sqlite database file with results")
-        sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bonds broken in substructures generated from metabolites (default: %(default)s)", default=4,type=int)
+        sc.add_argument('-l', '--max_ms_level', help="Maximum ms level to be processsed (default: %(default)s)", default=10,type=int)
         sc.add_argument('-a', '--abs_peak_cutoff', help="abs intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
         sc.add_argument('-r', '--rel_peak_cutoff', help="fraction of basepeak intensity threshold for storing peaks in database (default: %(default)s)", default=0.01,type=float)
-        sc.add_argument('--precursor_mz_precision', help="precision for matching precursor mz with peak mz in parent scan (default: %(default)s)", default=0.001,type=float)
+        # add_structures arguments
+        sc.add_argument('structures', type=argparse.FileType('rb'), help="File with smiles used as structures")
+        sc.add_argument('-s', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=2,type=int)
+        sc.add_argument('-m', '--metabolism_types', help="1 and/or 2 for phase 1 and 2 biotransformations (default: %(default)s)", default=["phase1,phase2"], type=str)
+        # annotate arguments
+        sc.add_argument('-p', '--mz_precision', help="precision in Dalton (default: %(default)s)", default=0.001,type=float)
+        sc.add_argument('-c', '--ms_intensity_cutoff', help="cutoff value to filter MS peaks (absolute) (default: %(default)s)", default=1e6,type=float)
+        sc.add_argument('-d', '--msms_intensity_cutoff', help="cutoff value to filter MSMS peaks (relative to basepeak) (default: %(default)s)", default=0.1,type=float)
+        sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
+        sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bonds broken in substructures generated from metabolites (default: %(default)s)", default=4,type=int)
+        sc.add_argument('--precursor_mz_precision', help="precision for matching precursor mz with peak mz in parent scan (default: %(default)s)", default=0.005,type=float)
+        sc.add_argument('-u', '--use_msms_only', help="annotate also peaks without fragmentation data (default: %(default)s)", action="store_false")
+        sc.add_argument('-f', '--use_fragmentation', default=True)
+        sc.set_defaults(func=self.all_in_one)
+
+        sc = subparsers.add_parser("add_structures", help=self.add_structures.__doc__, description=self.add_structures.__doc__)
+        sc.add_argument('db', type=argparse.FileType('a+b'), help="Sqlite database file with results")
+        # add_structures arguments
+        sc.add_argument('structures', type=argparse.FileType('rb'), help="File with smiles used as structures")
+        sc.add_argument('-s', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=2,type=int)
+        sc.add_argument('-m', '--metabolism_types', help="1 and/or 2 for phase 1 and 2 biotransformations (default: %(default)s)", default="phase1,phase2", type=str)
+        sc.set_defaults(func=self.add_structures)
+
+        sc = subparsers.add_parser("read_ms_data", help=self.read_ms_data.__doc__, description=self.read_ms_data.__doc__)
+        sc.add_argument('db', type=argparse.FileType('a+b'), help="Sqlite database file with results")
+        # read_ms_data arguments
+        sc.add_argument('mzxml', type=argparse.FileType('r'), help="mzXMl file with MS/MS data")
+        sc.add_argument('-l', '--max_ms_level', help="Maximum ms level to be processsed (default: %(default)s)", default=10,type=int)
+        sc.add_argument('-a', '--abs_peak_cutoff', help="abs intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
+        sc.add_argument('-r', '--rel_peak_cutoff', help="fraction of basepeak intensity threshold for storing peaks in database (default: %(default)s)", default=0.01,type=float)
+        sc.set_defaults(func=self.read_ms_data)
+
+        sc = subparsers.add_parser("annotate", help=self.annotate.__doc__, description=self.annotate.__doc__)
+        sc.add_argument('db', type=argparse.FileType('a+b'), help="Sqlite database file with results")
+        # annotate arguments
+        sc.add_argument('-p', '--mz_precision', help="precision in Dalton (default: %(default)s)", default=0.001,type=float)
+        sc.add_argument('-c', '--ms_intensity_cutoff', help="cutoff value to filter MS peaks (absolute) (default: %(default)s)", default=1e6,type=float)
+        sc.add_argument('-d', '--msms_intensity_cutoff', help="cutoff value to filter MSMS peaks (relative to basepeak) (default: %(default)s)", default=0.1,type=float)
+        sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
+        sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bonds broken in substructures generated from metabolites (default: %(default)s)", default=4,type=int)
+        sc.add_argument('--precursor_mz_precision', help="precision for matching precursor mz with peak mz in parent scan (default: %(default)s)", default=0.005,type=float)
         sc.add_argument('-u', '--use_msms_only', help="annotate only peaks with fragmentation data (default: %(default)s)", default=True)
         sc.add_argument('-f', '--use_fragmentation', default=True)
- 
-        sc.set_defaults(func=self.allinone)
-
-        sc = subparsers.add_parser("metabolize", help=self.metabolize.__doc__, description=self.metabolize.__doc__)
-        sc.add_argument('db', type=argparse.FileType('r'), help="Sqlite database file with results")
-        # sygma arguments
-        sc.add_argument('structures', type=argparse.FileType('rb'), help="File with smiles used as structures")
-        sc.add_argument('-n', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=2)
-        sc.add_argument('-m', '--metabolism_types', help="1 and/or 2 for phase 1 and 2 biotransformations (default: %(default)s)", default="12", choices=["1", "2", "12"])
-        # output arguments
-        sc.set_defaults(func=self.metabolize)
-
-        sc = subparsers.add_parser("mzxml", help=self.mzxml.__doc__, description=self.mzxml.__doc__)
-        # mzxml arguments
-        sc.add_argument('mzxml', type=argparse.FileType('r'), help="mzXMl file with MS/MS data")
-        sc.add_argument('-p', '--mz_precision', help="precision in Dalton (default: %(default)s)", default=0.01)
-        sc.add_argument('-c', '--msfilter', help="cutoff value to filter MS peaks (absolute) (default: %(default)s)", default=2e5)
-        sc.add_argument('-d', '--msmsfilter', help="cutoff value to filter MSMS peaks (relative to basepeak) (default: %(default)s)", default=0.1)
-        sc.add_argument('-i', '--ionisation', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
-        # output arguments
-        sc.add_argument('db', type=argparse.FileType('w'), help="Sqlite database file with results")
-        sc.set_defaults(func=self.mzxml)
+        sc.set_defaults(func=self.annotate)
 
         sc = subparsers.add_parser("sd2smiles", help=self.sd2smiles.__doc__, description=self.sd2smiles.__doc__)
         sc.add_argument('input', type=argparse.FileType('r'), help="Sd file")
@@ -72,54 +82,71 @@ class MagmaCommand(object):
     def version(self):
         return '1.0' # TODO move to main magma package and reuse in setup.py so version is specified in one place
 
-    def allinone(self, args):
+    def all_in_one(self, args):
         """Reads reactants file and MS/MS datafile, generates metabolites from reactants and matches them to peaks"""
         
         magma_session = magma.MagmaSession(args.db.name)
         struct_engine = magma_session.get_structure_engine(args.metabolism_types, args.n_reaction_steps) # TODO remove arguments
         for mol in self.smiles2mols(args.structures):
             struct_engine.add_structure(
-                                 Chem.MolToMolBlock(mol),
-                                 mol.GetProp('_Name'),
-                                 1.0, 0, 'PARENT', 1)
-        struct_engine.metabolize_all_structures(args.metabolism_types, args.n_reaction_steps)
+                            Chem.MolToMolBlock(mol),
+                            mol.GetProp('_Name'),
+                            1.0, 0, 'PARENT', 1)
+        struct_engine.metabolize_all(args.metabolism_types, args.n_reaction_steps)
 
         ms_data_engine = magma_session.get_ms_data_engine(
-                                                    abs_peak_cutoff=args.abs_peak_cutoff,
-                                                    rel_peak_cutoff=args.rel_peak_cutoff
-                                                    )
-        ms_data_engine.storeMZxmlFile(args.mzxml.name)
+                            abs_peak_cutoff=args.abs_peak_cutoff,
+                            rel_peak_cutoff=args.rel_peak_cutoff,
+                            ms_filename=args.ms_filename
+                            )
+        ms_data_engine.store_mzxml_file(args.mzxml.name)
         annotate_engine = magma_session.get_annotate_engine(
-                                                    ionisation_mode=args.ionisation_mode,
-                                                    use_fragmentation=args.use_fragmentation,
-                                                    max_broken_bonds=args.max_broken_bonds,
-                                                    ms_intensity_cutoff=args.ms_intensity_cutoff,
-                                                    msms_intensity_cutoff=args.msms_intensity_cutoff,
-                                                    mz_precision=args.mz_precision,
-                                                    precursor_mz_precision=args.precursor_mz_precision,
-                                                    use_msms_only=args.use_msms_only
-                                                    )
+                            ionisation_mode=args.ionisation_mode,
+                            use_fragmentation=args.use_fragmentation,
+                            max_broken_bonds=args.max_broken_bonds,
+                            ms_intensity_cutoff=args.ms_intensity_cutoff,
+                            msms_intensity_cutoff=args.msms_intensity_cutoff,
+                            mz_precision=args.mz_precision,
+                            precursor_mz_precision=args.precursor_mz_precision,
+                            use_msms_only=args.use_msms_only
+                            )
         annotate_engine.build_spectra()
         annotate_engine.search_all_structures()
         
 
-    def metabolize(self, args):
+    def add_structures(self, args):
         """Reads reactants file and existing result database, generates metabolites from reactants and matches them to peaks"""
-        magma.set_DB(args.db.name)
-        for mol in self.smiles2mols(args.reactants):
-            magma.add_metabolite(
-                                 Chem.MolToMolBlock(mol),
-                                 mol.GetProp('_Name'),
-                                 1.0, 0, 'PARENT', 1)
-        magma.metabolize_all(args.metabolism_types, args.nsteps)
-        magma.commit_DB()
+        magma_session = magma.MagmaSession(args.db.name)
+        struct_engine = magma_session.get_structure_engine(args.metabolism_types, args.n_reaction_steps) # TODO remove arguments
+        for mol in self.smiles2mols(args.structures):
+            struct_engine.add_structure(
+                            Chem.MolToMolBlock(mol),
+                            mol.GetProp('_Name'),
+                            1.0, 0, 'PARENT', 1)
+        struct_engine.metabolize_all(args.metabolism_types, args.n_reaction_steps)
 
-    def mzxml(self, args):
-        """Reads MS/MS datafile"""
-        magma.set_DB(args.db.name)
-        magma.set_run_data(None, None, None, args.mzxml.name, args.ionisation, True, args.msfilter, args.msmsfilter, args.precision, True)
-        magma.storeMZxmlFile(args.mzxml)
-        magma.commit_DB()
+    def read_ms_data(self, args):
+        magma_session = magma.MagmaSession(args.db.name)
+        ms_data_engine = magma_session.get_ms_data_engine(
+                            abs_peak_cutoff=args.abs_peak_cutoff,
+                            rel_peak_cutoff=args.rel_peak_cutoff,
+                            )
+        ms_data_engine.store_mzxml_file(args.mzxml.name)
+
+    def annotate(self, args):
+        magma_session = magma.MagmaSession(args.db.name)
+        annotate_engine = magma_session.get_annotate_engine(
+                            ionisation_mode=args.ionisation_mode,
+                            use_fragmentation=args.use_fragmentation,
+                            max_broken_bonds=args.max_broken_bonds,
+                            ms_intensity_cutoff=args.ms_intensity_cutoff,
+                            msms_intensity_cutoff=args.msms_intensity_cutoff,
+                            mz_precision=args.mz_precision,
+                            precursor_mz_precision=args.precursor_mz_precision,
+                            use_msms_only=args.use_msms_only
+                            )
+        annotate_engine.build_spectra()
+        annotate_engine.search_all_structures()
 
     def sd2smiles(self, args):
         """ Convert sd file to smiles """

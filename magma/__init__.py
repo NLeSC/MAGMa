@@ -6,7 +6,6 @@ from rdkit import Chem, Geometry
 from rdkit.Chem import AllChem, Descriptors
 from lxml import etree
 from sqlalchemy import create_engine,and_,desc
-sys.path.append('/home/ridderl/workspace/sygma_pyramid/Sygma/sygma')
 from models import DBSession, Base, Metabolite, Scan, Peak, Fragment, Run
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
@@ -72,7 +71,7 @@ class MagmaSession:
         # set default run parameters
         # set_run_data()
     def get_structure_engine(self,
-                 metabolism_types=["phase1","phase2"],
+                 metabolism_types="phase1,phase2",
                  n_reaction_steps=2
                  ):
         return StructureEngine(self.db_session,metabolism_types,n_reaction_steps)
@@ -92,7 +91,7 @@ class MagmaSession:
                  precursor_mz_precision=0.005,
                  use_msms_only=1
                  ):
-        return MsDataEngine(self.db_session,ionisation_mode,use_fragmentation,max_broken_bonds,
+        return AnnotateEngine(self.db_session,ionisation_mode,use_fragmentation,max_broken_bonds,
                  ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,precursor_mz_precision,use_msms_only)
     def commit(self):
         self.db_session.commit()
@@ -108,7 +107,7 @@ class StructureEngine:
         except:
             rundata = Run()
         if rundata.metabolism_types == None:
-            rundata.metabolism_types=','.join(metabolism_types)
+            rundata.metabolism_types=metabolism_types
         if rundata.n_reaction_steps == None:
             rundata.n_reaction_steps=n_reaction_steps
         self.db_session.add(rundata)
@@ -116,7 +115,7 @@ class StructureEngine:
         self.metabolism_types=rundata.metabolism_types.split(',')
         self.n_reaction_steps=rundata.n_reaction_steps
 
-    def CalcMim(self,mol):
+    def calc_mim(self,mol):
         mim=0
         for atom in mol.GetAtoms():
             mim+=(mims[atom.GetAtomicNum()]+Hmass*\
@@ -127,7 +126,7 @@ class StructureEngine:
         m=Chem.MolFromMolBlock(mol)
         smiles=Chem.MolToSmiles(m)
         molform=Chem.Descriptors.MolecularFormula(m)
-        mim=self.CalcMim(m)
+        mim=self.calc_mim(m)
         metab=Metabolite(
             mol=unicode(mol, 'utf-8', 'xmlcharrefreplace'), level=level, probability=prob,
             reactionsequence=sequence, smiles=smiles,
@@ -151,7 +150,7 @@ class StructureEngine:
         m=Chem.MolFromMolBlock(mol)
         smiles=Chem.MolToSmiles(m)
         molform=Chem.Descriptors.MolecularFormula(m)
-        mim=self.CalcMim(m)
+        mim=self.calc_mim(m)
         dupid = self.db_session.query(Metabolite).filter_by(smiles=smiles).all()
         while len(dupid)>0:
             smiles+='_'
@@ -175,7 +174,7 @@ class StructureEngine:
             "phase1":"/home/ridderl/rdkit_stuff/sygma_rules.phase1.smirks",
             "phase2":"/home/ridderl/rdkit_stuff/sygma_rules.phase2.smirks"
             }
-        for m in metabolism:
+        for m in metabolism.split(','):
             if m in metabolism_files:
                 exec_reactor=exec_reactor+" -q "+metabolism_files[m]
         sys.stderr.write(exec_reactor + '\n')
@@ -207,9 +206,10 @@ class StructureEngine:
                     if sequence=='PARENT\n':
                         isquery=1
                 line=reactor.stdout.readline()
-            self.add_metabolite(mol,name,prob,level,sequence,isquery)
+            self.add_structure(mol,name,prob,level,sequence,isquery)
             line=reactor.stdout.readline()
         reactor.stdout.close()
+        self.db_session.commit()
 
     def metabolize_all(self,metabolism,nsteps):
         parentids = self.db_session.query(Metabolite.metid).all()
@@ -237,15 +237,22 @@ class MsDataEngine():
         self.rel_peak_cutoff=rundata.rel_peak_cutoff
         self.max_ms_level=rundata.max_ms_level
 
-    def storeMZxmlFile(self,mzxmlFile):
-        self.ms_filename=mzxmlFile
-        tree=etree.parse(mzxmlFile)
-        root=tree.getroot()
-        namespace='{'+root.nsmap[None]+'}'
-        for mzxmlScan in root.findall(namespace+"msRun/"+namespace+"scan"):
-            self.storeMZxmlScan(mzxmlScan,0,namespace)
+    def store_mzxml_file(self,mzxml_file):
+        rundata=self.db_session.query(Run).one()
+        if rundata.ms_filename == None:
+            rundata.ms_filename=mzxml_file
+            self.db_session.add(rundata)
+            self.ms_filename=mzxml_file
+            tree=etree.parse(mzxml_file)
+            root=tree.getroot()
+            namespace='{'+root.nsmap[None]+'}'
+            for mzxmlScan in root.findall(namespace+"msRun/"+namespace+"scan"):
+                self.store_mzxml_scan(mzxmlScan,0,namespace)
+            self.db_session.commit()
+        else:
+            sys.exit('Attempt to read MS data twice')
 
-    def storeMZxmlScan(self,mzxmlScan,precScan,namespace):
+    def store_mzxml_scan(self,mzxmlScan,precScan,namespace):
         scan=Scan(
             scanid=int(mzxmlScan.attrib['num']),
             mslevel=int(mzxmlScan.attrib['msLevel']),
@@ -262,12 +269,12 @@ class MsDataEngine():
                 scan.precursormz=float(child.text)
                 scan.precursorintensity=float(child.attrib['precursorIntensity'])
             if child.tag == namespace+'peaks':
-                self.storeMZxmlPeaks(scan,child.text)
+                self.store_mzxml_peaks(scan,child.text)
             if child.tag == namespace+'scan' and int(child.attrib['msLevel'])<=self.max_ms_level:
-                self.storeMZxmlScan(child,scan.scanid,namespace)
+                self.store_mzxml_scan(child,scan.scanid,namespace)
         self.db_session.add(scan)
 
-    def storeMZxmlPeaks(self,scan,line):
+    def store_mzxml_peaks(self,scan,line):
         dbpeak_cutoff=scan.basepeakintensity*self.rel_peak_cutoff
         if dbpeak_cutoff<self.abs_peak_cutoff:
             dbpeak_cutoff=self.abs_peak_cutoff
@@ -286,7 +293,7 @@ class MsDataEngine():
                     self.db_session.add(Peak(scanid=scan.scanid,mz=mz,intensity=intensity))
             idx += 1
 
-    def storePeakList(self,scanid,rt,precursormz,basepeak,peaklist):
+    def store_peak_list(self,scanid,rt,precursormz,basepeak,peaklist):
         self.db_session.add(Scan(
             scanid=scanid,
             mslevel=1,
@@ -313,55 +320,6 @@ class MsDataEngine():
         for peak in peaklist:
             self.db_session.add(Peak(scanid=scanid+1,mz=peak[0],intensity=peak[1]))
 
-class ScanType:
-    def __init__(self,scan):
-        self.peaks=[]
-        self.scanid=scan.scanid
-        self.mslevel=scan.mslevel
-        run=self.db_session.query(Run).one()
-        if scan.mslevel==1:
-            cutoff=run.ms_intensity_cutoff
-        else:
-            cutoff=scan.basepeakintensity*run.msms_intensity_cutoff
-        peaks=self.db_session.query(Peak).filter(Peak.scanid==scan.scanid).filter(Peak.intensity>=cutoff).all()
-        for peak in peaks:
-            self.peaks.append(PeakType(peak.mz,peak.intensity,scan.scanid,run))
-        childscans=self.db_session.query(Scan).filter(Scan.precursorscanid==scan.scanid).all()
-        for childscan in childscans:
-            for peak in self.peaks:
-                if -run.precursor_mz_precision < childscan.precursormz-peak.mz < run.precursor_mz_precision:
-                    peak.addchildscan(childscan)
-                    break
-            #else:
-            #    if childscan.precursorintensity >= cutoff:
-            #        self.peaks.append(peaktype(childscan.precursormz,childscan.precursorintensity,self.scanid,run))
-            #        self.peaks[-1].addchildscan(childscan)
-
-class PeakType:
-    def __init__(self,mz,intensity,scanid,run):
-        self.mz=mz
-        self.intensity=intensity
-        self.scan=scanid
-        self.childscan=None
-        self.missingfragmentscore=missingfragmentpenalty # *intensity**0.5
-        self.precision=run.mz_precision
-    def addchildscan(self,scan):
-        self.childscan=ScanType(scan)
-        for peak in self.childscan.peaks:
-            self.missingfragmentscore+=peak.missingfragmentscore
-    def massmatch_rel(self,mim,low,high):
-        for x in range(low,high+1):
-            if self.mz/self.precision < mim+x*Hmass < self.mz*self.precision:
-            # if mim/precision < self.mz-x*Hmass < mim*precision:
-                return x
-        else:
-            return False
-    def massmatch(self,mim,low,high):
-        for x in range(low,high+1):
-            if self.mz-self.precision < mim+x*Hmass < self.mz+self.precision:
-                return x
-        else:
-            return False
 
 
 class AnnotateEngine:
@@ -401,15 +359,65 @@ class AnnotateEngine:
 
         self.scans=[]
 
-    def buildspectra(self):
+
+    def build_spectra(self):
+        me=self
+        class ScanType:
+            def __init__(self,scan):
+                self.peaks=[]
+                self.scanid=scan.scanid
+                self.mslevel=scan.mslevel
+                if scan.mslevel==1:
+                    cutoff=me.ms_intensity_cutoff
+                else:
+                    cutoff=scan.basepeakintensity*me.msms_intensity_cutoff
+                peaks=me.db_session.query(Peak).filter(Peak.scanid==scan.scanid).filter(Peak.intensity>=cutoff).all()
+                for peak in peaks:
+                    self.peaks.append(PeakType(peak.mz,peak.intensity,scan.scanid))
+                childscans=me.db_session.query(Scan).filter(Scan.precursorscanid==scan.scanid).all()
+                for childscan in childscans:
+                    for peak in self.peaks:
+                        if -me.precursor_mz_precision < childscan.precursormz-peak.mz < me.precursor_mz_precision:
+                            peak.add_child_scan(childscan)
+                            break
+                    #else:
+                    #    if childscan.precursorintensity >= cutoff:
+                    #        self.peaks.append(peaktype(childscan.precursormz,childscan.precursorintensity,self.scanid,run))
+                    #        self.peaks[-1].add_child_scan(childscan)
+        
+        class PeakType:
+            def __init__(self,mz,intensity,scanid):
+                self.mz=mz
+                self.intensity=intensity
+                self.scan=scanid
+                self.childscan=None
+                self.missingfragmentscore=missingfragmentpenalty # *intensity**0.5
+            def add_child_scan(self,scan):
+                self.childscan=ScanType(scan)
+                for peak in self.childscan.peaks:
+                    self.missingfragmentscore+=peak.missingfragmentscore
+            def massmatch_rel(self,mim,low,high):
+                for x in range(low,high+1):
+                    if self.mz/me.precision < mim+x*Hmass < self.mz*me.precision:
+                    # if mim/precision < self.mz-x*Hmass < mim*precision:
+                        return x
+                else:
+                    return False
+            def massmatch(self,mim,low,high):
+                for x in range(low,high+1):
+                    if self.mz-me.mz_precision < mim+x*Hmass < self.mz+me.mz_precision:
+                        return x
+                else:
+                    return False
+
         for dbscan in self.db_session.query(Scan).filter(Scan.mslevel==1).all():
             self.scans.append(ScanType(dbscan))
 
-    def searchAllMetabolites(self):
-        for metabolite in self.db_session.query(Metabolite).all():
-            self.search_metabolite(metabolite)
+    def search_all_structures(self):
+        for structure in self.db_session.query(Metabolite).all():
+            self.search_structure(structure)
     
-    def searchMetabolite(self,metabolite):
+    def search_structure(self,structure):
         FragmentFormID={}
         FragmentForms=[] # index = a elem formula (type=list)
         Fragments=[]
@@ -422,7 +430,7 @@ class AnnotateEngine:
         atomicForm={}
         bondbits=[]
         bondscore=[]
-        mol=Chem.MolFromMolBlock(str(metabolite.mol))
+        mol=Chem.MolFromMolBlock(str(structure.mol))
         me=self
     
         class hittype:
@@ -436,12 +444,12 @@ class AnnotateEngine:
                 self.scan = peak.scan
                 self.bonds = []
                 self.allbonds = 0
-                self.Score()
-                self.beself.db_sessionits=[]
+                self.score()
+                self.besthits=[]
                 #print "childscan",peak.childscan
                 if peak.childscan!=None:
                     self.score += self.findhits(peak.childscan,fragment[0])
-            def Score(self):
+            def score(self):
                 self.score = 0
                 for bond in range(len(bondbits)):
                     if 0 < (self.fragment & bondbits[bond]) < bondbits[bond]:
@@ -475,30 +483,30 @@ class AnnotateEngine:
                         totalscore+=min(besthit.score,peak.missingfragmentscore)
                         # totalscore+=min(besthit.score,missingfragmentpenalty*peak.mz)
                 return totalscore
-            def getFragment(self):
+            def get_fragment(self):
                 atomstring=''
                 for atom in range(len(atombits)):
                     if (atombits[atom] & self.fragment):
                         atomstring+=','+str(atom)
                 return(atomstring[1:])
-            def writeFragments(self,metid,parentfragid):
+            def write_fragments(self,metid,parentfragid):
                 global fragid
                 fragid+=1
                 currentFragid=fragid
-                self.db_session.add(Fragment(
+                me.db_session.add(Fragment(
                     metid=metid,
                     scanid=self.scan,
                     mz=self.mz,
                     mass=self.mass,
                     score=self.score,
                     parentfragid=parentfragid,
-                    atoms=self.getFragment(),
+                    atoms=self.get_fragment(),
                     deltah=self.deltaH
                     ))
-                if len(self.beself.db_sessionits)>0:
-                    for hit in self.beself.db_sessionits:
+                if len(self.besthits)>0:
+                    for hit in self.besthits:
                         if hit != None: # still need to work out how to deal with missed fragments
-                            hit.writeFragments(metid,currentFragid)
+                            hit.write_fragments(metid,currentFragid)
     
         def grow(fragment,form):
             NewFragments=[]
@@ -516,7 +524,7 @@ class AnnotateEngine:
                         NewForm=map(int.__add__,FragmentForms[FragmentFormID[fragment][0]],atomicForm[NewFragment^fragment])
                         grow(NewFragment,NewForm)
     
-        def calculateMass(form):
+        def calculate_mass(form):
             mass=0.0
             for x in range(len(form)):
                 mass+=form[x]*mims[atomicnums[x]]
@@ -526,9 +534,9 @@ class AnnotateEngine:
         
         for scan in self.scans:
             for peak in scan.peaks:
-                if not (self.useMSMSonly and peak.childscan==None):
-                    protonation=self.ionisation-(metabolite.molformula.find('+')>=0)*1
-                    deltaH=peak.massmatch(metabolite.mim,protonation,protonation)
+                if not (self.use_msms_only and peak.childscan==None):
+                    protonation=self.ionisation_mode-(structure.molformula.find('+')>=0)*1
+                    deltaH=peak.massmatch(structure.mim,protonation,protonation)
                     if type(deltaH)==int:
                         if not Fragmented:
                             for x in range(mol.GetNumAtoms()):
@@ -552,12 +560,12 @@ class AnnotateEngine:
                                                       heterow[x.GetBeginAtom().GetAtomicNum() != 6 or \
                                                                  x.GetEndAtom().GetAtomicNum() != 6])
     
-                            sys.stderr.write('\nMetabolite '+str(metabolite.metid)+': '+str(metabolite.origin)+str(metabolite.reactionsequence)+'\n')
-                            sys.stderr.write('Mim: '+str(metabolite.mim+Hmass))
+                            sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+str(structure.reactionsequence)+'\n')
+                            sys.stderr.write('Mim: '+str(structure.mim+Hmass))
                             for atom in atombits:
                                 grow(atom,atomicForm[atom])
                             for form in FragmentForms:
-                                FragmentMass.append(calculateMass(form))
+                                FragmentMass.append(calculate_mass(form))
                                 Fragments.append([])
                             for fragment in FragmentFormID:
                                 if FragmentFormID[fragment][1]<=me.max_broken_bonds:
@@ -574,7 +582,7 @@ class AnnotateEngine:
                         # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
                         hits.append(hittype(peak,[2**len(atombits)-1,0],deltaH))
                         sys.stderr.write('Score: '+str(hits[-1].score)+'\n')
-                        hits[-1].writeFragments(metabolite.metid,0)
+                        hits[-1].write_fragments(structure.metid,0)
         self.db_session.commit()
     
     def getMetaboliteScores(self,scanid):
