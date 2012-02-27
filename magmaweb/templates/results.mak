@@ -144,8 +144,8 @@ Fraction of basepeak intensity threshold threshold for storing peaks in database
 </fieldset>
 <fieldset class="x-fieldset x-fieldset-default">
 <legend class="x-fieldset-header x-fieldset-header-default">Annotate options</legend>
-Use defragmentation:
-% if run.use_fragmentation:
+Skip fragmentation:
+% if run.skip_fragmentation:
 Yes
 % else:
 No
@@ -162,8 +162,8 @@ Positive
 Negative
 % endif
 <br/>
-Annotate only peaks with fragmentation data:
-% if run.use_msms_only:
+Annotate all peaks, also peaks without fragmentation data:
+% if run.use_all_peaks:
 Yes
 % else:
 No
