@@ -53,7 +53,7 @@ Ext.onReady(function() {
                title: 'Upload',
                items:[{
                    xtype: 'combo',
-                   id: 'structure_format',
+                   name: 'structure_format',
                    store: ['smiles', 'sdf' ],
                    allowBlank: false,
                    value: 'smiles',
