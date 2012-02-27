@@ -1,17 +1,21 @@
 import unittest
-from magmaweb.job import JobFactory, Job, JobQuery
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from mock import Mock, patch
+from magmaweb.job import JobFactory, Job, JobQuery
+from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
 
-def initTestingDB(url = 'sqlite://'):
+def initTestingDB(url = 'sqlite://', dataset='default'):
     """Creates testing db and populates with test data"""
     engine = create_engine(url) # default in memory db
     session = sessionmaker(bind=engine)
     dbh = session()
     from magmaweb.models import Base
     Base.metadata.create_all(engine)
-    populateTestingDB(dbh)
+    if (dataset == 'default'):
+        populateTestingDB(dbh)
+    elif (dataset == 'useallpeaks'):
+        populateWithUseAllPeaks(dbh)
     return dbh
 
 def populateTestingDB(session):
@@ -24,7 +28,6 @@ def populateTestingDB(session):
     session
         session connection to db
     """
-    from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
     session.add(Run(
         n_reaction_steps=2, metabolism_types='phase1,phase2' ,
         ionisation_mode=-1, use_fragmentation=True,
@@ -104,7 +107,114 @@ def populateTestingDB(session):
         mz=119.08654022216797, score=4, parentfragid=1709,
         atoms="4,5,6,7,8,9,11,13,14", deltah=3
     )])
+
     session.flush()
+
+def populateWithUseAllPeaks(session):
+    """ Dataset with multiple fragments of same metabolite on lvl1 scan """
+    session.add(Run(
+        n_reaction_steps=2, metabolism_types='phase1,phase2' ,
+        ionisation_mode=-1, use_fragmentation=True,
+        ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
+        mz_precision=0.01, use_msms_only=False,
+        ms_filename = 'F123456.mzxml', abs_peak_cutoff=1000,
+        rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=0.01,
+        max_broken_bonds=4
+    ))
+    session.add(Metabolite(
+        metid = 12,
+        level = 1,
+        probability = 0.119004,
+        reactionsequence = 'sulfation_(aromatic_hydroxyl)',
+        smiles = 'Oc1ccc(CC2OC(=O)CC2)cc1OS(O)(=O)=O',
+        molformula = 'C11H12O7S',
+        isquery = False,
+        origin = '5-(3,4)-dihydroxyphenyl-g-valerolactone (F)',
+        mol = 'Molfile',
+        mim = 288.0303734299,
+        logp = 1.9027
+    ))
+    session.add_all([Scan(
+        scanid = 1,
+        mslevel = 1,
+        rt = 0.503165,
+        lowmz = 286.529,
+        highmz = 288.239,
+        basepeakmz = 287.023,
+        basepeakintensity = 39047000.0,
+        totioncurrent = 49605000.0,
+        precursorscanid = 0
+    ), Scan(
+        scanid = 2,
+        mslevel = 2,
+        rt = 0.544193333333333,
+        lowmz = 66.8575,
+        highmz = 288.026,
+        basepeakmz = 207.066,
+        basepeakintensity = 32485600.0,
+        totioncurrent = 42005700.0,
+        precursormz = 287.0231323,
+        precursorintensity = 39047000.0,
+        precursorscanid = 1
+    )])
+    session.add_all([Peak(
+        scanid = 1,
+        mz = 287.015686035156,
+        intensity = 1058332.875
+    ), Peak(
+        scanid = 1,
+        mz = 287.023132324219,
+        intensity = 39047040.0
+    ), Peak(
+        scanid = 2,
+        mz = 207.066223144531,
+        intensity = 32485624.0
+    ), Peak(
+        scanid = 2,
+        mz = 287.022827148438,
+        intensity = 6491798.0
+    )])
+    session.add_all([Fragment(
+        fragid = 17,
+        metid = 12,
+        scanid = 1,
+        mz = 287.015686035156,
+        mass = 288.0303734299,
+        score = 0.0,
+        parentfragid = 0,
+        atoms = '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
+        deltah = -1.0
+    ),Fragment(
+        fragid = 18,
+        metid = 12,
+        scanid = 1,
+        mz = 287.023132324219,
+        mass = 288.0303734299,
+        score = 0.5,
+        parentfragid = 0,
+        atoms = '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
+        deltah = -1.0
+    ),Fragment(
+        fragid = 19,
+        metid = 12,
+        scanid = 2,
+        mz = 207.066223144531,
+        mass = 207.0657338415,
+        score = 0.5,
+        parentfragid = 18,
+        atoms = '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14',
+        deltah = 0.0
+    ),Fragment(
+        fragid = 20,
+        metid = 12,
+        scanid = 2,
+        mz = 287.022827148438,
+        mass = 288.0303734299,
+        score = 0.0,
+        parentfragid = 18,
+        atoms = '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
+        deltah = -1.0
+    )])
 
 class JobFactoryTestCase(unittest.TestCase):
     def setUp(self):
@@ -616,7 +726,7 @@ class JobFragmentsTestCase(unittest.TestCase):
     def test_metabolitewithoutfragments(self):
         response = self.job.fragments(metid=72, scanid=641)
         self.assertEqual(response, {
-            'children': {
+            'children': [{
                 'atoms': u'0,1,2,3,4,5,6,7',
                 'children': [],
                 'deltah': -1.0,
@@ -630,13 +740,13 @@ class JobFragmentsTestCase(unittest.TestCase):
                 'mz': 109.0296783,
                 'scanid': 641,
                 'score': 200.0
-            }, 'expanded': True
+            }], 'expanded': True
         })
 
     def test_metabolitewithfragments(self):
         response = self.job.fragments(metid=352, scanid=870)
         self.assertEqual(response, {
-            'children': {
+            'children': [{
                 'atoms': u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14',
                 'children': [{
                     'atoms': "6,7,8,9,10,11,12,13,14",
@@ -676,7 +786,7 @@ class JobFragmentsTestCase(unittest.TestCase):
                 'mz': 207.0663147,
                 'scanid': 870,
                 'score': 100
-            }, 'expanded': True
+            }], 'expanded': True
         })
 
     def test_lvl3fragments(self):
@@ -700,3 +810,69 @@ class JobFragmentsTestCase(unittest.TestCase):
         from magmaweb.job import FragmentNotFound
         with self.assertRaises(FragmentNotFound):
             self.job.fragments(metid=70002, scanid=641)
+
+class JobFragmentsWithAllPeaksTestCase(unittest.TestCase):
+
+    def setUp(self):
+        import uuid
+        self.job = Job(uuid.uuid1(), initTestingDB(dataset='useallpeaks'), '/tmp')
+
+    def test_lvl1fragments(self):
+        response = self.job.fragments(metid=12, scanid=1)
+        self.assertEqual(response, {
+            'children': [{
+                'atoms': u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
+                'children': [],
+                'deltah': -1.0,
+                'expanded': True,
+                'fragid': 17,
+                'leaf': True,
+                'mass': 288.0303734299,
+                'metid': 12,
+                'mol': u'Molfile',
+                'mslevel': 1,
+                'mz': 287.015686035156,
+                'scanid': 1,
+                'score': 0.0
+            }, {
+                'atoms': u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
+                'deltah': -1.0,
+                'expanded': True,
+                'fragid': 18,
+                'leaf': False,
+                'mz': 287.023132324219,
+                'metid': 12,
+                'mol': u'Molfile',
+                'mslevel': 1,
+                'mass': 288.0303734299,
+                'scanid': 1,
+                'score': 0.5,
+                'children': [{
+                    'fragid':  19,
+                    'metid':  12,
+                    'scanid':  2,
+                    'mz':  207.066223144531,
+                    'mass':  207.0657338415,
+                    'score':  0.5,
+                    'mol': u'Molfile',
+                    'atoms':  u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14',
+                    'expanded': True,
+                    'leaf': True,
+                    'mslevel': 2,
+                    'deltah':  0.0
+                },{
+                    'fragid':  20,
+                    'metid':  12,
+                    'scanid':  2,
+                    'mz':  287.022827148438,
+                    'mass':  288.0303734299,
+                    'score':  0.0,
+                    'mol': u'Molfile',
+                    'atoms':  u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
+                    'expanded': True,
+                    'leaf': True,
+                    'mslevel': 2,
+                    'deltah':  -1.0
+                }]
+            }], 'expanded': True
+        })

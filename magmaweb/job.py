@@ -550,19 +550,24 @@ class Job(object):
 
         # parent metabolite
         if (node == ''):
-            try:
-                row = q().filter(
-                    Fragment.scanid == scanid).filter(
-                    Fragment.metid == metid).filter(
-                    Fragment.parentfragid == 0).one()
-            except NoResultFound:
+            structures = []
+            for row in q().filter(
+                                  Fragment.scanid == scanid
+                         ).filter(
+                                  Fragment.metid == metid
+                         ).filter(
+                                  Fragment.parentfragid == 0
+                         ):
+                structure = fragment2json(row)
+                structure['children'] = []
+                for frow in q().filter(Fragment.parentfragid == structure['fragid']):
+                    structure['expanded'] = True
+                    structure['children'].append(fragment2json(frow))
+                structures.append(structure)
+
+            if (len(structures) == 0):
                 raise FragmentNotFound()
-            metabolite = fragment2json(row)
-            metabolite['children'] = []
-            for frow in q().filter(Fragment.parentfragid == metabolite['fragid']):
-                metabolite['expanded'] = True
-                metabolite['children'].append(fragment2json(frow))
-            return { 'children': metabolite, 'expanded': True}
+            return { 'children': structures, 'expanded': True}
         # fragments
         else:
             fragments = []
