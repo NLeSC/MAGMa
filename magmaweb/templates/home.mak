@@ -69,6 +69,7 @@ Ext.onReady(function() {
                    value: 'or'
                }, {
                    xtype: 'filefield',
+                   name: 'structures_file',
                    emptyText: 'Upload structures in file',
                    width: 300
                }]
@@ -90,6 +91,7 @@ Ext.onReady(function() {
             xtype: 'combo',
             store: ['mzxml', 'peaklist' ],
             allowBlank: false,
+            name: 'msdata_format',
             value: 'mzxml'
         }, {
             name: 'db',
@@ -210,7 +212,7 @@ Ext.onReady(function() {
           name: 'mz_precision',
           fieldLabel: 'M/z offset which is allowed for matching a metabolite mass to m/z of a peak',
           allowBlank: false,
-          value: 0.01,
+          value: 0.001,
           decimalPrecision: 5
       }]
     }],
