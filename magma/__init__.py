@@ -62,14 +62,20 @@ Hmass=mims[1]     # Mass of hydrogen atom
 #maxMSlevel = 2 # TODO move to class
 
 class MagmaSession(object):
-    def __init__(self,db_name):
+    def __init__(self,db_name,description):
         engine = create_engine('sqlite:///'+db_name)
         session = sessionmaker()
         session.configure(bind=engine)
         self.db_session = session()
         Base.metadata.create_all(engine)
-        # set default run parameters
-        # set_run_data()
+        try:
+            rundata=self.db_session.query(Run).one()
+        except:
+            rundata = Run()
+        if rundata.description == None:
+            rundata.description=description
+        self.db_session.add(rundata)
+        self.db_session.commit()
     def get_structure_engine(self,
                  metabolism_types="phase1,phase2",
                  n_reaction_steps=2
@@ -83,16 +89,16 @@ class MagmaSession(object):
         return MsDataEngine(self.db_session,abs_peak_cutoff,rel_peak_cutoff,max_ms_level)
     def get_annotate_engine(self,
                  ionisation_mode=1,
-                 use_fragmentation=True,
+                 skip_fragmentation=False,
                  max_broken_bonds=4,
                  ms_intensity_cutoff=1e6,
                  msms_intensity_cutoff=0.1,
                  mz_precision=0.001,
                  precursor_mz_precision=0.005,
-                 use_msms_only=True
+                 use_all_peaks=False
                  ):
-        return AnnotateEngine(self.db_session,ionisation_mode,use_fragmentation,max_broken_bonds,
-                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,precursor_mz_precision,use_msms_only)
+        return AnnotateEngine(self.db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,
+                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,precursor_mz_precision,use_all_peaks)
     def commit(self):
         self.db_session.commit()
     def close(self):
@@ -145,6 +151,7 @@ class StructureEngine(object):
                 sys.stderr.write('Duplicate structure: '+sequence+' '+smiles+' - kept old one\n')
         except NoResultFound:
             self.db_session.add(metab)
+            self.db_session.commit()
             # print 'Added structure:',sequence
 
     def add_structure_tmp(self,mol,name,prob,level,sequence,isquery):
@@ -327,8 +334,8 @@ class MsDataEngine(object):
 
 
 class AnnotateEngine(object):
-    def __init__(self,db_session,ionisation_mode,use_fragmentation,max_broken_bonds,
-                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,precursor_mz_precision,use_msms_only):
+    def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,
+                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,precursor_mz_precision,use_all_peaks):
         self.db_session = db_session
         try:
             rundata=self.db_session.query(Run).one()
@@ -336,8 +343,8 @@ class AnnotateEngine(object):
             rundata = Run()
         if rundata.ionisation_mode == None:
             rundata.ionisation_mode=ionisation_mode
-        if rundata.use_fragmentation == None:
-            rundata.use_fragmentation=use_fragmentation
+        if rundata.skip_fragmentation == None:
+            rundata.skip_fragmentation=skip_fragmentation
         if rundata.max_broken_bonds == None:
             rundata.max_broken_bonds=max_broken_bonds
         if rundata.ms_intensity_cutoff == None:
@@ -348,18 +355,18 @@ class AnnotateEngine(object):
             rundata.mz_precision=mz_precision
         if rundata.precursor_mz_precision == None:
             rundata.precursor_mz_precision=precursor_mz_precision
-        if rundata.use_msms_only == None:
-            rundata.use_msms_only=use_msms_only
+        if rundata.use_all_peaks == None:
+            rundata.use_all_peaks=use_all_peaks
         self.db_session.add(rundata)
         self.db_session.commit()
         self.ionisation_mode=rundata.ionisation_mode
-        self.use_fragmentation=rundata.use_fragmentation
+        self.skip_fragmentation=rundata.skip_fragmentation
         self.max_broken_bonds=rundata.max_broken_bonds
         self.ms_intensity_cutoff=rundata.ms_intensity_cutoff
         self.msms_intensity_cutoff=rundata.msms_intensity_cutoff
         self.mz_precision=rundata.mz_precision
         self.precursor_mz_precision=rundata.precursor_mz_precision
-        self.use_msms_only=rundata.use_msms_only
+        self.use_all_peaks=rundata.use_all_peaks
 
         self.scans=[]
 
@@ -540,7 +547,7 @@ class AnnotateEngine(object):
 
         for scan in self.scans:
             for peak in scan.peaks:
-                if not (self.use_msms_only and peak.childscan==None):
+                if not ((not self.use_all_peaks) and peak.childscan==None):
                     protonation=self.ionisation_mode-(structure.molformula.find('+')>=0)*1
                     deltaH=peak.massmatch(structure.mim,protonation,protonation)
                     if type(deltaH)==int:
