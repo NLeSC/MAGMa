@@ -144,7 +144,6 @@ Fraction of basepeak intensity threshold threshold for storing peaks in database
 </fieldset>
 <fieldset class="x-fieldset x-fieldset-default">
 <legend class="x-fieldset-header x-fieldset-header-default">Annotate options</legend>
-Ionisation mode: ${run.ionisation_mode} <br/>
 Use defragmentation:
 % if run.use_fragmentation:
 Yes
