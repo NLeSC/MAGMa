@@ -32,14 +32,13 @@ class JobNotFound(Exception):
 
 class JobQuery(object):
     structures = None
-    mzxml_filename = None
-    mzxml_file = None
+    ms_data_file = None
     n_reaction_steps = None
     metabolism_types = None
     max_broken_bonds = None
     ionisation_mode = None
-    use_fragmentation = None
-    use_msms_only = None
+    skip_fragmentation = None
+    use_all_peaks = None
     ms_intensity_cutoff = None
     msms_intensity_cutoff = None
     mz_precision = None
@@ -47,13 +46,14 @@ class JobQuery(object):
     abs_peak_cutoff = None
     rel_peak_cutoff = None
     max_ms_level = None
+    description = None
+    ms_data_format = None
+    structure_format = None
 
     def __eq__(self, other):
         """ Compares all attributes except file objects"""
         return (
                 self.structures == other.structures
-                and
-                self.mzxml_filename == other.mzxml_filename
                 and
                 self.n_reaction_steps == other.n_reaction_steps
                 and
@@ -63,9 +63,9 @@ class JobQuery(object):
                 and
                 self.ionisation_mode == other.ionisation_mode
                 and
-                self.use_fragmentation == other.use_fragmentation
+                self.use_all_peaks == other.use_all_peaks
                 and
-                self.use_msms_only == other.use_msms_only
+                self.skip_fragmentation == other.skip_fragmentation
                 and
                 self.abs_peak_cutoff == other.abs_peak_cutoff
                 and
@@ -80,6 +80,12 @@ class JobQuery(object):
                 self.precursor_mz_precision == other.precursor_mz_precision
                 and
                 self.max_ms_level == other.max_ms_level
+                and
+                self.description == other.description
+                and
+                self.ms_data_format == other.ms_data_format
+                and
+                self.structure_format == other.structure_format
                 )
 
 class JobFactory(object):
@@ -184,14 +190,14 @@ class JobFactory(object):
         os.makedirs(jobdir)
 
         # copy mzxml file
-        jobmzxml = open(os.path.join(jobdir ,'data.mzxml'), 'wb')
-        query.mzxml_file.seek(0)
+        job_ms_data_file = open(os.path.join(jobdir ,'data.mzxml'), 'wb')
+        query.ms_data_file.seek(0)
         while 1:
-            data = query.mzxml_file.read(2 << 16)
+            data = query.ms_data_file.read(2 << 16)
             if not data:
                 break
-            jobmzxml.write(data)
-        jobmzxml.close()
+            job_ms_data_file.write(data)
+        job_ms_data_file.close()
 
         # copy metabolites string to file
         metsfile = file(os.path.join(jobdir, 'smiles.txt'), 'w')
@@ -223,14 +229,19 @@ class JobFactory(object):
                               "--abs_peak_cutoff", query.abs_peak_cutoff,
                               "--rel_peak_cutoff", query.rel_peak_cutoff,
                               "--precursor_mz_precision", query.precursor_mz_precision,
+                              "--structure_format", query.structure_format,
+                              "--ms_data_format", query.ms_data_format,
                               'data.mzxml', 'smiles.txt',
                               self.dbname
                               ]
                  }
-        if query.use_msms_only:
-            body['arguments'].insert(-3,"--use_msms_only")
-        if query.use_fragmentation:
-            body['arguments'].insert(-3,"--use_fragmentation")
+        if query.use_all_peaks:
+            body['arguments'].insert(-3, "--use_all_peaks")
+        if query.skip_fragmentation:
+            body['arguments'].insert(-3, "--skip_fragmentation")
+        if query.description:
+            body['arguments'].insert(-3, "--description")
+            body['arguments'].insert(-3, query.description)
 
         self.submitJob2Manager(body)
 

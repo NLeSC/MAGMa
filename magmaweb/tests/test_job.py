@@ -302,27 +302,57 @@ class JobFactoryTestCase(unittest.TestCase):
             self.factory.fromId(jobid)
         self.assertEqual(exc.exception.jobid, jobid)
 
-    def test_submitQuery(self):
-        import tempfile, uuid, os
+    def built_query(self):
+        import tempfile
         q = JobQuery()
         q.n_reaction_steps = 2
         q.ionisation_mode = 1
         q.ms_intensity_cutoff = 2e5
         q.msms_intensity_cutoff = 0.1
-        q.use_fragmentation = True
+        q.use_all_peaks = False
         q.abs_peak_cutoff = 1000
         q.rel_peak_cutoff = 0.01
         q.precursor_mz_precision = 0.001
-        q.use_msms_only = True
+        q.skip_fragmentation = False
         q.max_broken_bonds = 4
         q.mz_precision = 0.001
         q.metabolism_types = [ 'phase1', 'phase2' ]
         q.max_ms_level = 3
         q.structures = 'C1CCCC1|comp1'
-        q.mzxml_file = tempfile.NamedTemporaryFile()
-        q.mzxml_file.write('foo')
-        q.mzxml_file.flush();
-        q.mzxml_filename = q.mzxml_file.name
+        q.ms_data_file = tempfile.NamedTemporaryFile()
+        q.ms_data_file.write('foo')
+        q.ms_data_file.flush();
+        q.description = 'My description'
+        q.structure_format = 'smiles'
+        q.ms_data_format = 'mzxml'
+
+        query = q
+        jobargs = [
+                              "magma.sh",
+                              "all_in_one",
+                              "--max_ms_level", query.max_ms_level,
+                              "--mz_precision", query.mz_precision,
+                              "--ms_intensity_cutoff", query.ms_intensity_cutoff,
+                              "--msms_intensity_cutoff", query.msms_intensity_cutoff,
+                              "--ionisation_mode", query.ionisation_mode,
+                              "--n_reaction_steps", query.n_reaction_steps,
+                              "--metabolism_types", ",".join(query.metabolism_types),
+                              "--max_broken_bonds", query.max_broken_bonds,
+                              "--abs_peak_cutoff", query.abs_peak_cutoff,
+                              "--rel_peak_cutoff", query.rel_peak_cutoff,
+                              "--precursor_mz_precision", query.precursor_mz_precision,
+                              "--structure_format", query.structure_format,
+                              "--ms_data_format", query.ms_data_format,
+                              "--description", query.description,
+                              'data.mzxml', 'smiles.txt',
+                              'results.db'
+                              ]
+
+        return q, jobargs
+
+    def test_submitQuery(self):
+        import uuid, os
+        q, jobargs = self.built_query()
 
         self.factory.submitJob2Manager = Mock()
         jobid = self.factory.submitQuery(q)
@@ -338,7 +368,6 @@ class JobFactoryTestCase(unittest.TestCase):
             q.structures,
             'query mzxml file content has been copied to job dir'
         )
-        query = q
         self.factory.submitJob2Manager.assert_called_with({
                 'jobdir': os.path.join(self.factory.id2jobdir(jobid))+'/',
                 'executable': "/bin/sh",
@@ -350,28 +379,43 @@ class JobFactoryTestCase(unittest.TestCase):
                 "poststaged": ["results.db"],
                 "stderr": "stderr.txt",
                 "stdout": "stdout.txt",
-                'arguments': [
-                              "magma.sh",
-                              "all_in_one",
-                              "--max_ms_level", query.max_ms_level,
-                              "--mz_precision", query.mz_precision,
-                              "--ms_intensity_cutoff", query.ms_intensity_cutoff,
-                              "--msms_intensity_cutoff", query.msms_intensity_cutoff,
-                              "--ionisation_mode", query.ionisation_mode,
-                              "--n_reaction_steps", query.n_reaction_steps,
-                              "--metabolism_types", ",".join(query.metabolism_types),
-                              "--max_broken_bonds", query.max_broken_bonds,
-                              "--abs_peak_cutoff", query.abs_peak_cutoff,
-                              "--rel_peak_cutoff", query.rel_peak_cutoff,
-                              "--precursor_mz_precision", query.precursor_mz_precision,
-                              "--use_msms_only",
-                              "--use_fragmentation",
-                              'data.mzxml', 'smiles.txt',
-                              'results.db'
-                              ]
+                'arguments': jobargs
                 })
 
-        q.mzxml_file.close()
+        q.ms_data_file.close()
+
+    def test_submitQueryChecked(self):
+        import os
+        q, jobargs = self.built_query()
+        # add boolean flags
+        q.use_all_peaks = True
+        jobargs.insert(-3,'--use_all_peaks')
+        q.skip_fragmentation = True
+        jobargs.insert(-3,'--skip_fragmentation')
+        # remove optional description
+        jobargs.remove('--description')
+        jobargs.remove(q.description)
+        q.description = None
+
+        self.factory.submitJob2Manager = Mock()
+
+        jobid = self.factory.submitQuery(q)
+
+        self.factory.submitJob2Manager.assert_called_with({
+                'jobdir': os.path.join(self.factory.id2jobdir(jobid))+'/',
+                'executable': "/bin/sh",
+                'prestaged': [
+                              "magma.sh",
+                              "Magma-1.1.tar.gz",
+                              'data.mzxml', 'smiles.txt'
+                              ],
+                "poststaged": ["results.db"],
+                "stderr": "stderr.txt",
+                "stdout": "stdout.txt",
+                'arguments': jobargs
+                })
+
+        q.ms_data_file.close()
 
     @patch('urllib2.urlopen')
     def test_submitJob2Manager(self, ua):

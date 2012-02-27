@@ -53,10 +53,10 @@ Ext.onReady(function() {
                title: 'Upload',
                items:[{
                    xtype: 'combo',
-                   id: 'structures_format',
-                   store: ['smile', 'SD' ],
+                   id: 'structure_format',
+                   store: ['smiles', 'sdf' ],
                    allowBlank: false,
-                   value: 'smile',
+                   value: 'smiles',
                }, {
                    xtype: 'textarea',
                    name: 'structures',
@@ -89,12 +89,12 @@ Ext.onReady(function() {
         layout: 'hbox',
         items: [{
             xtype: 'combo',
-            store: ['mzxml', 'peaklist' ],
+            store: ['mzxml'],
             allowBlank: false,
-            name: 'msdata_format',
+            name: 'ms_data_format',
             value: 'mzxml'
         }, {
-            name: 'db',
+            name: 'ms_data_file',
             xtype: 'filefield',
             emptyText: 'Upload MS/MS data file',
             width: 300
@@ -185,14 +185,12 @@ Ext.onReady(function() {
           ]
       },{
           xtype:'checkbox',
-          fieldLabel: 'Use fragmentation',
-          checked: 'checked',
-          name: 'use_fragmentation'
+          fieldLabel: 'Skip fragmentation',
+          name: 'skip_fragmentation'
       },{
           xtype:'checkbox',
-          fieldLabel: 'Annotate only peaks with fragmentation data',
-          checked: 'checked',
-          name: 'use_msms_only'
+          fieldLabel: 'Annotate all lvl1 peaks, including those without fragmentation data',
+          name: 'use_all_peaks'
       },{
           xtype: 'numberfield',
           name: 'ms_intensity_cutoff',
@@ -214,7 +212,13 @@ Ext.onReady(function() {
           allowBlank: false,
           value: 0.001,
           decimalPrecision: 5
-      }]
+      }],
+    }, {
+        xtype: 'textfield',
+        name: 'description',
+        fieldLabel: 'Description',
+        width: 500,
+        emptyText: 'Enter optional description which can be used to identify the results'
     }],
     buttons: [{
       text: 'Submit',

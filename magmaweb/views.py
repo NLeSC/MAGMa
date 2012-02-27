@@ -31,15 +31,14 @@ def home(request):
     """Returns homepage on GET.
      On POST:
      1. creates job session
-     2. copies file in 'db' param to job session dir
+     2. copies file in 'ms_data_file' param to job session dir
      3. redirects to results action
     """
 
     if (request.method == 'POST'):
         post = request.POST
         q = JobQuery()
-        q.mzxml_filename=post['db'].filename
-        q.mzxml_file=post['db'].file
+        q.ms_data_file=post['ms_data_file'].file
         q.mz_precision=post['mz_precision']
         q.ms_intensity_cutoff=post['ms_intensity_cutoff']
         q.msms_intensity_cutoff=post['msms_intensity_cutoff']
@@ -52,14 +51,17 @@ def home(request):
         q.rel_peak_cutoff=post['rel_peak_cutoff']
         q.max_ms_level=post['max_ms_level']
         q.precursor_mz_precision=post['precursor_mz_precision']
-        if ('use_msms_only' in post):
-            q.use_msms_only = True
+        q.description = post['description']
+        q.structure_format = post['structure_format']
+        q.ms_data_format = post['ms_data_format']
+        if ('use_all_peaks' in post):
+            q.use_all_peaks = True
         else:
-            q.use_msms_only = False
-        if ('use_fragmentation' in post):
-            q.use_fragmentation = True
+            q.use_all_peaks = False
+        if ('skip_fragmentation' in post):
+            q.skip_fragmentation = True
         else:
-            q.use_fragmentation = False
+            q.skip_fragmentation = False
 
         jobid = job_factory(request).submitQuery(q)
         return Response(json.dumps({"success": True, "jobid": str(jobid) }), content_type='text/html')

@@ -85,7 +85,7 @@ class HomeView(unittest.TestCase):
         class FileUpload:
             pass
         post = {
-                'db': FileUpload(),
+                'ms_data_file': FileUpload(),
                 'mz_precision': 0.01,
                 'ms_intensity_cutoff': 2e5,
                 'msms_intensity_cutoff': 0.1,
@@ -98,16 +98,18 @@ class HomeView(unittest.TestCase):
                 'rel_peak_cutoff': 0.01,
                 'max_ms_level': 3,
                 'precursor_mz_precision': 0.001,
-                'use_msms_only': 'on',
-                'use_fragmentation': 'on'
+                'use_all_peaks': 'on',
+                'skip_fragmentation': 'on',
+                'description': 'My desc',
+                'structure_format': 'smiles',
+                'ms_data_format': 'mzxml'
                 }
-        post['db'].file = dbfile
-        post['db'].filename = dbfile.name
+        post['ms_data_file'].file = dbfile
+        post['ms_data_file'].filename = dbfile.name
 
         from magmaweb.job import JobQuery
         q = JobQuery()
-        q.mzxml_filename = dbfile.name
-        q.mzxml_file = dbfile
+        q.ms_data_file = dbfile
         q.mz_precision = post['mz_precision']
         q.ms_intensity_cutoff = post['ms_intensity_cutoff']
         q.msms_intensity_cutoff = post['msms_intensity_cutoff']
@@ -120,8 +122,11 @@ class HomeView(unittest.TestCase):
         q.rel_peak_cutoff = post['rel_peak_cutoff']
         q.max_ms_level = post['max_ms_level']
         q.precursor_mz_precision = post['precursor_mz_precision']
-        q.use_msms_only = True
-        q.use_fragmentation = True
+        q.skip_fragmentation = True
+        q.use_all_peaks = True
+        q.description = post['description']
+        q.structure_format = post['structure_format']
+        q.ms_data_format = post['ms_data_format']
 
         return (post,q)
 
@@ -163,10 +168,10 @@ class HomeView(unittest.TestCase):
         dbfile = tempfile.NamedTemporaryFile()
 
         (post, q) = self.build_post_request(dbfile)
-        del(post['use_msms_only'])
-        q.use_msms_only = False
-        del(post['use_fragmentation'])
-        q.use_fragmentation = False
+        del(post['use_all_peaks'])
+        q.use_all_peaks = False
+        del(post['skip_fragmentation'])
+        q.skip_fragmentation = False
 
         request = testing.DummyRequest(post=post)
 
