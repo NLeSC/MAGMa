@@ -29,6 +29,7 @@ class Metabolite(Base):
     origin = Column(Unicode) #: Name of molecule
     nhits = Column(Integer)
     mim = Column(Float) #: Monoisotopic mass
+    logp = Column(Float) #: Calculated logP
     fragments = relationship('Fragment', backref='metabolite') #: each metabolite is fragmented into fragments
 
 class Scan(Base):
@@ -75,13 +76,13 @@ class Fragment(Base):
 class Run(Base):
     """Run model for run table"""
     __tablename__ = 'run'
+    runid = Column(Integer, primary_key=True, autoincrement=True) #: Run identifier
     # TODO run consists of 1 row so doesn't need a pk
     # but sqlalchemy requires one
 
     # SyGMa parameters, TODO remove: metabolism type info will be part of reacton sequence of metabolites
-    n_reaction_steps = Column(Integer, primary_key=True) #: Maximum number of reaction steps applied to reactants
-    metabolism_types = Column(Unicode) #: Comma separated list of metabolism types, like "phase1,phase2"
-
+    n_reaction_steps = Column(Integer) #: Maximum number of reaction steps applied to reactants
+    metabolism_types = Column(Unicode) #: Comma separated list of metabolism types, like "phase1"
     # ms data parsing parameters
     ms_filename = Column(Unicode)
     abs_peak_cutoff = Column(Float) #: abs intensity threshold for storing peaks in database

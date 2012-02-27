@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, and_
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import desc, asc
+from sqlalchemy.sql.expression import desc, asc, distinct
 from sqlalchemy.orm.exc import NoResultFound
 from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
 
@@ -164,6 +164,10 @@ class JobFactory(object):
                                   json.dumps(body),
                                   { 'Content-Type': 'application/json' }
                                   )
+        # log what is send to job manager
+        import logging
+        logger = logging.getLogger('magmaweb')
+        logger.info(request.data)
         return urllib2.urlopen(request)
 
     def submitQuery(self, query):
@@ -207,13 +211,14 @@ class JobFactory(object):
                 "stdout": "stdout.txt",
                 'arguments': [
                               self.job_script,
-                              "allinone",
+                              "all_in_one",
+                              "--max_ms_level", query.max_ms_level,
                               "--mz_precision", query.mz_precision,
                               "--ms_intensity_cutoff", query.ms_intensity_cutoff,
                               "--msms_intensity_cutoff", query.msms_intensity_cutoff,
                               "--ionisation_mode", query.ionisation_mode,
                               "--n_reaction_steps", query.n_reaction_steps,
-                              "--metabolism_types", " ".join(query.metabolism_types),
+                              "--metabolism_types", ",".join(query.metabolism_types),
                               "--max_broken_bonds", query.max_broken_bonds,
                               "--abs_peak_cutoff", query.abs_peak_cutoff,
                               "--rel_peak_cutoff", query.rel_peak_cutoff,
@@ -322,7 +327,7 @@ class Job(object):
                 fragal.parentfragid == 0).filter(fragal.scanid == scanid)
 
         # add nr_scans column
-        stmt = self.session.query(Fragment.metid, func.count('*').label('nr_scans')).filter(
+        stmt = self.session.query(Fragment.metid, func.count(distinct(Fragment.scanid)).label('nr_scans')).filter(
             Fragment.parentfragid == 0).group_by(Fragment.metid).subquery()
         q = q.add_column(stmt.c.nr_scans).outerjoin(stmt, Metabolite.metid == stmt.c.metid)
 
@@ -370,7 +375,8 @@ class Job(object):
                 'origin': met.origin,
                 'nhits': met.nhits,
                 'nr_scans': r.nr_scans,
-                'mim': met.mim
+                'mim': met.mim,
+                'logp': met.logp
             }
             if ('score' in r.keys()):
                 row['score'] = r.score
@@ -391,7 +397,7 @@ class Job(object):
         csvstr = StringIO.StringIO()
         headers = [
                    'name', 'smiles', 'probability', 'reactionsequence',
-                   'nr_scans', 'molformula', 'mim' , 'isquery'
+                   'nr_scans', 'molformula', 'mim' , 'isquery', 'logp'
                    ]
         if ('score' in metabolites[0].keys()):
             headers.append('score')
@@ -544,19 +550,24 @@ class Job(object):
 
         # parent metabolite
         if (node == ''):
-            try:
-                row = q().filter(
-                    Fragment.scanid == scanid).filter(
-                    Fragment.metid == metid).filter(
-                    Fragment.parentfragid == 0).one()
-            except NoResultFound:
+            structures = []
+            for row in q().filter(
+                                  Fragment.scanid == scanid
+                         ).filter(
+                                  Fragment.metid == metid
+                         ).filter(
+                                  Fragment.parentfragid == 0
+                         ):
+                structure = fragment2json(row)
+                structure['children'] = []
+                for frow in q().filter(Fragment.parentfragid == structure['fragid']):
+                    structure['expanded'] = True
+                    structure['children'].append(fragment2json(frow))
+                structures.append(structure)
+
+            if (len(structures) == 0):
                 raise FragmentNotFound()
-            metabolite = fragment2json(row)
-            metabolite['children'] = []
-            for frow in q().filter(Fragment.parentfragid == metabolite['fragid']):
-                metabolite['expanded'] = True
-                metabolite['children'].append(fragment2json(frow))
-            return { 'children': metabolite, 'expanded': True}
+            return { 'children': structures, 'expanded': True}
         # fragments
         else:
             fragments = []

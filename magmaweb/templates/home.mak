@@ -231,6 +231,10 @@ Ext.onReady(function() {
                   waitMsg: 'Uploading your data...',
                   success: function(fp, o) {
                       window.location = '${request.application_url}/status/'+o.result.jobid;
+                  },
+                  failure: function(form, action) {
+                      console.log(action.failureType);
+                      console.log(action.result);
                   }
               });
           }
