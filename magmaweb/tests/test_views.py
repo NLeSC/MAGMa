@@ -2,6 +2,11 @@ import unittest
 from pyramid import testing
 from mock import patch, Mock
 
+class FileUpload:
+    file = None
+    filename = None
+    pass
+
 class HelperTestCase(unittest.TestCase):
     def setUp(self):
         import tempfile
@@ -80,10 +85,7 @@ class HomeView(unittest.TestCase):
         response = home(request)
         self.assertEqual(response, {})
 
-
     def build_post_request(self, dbfile):
-        class FileUpload:
-            pass
         post = {
                 'ms_data_file': FileUpload(),
                 'mz_precision': 0.01,
@@ -102,7 +104,8 @@ class HomeView(unittest.TestCase):
                 'skip_fragmentation': 'on',
                 'description': 'My desc',
                 'structure_format': 'smiles',
-                'ms_data_format': 'mzxml'
+                'ms_data_format': 'mzxml',
+                'structures_file': ''
                 }
         post['ms_data_file'].file = dbfile
         post['ms_data_file'].filename = dbfile.name
@@ -184,6 +187,39 @@ class HomeView(unittest.TestCase):
         jobf.submitQuery.assert_called_with(q)
         dbfile.close()
 
+    @patch('magmaweb.views.job_factory')
+    def test_postWithStructuresFile(self, mocked_jobfactory):
+        import uuid
+        jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
+        from magmaweb.job import JobFactory
+        jobf = Mock(JobFactory)
+        jobf.submitQuery.return_value = jobid
+        mocked_jobfactory.return_value = jobf
+
+        import tempfile
+        dbfile = tempfile.NamedTemporaryFile()
+
+        (post, q) = self.build_post_request(dbfile)
+
+        structuresfile = tempfile.NamedTemporaryFile()
+        structuresfile.write('CCO ethanol')
+        structuresfile.flush()
+        post['structures_file'] = FileUpload()
+        post['structures_file'].file = structuresfile
+        post['structures_file'].filename = structuresfile.name
+        q.structures = 'CCO ethanol'
+
+        request = testing.DummyRequest(post=post)
+
+        from magmaweb.views import home
+        response = home(request)
+
+        self.assertEqual(response.body, '{"success": true, "jobid": "'+str(jobid)+'"}')
+        self.assertEqual(response.content_type, 'text/html') # required for extjs iframe file upload
+        mocked_jobfactory.assert_called_with(request)
+        jobf.submitQuery.assert_called_with(q)
+        dbfile.close()
+        structuresfile.close()
 
 def mock_job():
     """ Returns a mocked magmaweb.job.Job which can be used as return value in a patched fetch_job()

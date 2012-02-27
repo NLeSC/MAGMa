@@ -70,6 +70,7 @@ Ext.onReady(function() {
                }, {
                    xtype: 'filefield',
                    name: 'structures_file',
+                   id: 'structures_filefield',
                    emptyText: 'Upload structures in file',
                    width: 300
                }]
@@ -96,6 +97,7 @@ Ext.onReady(function() {
         }, {
             name: 'ms_data_file',
             xtype: 'filefield',
+            allowBlank: false,
             emptyText: 'Upload MS/MS data file',
             width: 300
         }]
@@ -227,11 +229,12 @@ Ext.onReady(function() {
           var mol = sketcher.getMolecule();
           if (mol.bonds.length > 0) {
               form.setValues({
-                 structures_format: 'SD',
+                 structures_format: 'sdf',
                  structures_area: ChemDoodle.writeMOL(mol)
               });
           }
           if(form.isValid()){
+              // TODO test if structures textarea or file is filled
               form.submit({
                   url: '${request.route_url('home')}',
                   waitMsg: 'Uploading your data...',

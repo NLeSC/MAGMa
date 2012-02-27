@@ -37,6 +37,7 @@ def home(request):
 
     if (request.method == 'POST'):
         post = request.POST
+
         q = JobQuery()
         q.ms_data_file=post['ms_data_file'].file
         q.mz_precision=post['mz_precision']
@@ -62,6 +63,11 @@ def home(request):
             q.skip_fragmentation = True
         else:
             q.skip_fragmentation = False
+
+        if post['structures_file'] != '':
+            sf = post['structures_file'].file
+            sf.seek(0)
+            q.structures = sf.read()
 
         jobid = job_factory(request).submitQuery(q)
         return Response(json.dumps({"success": True, "jobid": str(jobid) }), content_type='text/html')
