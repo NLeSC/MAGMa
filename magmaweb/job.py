@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, and_
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import desc, asc
+from sqlalchemy.sql.expression import desc, asc, distinct
 from sqlalchemy.orm.exc import NoResultFound
 from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
 
@@ -327,7 +327,7 @@ class Job(object):
                 fragal.parentfragid == 0).filter(fragal.scanid == scanid)
 
         # add nr_scans column
-        stmt = self.session.query(Fragment.metid, func.count('*').label('nr_scans')).filter(
+        stmt = self.session.query(Fragment.metid, func.count(distinct(Fragment.scanid)).label('nr_scans')).filter(
             Fragment.parentfragid == 0).group_by(Fragment.metid).subquery()
         q = q.add_column(stmt.c.nr_scans).outerjoin(stmt, Metabolite.metid == stmt.c.metid)
 

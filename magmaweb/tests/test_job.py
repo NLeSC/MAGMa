@@ -811,11 +811,34 @@ class JobFragmentsTestCase(unittest.TestCase):
         with self.assertRaises(FragmentNotFound):
             self.job.fragments(metid=70002, scanid=641)
 
-class JobFragmentsWithAllPeaksTestCase(unittest.TestCase):
+class JobWithAllPeaksTestCase(unittest.TestCase):
 
     def setUp(self):
         import uuid
         self.job = Job(uuid.uuid1(), initTestingDB(dataset='useallpeaks'), '/tmp')
+
+    def test_default(self):
+        response = self.job.metabolites()
+        self.assertEquals(
+            response,
+            {
+                'total': 1,
+                'rows': [{
+                    'metid': 12,
+                    'isquery': False,
+                    'level': 1,
+                    'mol': u'Molfile',
+                    'molformula': u'C11H12O7S',
+                    'nhits': None,
+                    'nr_scans': 1,
+                    'origin': u'5-(3,4)-dihydroxyphenyl-g-valerolactone (F)',
+                    'probability': 0.119004,
+                    'reactionsequence': u'sulfation_(aromatic_hydroxyl)',
+                    'smiles': u'Oc1ccc(CC2OC(=O)CC2)cc1OS(O)(=O)=O',
+                    'mim': 288.0303734299, 'logp':1.9027
+                }]
+            }
+        )
 
     def test_lvl1fragments(self):
         response = self.job.fragments(metid=12, scanid=1)
