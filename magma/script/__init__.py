@@ -122,21 +122,21 @@ class MagmaCommand(object):
         struct_engine.metabolize_all(args.metabolism_types, args.n_reaction_steps)
 
     def _read_ms_data(self, args, magma_session):
-        ms_data_engine = magma_session.get_ms_data_engine(abs_peak_cutoff=args.abs_peak_cutoff, 
-            rel_peak_cutoff=args.rel_peak_cutoff)
+        ms_data_engine = magma_session.get_ms_data_engine(abs_peak_cutoff=args.abs_peak_cutoff,
+            rel_peak_cutoff=args.rel_peak_cutoff, max_ms_level=args.max_ms_level)
         if args.ms_data_format == "mzxml":
             ms_data_engine.store_mzxml_file(args.ms_data.name)
         elif args.ms_data_format == "peak_list":
             pass
 
     def _annotate(self, args, magma_session):
-        annotate_engine = magma_session.get_annotate_engine(ionisation_mode=args.ionisation_mode, 
-            skip_fragmentation=args.skip_fragmentation, 
-            max_broken_bonds=args.max_broken_bonds, 
-            ms_intensity_cutoff=args.ms_intensity_cutoff, 
-            msms_intensity_cutoff=args.msms_intensity_cutoff, 
-            mz_precision=args.mz_precision, 
-            precursor_mz_precision=args.precursor_mz_precision, 
+        annotate_engine = magma_session.get_annotate_engine(ionisation_mode=args.ionisation_mode,
+            skip_fragmentation=args.skip_fragmentation,
+            max_broken_bonds=args.max_broken_bonds,
+            ms_intensity_cutoff=args.ms_intensity_cutoff,
+            msms_intensity_cutoff=args.msms_intensity_cutoff,
+            mz_precision=args.mz_precision,
+            precursor_mz_precision=args.precursor_mz_precision,
             use_all_peaks=args.use_all_peaks)
         annotate_engine.build_spectra()
         annotate_engine.search_all_structures()
