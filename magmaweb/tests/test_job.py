@@ -19,7 +19,7 @@ def initTestingDB(url = 'sqlite://', dataset='default'):
     return dbh
 
 def populateTestingDB(session):
-    """Polulates test db with data
+    """Populates test db with data
 
     Adds 1 metabolite with one fragment.
     Adds 1 metabolite with one fragment which has 2 child fragments of which one has another child fragment.
@@ -30,12 +30,12 @@ def populateTestingDB(session):
     """
     session.add(Run(
         n_reaction_steps=2, metabolism_types='phase1,phase2' ,
-        ionisation_mode=-1, use_fragmentation=True,
+        ionisation_mode=-1, skip_fragmentation=True,
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
-        mz_precision=0.01, use_msms_only=True,
+        mz_precision=0.01, use_all_peaks=True,
         ms_filename = 'F123456.mzxml', abs_peak_cutoff=1000,
         rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=0.01,
-        max_broken_bonds=4
+        max_broken_bonds=4, description='My first description'
     ))
     session.add(Metabolite(
         metid=72, mol='Molfile', level=0, probability=1.0,
@@ -114,12 +114,12 @@ def populateWithUseAllPeaks(session):
     """ Dataset with multiple fragments of same metabolite on lvl1 scan """
     session.add(Run(
         n_reaction_steps=2, metabolism_types='phase1,phase2' ,
-        ionisation_mode=-1, use_fragmentation=True,
+        ionisation_mode=-1, skip_fragmentation=True,
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
-        mz_precision=0.01, use_msms_only=False,
+        mz_precision=0.01, use_all_peaks=False,
         ms_filename = 'F123456.mzxml', abs_peak_cutoff=1000,
         rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=0.01,
-        max_broken_bonds=4
+        max_broken_bonds=4, description='My second description'
     ))
     session.add(Metabolite(
         metid = 12,
@@ -322,7 +322,6 @@ class JobFactoryTestCase(unittest.TestCase):
         q.ms_data_file = tempfile.NamedTemporaryFile()
         q.ms_data_file.write('foo')
         q.ms_data_file.flush();
-        q.description = 'My description'
         q.structure_format = 'smiles'
         q.ms_data_format = 'mzxml'
 
@@ -343,7 +342,6 @@ class JobFactoryTestCase(unittest.TestCase):
                               "--precursor_mz_precision", query.precursor_mz_precision,
                               "--structure_format", query.structure_format,
                               "--ms_data_format", query.ms_data_format,
-                              "--description", query.description,
                               'data.mzxml', 'smiles.txt',
                               'results.db'
                               ]
@@ -392,10 +390,10 @@ class JobFactoryTestCase(unittest.TestCase):
         jobargs.insert(-3,'--use_all_peaks')
         q.skip_fragmentation = True
         jobargs.insert(-3,'--skip_fragmentation')
-        # remove optional description
-        jobargs.remove('--description')
-        jobargs.remove(q.description)
-        q.description = None
+        # add description
+        q.description = 'My description "hello" and \'bye\'; rm -rf ~'
+        jobargs.insert(-3,"--description")
+        jobargs.insert(-3, '\'My description "hello" and \'"\'"\'bye\'"\'"\'; rm -rf ~\'')
 
         self.factory.submitJob2Manager = Mock()
 
@@ -494,12 +492,13 @@ class JobTestCase(unittest.TestCase):
         self.assertEqual(runInfo.precursor_mz_precision, 0.01)
 
         self.assertEqual(runInfo.ionisation_mode, -1)
-        self.assertEqual(runInfo.use_fragmentation, True)
+        self.assertEqual(runInfo.skip_fragmentation, True)
         self.assertEqual(runInfo.max_broken_bonds, 4)
         self.assertEqual(runInfo.ms_intensity_cutoff, 200000.0)
         self.assertEqual(runInfo.msms_intensity_cutoff, 0.5)
         self.assertEqual(runInfo.mz_precision, 0.01)
-        self.assertEqual(runInfo.use_msms_only, True)
+        self.assertEqual(runInfo.use_all_peaks, True)
+        self.assertEqual(runInfo.description, 'My first description')
 
     def test_maxMSLevel(self):
         maxmslevel = self.job.maxMSLevel()

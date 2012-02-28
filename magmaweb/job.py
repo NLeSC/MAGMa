@@ -241,7 +241,9 @@ class JobFactory(object):
             body['arguments'].insert(-3, "--skip_fragmentation")
         if query.description:
             body['arguments'].insert(-3, "--description")
-            body['arguments'].insert(-3, query.description)
+            # Quote taken from http://docs.python.org/dev/library/shlex
+            quoted_desc = "'" + query.description.replace("'", "'\"'\"'") + "'"
+            body['arguments'].insert(-3, quoted_desc)
 
         self.submitJob2Manager(body)
 

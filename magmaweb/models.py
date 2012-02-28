@@ -77,8 +77,7 @@ class Run(Base):
     """Run model for run table"""
     __tablename__ = 'run'
     runid = Column(Integer, primary_key=True, autoincrement=True) #: Run identifier
-    # TODO run consists of 1 row so doesn't need a pk
-    # but sqlalchemy requires one
+    description = Column(Unicode) #: Description of the run
 
     # SyGMa parameters, TODO remove: metabolism type info will be part of reacton sequence of metabolites
     n_reaction_steps = Column(Integer) #: Maximum number of reaction steps applied to reactants
@@ -91,10 +90,10 @@ class Run(Base):
 
     # parameters for matching metabolites and fragments with peaks
     ionisation_mode = Column(Integer)
-    use_fragmentation = Column(Boolean)
+    skip_fragmentation = Column(Boolean)
     max_broken_bonds = Column(Integer) #: max number of bonds broken in substructures generated from metabolites
     ms_intensity_cutoff = Column(Float) #: Absolute intensity minimum of lvl1 scan peaks which are matched with metabolites
     msms_intensity_cutoff = Column(Float) #: Ratio of basepeak intensity
     mz_precision = Column(Float) #: precision for matching a metabolite mim to m/z of a peak
     precursor_mz_precision = Column(Float) #: precision for matching precursor mz with peak mz in parent scan
-    use_msms_only = Column(Boolean)
+    use_all_peaks = Column(Boolean)

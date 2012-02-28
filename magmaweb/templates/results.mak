@@ -129,6 +129,7 @@ Ext.onReady(function() {
 </head>
 <body>
 <div class="x-hidden" id="resultsinfo">
+<p>${run.description}</p>
 <fieldset class="x-fieldset x-fieldset-default">
 <legend class="x-fieldset-header x-fieldset-header-default">Generate metabolite options</legend>
 Maximum number of reaction steps: ${run.n_reaction_steps}<br/>
