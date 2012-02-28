@@ -342,7 +342,7 @@ class JobFactoryTestCase(unittest.TestCase):
                               "--precursor_mz_precision", query.precursor_mz_precision,
                               "--structure_format", query.structure_format,
                               "--ms_data_format", query.ms_data_format,
-                              'data.mzxml', 'smiles.txt',
+                              'ms_data.dat', 'structures.dat',
                               'results.db'
                               ]
 
@@ -357,14 +357,14 @@ class JobFactoryTestCase(unittest.TestCase):
 
         self.assertIsInstance(jobid, uuid.UUID)
         self.assertEqual(
-            open(os.path.join(self.factory.id2jobdir(jobid), 'data.mzxml')).read(),
+            open(os.path.join(self.factory.id2jobdir(jobid), 'ms_data.dat')).read(),
             'foo',
-            'query mzxml file content has been copied to job dir'
+            'query ms_data file content has been copied to job dir'
         )
         self.assertEqual(
-            open(os.path.join(self.factory.id2jobdir(jobid), 'smiles.txt')).read(),
+            open(os.path.join(self.factory.id2jobdir(jobid), 'structures.dat')).read(),
             q.structures,
-            'query mzxml file content has been copied to job dir'
+            'query structures has been copied to file in job dir'
         )
         self.factory.submitJob2Manager.assert_called_with({
                 'jobdir': os.path.join(self.factory.id2jobdir(jobid))+'/',
@@ -372,7 +372,7 @@ class JobFactoryTestCase(unittest.TestCase):
                 'prestaged': [
                               "magma.sh",
                               "Magma-1.1.tar.gz",
-                              'data.mzxml', 'smiles.txt'
+                              'ms_data.dat', 'structures.dat'
                               ],
                 "poststaged": ["results.db"],
                 "stderr": "stderr.txt",
@@ -405,7 +405,7 @@ class JobFactoryTestCase(unittest.TestCase):
                 'prestaged': [
                               "magma.sh",
                               "Magma-1.1.tar.gz",
-                              'data.mzxml', 'smiles.txt'
+                              'ms_data.dat', 'structures.dat'
                               ],
                 "poststaged": ["results.db"],
                 "stderr": "stderr.txt",

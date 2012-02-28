@@ -190,7 +190,7 @@ class JobFactory(object):
         os.makedirs(jobdir)
 
         # copy mzxml file
-        job_ms_data_file = open(os.path.join(jobdir ,'data.mzxml'), 'wb')
+        job_ms_data_file = open(os.path.join(jobdir, 'ms_data.dat'), 'wb')
         query.ms_data_file.seek(0)
         while 1:
             data = query.ms_data_file.read(2 << 16)
@@ -200,7 +200,7 @@ class JobFactory(object):
         job_ms_data_file.close()
 
         # copy metabolites string to file
-        metsfile = file(os.path.join(jobdir, 'smiles.txt'), 'w')
+        metsfile = file(os.path.join(jobdir, 'structures.dat'), 'w')
         metsfile.write(query.structures)
         metsfile.close()
 
@@ -210,7 +210,7 @@ class JobFactory(object):
                 'prestaged': [
                               self.job_script,
                               self.job_tarball,
-                              'data.mzxml', 'smiles.txt'
+                              'ms_data.dat', 'structures.dat'
                               ],
                 "poststaged": [self.dbname],
                 "stderr": "stderr.txt",
@@ -231,7 +231,7 @@ class JobFactory(object):
                               "--precursor_mz_precision", query.precursor_mz_precision,
                               "--structure_format", query.structure_format,
                               "--ms_data_format", query.ms_data_format,
-                              'data.mzxml', 'smiles.txt',
+                              'ms_data.dat', 'structures.dat',
                               self.dbname
                               ]
                  }
