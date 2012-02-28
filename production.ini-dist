@@ -21,6 +21,9 @@ jobfactory.state = job.state
 
 # To submit job to grid a script and tarball is required
 # tarball contains frozen magma application and script untars tarball and runs magma application
+# Example script:
+# tar -zxf Magma-1.1.tar.gz
+# Magma-1.1/magma "$@"
 jobfactory.script = /home/stefanv/workspace/magmajobmanager/magma.sh
 jobfactory.tarball = /home/stefanv/workspace/magmajobmanager/Magma-1.1.tar.gz
 
