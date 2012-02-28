@@ -3,6 +3,7 @@
 import sys,base64,subprocess
 import sqlite3,struct
 import pkg_resources
+import logging
 from rdkit import Chem, Geometry
 from rdkit.Chem import AllChem, Descriptors
 from lxml import etree
@@ -224,6 +225,7 @@ class StructureEngine(object):
         self.db_session.commit()
 
     def metabolize_all(self,metabolism,nsteps):
+        logging.warn('Metabolize all')
         parentids = self.db_session.query(Metabolite.metid).all()
         # print parentids
         for parentid, in parentids:
@@ -250,6 +252,7 @@ class MsDataEngine(object):
         self.max_ms_level=rundata.max_ms_level
 
     def store_mzxml_file(self,mzxml_file):
+        logging.warn('Store mzxml file')
         rundata=self.db_session.query(Run).one()
         if rundata.ms_filename == None:
             rundata.ms_filename=mzxml_file
@@ -260,7 +263,6 @@ class MsDataEngine(object):
             namespace='{'+root.nsmap[None]+'}'
             for mzxmlScan in root.findall(namespace+"msRun/"+namespace+"scan"):
                 self.store_mzxml_scan(mzxmlScan,0,namespace)
-            self.db_session.commit()
         else:
             sys.exit('Attempt to read MS data twice')
 
@@ -292,18 +294,12 @@ class MsDataEngine(object):
             dbpeak_cutoff=self.abs_peak_cutoff
         decoded = base64.decodestring(line)
         tmp_size = len(decoded)/4
-        unpack_format1 = ">%dL" % tmp_size
-        idx = 0
-        for tmp in struct.unpack(unpack_format1,decoded):
-            tmp_i = struct.pack("I",tmp)
-            tmp_f = struct.unpack("f",tmp_i)[0]
-            if( idx % 2 == 0 ):
-                mz=float(tmp_f)
-            else:
-                intensity=float(tmp_f)
-                if intensity > dbpeak_cutoff:
-                    self.db_session.add(Peak(scanid=scan.scanid,mz=mz,intensity=intensity))
-            idx += 1
+        unpack_format1 = ">%df" % tmp_size
+        unpacked = struct.unpack(unpack_format1,decoded)
+        # loop over odd=mz, even=intensity
+        for mz, intensity in zip(unpacked[::2], unpacked[1::2]):
+            if intensity > dbpeak_cutoff:
+                self.db_session.add(Peak(scanid=scan.scanid,mz=mz,intensity=intensity))
 
     def store_peak_list(self,scanid,rt,precursormz,basepeak,peaklist):
         self.db_session.add(Scan(
@@ -371,6 +367,7 @@ class AnnotateEngine(object):
         self.scans=[]
 
     def build_spectra(self):
+        logging.warn('Build spectra')
         me=self
         class ScanType(object):
             def __init__(self,scan):
@@ -394,7 +391,7 @@ class AnnotateEngine(object):
                     #    if childscan.precursorintensity >= cutoff:
                     #        self.peaks.append(peaktype(childscan.precursormz,childscan.precursorintensity,self.scanid,run))
                     #        self.peaks[-1].add_child_scan(childscan)
-        
+
         class PeakType(object):
             def __init__(self,mz,intensity,scanid):
                 self.mz=mz
@@ -427,6 +424,7 @@ class AnnotateEngine(object):
             self.scans.append(ScanType(dbscan))
 
     def search_all_structures(self):
+        logging.warn('Searching all structures')
         for structure in self.db_session.query(Metabolite).all():
             self.search_structure(structure)
 
@@ -520,7 +518,7 @@ class AnnotateEngine(object):
                     for hit in self.besthits:
                         if hit != None: # still need to work out how to deal with missed fragments
                             hit.write_fragments(metid,currentFragid)
-    
+
         def grow(fragment,form):
             NewFragments=[]
             for bond in range(len(bondbits)):
@@ -536,7 +534,7 @@ class AnnotateEngine(object):
                     if NewFragment not in FragmentFormID:
                         NewForm=map(int.__add__,FragmentForms[FragmentFormID[fragment][0]],atomicForm[NewFragment^fragment])
                         grow(NewFragment,NewForm)
-    
+
         def calculate_mass(form):
             mass=0.0
             for x in range(len(form)):
