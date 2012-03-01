@@ -213,7 +213,8 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
    * @param {Array} children child fragments
    */
   loadMSpectrasFromFragment: function(parent, children) {
-    if ('id' in parent.data && parent.data.id == 'root') {
+    // TODO remove ... || when extjs 4.1 is final
+    if (('id' in parent.data && parent.data.id == 'root' ) || parent.data.root) {
       // lvl1 fragment
       console.log('Selecting metabolite peak in lvl1 mspectra and loading lvl2 mspectra');
       var mspectra = this.getMSpectra(1);
