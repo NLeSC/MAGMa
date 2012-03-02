@@ -83,10 +83,13 @@ line.mspeak {
   padding: 5px;
 }
 
+svg {
+  background: white;
+}
 </style>
 <script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb-libs.js')}"></script>
 <script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb.js')}"></script>
-<script type="text/javascript" src="${request.static_url('magmaweb:static/d3/d3.min.js')}"></script>
+<script type="text/javascript" src="${request.static_url('magmaweb:static/d3/d3.v2.min.js')}"></script>
 <script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
 <script type="text/javascript">
 Ext.Loader.setConfig({
