@@ -232,7 +232,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
       items: [{
         xtype: 'component',
         cls: 'x-logo',
-        html: '<a href="'+me.urls.home+'" data-qtip="<b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites">MAGMa</a>',
+        html: '<a href="'+me.urls.home+'" data-qtip="<b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites">MAGMa</a>'
       }, {
         xtype:'tbspacer',
         flex:1 // aligns buttongroup right
@@ -297,8 +297,8 @@ Ext.define('Esc.magmaweb.resultsApp', {
         collapsible: true,
         height: '50%',
         split: true,
-        xtype: 'scanchromatogram',
-        border: false,
+        xtype: 'chromatogrampanel',
+        border: false
       }]
     });
 

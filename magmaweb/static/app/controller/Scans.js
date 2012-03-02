@@ -8,7 +8,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   extend: 'Ext.app.Controller',
   views: [ 'scan.Chromatogram' ],
   refs: [{
-    ref: 'scanChromatogram', selector: 'scanchromatogram'
+      ref: 'chromatogramPanel', selector: 'chromatogrampanel'
+  }, {
+      ref: 'chromatogram', selector: 'chromatogram'
   }],
   uses: [ 'Ext.window.MessageBox' ],
   /**
@@ -20,7 +22,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     var me = this;
 
     this.control({
-      'scanchromatogram': {
+      'chromatogram': {
         selectscan: function(scanid) {
             me.application.fireEvent('selectscan', scanid);
         },
@@ -29,22 +31,22 @@ Ext.define('Esc.magmaweb.controller.Scans', {
         },
         mouseoverscan: function(scan) {
             if ('metaboliteintensity' in scan) {
-              this.getScanChromatogram().setTitle(Ext.String.format(
+              this.getChromatogramPanel().setTitle(Ext.String.format(
                       'Chromatogram (rt={0}, basepeak intensity={1}, metabolite intensity={2}, scan={3})',
                       scan.rt, scan.intensity, scan.metaboliteintensity, scan.id
               ));
             } else {
-              this.getScanChromatogram().setTitle(Ext.String.format('Chromatogram (rt={0}, intensity={1}, scan={2})', scan.rt, scan.intensity, scan.id));
+              this.getChromatogramPanel().setTitle(Ext.String.format('Chromatogram (rt={0}, intensity={1}, scan={2})', scan.rt, scan.intensity, scan.id));
             }
         }
       },
-      'scanchromatogram tool[action=search]': {
+      'chromatogrampanel tool[action=search]': {
         click: this.searchScan
       },
-      'scanchromatogram tool[action=clearselection]': {
+      'chromatogrampanel tool[action=clearselection]': {
         click: this.clearScanSelection
       },
-      'scanchromatogram tool[action=center]': {
+      'chromatogrampanel tool[action=center]': {
         click: this.center
       }
     });
@@ -81,7 +83,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     var me = this;
     // config chromatogram,
     // must be done after viewport so canvas is avaliable
-    var chromatogram = this.getScanChromatogram();
+    var chromatogram = this.getChromatogram();
     chromatogram.cutoff = this.application.getMs_intensity_cutoff();
     chromatogram.setLoading(true);
     d3.json(
@@ -102,14 +104,14 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       return false;
     }
     var me = this;
-    var chromatogram = this.getScanChromatogram();
+    var chromatogram = this.getChromatogram();
     chromatogram.setLoading(false);
     console.log('Loading chromatogram');
     chromatogram.setData(data);
     me.resetScans();
   },
   clearExtractedIonChromatogram: function() {
-    this.getScanChromatogram().setExtractedIonChromatogram([]);
+    this.getChromatogram().setExtractedIonChromatogram([]);
   },
   /**
    * Download the extracted ion chromatogram of a metabolite on the chromatogram.
@@ -117,7 +119,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    */
   loadExtractedIonChromatogram: function(metid) {
     console.log('Loading extracted ion chromatogram');
-    this.getScanChromatogram().setLoading(true);
+    this.getChromatogram().setLoading(true);
     var me = this;
     d3.json(
       Ext.String.format(this.application.getUrls().extractedionchromatogram, metid),
@@ -137,8 +139,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       });
       return false;
     }
-    this.getScanChromatogram().setLoading(false);
-    this.getScanChromatogram().setExtractedIonChromatogram(data.chromatogram);
+    var chromatogram = this.getChromatogram();
+    chromatogram.setLoading(false);
+    chromatogram.setExtractedIonChromatogram(data.chromatogram);
     this.setScans(data.scans);
   },
   searchScan: function() {
@@ -155,7 +158,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     );
   },
   clearScanSelection: function() {
-    this.getScanChromatogram().clearScanSelection();
+    this.getChromatogram().clearScanSelection();
     this.application.fireEvent('noselectscan');
   },
   /**
@@ -163,7 +166,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * @param {Number} scanid Scan identifier
    */
   selectScan: function(scanid) {
-    this.getScanChromatogram().selectScan(scanid);
+    this.getChromatogram().selectScan(scanid);
     this.application.fireEvent('selectscan', scanid);
   },
   /**
@@ -188,7 +191,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    */
   setScans: function(scans) {
     console.log('Setting chromatogram scan markers');
-    var chromatogram = this.getScanChromatogram();
+    var chromatogram = this.getChromatogram();
     if (!chromatogram.hasData()) {
         return; // can not set scan markers if chromatogram is not loaded
     }
@@ -214,8 +217,6 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     }
   },
   center: function() {
-      var chromatogram = this.getScanChromatogram();
-      chromatogram.resetScales();
-      chromatogram.redraw();
+      this.getChromatogram().resetScales();
   }
 });

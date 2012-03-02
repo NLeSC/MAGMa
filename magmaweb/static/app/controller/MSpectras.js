@@ -316,6 +316,5 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   center: function(tool) {
       var mspectra = tool.up('panel').down('mspectra');
       mspectra.resetScales();
-      mspectra.redraw();
   }
 });

@@ -18,14 +18,14 @@ describe('Scans controller', function() {
       redraw: function() {},
       resetScales: function() {},
     };
-    spyOn(ctrl, 'getScanChromatogram').andReturn(mocked_chromatogram);
+    spyOn(ctrl, 'getChromatogram').andReturn(mocked_chromatogram);
   });
 
   it('onLaunch', function() {
     spyOn(mocked_chromatogram, 'setLoading');
     spyOn(d3, 'json');
     ctrl.onLaunch();
-    expect(ctrl.getScanChromatogram()).toBeDefined();
+    expect(ctrl.getChromatogram()).toBeDefined();
     expect(mocked_chromatogram.cutoff).toEqual(2000000);
     expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(true);
     expect(d3.json).toHaveBeenCalledWith('data/chromatogram.json', jasmine.any(Function));
@@ -286,7 +286,6 @@ describe('Scans controller', function() {
 
   it('center', function() {
       spyOn(mocked_chromatogram, 'resetScales');
-      spyOn(mocked_chromatogram, 'redraw');
       var tool = {
         up: function() {
             return {
@@ -297,6 +296,5 @@ describe('Scans controller', function() {
       ctrl.center(tool);
 
       expect(mocked_chromatogram.resetScales).toHaveBeenCalled();
-      expect(mocked_chromatogram.redraw).toHaveBeenCalled();
   });
 });

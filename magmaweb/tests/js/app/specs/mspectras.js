@@ -313,17 +313,16 @@ describe('MSpectras controller', function() {
   it('center', function() {
       var mspectra = ctrl.getMSpectra(1);
       spyOn(mspectra, 'resetScales');
-      spyOn(mspectra, 'redraw');
       var tool = {
-        up: function() {
-            return {
-              down: function() { return mspectra; }
-            };
-        }
+          up: function() {
+              return {
+                down: function() { return mspectra; }
+              };
+          }
       };
+
       ctrl.center(tool);
 
       expect(mspectra.resetScales).toHaveBeenCalled();
-      expect(mspectra.redraw).toHaveBeenCalled();
   });
 });
