@@ -4,6 +4,7 @@ describe('Esc.d3.Chromatogram', function() {
   function mockSvg() {
     var svg = {
       selectAll: function() { return this; },
+      select: function() { return this; },
       append: function() { return this; },
       attr: function() { return this; },
       call: function() { return this; },
@@ -15,6 +16,7 @@ describe('Esc.d3.Chromatogram', function() {
       text: function() { return this; }
     };
     spyOn(svg, 'selectAll').andCallThrough();
+    spyOn(svg, 'select').andCallThrough();
     spyOn(svg, 'append').andCallThrough();
     spyOn(svg, 'attr').andCallThrough();
     spyOn(svg, 'text').andCallThrough();
@@ -38,11 +40,12 @@ describe('Esc.d3.Chromatogram', function() {
 
   it('initScales', function() {
     var chart = Ext.create('Esc.d3.Chromatogram', {
-      width: 500, height: 400, data: data
+      width: 500, height: 400, data: data,
+      axesPadding: [0, 0, 0, 0]
     });
     // mock initSvg
-    chart.chartWidth = 500;
-    chart.chartHeight = 400;
+    spyOn(chart, 'getWidth').andReturn(500);
+    spyOn(chart, 'getHeight').andReturn(400);
 
     chart.initScales();
 
@@ -54,19 +57,6 @@ describe('Esc.d3.Chromatogram', function() {
     expect(chart.scales.x.range()).toEqual([0,500]);
     expect(chart.scales.y.domain()).toEqual([0,100]);
     expect(chart.scales.y.range()).toEqual([400,0]);
-  });
-
-  it('initAxes', function() {
-    var chart = Ext.create('Esc.d3.Chromatogram', {
-      width: 500, height: 400, data: data
-    });
-    // mock initSvg
-    chart.chartWidth = 500;
-    chart.chartHeight = 400;
-
-    chart.initScales();
-    chart.initAxes();
-
     expect(chart.axes.x.scale()).toEqual(chart.scales.x);
     expect(chart.axes.x.ticks()).toEqual({ 0:chart.ticks.x});
     expect(chart.axes.x.orient()).toEqual('bottom');
@@ -75,18 +65,20 @@ describe('Esc.d3.Chromatogram', function() {
     expect(chart.axes.y.orient()).toEqual('left');
   });
 
-  describe('onDataReady', function() {
+  describe('draw', function() {
     it('!markers', function() {
       var chart = Ext.create('Esc.d3.Chromatogram', {
-        width: 500, height: 400, data: data, cutoff: 10
+        width: 500, height: 400, data: data, cutoff: 10,
+        axesPadding: [0, 0, 0, 0]
       });
       // mock initSvg
-      chart.chartWidth = 500;
-      chart.chartHeight = 400;
+      spyOn(chart, 'getWidth').andReturn(500);
+      spyOn(chart, 'getHeight').andReturn(400);
       chart.svg = mockSvg();
       spyOn(chart,'onMarkersReady');
+      chart.initScales();
 
-      chart.onDataReady();
+      chart.draw();
 
       expect(chart.onMarkersReady).not.toHaveBeenCalled();
       expect(chart.svg.attr).toHaveBeenCalledWith('class', chart.cutoffCls);
@@ -102,34 +94,79 @@ describe('Esc.d3.Chromatogram', function() {
     it('markers', function() {
       var chart = Ext.create('Esc.d3.Chromatogram', {
         width: 500, height: 400, data: data,
-        cutoff: 10, markers: [data[0]]
+        cutoff: 10, markers: [data[0]],
+        axesPadding: [0, 0, 0, 0]
       });
       // mock initSvg
-      chart.chartWidth = 500;
-      chart.chartHeight = 400;
+      spyOn(chart, 'getWidth').andReturn(500);
+      spyOn(chart, 'getHeight').andReturn(400);
+
       chart.svg = mockSvg();
       spyOn(chart,'onMarkersReady');
-      chart.onDataReady();
+      chart.initScales();
+
+      chart.draw();
 
       expect(chart.onMarkersReady).toHaveBeenCalled();
     });
   });
 
-  it('setData', function() {
-    var chart = Ext.create('Esc.d3.Chromatogram', {
-      width: 500, height: 400
-    });
-    // mock initSvg
-    chart.chartWidth = 500;
-    chart.chartHeight = 400;
-    chart.svg = mockSvg();
+  it('undraw', function() {
+      var chart = Ext.create('Esc.d3.Chromatogram', {
+        width: 500, height: 400, data: data,
+        cutoff: 3, markers: [{mz: 3}],
+        axesPadding: [0, 0, 0, 0]
+      });
+      // mock initSvg
+      spyOn(chart, 'getWidth').andReturn(500);
+      spyOn(chart, 'getHeight').andReturn(400);
+      chart.svg = mockSvg();
+      spyOn(chart, 'clearScanSelection');
 
-    chart.setData(data);
+      chart.undraw();
 
-    expect(chart.data).toEqual(data);
-    // all previous chart elements are removed before setting data
-    expect(chart.svg.classed).toHaveBeenCalled();
-    expect(chart.svg.remove.callCount).toEqual(7);
+      expect(chart.clearScanSelection).toHaveBeenCalled();
+      expect(chart.svg.remove).toHaveBeenCalled();
+      expect(chart.svg.remove.callCount).toBeGreaterThan(5);
+  });
+
+  describe('onZoom', function() {
+      it('no markers', function() {
+          var chart = Ext.create('Esc.d3.Chromatogram', {
+            width: 500, height: 400, data: data,
+            axesPadding: [0, 0, 0, 0]
+          });
+          // mock initSvg
+          spyOn(chart, 'getWidth').andReturn(500);
+          spyOn(chart, 'getHeight').andReturn(400);
+          chart.svg = mockSvg();
+          chart.initScales();
+
+          chart.onZoom();
+
+          expect(chart.svg.select).toHaveBeenCalledWith('.x.axis');
+          expect(chart.svg.select).toHaveBeenCalledWith('path.line');
+          expect(chart.svg.select).toHaveBeenCalledWith('path.metaboliteline');
+          expect(chart.svg.attr).not.toHaveBeenCalledWith('transform', jasmine.any(Function));
+          expect(chart.svg.attr).toHaveBeenCalledWith('x1', jasmine.any(Function));
+          expect(chart.svg.attr).toHaveBeenCalledWith('x2', jasmine.any(Function));
+      });
+
+      it('with markers', function() {
+          var chart = Ext.create('Esc.d3.Chromatogram', {
+            width: 500, height: 400, data: data,
+            axesPadding: [0, 0, 0, 0], markers: [{mz: 3}]
+          });
+          // mock initSvg
+          spyOn(chart, 'getWidth').andReturn(500);
+          spyOn(chart, 'getHeight').andReturn(400);
+          chart.svg = mockSvg();
+          chart.initScales();
+
+          chart.onZoom();
+
+          expect(chart.svg.attr).toHaveBeenCalledWith('transform', jasmine.any(Function));
+      });
   });
 
   describe('selectScan', function() {
@@ -285,11 +322,13 @@ describe('Esc.d3.Chromatogram', function() {
 
   it('setExtractedIonChromatogram', function() {
     var chart = Ext.create('Esc.d3.Chromatogram', {
-      width: 500, height: 400, data: data
+      width: 500, height: 400, data: data,
+      axesPadding: [0, 0, 0, 0]
     });
     // mock initSvg
-    chart.chartWidth = 500;
-    chart.chartHeight = 400;
+    spyOn(chart, 'getWidth').andReturn(500);
+    spyOn(chart, 'getHeight').andReturn(400);
+
     chart.svg = mockSvg();
 
     var eic = data;

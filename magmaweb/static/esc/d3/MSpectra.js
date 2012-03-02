@@ -18,7 +18,7 @@
  *     });
  *     mass_spectra.selectPeak(1);
  *
- * Note! This example requires d3.js to be sourced.
+ * Note! This example requires d3.v2.js to be sourced.
  *
  */
 Ext.define('Esc.d3.MSpectra', {
@@ -49,7 +49,7 @@ Ext.define('Esc.d3.MSpectra', {
         selectedPeakCls: 'selectedpeak',
         markers: [],
         chartWidth: 0,
-        chartHeight: 0,
+        chartHeight: 0
         // TODO add cutoff and basepeakintensity so cutoff line can be drawn
     };
 
@@ -81,44 +81,36 @@ Ext.define('Esc.d3.MSpectra', {
     );
   },
   /**
-   * @inheritdoc Esc.d3.Abstract#redraw
+   * @inheritdoc Esc.d3.Abstract#onZoom
    */
-  redraw: function() {
+  onZoom: function() {
+    this.callParent(arguments);
     var me = this;
-    if (d3.event && d3.event.translate[0] != 0 && d3.event.translate[1] != 0) {
-      // pan and zoom x axis
-      d3.event.transform(this.scales.x);
-    }
-    this.svg.select(".x.axis").call(this.axes.x);
-    // do not scale y axis
-    //svg.select(".y.axis").call(yAxis);
+
     if (this.markers.length) {
       this.svg.selectAll("path.lowermarker")
         .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + me.scales.y(0) + ")"; });
       this.svg.selectAll("path.uppermarker")
-       .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + me.scales.y(me.ranges.y.max) + ")"; });
+        .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + me.scales.y(me.ranges.y.max) + ")"; });
     }
-    this.svg.selectAll("line.mspeak").attr("y2", function(d) {
-      return me.scales.y(d.intensity);
-    }).attr("x1", function(d) {
-      return me.scales.x(d.mz);
-    }).attr("x2", function(d) {
-      return me.scales.x(d.mz);
-    }).attr("y1", this.scales.y(0));
+
+    this.svg.selectAll("line.mspeak")
+        .attr("x1", function(d) { return me.scales.x(d.mz); })
+        .attr("x2", function(d) { return me.scales.x(d.mz); })
+    ;
   },
   initScales: function() {
+    this.callParent(arguments);
     this.ranges.x.min = 0;
     this.ranges.x.max = d3.max(this.data, function(r) { return r.mz; });
     this.ranges.y.min = 0;
     this.ranges.y.max = d3.max(this.data, function(r) { return r.intensity; });
     this.scales.x = d3.scale.linear().domain([this.ranges.x.min, this.ranges.x.max]).range([0, this.chartWidth]);
     this.scales.y = d3.scale.linear().domain([this.ranges.y.min, this.ranges.y.max]).range([this.chartHeight, 0]);
-  },
-  initAxes: function() {
     this.axes.x = d3.svg.axis().scale(this.scales.x).ticks(this.ticks.x);
     this.axes.y = d3.svg.axis().scale(this.scales.y).ticks(this.ticks.y).orient("left").tickFormat(d3.format('.2e'));
   },
-  onDataReady: function() {
+  draw: function() {
     this.callParent(arguments);
     var me = this;
 
@@ -151,29 +143,28 @@ Ext.define('Esc.d3.MSpectra', {
     }
 
     // of each mz plot intensity as vertical line
-    this.svg.selectAll("line.mspeak")
-    .data(this.data)
-    .enter().append("svg:line")
-    .attr("class", "mspeak")
-    .attr("x1", function(d) { return me.scales.x(d.mz); })
-    .attr("y2", function(d) { return me.scales.y(d.intensity); })
-    .attr("y1", this.chartHeight)
-    .attr("x2", function(d) { return me.scales.x(d.mz); })
-    .on('mouseover', function(peak) {
-        me.fireEvent('mouseoverpeak', peak);
-    })
+    var peaks = this.svg.selectAll('line.mspeak').data(this.data, function(d) { return d.mz;});
+
+    peaks.enter().append("svg:line")
+        .attr("class", "mspeak")
+        .attr("x1", function(d) { return me.scales.x(d.mz); })
+        .attr("y2", function(d) { return me.scales.y(d.intensity); })
+        .attr("y1", this.chartHeight)
+        .attr("x2", function(d) { return me.scales.x(d.mz); })
+        .on('mouseover', function(peak) {
+            me.fireEvent('mouseoverpeak', peak);
+        })
     ;
 
     if (this.hasMarkers()) {
       this.onMarkersReady();
     }
   },
-  setData: function(data) {
-	  this.svg.selectAll('.axis').remove();
-	  this.svg.selectAll('line.mspeak').remove();
+  undraw: function() {
+    this.svg.selectAll('g.axis').remove();
+    this.svg.selectAll('line.mspeak').remove();
     this.clearPeakSelection();
     this.svg.selectAll('.marker').remove();
-    this.svg.selectAll('.emptytext').remove();
     this.svg.selectAll('.'+this.cutoffCls).remove();
     this.callParent(arguments);
   },

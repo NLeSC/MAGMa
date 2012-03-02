@@ -19,12 +19,11 @@
  *     chromatogram.setExtractedIonChromatogram([{rt:1, intensity: 45, id:4}, {rt:2, intensity: 60, id:5}]);
  *     chromatogram.selectScan(4);
  *
- * Note! This example requires d3.js to be sourced.
+ * Note! This example requires d3.v2.js to be sourced.
  */
 Ext.define('Esc.d3.Chromatogram', {
   extend: 'Esc.d3.Abstract',
   alias: 'widget.chromatogram',
-
   initComponent: function() {
     var defConfig = {
         /**
@@ -88,17 +87,12 @@ Ext.define('Esc.d3.Chromatogram', {
     );
   },
   /**
-   * @inheritdoc Esc.d3.Abstract#redraw
+   * @inheritdoc Esc.d3.Abstract#onZoom
    */
-  redraw: function() {
+  onZoom: function() {
+    this.callParent(arguments);
     var me = this;
-    if (d3.event && d3.event.translate[0] != 0 && d3.event.translate[1] != 0) {
-      // pan and zoom x axis
-      d3.event.transform(this.scales.x);
-    }
-    this.svg.select(".x.axis").call(this.axes.x);
-    // do not scale y axis
-    //svg.select(".y.axis").call(yAxis);
+
     this.svg.select("path.line").attr('d', this.line(this.data));
     this.svg.select("path.metaboliteline").attr('d', this.line(this.metabolitedata));
     if (this.markers.length) {
@@ -107,15 +101,13 @@ Ext.define('Esc.d3.Chromatogram', {
       this.svg.selectAll("path.uppermarker")
        .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(me.ranges.y.max) + ")"; });
     }
-    this.svg.selectAll("line.peak").attr("y2", function(d) {
-      return me.scales.y(d.intensity);
-    }).attr("x1", function(d) {
-      return me.scales.x(d.rt);
-    }).attr("x2", function(d) {
-      return me.scales.x(d.rt);
-    }).attr("y1", this.scales.y(0));
+    this.svg.selectAll("line.peak")
+      .attr("x1", function(d) { return me.scales.x(d.rt); })
+      .attr("x2", function(d) { return me.scales.x(d.rt); })
+    ;
   },
   initScales: function() {
+    this.callParent(arguments);
     this.ranges.x.min = 0;
     this.ranges.x.max = d3.max(this.data, function(r) { return r.rt; });
     this.ranges.y.min = 0;
@@ -130,12 +122,11 @@ Ext.define('Esc.d3.Chromatogram', {
     .interpolate('linear')
     .x(function(d) { return me.scales.x(d.rt); })
     .y(function(d) { return me.scales.y(d.intensity); });
-  },
-  initAxes: function() {
+
     this.axes.x = d3.svg.axis().scale(this.scales.x).ticks(this.ticks.x);
     this.axes.y = d3.svg.axis().scale(this.scales.y).ticks(this.ticks.y).orient("left").tickFormat(d3.format('.2e'));
   },
-  onDataReady: function() {
+  draw: function() {
     this.callParent(arguments);
     var me = this;
 
@@ -201,17 +192,16 @@ Ext.define('Esc.d3.Chromatogram', {
       this.onMarkersReady();
     }
   },
-  setData: function(data) {
-	  this.svg.selectAll('.axis').remove();
-	  this.svg.selectAll('.peak').remove();
-	  this.svg.selectAll('.line').remove();
-	  this.svg.selectAll('.'+this.cutoffCls).remove();
-	  this.clearScanSelection();
-	  this.svg.selectAll('.marker').remove();
-	  this.svg.selectAll('.emptytext').remove();
-	  this.metabolitedata = [];
-    this.svg.selectAll('path.metaboliteline').remove();
-    this.callParent(arguments);
+  undraw: function() {
+      this.svg.selectAll('.axis').remove();
+      this.svg.selectAll('.peak').remove();
+      this.svg.selectAll('.line').remove();
+      this.svg.selectAll('.'+this.cutoffCls).remove();
+      this.clearScanSelection();
+      this.svg.selectAll('.marker').remove();
+      this.metabolitedata = [];
+      this.svg.selectAll('path.metaboliteline').remove();
+      this.callParent(arguments);
   },
   /**
    * @private
@@ -270,15 +260,15 @@ Ext.define('Esc.d3.Chromatogram', {
    * When a scan has been selected scan it is reselected if scan is still marked
    */
   setMarkers: function(data) {
-  	if (this.selectedScan != -1) {
-  		var selectedScan = this.selectedScan;
-  	}
+      if (this.selectedScan != -1) {
+          var selectedScan = this.selectedScan;
+      }
     this.clearScanSelection();
     this.svg.selectAll('.marker').remove();
     this.markers = data;
     this.onMarkersReady();
     if (selectedScan) {
-    	this.selectScan(selectedScan);
+        this.selectScan(selectedScan);
     }
   },
   hasMarkers: function() {

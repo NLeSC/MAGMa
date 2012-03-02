@@ -4,6 +4,7 @@ describe('Esc.d3.MSpectra', function() {
   function mockSvg() {
     var svg = {
       selectAll: function() { return this; },
+      select: function() { return this; },
       append: function() { return this; },
       attr: function() { return this; },
       call: function() { return this; },
@@ -15,6 +16,7 @@ describe('Esc.d3.MSpectra', function() {
       text: function() { return this; }
     };
     spyOn(svg, 'selectAll').andCallThrough();
+    spyOn(svg, 'select').andCallThrough();
     spyOn(svg, 'append').andCallThrough();
     spyOn(svg, 'attr').andCallThrough();
     spyOn(svg, 'text').andCallThrough();
@@ -23,6 +25,7 @@ describe('Esc.d3.MSpectra', function() {
     spyOn(svg, 'remove').andCallThrough();
     spyOn(svg, 'classed').andCallThrough();
     spyOn(svg, 'on').andCallThrough();
+    spyOn(svg, 'call').andCallThrough();
     return svg;
   }
 
@@ -38,14 +41,17 @@ describe('Esc.d3.MSpectra', function() {
 
   it('initScales', function() {
     var chart = Ext.create('Esc.d3.MSpectra', {
-      width: 500, height: 400, data: data
+      width: 500, height: 400, data: data,
+      axesPadding: [0, 0, 0, 0]
     });
     // mock initSvg
-    chart.chartWidth = 500;
-    chart.chartHeight = 400;
+    spyOn(chart, 'getWidth').andReturn(500);
+    spyOn(chart, 'getHeight').andReturn(400);
 
     chart.initScales();
 
+    expect(chart.chartWidth, 500);
+    expect(chart.chartHeight, 400);
     expect(chart.ranges).toEqual({
       x: { min:0, max: 3},
       y: { min:0, max: 4}
@@ -54,19 +60,6 @@ describe('Esc.d3.MSpectra', function() {
     expect(chart.scales.x.range()).toEqual([0,500]);
     expect(chart.scales.y.domain()).toEqual([0,4]);
     expect(chart.scales.y.range()).toEqual([400,0]);
-  });
-
-  it('initAxes', function() {
-    var chart = Ext.create('Esc.d3.MSpectra', {
-      width: 500, height: 400, data: data
-    });
-    // mock initSvg
-    chart.chartWidth = 500;
-    chart.chartHeight = 400;
-
-    chart.initScales();
-    chart.initAxes();
-
     expect(chart.axes.x.scale()).toEqual(chart.scales.x);
     expect(chart.axes.x.ticks()).toEqual({ 0:chart.ticks.x});
     expect(chart.axes.x.orient()).toEqual('bottom');
@@ -75,17 +68,20 @@ describe('Esc.d3.MSpectra', function() {
     expect(chart.axes.y.orient()).toEqual('left');
   });
 
-  describe('onDataReady', function() {
+  describe('draw', function() {
     it('!markers + !cutoff', function() {
       var chart = Ext.create('Esc.d3.MSpectra', {
-        width: 500, height: 400, data: data
+        width: 500, height: 400, data: data,
+        axesPadding: [0, 0, 0, 0]
       });
       // mock initSvg
-      chart.chartWidth = 500;
-      chart.chartHeight = 400;
+      spyOn(chart, 'getWidth').andReturn(500);
+      spyOn(chart, 'getHeight').andReturn(400);
       chart.svg = mockSvg();
       spyOn(chart,'onMarkersReady');
-      chart.onDataReady();
+      chart.initScales();
+
+      chart.draw();
 
       expect(chart.onMarkersReady).not.toHaveBeenCalled();
       expect(chart.svg.attr).not.toHaveBeenCalledWith('class', chart.cutoffCls);
@@ -93,41 +89,45 @@ describe('Esc.d3.MSpectra', function() {
       expect(chart.svg.text).toHaveBeenCalledWith('M/z');
       expect(chart.svg.attr).toHaveBeenCalledWith('class', 'y axis');
       expect(chart.svg.attr).toHaveBeenCalledWith('class', 'mspeak');
-      expect(chart.svg.data).toHaveBeenCalledWith(data);
     });
 
     it('markers + cutoff', function() {
       var chart = Ext.create('Esc.d3.MSpectra', {
         width: 500, height: 400, data: data,
-        cutoff: 3, markers: [{mz: 3}]
+        cutoff: 3, markers: [{mz: 3}],
+        axesPadding: [0, 0, 0, 0]
       });
       // mock initSvg
-      chart.chartWidth = 500;
-      chart.chartHeight = 400;
+      spyOn(chart, 'getWidth').andReturn(500);
+      spyOn(chart, 'getHeight').andReturn(400);
       chart.svg = mockSvg();
       spyOn(chart,'onMarkersReady');
-      chart.onDataReady();
+      chart.initScales();
+
+      chart.draw();
 
       expect(chart.onMarkersReady).toHaveBeenCalled();
       expect(chart.svg.attr).toHaveBeenCalledWith('class', chart.cutoffCls);
     });
   });
 
-  it('setData', function() {
+  it('undraw', function() {
     var chart = Ext.create('Esc.d3.MSpectra', {
-      width: 500, height: 400
+      width: 500, height: 400, data: data,
+      cutoff: 3, markers: [{mz: 3}],
+      axesPadding: [0, 0, 0, 0]
     });
     // mock initSvg
-    chart.chartWidth = 500;
-    chart.chartHeight = 400;
+    spyOn(chart, 'getWidth').andReturn(500);
+    spyOn(chart, 'getHeight').andReturn(400);
     chart.svg = mockSvg();
+    spyOn(chart, 'clearPeakSelection');
 
-    chart.setData(data);
+    chart.undraw();
 
-    expect(chart.data).toEqual(data);
-    // all previous chart elements are removed before setting data
-    expect(chart.svg.classed).toHaveBeenCalled();
-    expect(chart.svg.remove.callCount).toEqual(5);
+    expect(chart.clearPeakSelection).toHaveBeenCalled();
+    expect(chart.svg.remove).toHaveBeenCalled();
+    expect(chart.svg.remove.callCount).toBeGreaterThan(3);
   });
 
   describe('onToggleMarker', function() {
@@ -274,5 +274,42 @@ describe('Esc.d3.MSpectra', function() {
       expect(chart.svg.text).toHaveBeenCalledWith(jasmine.any(Function));
       expect(chart.svg.on).toHaveBeenCalledWith('click', jasmine.any(Function));
     });
+  });
+
+  describe('onZoom', function() {
+      it('no markers', function() {
+          var chart = Ext.create('Esc.d3.MSpectra', {
+            width: 500, height: 400, data: data,
+            axesPadding: [0, 0, 0, 0]
+          });
+          // mock initSvg
+          spyOn(chart, 'getWidth').andReturn(500);
+          spyOn(chart, 'getHeight').andReturn(400);
+          chart.svg = mockSvg();
+          chart.initScales();
+
+          chart.onZoom();
+
+          expect(chart.svg.select).toHaveBeenCalledWith('.x.axis');
+          expect(chart.svg.attr).not.toHaveBeenCalledWith('transform', jasmine.any(Function));
+          expect(chart.svg.attr).toHaveBeenCalledWith('x1', jasmine.any(Function));
+          expect(chart.svg.attr).toHaveBeenCalledWith('x2', jasmine.any(Function));
+      });
+
+      it('with markers', function() {
+          var chart = Ext.create('Esc.d3.MSpectra', {
+            width: 500, height: 400, data: data,
+            axesPadding: [0, 0, 0, 0], markers: [{mz: 3}]
+          });
+          // mock initSvg
+          spyOn(chart, 'getWidth').andReturn(500);
+          spyOn(chart, 'getHeight').andReturn(400);
+          chart.svg = mockSvg();
+          chart.initScales();
+
+          chart.onZoom();
+
+          expect(chart.svg.attr).toHaveBeenCalledWith('transform', jasmine.any(Function));
+      });
   });
 });

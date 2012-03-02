@@ -32,51 +32,12 @@ describe('Esc.d3.Abstract', function() {
           getWidth: function() { return 400 },
           getHeight: function() { return 500 },
       };
+
       chart.onRender();
+
       expect(chart.callParent).toHaveBeenCalled();
       expect(chart.initSvg).toHaveBeenCalled();
     });
-
-    it('percentsize', function() {
-      var chart = Ext.create('Esc.d3.Abstract', {
-        width: '50%', height: '30%'
-      });
-      spyOn(chart, 'callParent');
-      spyOn(chart, 'initSvg');
-      chart.body = {
-          getWidth: function() { return 1 },
-          getHeight: function() { return 1 },
-      };
-      chart.onRender();
-      expect(chart.callParent).toHaveBeenCalled();
-      expect(chart.initSvg).not.toHaveBeenCalled();
-      // mock layout
-      chart.body.getWidth = function() { return 500 };
-      chart.body.getHeight = function() { return 500 };
-      chart.fireEvent('afterlayout', chart);
-      expect(chart.initSvg).toHaveBeenCalled();
-    });
-  });
-
-  it('resize', function() {
-    var chart = Ext.create('Esc.d3.Abstract', {
-      width: 400, height: 500
-    });
-    spyOn(chart, 'on');
-    spyOn(chart, 'initSvg')
-    chart.body = {
-        getWidth: function() { return 400 },
-        getHeight: function() { return 500 },
-    };
-    var svg = {
-        attr: function(key, value) {},
-        select: function() { return this; },
-    };
-    spyOn(svg, 'attr');
-    spyOn(d3, 'select').andReturn(svg);
-    chart.fireEvent('resize', chart, 600, 700);
-    expect(svg.attr).toHaveBeenCalledWith('width', 600);
-    expect(svg.attr).toHaveBeenCalledWith('height', 700);
   });
 
   describe('setData', function() {
@@ -114,7 +75,10 @@ describe('Esc.d3.Abstract', function() {
       });
       chart.svg = { append: function() {}};
       spyOn(chart.svg,'append');
+      spyOn(chart, 'undraw');
       chart.onDataEmpty();
+
+      expect(chart.undraw).toHaveBeenCalled();
       expect(chart.svg.append).not.toHaveBeenCalled();
     });
 
@@ -131,12 +95,12 @@ describe('Esc.d3.Abstract', function() {
       spyOn(chart.svg, 'append').andCallThrough();
       spyOn(chart.svg, 'attr').andCallThrough();
       spyOn(chart.svg, 'text').andCallThrough();
+      spyOn(chart, 'undraw');
       chart.chartWidth = 300;
       chart.chartHeight = 400;
       chart.onDataEmpty();
-      expect(chart.svg.append).toHaveBeenCalled();
-      expect(chart.svg.attr).toHaveBeenCalledWith('x', 150);
-      expect(chart.svg.attr).toHaveBeenCalledWith('y', 200);
+      expect(chart.undraw).toHaveBeenCalled();
+      expect(chart.svg.append).toHaveBeenCalledWith('svg:text');
       expect(chart.svg.text).toHaveBeenCalledWith(emptyText);
     });
   });
@@ -146,10 +110,27 @@ describe('Esc.d3.Abstract', function() {
       width: 400, height: 500
     });
     spyOn(chart, 'initScales');
-    spyOn(chart, 'initAxes');
+    spyOn(chart, 'undraw');
+    spyOn(chart, 'draw');
     chart.onDataReady();
     expect(chart.initScales).toHaveBeenCalled();
-    expect(chart.initAxes).toHaveBeenCalled();
+    expect(chart.undraw).toHaveBeenCalled();
+    expect(chart.draw).toHaveBeenCalled();
+  });
+
+  it('initScales', function() {
+      var chart = Ext.create('Esc.d3.Abstract', {
+          width: 400, height: 500,
+          axesPadding: [20, 10, 40, 80]
+      });
+      // mock initSvg
+      spyOn(chart, 'getWidth').andReturn(400);
+      spyOn(chart, 'getHeight').andReturn(500);
+
+      chart.initScales();
+
+      expect(chart.chartWidth, 400 - 10 - 40);
+      expect(chart.chartHeight, 500 - 20 - 80);
   });
 
   it('resetScales', function() {
@@ -161,10 +142,14 @@ describe('Esc.d3.Abstract', function() {
     chart.scales.y = { domain: function() { return this; } };
     spyOn(chart.scales.x, 'domain');
     spyOn(chart.scales.y, 'domain');
+    spyOn(chart, 'initZoom');
+    spyOn(chart, 'onZoom');
 
     chart.resetScales();
 
     expect(chart.scales.x.domain).toHaveBeenCalledWith([0, 100]);
     expect(chart.scales.y.domain).toHaveBeenCalledWith([200, 300]);
+    expect(chart.initZoom).toHaveBeenCalled();
+    expect(chart.onZoom).toHaveBeenCalled();
   });
 });
