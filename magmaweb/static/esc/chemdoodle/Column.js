@@ -117,6 +117,7 @@ Ext.define('Esc.chemdoodle.Column', {
     this.grid = grid;
     // after canvas tag has been added to dom
     this.grid.getView().on('refresh', this.initCanvases , this);
+    this.grid.on('afteritemcollapse', this.initCanvases , this);
   },
   /**
    * @method
