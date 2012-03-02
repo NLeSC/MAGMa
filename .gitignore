@@ -5,7 +5,7 @@ development.ini
 production.ini
 *py[co]
 magmaweb/static/ext-*
-magmaweb/static/app/resultsApp-all.js
+magmaweb/static/app/resultsApp-all*.js
 cover
 .coverage
 docs/_build/

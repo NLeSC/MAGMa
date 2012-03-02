@@ -4,7 +4,7 @@
     "builds": [
         {
             "name": "All Classes",
-            "target": "resultsApp-all.js",
+            "target": "resultsApp-all-4.0.7.js",
             "compress": true,
             "files": [
                 {
