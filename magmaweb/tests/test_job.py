@@ -377,6 +377,7 @@ class JobFactoryTestCase(unittest.TestCase):
                 "poststaged": ["results.db"],
                 "stderr": "stderr.txt",
                 "stdout": "stdout.txt",
+                "time_max": 30,
                 'arguments': jobargs
                 })
 
@@ -410,6 +411,7 @@ class JobFactoryTestCase(unittest.TestCase):
                 "poststaged": ["results.db"],
                 "stderr": "stderr.txt",
                 "stdout": "stdout.txt",
+                "time_max": 30,
                 'arguments': jobargs
                 })
 

@@ -92,7 +92,8 @@ class JobFactory(object):
     """ Factory which can create jobs """
     def __init__(
                  self, jobrootdir, job_script, job_tarball, dbname = 'results.db',
-                 submiturl='http://localhost:9998', jobstatefilename = 'job.state'
+                 submiturl='http://localhost:9998', jobstatefilename = 'job.state',
+                 time_max=30
                  ):
         """
         jobrootdir
@@ -112,6 +113,9 @@ class JobFactory(object):
 
         jobstatefilename
             Filename where job manager daemon writes job state (default job.state)
+
+        time_max
+            Maximum time in minutes a job can take (default 30)
         """
         self.jobrootdir = jobrootdir
         self.dbname = dbname
@@ -119,6 +123,7 @@ class JobFactory(object):
         self.jobstatefilename = jobstatefilename
         self.job_script = job_script
         self.job_tarball = job_tarball
+        self.time_max = time_max
 
     def fromId(self, jobid):
         """
@@ -215,6 +220,7 @@ class JobFactory(object):
                 "poststaged": [self.dbname],
                 "stderr": "stderr.txt",
                 "stdout": "stdout.txt",
+                "time_max": self.time_max,
                 'arguments': [
                               self.job_script,
                               "all_in_one",
