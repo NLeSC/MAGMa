@@ -147,12 +147,16 @@ class StructureEngine(object):
                 self.db_session.delete(dupid)
                 self.db_session.commit()
                 self.db_session.add(metab)
+                self.db_session.commit()
                 sys.stderr.write('Duplicate structure: '+sequence+' '+smiles+' - old one removed\n')
             else:
                 sys.stderr.write('Duplicate structure: '+sequence+' '+smiles+' - kept old one\n')
+                metab = dupid
         except NoResultFound:
             self.db_session.add(metab)
             self.db_session.commit()
+        finally:
+            return metab.metid
             # print 'Added structure:',sequence
 
     def add_structure_tmp(self,mol,name,prob,level,sequence,isquery):

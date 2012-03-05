@@ -1,4 +1,5 @@
 import argparse
+import sys
 from rdkit import Chem
 from rdkit.Chem import AllChem
 import magma
@@ -90,25 +91,28 @@ class MagmaCommand(object):
     def version(self):
         return '1.0' # TODO move to main magma package and reuse in setup.py so version is specified in one place
 
+    def get_magma_session(self, db, description):
+        return magma.MagmaSession(db, description)
+
     def all_in_one(self, args):
         """Reads reactants file and MS/MS datafile, generates metabolites from reactants and matches them to peaks"""
 
-        magma_session = magma.MagmaSession(args.db,args.description)
+        magma_session = self.get_magma_session(args.db,args.description)
         self._add_structures(args, magma_session)
         self._read_ms_data(args, magma_session)
         self._annotate(args, magma_session)
 
     def add_structures(self, args):
         """Reads reactants file and existing result database, generates metabolites from reactants and matches them to peaks"""
-        magma_session = magma.MagmaSession(args.db,args.description)
+        magma_session = self.get_magma_session(args.db,args.description)
         self._add_structures(args, magma_session)
 
     def read_ms_data(self, args):
-        magma_session = magma.MagmaSession(args.db,args.description)
+        magma_session = self.get_magma_session(args.db,args.description)
         self._read_ms_data(args, magma_session)
 
     def annotate(self, args):
-        magma_session = magma.MagmaSession(args.db,args.description)
+        magma_session = self.get_magma_session(args.db,args.description)
         self._annotate(args, magma_session)
 
     def _add_structures(self, args, magma_session):
@@ -182,11 +186,10 @@ class MagmaCommand(object):
             mols.append(mol)
         return mols
 
-    def run(self):
+    def run(self, argv=sys.argv[1:]):
         """Parse arguments and runs subcommand"""
-        args = self.parser.parse_args()
+        args = self.parser.parse_args(argv)
         return args.func(args)
-
 
 if __name__ == "__main__":
     main()
