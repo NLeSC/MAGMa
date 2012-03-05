@@ -123,8 +123,24 @@ Ext.define('Esc.d3.Chromatogram', {
     .x(function(d) { return me.scales.x(d.rt); })
     .y(function(d) { return me.scales.y(d.intensity); });
 
-    this.axes.x = d3.svg.axis().scale(this.scales.x).ticks(this.ticks.x);
-    this.axes.y = d3.svg.axis().scale(this.scales.y).ticks(this.ticks.y).orient("left").tickFormat(d3.format('.2e'));
+    var nrxticks = this.ticks.x;
+    if (this.chartWidth < 25*(6+2)) {
+        nrxticks = 2;
+    }
+    if (this.chartWidth < 25*2) {
+        nrxticks = 0;
+    }
+    this.axes.x = d3.svg.axis().scale(this.scales.x).ticks(nrxticks);
+
+    var nryticks = this.ticks.y;
+    if (this.chartHeight < 16*(1+2)) {
+        nryticks = 2;
+    }
+    if (this.chartHeight < 16*2) {
+        nryticks = 0;
+    }
+    this.axes.y = d3.svg.axis().scale(this.scales.y).ticks(nryticks).orient("left").tickFormat(d3.format('.2e'));
+
   },
   draw: function() {
     this.callParent(arguments);

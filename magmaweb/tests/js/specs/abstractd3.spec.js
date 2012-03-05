@@ -5,7 +5,7 @@ describe('Esc.d3.Abstract', function() {
       var chart = Ext.create('Esc.d3.Abstract', {
         width: 400, height: 500
       });
-      expect(chart.axesPadding).toEqual([10, 10, 38, 80]);
+      expect(chart.axesPadding).toEqual([10, 14, 38, 80]);
       expect(chart.ticks).toEqual({x:10, y:4});
       expect(chart.data).toEqual([]);
       expect(chart.hasData()).toBeFalsy();

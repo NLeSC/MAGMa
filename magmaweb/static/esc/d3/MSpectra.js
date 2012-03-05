@@ -107,8 +107,24 @@ Ext.define('Esc.d3.MSpectra', {
     this.ranges.y.max = d3.max(this.data, function(r) { return r.intensity; });
     this.scales.x = d3.scale.linear().domain([this.ranges.x.min, this.ranges.x.max]).range([0, this.chartWidth]);
     this.scales.y = d3.scale.linear().domain([this.ranges.y.min, this.ranges.y.max]).range([this.chartHeight, 0]);
-    this.axes.x = d3.svg.axis().scale(this.scales.x).ticks(this.ticks.x);
-    this.axes.y = d3.svg.axis().scale(this.scales.y).ticks(this.ticks.y).orient("left").tickFormat(d3.format('.2e'));
+
+    var nrxticks = this.ticks.x;
+    if (this.chartWidth < 25*(6+2)) {
+        nrxticks = 2;
+    }
+    if (this.chartWidth < 25*2) {
+        nrxticks = 0;
+    }
+    this.axes.x = d3.svg.axis().scale(this.scales.x).ticks(nrxticks);
+
+    var nryticks = this.ticks.y;
+    if (this.chartHeight < 16*(1+2)) {
+        nryticks = 2;
+    }
+    if (this.chartHeight < 16*2) {
+        nryticks = 0;
+    }
+    this.axes.y = d3.svg.axis().scale(this.scales.y).ticks(nryticks).orient("left").tickFormat(d3.format('.2e'));
   },
   draw: function() {
     this.callParent(arguments);
