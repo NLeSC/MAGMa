@@ -404,6 +404,10 @@
                     "name": "Separator.js"
                 },
                 {
+                    "path": "static/ext-4.1.0-beta-3/src/toolbar/",
+                    "name": "Spacer.js"
+                },
+                {
                     "path": "static/ext-4.1.0-beta-3/src/layout/component/",
                     "name": "Auto.js"
                 },
@@ -430,6 +434,14 @@
                 {
                     "path": "static/ext-4.1.0-beta-3/src/layout/container/",
                     "name": "VBox.js"
+                },
+                {
+                    "path": "static/ext-4.1.0-beta-3/src/layout/container/",
+                    "name": "Table.js"
+                },
+                {
+                    "path": "static/ext-4.1.0-beta-3/src/container/",
+                    "name": "ButtonGroup.js"
                 },
                 {
                     "path": "static/ext-4.1.0-beta-3/src/toolbar/",
