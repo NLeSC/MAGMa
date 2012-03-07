@@ -4,6 +4,13 @@ MAGMa
 MAGMa is a abbreviation for 'Ms Annotation based on in silico Generated Metabolites'.
 Magma subproject which performs actual calculations.
 
+Requirements
+------------
+
+MAGMa requires rdkit python package.
+To install see instructions at http://rdkit.sourceforge.net/ .
+rdkit requires boost libraries and numpy.
+
 Running on cluster
 ------------------
 
