@@ -123,7 +123,7 @@ class MagmaCommand(object):
 
     def _read_ms_data(self, args, magma_session):
         ms_data_engine = magma_session.get_ms_data_engine(abs_peak_cutoff=args.abs_peak_cutoff, 
-            rel_peak_cutoff=args.rel_peak_cutoff)
+            rel_peak_cutoff=args.rel_peak_cutoff,max_ms_level=args.max_ms_level)
         if args.ms_data_format == "mzxml":
             ms_data_engine.store_mzxml_file(args.ms_data.name)
         elif args.ms_data_format == "peak_list":

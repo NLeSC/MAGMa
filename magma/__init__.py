@@ -3,6 +3,7 @@
 import sys,base64,subprocess
 import sqlite3,struct
 import pkg_resources
+import numpy as np
 from rdkit import Chem, Geometry
 from rdkit.Chem import AllChem, Descriptors
 from lxml import etree
@@ -428,7 +429,7 @@ class AnnotateEngine(object):
 
     def search_all_structures(self):
         for structure in self.db_session.query(Metabolite).all():
-            self.search_structure(structure)
+            self.search_structure_numpy(structure)
 
     def search_structure(self,structure):
         FragmentFormID={}
@@ -483,8 +484,8 @@ class AnnotateEngine(object):
                         if type(massmatch)==int:
                             for fragment in Fragments[i]:
                                 #print "fragment@level",childscan.mslevel,fragment[0] & subfrag == fragment[0],(-fragment[1]-1)<=massmatch<=(fragment[1]+1)
-                                # if fragment[0] & subfrag == fragment[0] and (-fragment[1]-1)<=massmatch<=(fragment[1]+1):
-                                if (-fragment[1]-1)<=massmatch<=(fragment[1]+1):
+                                if fragment[0] & subfrag == fragment[0] and (-fragment[1]-1)<=massmatch<=(fragment[1]+1):
+                                # if (-fragment[1]-1)<=massmatch<=(fragment[1]+1):
                                     #print "hit@level",childscan.mslevel
                                     hit=hittype(peak,fragment,massmatch)
                                     if besthit==None or besthit.score > hit.score:
@@ -760,3 +761,154 @@ class AnnotateEngine(object):
                         hits[-1].write_fragments(structure.metid,0)
         self.db_session.commit()
 
+    def search_structure_numpy(self,structure):
+        FragmentBreaks={}
+        FragmentMass={}
+        Fragments={}
+        Fragmented=False
+        hits=[]                # [hits]
+        atombits=[]          # [1,2,4,8,16,....]
+        atommass={}          # {atombit:atommass(incl. attached hydrogens)}
+        bondbits=[]
+        bondscore=[]
+        mol=Chem.MolFromMolBlock(str(structure.mol))
+        me=self
+
+        class hittype(object):
+            def __init__(self,peak,fragment,deltaH):
+                self.mass = FragmentMass[fragment]
+                self.fragment = fragment
+                self.deltaH = deltaH
+                self.breaks = FragmentBreaks[fragment]
+                self.mz = peak.mz
+                self.intensity = peak.intensity
+                self.scan = peak.scan
+                self.bonds = []
+                self.allbonds = 0
+                self.score()
+                self.besthits=[]
+                #print "childscan",peak.childscan
+                if peak.childscan!=None:
+                    self.score += self.findhits(peak.childscan,fragment)
+            def score(self):
+                self.score = 0
+                for bond in range(len(bondbits)):
+                    if 0 < (self.fragment & bondbits[bond]) < bondbits[bond]:
+                        self.score += bondscore[bond]
+                        self.bonds.append(bond)
+                        self.allbonds=self.allbonds|bondbits[bond] # set all bits of broken bond atoms
+                # self.score*=self.intensity**0.5
+                # self.score*=self.mz
+            def findhits(self,childscan,subfrag):
+                totalscore=0
+                # if childscan.mslevel==5:
+                #     print "MS level",childscan.mslevel,len(childscan.peaks)
+                for peak in childscan.peaks:
+                    # print '-->',peak.mz
+                    # print spectrum.scan,peak.mz,peak.intensity
+                    besthit=None
+                    result=np.where(np.where(fragmims < (peak.mz+me.mz_precision),fragmims,0) > (peak.mz-me.mz_precision))
+                    for i in range(len(result[0])):
+#                        print "Value: %s"%frags[result[0][i]][result[1][i]]
+#                        if frags[result[0][i]] & subfrag == frags[result[0][i]]:
+                        hit=hittype(peak,frags[result[0][i]],result[1][i])
+                        if besthit==None or besthit.score > hit.score:
+                            besthit=hit
+                    self.besthits.append(besthit)
+                    if besthit==None:
+                        totalscore+=peak.missingfragmentscore
+                    else:
+                        totalscore+=min(besthit.score,peak.missingfragmentscore)
+                return totalscore
+            def get_fragment(self):
+                atomstring=''
+                for atom in range(len(atombits)):
+                    if (atombits[atom] & self.fragment):
+                        atomstring+=','+str(atom)
+                return(atomstring[1:])
+            def write_fragments(self,metid,parentfragid):
+                global fragid
+                fragid+=1
+                currentFragid=fragid
+                me.db_session.add(Fragment(
+                    metid=metid,
+                    scanid=self.scan,
+                    mz=self.mz,
+                    mass=self.mass,
+                    score=self.score,
+                    parentfragid=parentfragid,
+                    atoms=self.get_fragment(),
+                    deltah=self.deltaH
+                    ))
+                if len(self.besthits)>0:
+                    for hit in self.besthits:
+                        if hit != None: # still need to work out how to deal with missed fragments
+                            hit.write_fragments(metid,currentFragid)
+    
+        def grow(fragment):
+            NewFragments=[]
+            for bond in range(len(bondbits)):
+                if 0 < (fragment & bondbits[bond]) < bondbits[bond]:
+                    NewFragments.append(fragment|bondbits[bond])
+            FragmentBreaks[fragment]=len(NewFragments)
+            if len(NewFragments) <= me.max_broken_bonds+3:
+                for NewFragment in NewFragments:
+                    if NewFragment not in FragmentMass:
+                        FragmentMass[NewFragment]=FragmentMass[fragment]+atommass[NewFragment^fragment]
+                        grow(NewFragment)
+    
+        # for peak in self.db_session.query(Peak).filter(Scan.mslevel)==1.filter(Peak.intensity>MSfilter)
+
+        for scan in self.scans:
+            for peak in scan.peaks:
+                if not ((not self.use_all_peaks) and peak.childscan==None):
+                    protonation=self.ionisation_mode-(structure.molformula.find('+')>=0)*1
+                    deltaH=peak.massmatch(structure.mim,protonation,protonation)
+                    if type(deltaH)==int:
+                        if not Fragmented:
+                            for x in range(mol.GetNumAtoms()):
+                                atombits.append(2**x)
+                                an=mol.GetAtomWithIdx(x).GetAtomicNum()
+                                atommass[2**x]=mims[an]+\
+                                                    (mol.GetAtomWithIdx(x).GetNumImplicitHs()+\
+                                                    mol.GetAtomWithIdx(x).GetNumExplicitHs())*Hmass
+                            for x in mol.GetBonds():
+                                bondbits.append(atombits[x.GetBeginAtomIdx()]|\
+                                                     atombits[x.GetEndAtomIdx()])
+                                bondscore.append(typew[x.GetBondType()]*ringw[x.IsInRing()]*\
+                                                      heterow[x.GetBeginAtom().GetAtomicNum() != 6 or \
+                                                                 x.GetEndAtom().GetAtomicNum() != 6])
+                            sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+str(structure.reactionsequence)+'\n')
+                            sys.stderr.write('Mim: '+str(structure.mim+Hmass))
+                            for atom in atombits:
+                                FragmentMass[atom]=atommass[atom]
+                                grow(atom)
+                            fragmims=np.zeros(me.max_broken_bonds*2+3)
+                            frags=[0]
+                            for fragment in FragmentMass:
+                                if FragmentBreaks[fragment]<=me.max_broken_bonds:
+#                                    print np.hstack((np.zeros(me.max_broken_bonds-FragmentBreaks[fragment]),
+#                                                     np.arange(-FragmentBreaks[fragment],FragmentBreaks[fragment]+1)*Hmass+FragmentMass[fragment],
+#                                                     np.zeros(me.max_broken_bonds-FragmentBreaks[fragment])
+#                                                     ))
+                                    fragmims = np.vstack((fragmims,
+                                                       np.hstack((np.zeros(me.max_broken_bonds-FragmentBreaks[fragment]),
+                                                                  np.arange(-FragmentBreaks[fragment]-1,FragmentBreaks[fragment]+2)*Hmass+FragmentMass[fragment],
+                                                                  np.zeros(me.max_broken_bonds-FragmentBreaks[fragment])
+                                                                  ))
+                                                       ))
+                                    frags.append(fragment)
+                                    
+                            sys.stderr.write('N fragments: '+str(len(FragmentMass))+"\n")
+                            Fragmented=True
+                        global fragid
+                        fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
+                        if fragid == None:
+                            fragid = 0
+
+                        sys.stderr.write('Scan: '+str(scan.scanid)+' - Mz: '+str(peak.mz)+' - ')
+                        # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
+                        hits.append(hittype(peak,2**len(atombits)-1,protonation))
+                        sys.stderr.write('Score: '+str(hits[-1].score)+'\n')
+                        hits[-1].write_fragments(structure.metid,0)
+        self.db_session.commit()
