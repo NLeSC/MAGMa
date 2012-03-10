@@ -436,7 +436,6 @@ class AnnotateEngine(object):
     def search_structure(self,structure):
         FragmentBreaks={}
         FragmentMass={}
-        Fragments={}
         Fragmented=False
         hits=[]                # [hits]
         atombits=[]          # [1,2,4,8,16,....]
@@ -482,10 +481,10 @@ class AnnotateEngine(object):
                     result=np.where(np.where(fragmims < (peak.mz+me.mz_precision),fragmims,0) > (peak.mz-me.mz_precision))
                     for i in range(len(result[0])):
 #                        print "Value: %s"%frags[result[0][i]][result[1][i]]
-#                        if frags[result[0][i]] & subfrag == frags[result[0][i]]:
-                        hit=hittype(peak,frags[result[0][i]],result[1][i])
-                        if besthit==None or besthit.score > hit.score:
-                            besthit=hit
+                        if frags[result[0][i]] & subfrag == frags[result[0][i]]:
+                            hit=hittype(peak,frags[result[0][i]],me.max_broken_bonds+1-result[1][i])
+                            if besthit==None or besthit.score > hit.score:
+                                besthit=hit
                     self.besthits.append(besthit)
                     if besthit==None:
                         totalscore+=peak.missingfragmentscore
@@ -571,7 +570,8 @@ class AnnotateEngine(object):
                                                        ))
                                     frags.append(fragment)
                                     
-                            sys.stderr.write('N fragments: '+str(len(FragmentMass))+"\n")
+                            sys.stderr.write('N fragments created: '+str(len(FragmentMass))+"\n")
+                            sys.stderr.write('N fragments kept: '+str(len(fragmims))+"\n")
                             Fragmented=True
                         global fragid
                         fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
@@ -580,7 +580,7 @@ class AnnotateEngine(object):
 
                         sys.stderr.write('Scan: '+str(scan.scanid)+' - Mz: '+str(peak.mz)+' - ')
                         # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
-                        hits.append(hittype(peak,2**len(atombits)-1,protonation))
+                        hits.append(hittype(peak,2**len(atombits)-1,-protonation))
                         sys.stderr.write('Score: '+str(hits[-1].score)+'\n')
                         hits[-1].write_fragments(structure.metid,0)
         self.db_session.commit()
