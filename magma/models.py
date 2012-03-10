@@ -77,8 +77,6 @@ class Run(Base):
     """Run model for run table"""
     __tablename__ = 'run'
     runid = Column(Integer, primary_key=True, autoincrement=True) #: Run identifier
-    # TODO run consists of 1 row so doesn't need a pk
-    # but sqlalchemy requires one
     description = Column(Unicode) #: Description of the run
 
     # SyGMa parameters, TODO remove: metabolism type info will be part of reacton sequence of metabolites
