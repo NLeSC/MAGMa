@@ -44,8 +44,18 @@ public class JobSubmitRequest {
      * executable is called. Must be relative to job directory
      */
     public String[] poststaged = {};
+    /**
+     * The maximum walltime or cputime for a single execution of the
+     * executable. The units is in minutes.
+     */
     public long time_max = 0;
+    /**
+     * minimal required memory in MB
+     */
     public int memory_min = 0;
+    /**
+     * maximum required memory in MB
+     */
     public int memory_max = 0;
 
     /**
