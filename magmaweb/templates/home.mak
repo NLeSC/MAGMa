@@ -51,6 +51,7 @@ Ext.onReady(function() {
   Ext.QuickTips.init();
 
   var form = Ext.create('Ext.form.Panel', {
+    border: false,
     region: 'center',
     bodyPadding: 5,
     defaults: { bodyPadding: 5 },
@@ -275,6 +276,7 @@ Ext.onReady(function() {
   Ext.create('Ext.container.Viewport', {
     layout: 'border',
     items: [{
+      border: false,
       region: 'north',
       layout: {
         type: 'hbox',
