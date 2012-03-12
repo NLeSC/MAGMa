@@ -74,6 +74,14 @@ def home(request):
 
     return dict()
 
+@view_config(route_name='uploaddb', renderer='uploaddb.mak')
+def uploaddb(request):
+    if (request.method == 'POST'):
+        job = job_factory(request).fromDb(request.POST['db_file'].file)
+        return HTTPFound(location=request.route_url('results', jobid=job.id))
+    else:
+        return {}
+
 @view_config(route_name='results', renderer='results.mak')
 def results(request):
     """Returns results page"""

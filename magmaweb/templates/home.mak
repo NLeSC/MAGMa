@@ -10,6 +10,22 @@
 <script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.8.7.custom.min.js')}"></script>
 <script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/ChemDoodleWeb-sketcher.js')}"></script>
 <script type="text/javascript" src="${request.extjsroot}/ext-all.js"></script>
+<style type="text/css">
+.x-logo a {
+  font-size: 40px;
+  font-weight: bold;
+  color: #333;
+  text-decoration:none;
+  padding-left: 520px;
+  padding-top: 3px; /* aligns app title with text in logo  */
+  background: url(${request.static_url('magmaweb:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}) no-repeat 5px 4px;
+}
+
+#welcome h1 {
+  font-size: 200%;
+}
+
+</style>
 <script type="text/javascript">
 
 Ext.Loader.setConfig({
@@ -35,13 +51,14 @@ Ext.onReady(function() {
   Ext.QuickTips.init();
 
   var form = Ext.create('Ext.form.Panel', {
-    frame: true,
-    width: 800,
-    title: 'MAGMa submit form',
+    region: 'center',
     bodyPadding: 5,
-    renderTo: Ext.getBody(),
     defaults: { bodyPadding: 5 },
+    autoScroll: true,
     items:[{
+        contentEl: 'welcome',
+        border: false
+    },{
        xtype: 'fieldset',
        title: "Structures",
        items:[{
@@ -79,8 +96,7 @@ Ext.onReady(function() {
                items: [{
                    id: 'sketcher', // during form submit fetch molblock from sketcher
                    contentEl: 'sketcher_content',
-                   width: 500,
-                   height: 300
+                   border: false
                }]
            }]
        }],
@@ -219,7 +235,7 @@ Ext.onReady(function() {
         xtype: 'textfield',
         name: 'description',
         fieldLabel: 'Description',
-        width: 500,
+        width: 510,
         emptyText: 'Enter optional description which can be used to identify the results'
     }],
     buttons: [{
@@ -255,6 +271,40 @@ Ext.onReady(function() {
       }
     }]
   });
+
+  Ext.create('Ext.container.Viewport', {
+    layout: 'border',
+    items: [{
+      region: 'north',
+      layout: {
+        type: 'hbox',
+        align: 'middle',
+        padding: 2
+      },
+      items: [{
+        xtype: 'component',
+        cls: 'x-logo',
+        html: '<a href="${request.route_url('home')}" data-qtip="<b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites">MAGMa</a>'
+      }, {
+        xtype:'tbspacer',
+        flex:1 // aligns buttongroup right
+      }, {
+          xtype: 'buttongroup',
+          columns: 3,
+          items: [{
+            text: 'Help',
+            tooltip: 'Goto help pages',
+            disabled: true
+          },{
+            text: 'Upload result',
+            tooltip: 'Upload a result db for viewing',
+            url: '${request.route_url('uploaddb')}'
+          }]
+        }]
+     },
+     form
+     ]
+  });
 });
 </script>
 </head>
@@ -269,6 +319,9 @@ sketcher.repaint();
 sketcher.toolbarManager.buttonSave.disable();
 sketcher.toolbarManager.buttonOpen.disable();
 </script>
+</div>
+<div id="welcome" class="x-hidden">
+<h1>Welcome to the <b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites application</h1>
 </div>
 </body>
 </html>

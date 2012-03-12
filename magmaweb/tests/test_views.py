@@ -72,7 +72,7 @@ class HomeView(unittest.TestCase):
         import tempfile
         settings = { 'jobrootdir': tempfile.mkdtemp() }
         self.config = testing.setUp(settings=settings)
-        self.config.add_route('results', '/results')
+        self.config.add_route('results', '/results/{jobid}')
 
     def tearDown(self):
         import shutil
@@ -85,7 +85,7 @@ class HomeView(unittest.TestCase):
         response = home(request)
         self.assertEqual(response, {})
 
-    def build_post_request(self, dbfile):
+    def build_post_request(self, ms_data_file):
         post = {
                 'ms_data_file': FileUpload(),
                 'mz_precision': 0.01,
@@ -107,12 +107,12 @@ class HomeView(unittest.TestCase):
                 'ms_data_format': 'mzxml',
                 'structures_file': ''
                 }
-        post['ms_data_file'].file = dbfile
-        post['ms_data_file'].filename = dbfile.name
+        post['ms_data_file'].file = ms_data_file
+        post['ms_data_file'].filename = ms_data_file.name
 
         from magmaweb.job import JobQuery
         q = JobQuery()
-        q.ms_data_file = dbfile
+        q.ms_data_file = ms_data_file
         q.mz_precision = post['mz_precision']
         q.ms_intensity_cutoff = post['ms_intensity_cutoff']
         q.msms_intensity_cutoff = post['msms_intensity_cutoff']
@@ -143,9 +143,9 @@ class HomeView(unittest.TestCase):
         mocked_jobfactory.return_value = jobf
 
         import tempfile
-        dbfile = tempfile.NamedTemporaryFile()
+        ms_data_file = tempfile.NamedTemporaryFile()
 
-        (post, q) = self.build_post_request(dbfile)
+        (post, q) = self.build_post_request(ms_data_file)
 
         request = testing.DummyRequest(post=post)
 
@@ -156,7 +156,7 @@ class HomeView(unittest.TestCase):
         self.assertEqual(response.content_type, 'text/html') # required for extjs iframe file upload
         mocked_jobfactory.assert_called_with(request)
         jobf.submitQuery.assert_called_with(q)
-        dbfile.close()
+        ms_data_file.close()
 
     @patch('magmaweb.views.job_factory')
     def test_postUnchecked(self, mocked_jobfactory):
@@ -168,9 +168,9 @@ class HomeView(unittest.TestCase):
         mocked_jobfactory.return_value = jobf
 
         import tempfile
-        dbfile = tempfile.NamedTemporaryFile()
+        ms_data_file = tempfile.NamedTemporaryFile()
 
-        (post, q) = self.build_post_request(dbfile)
+        (post, q) = self.build_post_request(ms_data_file)
         del(post['use_all_peaks'])
         q.use_all_peaks = False
         del(post['skip_fragmentation'])
@@ -185,7 +185,7 @@ class HomeView(unittest.TestCase):
         self.assertEqual(response.content_type, 'text/html') # required for extjs iframe file upload
         mocked_jobfactory.assert_called_with(request)
         jobf.submitQuery.assert_called_with(q)
-        dbfile.close()
+        ms_data_file.close()
 
     @patch('magmaweb.views.job_factory')
     def test_postWithStructuresFile(self, mocked_jobfactory):
@@ -197,9 +197,9 @@ class HomeView(unittest.TestCase):
         mocked_jobfactory.return_value = jobf
 
         import tempfile
-        dbfile = tempfile.NamedTemporaryFile()
+        ms_data_file = tempfile.NamedTemporaryFile()
 
-        (post, q) = self.build_post_request(dbfile)
+        (post, q) = self.build_post_request(ms_data_file)
 
         structuresfile = tempfile.NamedTemporaryFile()
         structuresfile.write('CCO ethanol')
@@ -218,7 +218,7 @@ class HomeView(unittest.TestCase):
         self.assertEqual(response.content_type, 'text/html') # required for extjs iframe file upload
         mocked_jobfactory.assert_called_with(request)
         jobf.submitQuery.assert_called_with(q)
-        dbfile.close()
+        ms_data_file.close()
         structuresfile.close()
 
 def mock_job():
@@ -532,4 +532,43 @@ class StderrView(unittest.TestCase):
         self.job.stderr.assert_called_with()
         self.assertEqual(response.content_type, 'text/plain')
         self.assertMultiLineEqual(response.app_iter.read(), 'bla')
+
+class UploadDbView(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+        self.config.add_route('results', '/results/{jobid}')
+
+    def tearDown(self):
+        testing.tearDown()
+
+    def test_get(self):
+        request = testing.DummyRequest()
+        from magmaweb.views import uploaddb
+        response = uploaddb(request)
+        self.assertEqual(response, {})
+
+    @patch('magmaweb.views.job_factory')
+    def test_post(self, mocked_jobfactory):
+        import tempfile
+        db_file = tempfile.NamedTemporaryFile()
+        post = { 'db_file': FileUpload() }
+        post['db_file'].file = db_file
+        request = testing.DummyRequest(post=post)
+        job = FileUpload()
+        job.id = '123456'
+        from magmaweb.job import JobFactory
+        jobf = Mock(JobFactory)
+        jobf.fromDb.return_value = job
+        mocked_jobfactory.return_value = jobf
+
+        from magmaweb.views import uploaddb
+        response = uploaddb(request)
+
+        from pyramid.httpexceptions import HTTPFound
+        self.assertIsInstance(response, HTTPFound)
+        self.assertEquals(response.location, 'http://example.com/results/123456')
+        mocked_jobfactory.assert_called_with(request)
+        jobf.fromDb.assert_called_with(db_file)
+
+        db_file.close()
 

@@ -21,5 +21,6 @@ def main(global_config, **settings):
     config.add_route('mspectra.json', '/results/{jobid}/mspectra/{scanid}.json')
     config.add_route('extractedionchromatogram.json','/results/{jobid}/extractedionchromatogram/{metid}.json')
     config.add_route('stderr.txt', '/results/{jobid}/stderr.txt')
+    config.add_route('uploaddb', '/uploaddb')
     config.scan('magmaweb')
     return config.make_wsgi_app()
