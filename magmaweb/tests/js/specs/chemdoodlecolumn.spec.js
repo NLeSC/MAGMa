@@ -80,7 +80,7 @@ describe('Esc.ChemDoodleColumn', function() {
             view.id = 'gridview-1234';
             var store = function() {};
             var record = { data:{ 'mol': caffeineMolFile } };
-            store.getById = function() { return record };
+            store.data = { getByKey: function() { return record } };
             var col = createDefault();
             col.grid = function() { };
             col.grid.getView = function() { return view };
@@ -89,12 +89,12 @@ describe('Esc.ChemDoodleColumn', function() {
 
             spyOn(Ext.DomQuery,'select').andReturn(canvases);
             spyOn(col,'initCanvas');
-            spyOn(store,'getById').andCallThrough();
+            spyOn(store.data,'getByKey').andCallThrough();
 
             col.initCanvases();
 
             expect(Ext.DomQuery.select).toHaveBeenCalled();
-            expect(store.getById).toHaveBeenCalledWith(5);
+            expect(store.data.getByKey).toHaveBeenCalledWith('5');
             expect(col.initCanvas).toHaveBeenCalledWith(canvases[0].id, 150, 100, record.data.mol, record);
         })
     });

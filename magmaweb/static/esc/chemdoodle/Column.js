@@ -51,6 +51,7 @@
 Ext.define('Esc.chemdoodle.Column', {
   extend: 'Ext.grid.column.Column',
   alias: ['widget.chemdoodlecolumn'],
+  sortable: false,
   config: {
     /**
      * @cfg {Number} canvasWidth
@@ -100,10 +101,10 @@ Ext.define('Esc.chemdoodle.Column', {
         Ext.DomQuery.select('canvas[class*="'+this.getCanvasClass()+'"]',this.grid.getView().dom),
         function(canvas) {
           var canvasid = canvas.id;
-          var rowid = canvasid.replace(this.grid.getView().id+'-','');
-          rowid = rowid.replace(/-\d$/,'')*1;
+          var rowid = canvasid.replace(this.grid.getView().id+'-', '');
+          rowid = rowid.replace(/-\d$/, ''); // remove column id
           var store = this.grid.getStore();
-          var row = store.getById(rowid);
+          var row = store.data.getByKey(rowid);
           if (row && row.data[this.dataIndex]) {
             this.initCanvas(canvasid,this.getCanvasWidth(),this.getCanvasHeight(),row.data[this.dataIndex],row);
           }
