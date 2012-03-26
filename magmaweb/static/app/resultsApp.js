@@ -311,6 +311,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
       width: 600,
       hideCollapseTool: true,
       border: false,
+      preventHeader: true,
       items:[{
         region: 'center',
         xtype: 'fragmenttree',
@@ -318,26 +319,22 @@ Ext.define('Esc.magmaweb.resultsApp', {
       },{
         region:'south',
         height: '50%',
-        layout: 'border',
         split: true,
         collapsible: true,
         hideCollapseTool: true,
         border: false,
-        items:[{
-          id: 'mspectrapanel',
-          region: 'center',
-          layout: {
-            type: 'vbox',
-            align: 'stretch'
-          },
-          border: false,
-          defaults: {
-            flex: 1,
-            layout:'fit',
-            border: false
-          },
-          items: msspectrapanels
-        }],
+        preventHeader: true,
+        id: 'mspectrapanel',
+        layout: {
+          type: 'vbox',
+          align: 'stretch'
+        },
+        defaults: {
+          flex: 1,
+          layout:'fit',
+          border: false
+        },
+        items: msspectrapanels
       }]
     });
 
