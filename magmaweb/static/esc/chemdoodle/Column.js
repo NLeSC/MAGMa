@@ -104,7 +104,12 @@ Ext.define('Esc.chemdoodle.Column', {
           var rowid = canvasid.replace(this.grid.getView().id+'-', '');
           rowid = rowid.replace(/-\d$/, ''); // remove column id
           var store = this.grid.getStore();
-          var row = store.data.getByKey(rowid);
+          // TreeStore doesn't have data.getByKey use getNodeById
+          if ('getNodeById' in store) {
+              var row = store.getNodeById(rowid);
+          } else {
+              var row = store.data.getByKey(rowid);
+          }
           if (row && row.data[this.dataIndex]) {
             this.initCanvas(canvasid,this.getCanvasWidth(),this.getCanvasHeight(),row.data[this.dataIndex],row);
           }

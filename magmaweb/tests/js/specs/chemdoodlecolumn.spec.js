@@ -97,6 +97,32 @@ describe('Esc.ChemDoodleColumn', function() {
             expect(store.data.getByKey).toHaveBeenCalledWith('5');
             expect(col.initCanvas).toHaveBeenCalledWith(canvases[0].id, 150, 100, record.data.mol, record);
         })
+
+        it('treestore issue #81', function() {
+            // calls initCanvas on all canvas tags with class="x-chemdoodle-cols"
+            // canvas id contains a record id
+            var view = function() {};
+            view.dom = function() { return 'dom'; };
+            view.id = 'gridview-1234';
+            var store = function() {};
+            var record = { data:{ 'mol': caffeineMolFile } };
+            store.getNodeById = function() { return record };
+            var col = createDefault();
+            col.grid = function() { };
+            col.grid.getView = function() { return view };
+            col.grid.getStore = function() { return store };
+            var canvases = [{ id:'gridview-1234-5-2' }];
+
+            spyOn(Ext.DomQuery,'select').andReturn(canvases);
+            spyOn(col,'initCanvas');
+            spyOn(store,'getNodeById').andCallThrough();
+
+            col.initCanvases();
+
+            expect(Ext.DomQuery.select).toHaveBeenCalled();
+            expect(store.getNodeById).toHaveBeenCalledWith('5');
+            expect(col.initCanvas).toHaveBeenCalledWith(canvases[0].id, 150, 100, record.data.mol, record);
+        });
     });
 
     describe('initCanvas', function() {
