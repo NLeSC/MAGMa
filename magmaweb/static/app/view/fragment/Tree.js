@@ -22,6 +22,7 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
     // now we turn off animate, so refresh events are fired and mols can be rendered
     animate: false,
     blockRefresh: false,
+    deferEmptyText: false,
     emptyText: 'Select a metabolite and scan, to show its fragments',
   },
   initComponent: function() {
