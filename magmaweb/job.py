@@ -297,7 +297,7 @@ class Job(object):
 
     def maxMSLevel(self):
         """ Returns the maximum nr of MS levels """
-        return self.session.query(func.max(Scan.mslevel)).scalar()
+        return self.session.query(func.max(Scan.mslevel)).scalar() or 0
 
     def runInfo(self):
         """ Returns run info"""

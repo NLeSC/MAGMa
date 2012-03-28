@@ -506,6 +506,12 @@ class JobTestCase(unittest.TestCase):
         maxmslevel = self.job.maxMSLevel()
         self.assertEqual(maxmslevel, 3)
 
+    def test_maxMSLevel_withoutscans(self):
+        self.session.query(Peak).delete()
+        self.session.query(Scan).delete()
+        maxmslevel = self.job.maxMSLevel()
+        self.assertEqual(maxmslevel, 0)
+
     def test_extractedionchromatogram(self):
         metid = 72
         eic = self.job.extractedIonChromatogram(metid)

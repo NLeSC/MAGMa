@@ -212,6 +212,40 @@ Ext.define('Esc.magmaweb.resultsApp', {
         items: mspectras[mslevel]
       });
     }
+    if (this.getMaxmslevel() > 0) {
+        var mspectrapanel = Ext.create('Ext.panel.Panel', {
+            region:'south',
+            height: '50%',
+            split: true,
+            collapsible: true,
+            hideCollapseTool: true,
+            border: false,
+            preventHeader: true,
+            id: 'mspectrapanel',
+            layout: {
+              type: 'vbox',
+              align: 'stretch'
+            },
+            defaults: {
+              flex: 1,
+              layout:'fit',
+              border: false
+            },
+            items: msspectrapanels
+        });
+    } else {
+        var mspectrapanel = Ext.create('Ext.panel.Panel', {
+            region:'south',
+            height: '50%',
+            split: true,
+            collapsible: true,
+            hideCollapseTool: true,
+            border: false,
+            title: 'Scans',
+            id: 'mspectrapanel',
+            html: 'No scans available: Upload ms data'
+        });
+    }
 
     var infoWindow = Ext.create('Ext.window.Window', {
         title: 'Information',
@@ -316,26 +350,9 @@ Ext.define('Esc.magmaweb.resultsApp', {
         region: 'center',
         xtype: 'fragmenttree',
         border: false
-      },{
-        region:'south',
-        height: '50%',
-        split: true,
-        collapsible: true,
-        hideCollapseTool: true,
-        border: false,
-        preventHeader: true,
-        id: 'mspectrapanel',
-        layout: {
-          type: 'vbox',
-          align: 'stretch'
-        },
-        defaults: {
-          flex: 1,
-          layout:'fit',
-          border: false
-        },
-        items: msspectrapanels
-      }]
+      },
+      mspectrapanel
+      ]
     });
 
     Ext.create('Ext.Viewport', {
