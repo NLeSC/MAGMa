@@ -277,7 +277,27 @@ describe('Metabolites', function() {
        Ext.util.Observable.releaseCapture(ctrl.application);
      });
 
+     describe('onChromatrogramLoad', function() {
+
+        it('initially', function() {
+            expect(ctrl.hasMSData).toBeFalsy();
+        });
+
+        it('empty chormatogram', function() {
+            chromatogram = { data: [] };
+            ctrl.onChromatrogramLoad(chromatogram);
+            expect(ctrl.hasMSData).toBeFalsy();
+        });
+
+        it('filled chormatogram', function() {
+            chromatogram = { data: [1] };
+            ctrl.onChromatrogramLoad(chromatogram);
+            expect(ctrl.hasMSData).toBeTruthy();
+        });
+     });
+
      it('load metabolites', function() {
+       spyOn(ctrl, 'metabolizable');
        var f = { callback: function() {} };
        spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
        Ext.util.Observable.capture(ctrl.application, f.callback);
@@ -285,6 +305,7 @@ describe('Metabolites', function() {
        store.fireEvent('load', store);
 
        expect(f.callback).toHaveBeenCalledWith('metaboliteload', jasmine.any(Object));
+       expect(ctrl.metabolizable).toHaveBeenCalledWith(true);
 
        Ext.util.Observable.releaseCapture(ctrl.application);
      });
@@ -297,6 +318,7 @@ describe('Metabolites', function() {
        spyOn(sm, 'hasSelection').andReturn(false);
        spyOn(sm, 'select');
 
+       spyOn(ctrl, 'metabolizable');
        var f = { callback: function() {} };
        spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
 
@@ -311,6 +333,26 @@ describe('Metabolites', function() {
        expect(sm.hasSelection).toHaveBeenCalled();
        expect(sm.select).toHaveBeenCalledWith(0);
        expect(f.callback).toHaveBeenCalledWith('metaboliteload', jasmine.any(Object));
+       expect(ctrl.metabolizable).toHaveBeenCalledWith(true);
+       Ext.util.Observable.releaseCapture(ctrl.application);
+    });
+
+    it('load metabolites, zero metabolites', function() {
+       spyOn(ctrl, 'metabolizable');
+       var f = { callback: function() {} };
+       spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+       Ext.util.Observable.capture(ctrl.application, f.callback);
+
+       // load zero
+       store.loadRawData({
+            rows: [],
+            total: 0,
+            scans: []
+       });
+
+       expect(f.callback).toHaveBeenCalledWith('metaboliteload', jasmine.any(Object));
+       expect(ctrl.metabolizable).toHaveBeenCalledWith(false);
+
        Ext.util.Observable.releaseCapture(ctrl.application);
     });
 

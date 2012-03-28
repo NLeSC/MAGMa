@@ -9,6 +9,15 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
   views: [ 'metabolite.List' ],
   stores: [ 'Metabolites' ],
   models: [ 'Metabolite' ],
+  uses: [
+    'Ext.window.Window',
+    'Ext.form.Panel',
+    'Ext.form.field.Hidden',
+    'Ext.form.field.Display',
+    'Esc.magmaweb.view.metabolite.AddFieldSet',
+    'Esc.magmaweb.view.metabolite.MetabolizeFieldSet',
+    'Esc.magmaweb.view.fragment.AnnotateFieldSet'
+  ],
   refs: [{
     ref: 'metaboliteList', selector: 'metabolitelist'
   }],
@@ -26,21 +35,39 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       'metabolitelist': {
         select: this.onSelect,
         deselect: this.onDeselect,
-        beforeselect: this.beforeSelect
+        beforeselect: this.beforeSelect,
+        metabolize: this.showMetabolizeStructureForm
       },
-      'metabolitelist button[action=clear]': {
+      'metabolitelist component[action=clear]': {
         click: this.clearFilters
       },
       'metabolitelist component[action=pagesize]': {
         select: this.onPageSizeChange
       },
-      'metabolitelist tool[action=download]': {
+      'metabolitelist component[action=download]': {
         click: this.download
+      },
+      'metabolitelist component[action=add]': {
+        click: this.showAddStructuresForm
+      },
+      'metabolitelist component[action=metabolize]': {
+        click: this.showMetabolizeForm
+      },
+      'metabolitelist component[action=annotate]': {
+        click: this.showAnnotateForm
       }
     });
 
     this.application.on('selectscan', this.applyScanFilter, this);
     this.application.on('noselectscan', this.clearScanFilter, this);
+
+    /**
+     * @property {Boolean} hasMSData
+     * Whether there is ms data to use for annotate
+     * Used in action forms to disable/enable annotate options
+     */
+    this.hasMSData = false;
+    this.application.on('chromatogramload', this.onChromatrogramLoad, this);
 
     this.application.addEvents(
         /**
@@ -93,6 +120,14 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
         console.log('Only one metabolite loaded and its not selected, selecting it');
         this.getMetaboliteList().getSelectionModel().select(0);
     }
+    this.metabolizable(store.getTotalCount() > 0);
+  },
+  /**
+   * Listens for chromatogram load event.
+   * @param {Esc.d3.Chromatagram} chromatogram
+   */
+  onChromatrogramLoad: function(chromatogram) {
+    this.hasMSData = chromatogram.data.length > 0;
   },
   /**
    * Only allow metabolite with a scans to be selected.
@@ -200,6 +235,170 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
         Ext.Object.toQueryString(params)
     );
     window.open(url, 'metabolites.csv');
+  },
+  /**
+   * Shows add structures form in modal window.
+   */
+  showAddStructuresForm: function() {
+      Ext.create('Ext.window.Window', {
+          title: 'Add structure(s)',
+          height: 500,
+          width: 600,
+          layout: 'fit',
+          modal: true,
+          items: {
+                xtype: 'form',
+                bodyPadding: 5,
+                defaults: { bodyPadding: 5 },
+                border: false,
+                autoScroll: true,
+                items : [{
+                    xtype : 'addstructurefieldset'
+                }, {
+                    xtype : 'metabolizefieldset',
+                    checkboxToggle: true,
+                    collapsed : true,
+                    collapsible : true
+                }, {
+                    xtype : 'annotatefieldset',
+                    disabled: !this.hasMSData,
+                    collapsed : true,
+                    collapsible : true
+                }],
+                buttons: [{
+                    text: 'Submit',
+                    handler: function(){
+                        console.log('TODO');
+                    }
+                }, {
+                    text: 'Reset',
+                    handler: function() {
+                        this.up('form').getForm().reset();
+                    }
+                }]
+          }
+      }).show();
+  },
+  /**
+   * Shows metabolize form in modal window
+   */
+  showMetabolizeForm: function() {
+    Ext.create('Ext.window.Window', {
+        title: 'Metabolize all structures',
+        modal: true,
+        height: 300,
+        width: 600,
+        layout: 'fit',
+        items: {
+            xtype: 'form',
+            bodyPadding: 5,
+            defaults: { bodyPadding: 5 },
+            border: false,
+            autoScroll: true,
+            items: [{
+                xtype : 'metabolizefieldset'
+            }, {
+                xtype : 'annotatefieldset',
+                disabled: !this.hasMSData,
+                collapsed : true,
+                collapsible : true
+            }],
+            buttons: [{
+                text: 'Submit',
+                handler: function(){
+                    console.log('TODO');
+                }
+            }, {
+                text: 'Reset',
+                handler: function() {
+                    this.up('form').getForm().reset();
+                }
+            }]
+        }
+    }).show();
+  },
+  /**
+   * Shows annotate form in modal window
+   */
+  showAnnotateForm: function() {
+    Ext.create('Ext.window.Window', {
+        title: 'Annotate all structures',
+        modal: true,
+        height: 400,
+        width: 600,
+        layout: 'fit',
+        items: {
+            xtype: 'form',
+            bodyPadding: 5,
+            defaults: { bodyPadding: 5 },
+            border: false,
+            autoScroll: true,
+            items: [{
+                xtype : 'annotatefieldset'
+            }],
+            buttons: [{
+                text: 'Submit',
+                handler: function(){
+                    console.log('TODO');
+                }
+            }, {
+                text: 'Reset',
+                handler: function() {
+                    this.up('form').getForm().reset();
+                }
+            }]
+        }
+    }).show();
+  },
+  /**
+   * Shows metabolize form in modal window for one metabolite/structure
+   * @param {Ext.data.Model} rec Record to metabolize
+   */
+  showMetabolizeStructureForm: function(rec) {
+    Ext.create('Ext.window.Window', {
+        title: 'Metabolize',
+        modal: true,
+        height: 300,
+        width: 600,
+        layout: 'fit',
+        items: {
+            xtype: 'form',
+            bodyPadding: 5,
+            defaults: { bodyPadding: 5 },
+            border: false,
+            autoScroll: true,
+            items: [{
+                xtype: 'displayfield',
+                fieldLabel: 'Name',
+                value: rec.get('origin')
+            },{
+                xtype: 'hiddenfield',
+                name: 'metid',
+                value: rec.get('metid')
+            },{
+                xtype : 'metabolizefieldset'
+            }, {
+                xtype : 'annotatefieldset',
+                disabled: !this.hasMSData,
+                collapsed : true,
+                collapsible : true
+            }],
+            buttons: [{
+                text: 'Submit',
+                handler: function(){
+                    console.log('TODO');
+                }
+            }, {
+                text: 'Reset',
+                handler: function() {
+                    this.up('form').getForm().reset();
+                }
+            }]
+        }
+    }).show();
+  },
+  metabolizable: function(enabled) {
+     Ext.getCmp('metabolizeaction').setDisabled(!enabled);
   }
 });
 

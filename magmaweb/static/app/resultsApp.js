@@ -112,6 +112,13 @@ Ext.define('Esc.magmaweb.resultsApp', {
    */
   selected: { scanid: false, metid: false },
   /**
+   * Can only annotate when there are structures and ms data.
+   * @property {Object} annotatable
+   * @property {Boolean} annotabable.structures Whether there are structures
+   * @property {Boolean} annotabable.msdata Whether there is ms data
+   */
+  annotatable: { structures: false, msdata: false },
+  /**
    * Logs error in console and shows a error message box to user
    *
    * @param {Ext.Error} err The raised error
@@ -193,6 +200,23 @@ Ext.define('Esc.magmaweb.resultsApp', {
     this.on('peakmouseover', function(peak, mslevel, scanid) {
       Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' scan '+scanid+' (m/z='+peak.mz+', intensity='+peak.intensity+')');
     });
+
+    this.on('metaboliteload', function(store) {
+        this.annotatable.structures = store.getTotalCount() > 0;
+        if (this.annotatable.structures && this.annotatable.msdata) {
+            Ext.getCmp('annotateaction').enable();
+        } else {
+            Ext.getCmp('annotateaction').disable();
+        }
+    }, this);
+    this.on('chromatogramload', function(chromatogram) {
+        this.annotatable.msdata = chromatogram.data.length > 0;
+        if (this.annotatable.structures && this.annotatable.msdata) {
+            Ext.getCmp('annotateaction').enable();
+        } else {
+            Ext.getCmp('annotateaction').disable();
+        }
+    }, this);
 
     console.log('Launch app');
 

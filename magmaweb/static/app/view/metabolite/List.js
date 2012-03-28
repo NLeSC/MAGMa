@@ -5,9 +5,16 @@
 Ext.define('Esc.magmaweb.view.metabolite.List', {
   extend: 'Ext.grid.Panel',
   alias: 'widget.metabolitelist',
+  requires: [
+    'Ext.ux.grid.FiltersFeature', 'Esc.chemdoodle.Column',
+    'Ext.toolbar.Paging', 'Ext.grid.column.Boolean',
+    'Ext.form.field.ComboBox', 'Ext.grid.column.Action'
+  ],
   title: 'Query molecules & Metabolites',
   store: 'Metabolites',
-  requires: ['Ext.ux.grid.FiltersFeature', 'Esc.chemdoodle.Column', 'Ext.toolbar.Paging', 'Ext.grid.column.Boolean', 'Ext.form.field.ComboBox' ],
+  viewConfig: {
+    emptyText: 'No structures available: Add structures or relax filters'
+  },
   selModel: Ext.create('Ext.selection.CheckboxModel', {
     allowDeselect: true,
     mode: 'SINGLE'
@@ -32,18 +39,40 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         [100, '100 metabolites per page'],
         [250, '250 metabolites per page'],
         [500, '500 metabolites per page'],
-        [1000, '1000 metabolites per page'],
+        [1000, '1000 metabolites per page']
       ],
       forceSelection: true,
       triggerAction: 'all',
       action: 'pagesize'
     }, {
-      text: 'Clear filters',
-      action: 'clear'
+      text: 'Actions',
+      menu: {
+        items: [{
+            iconCls: 'icon-add',
+            text: 'Add structures',
+            action: 'add'
+        }, {
+            text: 'Metabolize',
+            id: 'metabolizeaction',
+            tooltip: 'Metabolize all structures',
+            disabled: true,
+            action: 'metabolize'
+        }, {
+            text: 'Annotate',
+            tooltip: 'Annotate all structures',
+            id: 'annotateaction',
+            disabled: true,
+            action: 'annotate'
+        }, {
+            text: 'Clear filters',
+            action: 'clear'
+        }]
+      }
     }]
   }],
   initComponent: function() {
     console.log('Init met grid');
+    var me = this;
     var molcol = Ext.create('Esc.chemdoodle.Column', {
       text: 'Molecule', dataIndex: 'mol',
       width: 162
@@ -53,6 +82,15 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
       id: 'mfilter',
       encode: true
     });
+
+    this.addEvents([
+        /**
+         * @event metabolize
+         * Fired after metabolize column action is clicked
+         * @param {Ext.data.Model} record The record to metabolize
+         */
+        'metabolize'
+    ]);
 
     Ext.apply(this, {
       columns: [
@@ -72,7 +110,16 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
         {text: 'Name', dataIndex: 'origin', hidden: true, filter: { type: 'string' }},
         {text: 'Fragment score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }},
-        {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true}
+        {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true},
+        {xtype: 'actioncolumn', width:30, text:'Commands',
+            items: [{
+                tooltip: 'Metabolize',
+                iconCls: 'metabolize-col',
+                handler: function(grid, rowIndex) {
+                    me.fireEvent('metabolize', me.getStore().getAt(rowIndex));
+                }
+            }]
+        }
       ],
       plugins: [molcol],
       features: [mfilters]

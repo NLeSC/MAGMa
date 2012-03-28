@@ -20,10 +20,14 @@ Ext.define('Esc.magmaweb.view.scan.Chromatogram', {
     type: 'restore',
     tooltip: 'Center chromatogram',
     action: 'center'
+  }, {
+    type: 'gear',
+    tooltip: 'Upload MS data',
+    action: 'upload'
   }],
   layout: 'fit',
   items: {
-      emptyText: 'Loading chromatogram ...',
+      emptyText: 'No chromatogram available: Upload ms data',
       axesPadding: [16, 5, 58, 80],
       xtype: 'chromatogram'
   }

@@ -5,6 +5,7 @@
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
 <link rel="stylesheet" href="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb.css')}" type="text/css"></link>
 <link rel="stylesheet" href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
+<link rel="stylesheet" href="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.8.7.custom.css')}" type="text/css"></link>
 <link rel="stylesheet" type="text/css" href="${request.extjsroot}/examples/ux/grid/css/GridFilters.css" />
 <link rel="stylesheet" type="text/css" href="${request.extjsroot}/examples/ux/grid/css/RangeMenu.css" />
 <style type="text/css">
@@ -86,9 +87,26 @@ line.mspeak {
 svg {
   background: white;
 }
+
+/* shared styles for the ActionColumn icons */
+.x-action-col-cell img {
+    height: 16px;
+    width: 16px;
+    cursor: pointer;
+}
+.x-action-col-cell img.metabolize-col {
+    background-image: url(${request.extjsroot}/examples/shared/icons/fam/cog.png);
+}
+
+.icon-add {
+    background-image: url(${request.extjsroot}/examples/writer/images/add.png) !important;
+}
+
 </style>
 <script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb-libs.js')}"></script>
 <script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb.js')}"></script>
+<script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.8.7.custom.min.js')}"></script>
+<script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/ChemDoodleWeb-sketcher.js')}"></script>
 <script type="text/javascript" src="${request.static_url('magmaweb:static/d3/d3.v2.min.js')}"></script>
 <script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
 <script type="text/javascript">
@@ -174,6 +192,17 @@ No
 % endif
 <br/>
 </fieldset>
+</div>
+<div id="sketcher_content" class="x-hidden">
+<script language="javascript">
+var sketcher = new ChemDoodle.SketcherCanvas(
+        'sketcher_canvas', 500, 300,
+        '${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/icons/')}',
+        ChemDoodle.featureDetection.supports_touch(), false);
+sketcher.repaint();
+sketcher.toolbarManager.buttonSave.disable();
+sketcher.toolbarManager.buttonOpen.disable();
+</script>
 </div>
 </body>
 </html>

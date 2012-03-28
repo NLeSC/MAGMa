@@ -12,7 +12,13 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   }, {
       ref: 'chromatogram', selector: 'chromatogram'
   }],
-  uses: [ 'Ext.window.MessageBox' ],
+  uses: [
+         'Ext.window.MessageBox',
+         'Ext.window.Window',
+         'Ext.form.Panel',
+         'Esc.magmaweb.view.scan.UploadFieldSet',
+         'Esc.magmaweb.view.fragment.AnnotateFieldSet'
+  ],
   /**
    * Cached scans which belong to (filtered) metabolites
    */
@@ -48,6 +54,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       },
       'chromatogrampanel tool[action=center]': {
         click: this.center
+      },
+      'chromatogrampanel tool[action=upload]': {
+        click: this.showUploadForm
       }
     });
 
@@ -62,6 +71,13 @@ Ext.define('Esc.magmaweb.controller.Scans', {
         this.clearExtractedIonChromatogram();
     }, this);
 
+    /**
+     * @property {Boolean} hasStructures
+     * Whether there are structures.
+     * Used to disable/enable annotate options
+     */
+    this.hasStructures = false;
+
     this.application.addEvents(
       /**
        * @event
@@ -73,7 +89,13 @@ Ext.define('Esc.magmaweb.controller.Scans', {
        * @event
        * Triggered when no scan is selected anymore.
        */
-      'noselectscan'
+      'noselectscan',
+      /**
+       * @event chromatogramload
+       * Fired after chromatogram has been loaded
+       * @param chromatogram Chromatogram
+       */
+      'chromatogramload'
     );
   },
   /**
@@ -109,6 +131,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     console.log('Loading chromatogram');
     chromatogram.setData(data);
     me.resetScans();
+    this.application.fireEvent('chromatogramload', chromatogram);
   },
   clearExtractedIonChromatogram: function() {
     this.getChromatogram().setExtractedIonChromatogram([]);
@@ -176,6 +199,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * @param {Esc.magmaweb.store.Metabolites} metabolitestore rawdata of store reader has scans
    */
   setScansOfMetabolites: function(metabolitestore) {
+      this.hasStructures = metabolitestore.getTotalCount() > 0;
       this.scans_of_metabolites = metabolitestore.getProxy().getReader().rawData.scans;
       this.setScans(this.scans_of_metabolites);
   },
@@ -218,5 +242,40 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   },
   center: function() {
       this.getChromatogram().resetScales();
+  },
+  showUploadForm: function() {
+      Ext.create('Ext.window.Window', {
+          title: 'Upload MS data',
+          height: 320,
+          width: 600,
+          layout: 'fit',
+          modal: true,
+          items: {
+              xtype: 'form',
+              bodyPadding: 5,
+              defaults: { bodyPadding: 5 },
+              border: false,
+              autoScroll: true,
+              items: [{
+                  xtype: 'uploadmsdatafieldset'
+              }, {
+                  xtype : 'annotatefieldset',
+                  disabled: !this.hasStructures,
+                  collapsed : true,
+                  collapsible : true
+              }],
+              buttons: [{
+                  text: 'Submit',
+                  handler: function(){
+                      console.log('TODO');
+                  }
+              }, {
+                  text: 'Reset',
+                  handler: function() {
+                      this.up('form').getForm().reset();
+                  }
+              }]
+          }
+      }).show();
   }
 });

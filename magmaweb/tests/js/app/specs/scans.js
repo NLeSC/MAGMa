@@ -35,6 +35,9 @@ describe('Scans controller', function() {
     spyOn(mocked_chromatogram, 'setLoading');
     spyOn(mocked_chromatogram, 'setData');
     spyOn(ctrl, 'resetScans');
+    var f = { callback: function() {} };
+    spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+    Ext.util.Observable.capture(ctrl.application, f.callback);
 
     var data = [1,2,3,4];
     ctrl.loadChromatogramCallback(data);
@@ -42,6 +45,9 @@ describe('Scans controller', function() {
     expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(false);
     expect(mocked_chromatogram.setData).toHaveBeenCalledWith(data);
     expect(ctrl.resetScans).toHaveBeenCalled();
+
+    expect(f.callback).toHaveBeenCalledWith('chromatogramload', jasmine.any(Object));
+    Ext.util.Observable.releaseCapture(ctrl.application);
   });
 
   it('loadChromatogramCallback error', function() {
@@ -147,17 +153,35 @@ describe('Scans controller', function() {
     Ext.util.Observable.releaseCapture(ctrl.application);
   });
 
-  it('setScansOfMetabolites', function() {
-    // mock metabolite store
-    var data = { rawData: { scans: [1,2] }};
-    var proxy = { getReader: function() { return data; }};
-    var store = { getProxy: function() { return proxy; }};
-    spyOn(ctrl, 'setScans');
+  describe('setScansOfMetabolites', function() {
 
-    ctrl.setScansOfMetabolites(store);
+    it('filled', function() {
+        // mock metabolite store
+        var data = { rawData: { scans: [1,2] }};
+        var proxy = { getReader: function() { return data; }};
+        var store = { getProxy: function() { return proxy; }, getTotalCount: function() { return 1 }};
+        spyOn(ctrl, 'setScans');
 
-    expect(ctrl.scans_of_metabolites).toEqual([1, 2]);
-    expect(ctrl.setScans).toHaveBeenCalledWith([1, 2]);
+        ctrl.setScansOfMetabolites(store);
+
+        expect(ctrl.scans_of_metabolites).toEqual([1, 2]);
+        expect(ctrl.setScans).toHaveBeenCalledWith([1, 2]);
+        expect(ctrl.hasStructures).toBeTruthy();
+    });
+
+    it('empty', function() {
+        // mock metabolite store
+        var data = { rawData: { scans: [] }};
+        var proxy = { getReader: function() { return data; }};
+        var store = { getProxy: function() { return proxy; }, getTotalCount: function() { return 0 }};
+        spyOn(ctrl, 'setScans');
+
+        ctrl.setScansOfMetabolites(store);
+
+        expect(ctrl.scans_of_metabolites).toEqual([]);
+        expect(ctrl.setScans).toHaveBeenCalledWith([]);
+        expect(ctrl.hasStructures).toBeFalsy();
+    });
   });
 
   it('resetScans', function() {
