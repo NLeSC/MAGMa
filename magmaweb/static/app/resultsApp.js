@@ -10,7 +10,6 @@
  *       maxmslevel: 3,
  *       ms_intensity_cutoff: 20000,
  *       urls: {
- *         nlesclogo: 'static/ESCIENCE_log_B_nl_long_cyanblack.jpg',
  *         home: '/',
  *         fragments: '/fragments/{0}/{1}.json',
  *         mspectra: '/mspectra/{0}.json?mslevel={1}',
@@ -67,11 +66,6 @@ Ext.define('Esc.magmaweb.resultsApp', {
          * @cfg {String} urls.home
          */
         home: null,
-        /**
-         * NLeSC logo.
-         * @cfg {String} urls.nlesclogo
-         */
-        nlesclogo: null,
         /**
          * Fragments endpoint.
          * Tokenized string with scanid and metid tokens.

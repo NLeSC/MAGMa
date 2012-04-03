@@ -133,7 +133,6 @@ Ext.onReady(function() {
       maxmslevel: ${maxmslevel},
       ms_intensity_cutoff: ${run.ms_intensity_cutoff},
       urls: {
-        nlesclogo: '${request.static_url('magmaweb:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}',
         home: '${request.route_url('home')}',
         fragments: '${request.application_url}/results/${jobid}/fragments/{0}/{1}.json',
         mspectra: '${request.application_url}/results/${jobid}/mspectra/{0}.json?mslevel={1}',
