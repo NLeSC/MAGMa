@@ -244,6 +244,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       this.getChromatogram().resetScales();
   },
   showUploadForm: function() {
+      var me = this;
       Ext.create('Ext.window.Window', {
           title: 'Upload MS data',
           height: 320,
@@ -266,8 +267,21 @@ Ext.define('Esc.magmaweb.controller.Scans', {
               }],
               buttons: [{
                   text: 'Submit',
-                  handler: function(){
-                      console.log('TODO');
+                  handler: function() {
+                      var form = this.up('form').getForm();
+                      if (form.isValid()) {
+                          form.submit({
+                              url: me.application.getUrls().chromatogram,
+                              waitMsg: 'Submitting action ...',
+                              success: function(fp, o) {
+                                  console.log('Action submitted');
+                              },
+                              failure: function(form, action) {
+                                  console.log(action.failureType);
+                                  console.log(action.result);
+                              }
+                          });
+                      }
                   }
               }, {
                   text: 'Reset',

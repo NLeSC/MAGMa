@@ -23,6 +23,10 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
      type:'save',
      tooltip: 'Save metabolites as comma seperated file',
      action: 'download'
+  }, {
+     type: 'gear',
+     tooltip: 'Perform actions on metabolites',
+     action: 'actions'
   }],
   dockedItems: [{
     xtype: 'pagingtoolbar',
@@ -44,30 +48,6 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
       forceSelection: true,
       triggerAction: 'all',
       action: 'pagesize'
-    }, {
-      text: 'Actions',
-      menu: {
-        items: [{
-            iconCls: 'icon-add',
-            text: 'Add structures',
-            action: 'add'
-        }, {
-            text: 'Metabolize',
-            id: 'metabolizeaction',
-            tooltip: 'Metabolize all structures',
-            disabled: true,
-            action: 'metabolize'
-        }, {
-            text: 'Annotate',
-            tooltip: 'Annotate all structures',
-            id: 'annotateaction',
-            disabled: true,
-            action: 'annotate'
-        }, {
-            text: 'Clear filters',
-            action: 'clear'
-        }]
-      }
     }]
   }],
   initComponent: function() {

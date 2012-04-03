@@ -64,6 +64,7 @@ Ext.onReady(function() {
     }, {
         xtype : 'metabolizefieldset',
         checkboxToggle: true,
+        checkboxName: 'metabolize',
         collapsed : true,
         collapsible : true
     }, {
@@ -104,6 +105,8 @@ Ext.onReady(function() {
       }
     }]
   });
+  // ms_data_file is optional on home page
+  form.down('component[name=ms_data_file]').allowBlank = true;
 
   Ext.create('Ext.container.Viewport', {
     layout: 'border',

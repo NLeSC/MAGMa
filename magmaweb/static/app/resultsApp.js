@@ -36,7 +36,10 @@ Ext.define('Esc.magmaweb.resultsApp', {
     'Ext.panel.Panel',
     'Ext.container.Viewport',
     'Ext.layout.container.Border',
-    'Ext.Img'
+    'Ext.Img',
+    'Ext.window.Window',
+    'Ext.form.Panel',
+    'Esc.magmaweb.view.fragment.AnnotateFieldSet'
   ],
   config: {
     /**
@@ -123,6 +126,53 @@ Ext.define('Esc.magmaweb.resultsApp', {
    *
    * @param {Ext.Error} err The raised error
    */
+  /**
+   * Shows annotate form in modal window
+   */
+  showAnnotateForm: function() {
+    var me = this;
+    Ext.create('Ext.window.Window', {
+        title: 'Annotate all structures',
+        modal: true,
+        height: 400,
+        width: 600,
+        layout: 'fit',
+        items: {
+            xtype: 'form',
+            bodyPadding: 5,
+            defaults: { bodyPadding: 5 },
+            border: false,
+            autoScroll: true,
+            items: [{
+                xtype : 'annotatefieldset'
+            }],
+            buttons: [{
+                text: 'Submit',
+                handler: function() {
+                    var form = this.up('form').getForm();
+                    if (form.isValid()) {
+                        form.submit({
+                            url: me.getUrls().fragments,
+                            waitMsg: 'Submitting action ...',
+                            success: function(fp, o) {
+                                console.log('Action submitted');
+                            },
+                            failure: function(form, action) {
+                                console.log(action.failureType);
+                                console.log(action.result);
+                            }
+                        });
+                    }
+                }
+            }, {
+                text: 'Reset',
+                handler: function() {
+                    this.up('form').getForm().reset();
+                }
+            }]
+        }
+    }).show();
+  },
   errorHandle: function(err) {
       console.error(err);
       Ext.Msg.show({
@@ -158,7 +208,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
     );
 
     // uncomment to see all application events fired in console
-    //Ext.util.Observable.capture(this, function() { console.log(arguments);return true;});
+//    Ext.util.Observable.capture(this, function() { console.log(arguments);return true;});
 
     this.on('metaboliteselect', function(metid) {
       this.selected.metid = metid;
@@ -323,8 +373,10 @@ Ext.define('Esc.magmaweb.resultsApp', {
                   }]
               }
             },{
-              text: 'Refine',
-              tooltip: 'Redo the analysis with additional metabolites and/or other settings',
+              text: 'Annotate',
+              tooltip: 'Annotate all structures',
+              id: 'annotateaction',
+              handler: me.showAnnotateForm.bind(me),
               disabled: true
             },{
               text: 'Help',

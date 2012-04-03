@@ -436,10 +436,6 @@
                     "name": "Application.js"
                 },
                 {
-                    "path": "static/app/",
-                    "name": "resultsApp.js"
-                },
-                {
                     "path": "static/extjs-4.1.0-rc1/src/util/",
                     "name": "Point.js"
                 },
@@ -1162,6 +1158,10 @@
                 {
                     "path": "static/extjs-4.1.0-rc1/src/layout/component/",
                     "name": "FieldSet.js"
+                },
+                {
+                    "path": "static/app/",
+                    "name": "resultsApp.js"
                 },
                 {
                     "path": "static/extjs-4.1.0-rc1/src/button/",

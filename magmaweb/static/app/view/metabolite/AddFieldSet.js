@@ -22,7 +22,26 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                     id : 'structures_area',
                     emptyText : 'Enter smile string followed by space and name on each line',
                     height : 200,
-                    width : 500
+                    width : 500,
+                    /**
+                     * Use validator to write sketched molecule in textarea as molblock.
+                     * A sketched molecule will overwrite the textarea.
+                     * @param {} value
+                     * @return {Boolean}
+                     */
+                    validator: function(value) {
+                        var form = this.up('form').getForm();
+                        var mol = sketcher.getMolecule();
+                        if (mol.bonds.length > 0) {
+                            var molblock = ChemDoodle.writeMOL(mol);
+                            form.setValues({
+                                structures_format: 'sdf',
+                                structures_area: molblock
+                            });
+                        }
+
+                        return true;
+                    }
                 }, {
                     xtype : 'displayfield',
                     value : 'or'
