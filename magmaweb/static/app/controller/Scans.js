@@ -259,7 +259,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
                   defaults: { bodyPadding: 5 },
                   border: false,
                   autoScroll: true,
-                  url: me.rpcUrl('add_msdata'),
+                  url: me.rpcUrl('add_ms_data'),
                   items: [{
                       xtype: 'uploadmsdatafieldset'
                   }, {

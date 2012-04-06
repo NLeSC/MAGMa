@@ -23,5 +23,13 @@ def main(global_config, **settings):
     config.add_route('extractedionchromatogram.json','/results/{jobid}/extractedionchromatogram/{metid}.json')
     config.add_route('stderr.txt', '/results/{jobid}/stderr.txt')
     config.add_route('uploaddb', '/uploaddb')
+
+    config.add_route('rpc.add_structures', '/rpc/{jobid}/add_structures')
+    config.add_route('rpc.add_ms_data', '/rpc/{jobid}/add_ms_data')
+    config.add_route('rpc.metabolize', '/rpc/{jobid}/metabolize')
+    config.add_route('rpc.metabolize_one', '/rpc/{jobid}/metabolize_one')
+    config.add_route('rpc.annotate', '/rpc/{jobid}/annotate')
+    config.add_route('rpc.allinone', '/rpc/{jobid}/allinone')
+
     config.scan('magmaweb')
     return config.make_wsgi_app()
