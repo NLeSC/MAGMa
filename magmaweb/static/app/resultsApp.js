@@ -57,6 +57,11 @@ Ext.define('Esc.magmaweb.resultsApp', {
      */
     ms_intensity_cutoff: null,
     /**
+     * Job identifier
+     * @cfg String
+     */
+    jobid: null,
+    /**
      * Endpoints/templates for contacting server.
      * @cfg {Object}
      */
@@ -125,47 +130,54 @@ Ext.define('Esc.magmaweb.resultsApp', {
    */
   showAnnotateForm: function() {
     var me = this;
-    Ext.create('Ext.window.Window', {
-        title: 'Annotate all structures',
-        modal: true,
-        height: 400,
-        width: 600,
-        layout: 'fit',
-        items: {
-            xtype: 'form',
-            bodyPadding: 5,
-            defaults: { bodyPadding: 5 },
-            border: false,
-            autoScroll: true,
-            items: [{
-                xtype : 'annotatefieldset'
-            }],
-            buttons: [{
-                text: 'Submit',
-                handler: function() {
-                    var form = this.up('form').getForm();
-                    if (form.isValid()) {
-                        form.submit({
-                            url: me.getUrls().fragments,
-                            waitMsg: 'Submitting action ...',
-                            success: function(fp, o) {
-                                console.log('Action submitted');
-                            },
-                            failure: function(form, action) {
-                                console.log(action.failureType);
-                                console.log(action.result);
-                            }
-                        });
+    if (!this.annotateForm) {
+        this.annotateForm = Ext.create('Ext.window.Window', {
+            title: 'Annotate all structures',
+            modal: true,
+            height: 400,
+            width: 600,
+            layout: 'fit',
+            closeAction: 'hide',
+            items: {
+                xtype: 'form',
+                bodyPadding: 5,
+                defaults: { bodyPadding: 5 },
+                border: false,
+                autoScroll: true,
+                url: me.rpcUrl('annotate'),
+                items: [{
+                    xtype : 'annotatefieldset'
+                }],
+                buttons: [{
+                    text: 'Submit',
+                    handler: function() {
+                        var form = this.up('form').getForm();
+                        var wf = this.up('window');
+                        if (form.isValid()) {
+                            form.submit({
+                                waitMsg: 'Submitting action ...',
+                                success: function(fp, o) {
+                                    console.log('Action submitted');
+                                    wf.hide();
+                                },
+                                failure: function(form, action) {
+                                    console.log(action.failureType);
+                                    console.log(action.result);
+                                    wf.hide();
+                                }
+                            });
+                        }
                     }
-                }
-            }, {
-                text: 'Reset',
-                handler: function() {
-                    this.up('form').getForm().reset();
-                }
-            }]
-        }
-    }).show();
+                }, {
+                    text: 'Reset',
+                    handler: function() {
+                        this.up('form').getForm().reset();
+                    }
+                }]
+            }
+        });
+    }
+    this.annotateForm.show();
   },
   errorHandle: function(err) {
       console.error(err);
@@ -176,6 +188,14 @@ Ext.define('Esc.magmaweb.resultsApp', {
           icon: Ext.Msg.ERROR
       });
       return true;
+  },
+  /**
+   * Get url of rpc method
+   * @param {String} method
+   * @return {Url}
+   */
+  rpcUrl: function(method) {
+    return this.urls.home+'rpc/'+this.jobid+'/'+method;
   },
   /**
    * Creates mspectraspanels and viewport and fires/listens for mspectra events

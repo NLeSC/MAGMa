@@ -245,51 +245,58 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   },
   showUploadForm: function() {
       var me = this;
-      Ext.create('Ext.window.Window', {
-          title: 'Upload MS data',
-          height: 320,
-          width: 600,
-          layout: 'fit',
-          modal: true,
-          items: {
-              xtype: 'form',
-              bodyPadding: 5,
-              defaults: { bodyPadding: 5 },
-              border: false,
-              autoScroll: true,
-              items: [{
-                  xtype: 'uploadmsdatafieldset'
-              }, {
-                  xtype : 'annotatefieldset',
-                  disabled: !this.hasStructures,
-                  collapsed : true,
-                  collapsible : true
-              }],
-              buttons: [{
-                  text: 'Submit',
-                  handler: function() {
-                      var form = this.up('form').getForm();
-                      if (form.isValid()) {
-                          form.submit({
-                              url: me.application.getUrls().chromatogram,
-                              waitMsg: 'Submitting action ...',
-                              success: function(fp, o) {
-                                  console.log('Action submitted');
-                              },
-                              failure: function(form, action) {
-                                  console.log(action.failureType);
-                                  console.log(action.result);
-                              }
-                          });
+      if (!this.uploadForm) {
+          this.uploadForm = Ext.create('Ext.window.Window', {
+              title: 'Upload MS data',
+              height: 320,
+              width: 600,
+              layout: 'fit',
+              modal: true,
+              closeAction: 'hide',
+              items: {
+                  xtype: 'form',
+                  bodyPadding: 5,
+                  defaults: { bodyPadding: 5 },
+                  border: false,
+                  autoScroll: true,
+                  url: me.rpcUrl('add_msdata'),
+                  items: [{
+                      xtype: 'uploadmsdatafieldset'
+                  }, {
+                      xtype : 'annotatefieldset',
+                      disabled: !this.hasStructures,
+                      collapsed : true,
+                      collapsible : true
+                  }],
+                  buttons: [{
+                      text: 'Submit',
+                      handler: function() {
+                          var form = this.up('form').getForm();
+                          var wf = this.up('window');
+                          if (form.isValid()) {
+                              form.submit({
+                                  waitMsg: 'Submitting action ...',
+                                  success: function(fp, o) {
+                                      console.log('Action submitted');
+                                      wf.hide();
+                                  },
+                                  failure: function(form, action) {
+                                      console.log(action.failureType);
+                                      console.log(action.result);
+                                      wf.hide();
+                                  }
+                              });
+                          }
                       }
-                  }
-              }, {
-                  text: 'Reset',
-                  handler: function() {
-                      this.up('form').getForm().reset();
-                  }
-              }]
-          }
-      }).show();
+                  }, {
+                      text: 'Reset',
+                      handler: function() {
+                          this.up('form').getForm().reset();
+                      }
+                  }]
+              }
+          });
+      }
+      this.uploadForm.show();
   }
 });

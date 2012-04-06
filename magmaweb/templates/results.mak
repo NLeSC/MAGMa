@@ -132,6 +132,7 @@ Ext.onReady(function() {
       appFolder: "${request.static_url('magmaweb:static/app')}",
       maxmslevel: ${maxmslevel},
       ms_intensity_cutoff: ${run.ms_intensity_cutoff},
+      jobid: '${jobid}',
       urls: {
         home: '${request.route_url('home')}',
         fragments: '${request.application_url}/results/${jobid}/fragments/{0}/{1}.json',

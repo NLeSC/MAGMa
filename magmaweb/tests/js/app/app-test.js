@@ -15,6 +15,7 @@ Ext.onReady(function() {
       appFolder: "../../../static/app",
       maxmslevel: 3,
       ms_intensity_cutoff: 2000000,
+      jobid: '3ad25048-26f6-11e1-851e-00012e260790',
       urls: {
         home: '/',
         fragments: 'data/fragments.s{0}.m{1}.json',
