@@ -2,7 +2,7 @@ import unittest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from mock import Mock, patch
-from magmaweb.job import JobFactory, Job, JobQuery
+from magmaweb.job import JobFactory, Job, make_job_factory, JobQuery
 from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
 
 def initTestingDB(url = 'sqlite://', dataset='default'):
@@ -216,45 +216,68 @@ def populateWithUseAllPeaks(session):
         deltah = -1.0
     )])
 
+class JobFactoryFactoryTestCase(unittest.TestCase):
+
+    def test_norootdir(self):
+        with self.assertRaises(TypeError):
+            make_job_factory({})
+
+    def test_minimal(self):
+        factory = make_job_factory({
+                                   'jobfactory.root_dir': '/somedir'
+                                    })
+        self.assertEqual(factory.root_dir, '/somedir')
+        self.assertEqual(factory.init_script, '')
+        self.assertEqual(factory.tarball, None)
+
+    def test_local(self):
+        factory = make_job_factory({
+                                   'jobfactory.root_dir': '/somedir',
+                                   'jobfactory.init_script': '. /somedir/env/bin/activate'
+                                    })
+        self.assertEqual(factory.root_dir, '/somedir')
+        self.assertEqual(factory.init_script, '. /somedir/env/bin/activate')
+        self.assertEqual(factory.tarball, None)
+
+    def test_remote(self):
+        factory = make_job_factory({
+                                   'jobfactory.root_dir': '/somedir',
+                                   'jobfactory.init_script': 'tar -zxf Magma.tar.gz;export PATH=Magma/:$PATH;',
+                                   'jobfactory.tarball': '/somepath/Magma.tar.gz'
+                                    })
+        self.assertEqual(factory.root_dir, '/somedir')
+        self.assertEqual(factory.init_script, 'tar -zxf Magma.tar.gz;export PATH=Magma/:$PATH;')
+        self.assertEqual(factory.tarball, '/somepath/Magma.tar.gz')
+
 class JobFactoryTestCase(unittest.TestCase):
     def setUp(self):
         import tempfile
-        self.jobrootdir = tempfile.mkdtemp()
-        self.dbname = 'results.db'
-        self.factory = JobFactory(
-                                  jobrootdir=self.jobrootdir,
-                                  dbname=self.dbname,
-                                  job_script="magma.sh",
-                                  job_tarball="Magma-1.1.tar.gz",
-                                  submiturl='http://localhost:9998'
-                                  )
+        self.root_dir = tempfile.mkdtemp()
+        self.factory = JobFactory(root_dir=self.root_dir)
 
     def tearDown(self):
         import shutil
-        shutil.rmtree(self.jobrootdir)
+        shutil.rmtree(self.root_dir)
 
     def test_hasrootdir(self):
-        self.assertEqual(self.factory.jobrootdir, self.jobrootdir)
-
-    def test_hasdbname(self):
-        self.assertEqual(self.factory.dbname, self.dbname)
+        self.assertEqual(self.factory.root_dir, self.root_dir)
 
     def test_id2url(self):
         import uuid, os
         jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
-        jobdbfn = 'sqlite:///'+os.path.join(self.jobrootdir, str(jobid), self.dbname)
+        jobdbfn = 'sqlite:///'+os.path.join(self.root_dir, str(jobid), 'results.db')
         self.assertEqual(self.factory.id2url(jobid), jobdbfn)
 
     def test_id2jobdir(self):
         import uuid, os
         jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
-        jobdir = os.path.join(self.jobrootdir, str(jobid))
+        jobdir = os.path.join(self.root_dir, str(jobid))
         self.assertEqual(self.factory.id2jobdir(jobid), jobdir)
 
     def test_id2db(self):
         import uuid, os
         jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
-        jobdbfn = os.path.join(self.jobrootdir, str(jobid), self.dbname)
+        jobdbfn = os.path.join(self.root_dir, str(jobid), 'results.db')
         self.assertEqual(self.factory.id2db(jobid), jobdbfn)
 
     def test_fromdb(self):
@@ -302,120 +325,67 @@ class JobFactoryTestCase(unittest.TestCase):
             self.factory.fromId(jobid)
         self.assertEqual(exc.exception.jobid, jobid)
 
-    def built_query(self):
-        import tempfile
-        q = JobQuery()
-        q.n_reaction_steps = 2
-        q.ionisation_mode = 1
-        q.ms_intensity_cutoff = 2e5
-        q.msms_intensity_cutoff = 0.1
-        q.use_all_peaks = False
-        q.abs_peak_cutoff = 1000
-        q.rel_peak_cutoff = 0.01
-        q.precursor_mz_precision = 0.001
-        q.skip_fragmentation = False
-        q.max_broken_bonds = 4
-        q.mz_precision = 0.001
-        q.metabolism_types = [ 'phase1', 'phase2' ]
-        q.max_ms_level = 3
-        q.structures = 'C1CCCC1|comp1'
-        q.ms_data_file = tempfile.NamedTemporaryFile()
-        q.ms_data_file.write('foo')
-        q.ms_data_file.flush();
-        q.structure_format = 'smiles'
-        q.ms_data_format = 'mzxml'
-
-        query = q
-        jobargs = [
-                              "magma.sh",
-                              "all_in_one",
-                              "--max_ms_level", query.max_ms_level,
-                              "--mz_precision", query.mz_precision,
-                              "--ms_intensity_cutoff", query.ms_intensity_cutoff,
-                              "--msms_intensity_cutoff", query.msms_intensity_cutoff,
-                              "--ionisation_mode", query.ionisation_mode,
-                              "--n_reaction_steps", query.n_reaction_steps,
-                              "--metabolism_types", ",".join(query.metabolism_types),
-                              "--max_broken_bonds", query.max_broken_bonds,
-                              "--abs_peak_cutoff", query.abs_peak_cutoff,
-                              "--rel_peak_cutoff", query.rel_peak_cutoff,
-                              "--precursor_mz_precision", query.precursor_mz_precision,
-                              "--structure_format", query.structure_format,
-                              "--ms_data_format", query.ms_data_format,
-                              'ms_data.dat', 'structures.dat',
-                              'results.db'
-                              ]
-
-        return q, jobargs
-
     def test_submitQuery(self):
-        import uuid, os
-        q, jobargs = self.built_query()
-
-        self.factory.submitJob2Manager = Mock()
-        jobid = self.factory.submitQuery(q)
-
-        self.assertIsInstance(jobid, uuid.UUID)
-        self.assertEqual(
-            open(os.path.join(self.factory.id2jobdir(jobid), 'ms_data.dat')).read(),
-            'foo',
-            'query ms_data file content has been copied to job dir'
-        )
-        self.assertEqual(
-            open(os.path.join(self.factory.id2jobdir(jobid), 'structures.dat')).read(),
-            q.structures,
-            'query structures has been copied to file in job dir'
-        )
-        self.factory.submitJob2Manager.assert_called_with({
-                'jobdir': os.path.join(self.factory.id2jobdir(jobid))+'/',
-                'executable': "/bin/sh",
-                'prestaged': [
-                              "magma.sh",
-                              "Magma-1.1.tar.gz",
-                              'ms_data.dat', 'structures.dat'
-                              ],
-                "poststaged": ["results.db"],
-                "stderr": "stderr.txt",
-                "stdout": "stdout.txt",
-                "time_max": 30,
-                'arguments': jobargs
-                })
-
-        q.ms_data_file.close()
-
-    def test_submitQueryChecked(self):
         import os
-        q, jobargs = self.built_query()
-        # add boolean flags
-        q.use_all_peaks = True
-        jobargs.insert(-3,'--use_all_peaks')
-        q.skip_fragmentation = True
-        jobargs.insert(-3,'--skip_fragmentation')
-        # add description
-        q.description = 'My description "hello" and \'bye\'; rm -rf ~'
-        jobargs.insert(-3,"--description")
-        jobargs.insert(-3, '\'My description "hello" and \'"\'"\'bye\'"\'"\'; rm -rf ~\'')
+        self.factory.init_script = "# make magma available\n"
+        job = self.factory.fromScratch()
+
+        self.factory.script_fn = 'script.sh'
+        query = {}
+        query['id'] = job.id
+        query['dir'] = job.dir
+        query['prestaged'] = ['structures.dat']
+        query['script'] = "magma add_structures -t smiles structures.dat results.db\n"
 
         self.factory.submitJob2Manager = Mock()
 
-        jobid = self.factory.submitQuery(q)
+        jobid = self.factory.submitQuery(query)
 
-        self.factory.submitJob2Manager.assert_called_with({
-                'jobdir': os.path.join(self.factory.id2jobdir(jobid))+'/',
-                'executable': "/bin/sh",
-                'prestaged': [
-                              "magma.sh",
-                              "Magma-1.1.tar.gz",
-                              'ms_data.dat', 'structures.dat'
-                              ],
-                "poststaged": ["results.db"],
-                "stderr": "stderr.txt",
-                "stdout": "stdout.txt",
-                "time_max": 30,
-                'arguments': jobargs
-                })
+        self.assertEqual(jobid, job.id)
+        job_script = open(os.path.join(job.dir, self.factory.script_fn)).read()
+        self.assertMultiLineEqual(job_script, """# make magma available
+magma add_structures -t smiles structures.dat results.db
+""")
+        jobmanager_query = {
+                            'jobdir': job.dir+'/',
+                            'executable': "/bin/sh",
+                            'prestaged': [
+                                          self.factory.script_fn,
+                                          'results.db',
+                                          'structures.dat'
+                                          ],
+                            "poststaged": ['results.db'],
+                            "stderr": "stderr.txt",
+                            "stdout": "stdout.txt",
+                            "time_max": self.factory.time_max,
+                            'arguments': [ self.factory.script_fn ]
+                            }
+        self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
 
-        q.ms_data_file.close()
+    def test_submitQuery_tarball(self):
+        self.factory.tarball = 'Magma-1.1.tar.gz'
+        self.factory.submitJob2Manager = Mock()
+        job = self.factory.fromScratch()
+        query = { 'id': job.id, 'dir': job.dir, 'prestaged': [], 'script': ''}
+
+        jobid = self.factory.submitQuery(query)
+
+        self.assertEqual(jobid, job.id)
+        jobmanager_query = {
+                            'jobdir': job.dir+'/',
+                            'executable': "/bin/sh",
+                            'prestaged': [
+                                          self.factory.script_fn,
+                                          'results.db',
+                                          'Magma-1.1.tar.gz'
+                                          ],
+                            "poststaged": ['results.db'],
+                            "stderr": "stderr.txt",
+                            "stdout": "stdout.txt",
+                            "time_max": self.factory.time_max,
+                            'arguments': [ self.factory.script_fn ]
+                            }
+        self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
 
     @patch('urllib2.urlopen')
     def test_submitJob2Manager(self, ua):
@@ -427,7 +397,7 @@ class JobFactoryTestCase(unittest.TestCase):
         # TODO replace with ua.assert_called_once_with(<hamcrest matcher>)
         req = ua.call_args[0][0]
         self.assertEquals(req.get_data(), json.dumps(body))
-        self.assertEquals(req.get_full_url(), self.factory.submiturl)
+        self.assertEquals(req.get_full_url(), self.factory.submit_url)
         self.assertEquals(req.get_header('Content-type'), 'application/json')
 
     def test_state(self):
@@ -452,6 +422,19 @@ class JobFactoryTestCase(unittest.TestCase):
         state = self.factory.state(jobid)
 
         self.assertEquals(state, 'UNKNOWN')
+
+    def test_fromScratch(self):
+        import uuid
+
+        job = self.factory.fromScratch()
+
+        self.assertIsInstance(job.id, uuid.UUID)
+        self.assertEqual(job.maxMSLevel(), 0)
+
+    def test_cloneJob(self):
+        job = self.factory.fromScratch()
+        newjob = self.factory.cloneJob(job)
+        self.assertNotEqual(job.id, newjob.id)
 
 class JobNotFound(unittest.TestCase):
     def test_it(self):
@@ -535,6 +518,15 @@ class JobTestCase(unittest.TestCase):
         self.assertIsInstance(log, file)
         self.assertEqual(log.name, self.jobdir+'/stderr.txt')
         self.assertEqual(log.read(), 'Error log')
+
+    def test_metabolitesTotalCount(self):
+        self.assertEqual(self.job.metabolitesTotalCount(), 2)
+
+    def test_jobquery(self):
+        jobquery = self.job.jobquery()
+        self.assertIsInstance(jobquery, JobQuery)
+        self.assertEqual(jobquery.id, self.job.id)
+        self.assertEqual(jobquery.dir, self.job.dir)
 
 class JobMetabolitesTestCase(unittest.TestCase):
     def setUp(self):
@@ -950,3 +942,441 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                 }]
             }], 'expanded': True
         })
+
+class JobQueryTestCase(unittest.TestCase):
+    def setUp(self):
+        self.jobid = 12345
+        self.jobdir = '/somedir'
+        self.jobquery = JobQuery(id=self.jobid, dir=self.jobdir, script='', prestaged=[])
+
+    def test_eq(self):
+        self.assertTrue(
+                        JobQuery(id=self.jobid, dir=self.jobdir, script='', prestaged=[]).__eq__(
+                            JobQuery(id=self.jobid, dir=self.jobdir, script='', prestaged=[])
+                            )
+                        )
+        self.assertFalse(
+                        JobQuery(id=67890, dir=self.jobdir, script='', prestaged=[]).__eq__(
+                            JobQuery(id=self.jobid, dir=self.jobdir, script='', prestaged=[])
+                            )
+                        )
+        self.assertFalse(
+                        JobQuery(id=self.jobid, dir='/otherdir', script='', prestaged=[]).__eq__(
+                            JobQuery(id=self.jobid, dir=self.jobdir, script='', prestaged=[])
+                            )
+                        )
+        self.assertFalse(
+                        JobQuery(id=self.jobid, dir=self.jobdir, script='b', prestaged=[]).__eq__(
+                            JobQuery(id=self.jobid, dir=self.jobdir, script='', prestaged=[])
+                            )
+                        )
+        self.assertFalse(
+                        JobQuery(id=self.jobid, dir=self.jobdir, script='', prestaged=[1]).__eq__(
+                            JobQuery(id=self.jobid, dir=self.jobdir, script='', prestaged=[])
+                            )
+                        )
+
+    def test_repr(self):
+        jq = JobQuery('x','y','z', [123])
+        self.assertEqual(jq.__repr__(),"JobQuery('x', 'y', 'z', [123])")
+
+class JobQueryActionTestCase(unittest.TestCase):
+    def setUp(self):
+        import uuid, tempfile
+        self.jobid = uuid.uuid1()
+        self.jobdir = tempfile.mkdtemp()
+        self.jobquery = JobQuery(id=self.jobid, dir=self.jobdir, script='', prestaged=[])
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.jobdir)
+
+    def fetch_file(self, filename):
+        import os.path
+        return file(os.path.join(self.jobdir, filename)).read()
+
+class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
+    def test_structures_as_string(self):
+        params = {'structure_format': 'smiles', 'structures': 'CCO Ethanol'}
+        query = self.jobquery.add_structures(params)
+
+        sf = 'structures.dat'
+        expected_query = JobQuery(
+                          id=self.jobid,
+                          dir=self.jobdir,
+                          prestaged=[sf],
+                          script="{magma} add_structures -t smiles structures.dat {db}\n"
+                          )
+        self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual(params['structures'], self.fetch_file(sf))
+
+    def test_structures_as_file(self):
+        import tempfile
+        from cgi import FieldStorage
+        sfile = tempfile.TemporaryFile()
+        sfile.write('foo')
+        sfile.flush()
+        sfield = FieldStorage()
+        sfield.file = sfile
+        params = {'structure_format': 'smiles', 'structures_file': sfield}
+
+        query = self.jobquery.add_structures(params)
+
+        expected_query = JobQuery(**{
+                          'id': self.jobid,
+                          'dir': self.jobdir,
+                          'prestaged': ['structures.dat'],
+                          'script': "{magma} add_structures -t smiles structures.dat {db}\n"
+                          })
+        self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('foo', self.fetch_file('structures.dat'))
+
+    def test_with_metabolize(self):
+        params = {
+                  'structure_format': 'smiles', 'structures': 'CCO Ethanol',
+                  'metabolize': 'on',
+                  'n_reaction_steps': 2,
+                  'metabolism_types': 'phase1,phase2'
+                  }
+        query = self.jobquery.add_structures(params)
+
+        sf = 'structures.dat'
+        script  = "{magma} add_structures -t smiles structures.dat {db}\n"
+        script += "{magma} metabolize -s 2 -m phase1,phase2 {db}\n"
+        expected_query = JobQuery(**{
+                          'id': self.jobid,
+                          'dir': self.jobdir,
+                          'prestaged': [sf],
+                          'script': script
+                          })
+        self.assertEqual(query, expected_query)
+
+    def test_with_annotate(self):
+        params = {
+                  'structure_format': 'smiles', 'structures': 'CCO Ethanol',
+                  'mz_precision': 0.001,
+                  'ms_intensity_cutoff': 200000,
+                  'msms_intensity_cutoff': 0.1,
+                  'ionisation_mode': 1,
+                  'max_broken_bonds': 4,
+                  'precursor_mz_precision': 0.001,
+                  'use_all_peaks': False,
+                  'skip_fragmentation': False
+                  }
+        query = self.jobquery.add_structures(params, True)
+
+        sf = 'structures.dat'
+        script  = "{magma} add_structures -t smiles structures.dat {db}\n"
+        script += "{magma} annotate -p 0.001 -c 200000 -d 0.1 -i 1 -b 4 --precursor_mz_precision 0.001 {db}\n"
+        expected_query = JobQuery(**{
+                          'id': self.jobid,
+                          'dir': self.jobdir,
+                          'prestaged': [sf],
+                          'script': script
+                          })
+        self.assertEqual(query, expected_query)
+
+    def test_with_metabolize_and_annotate(self):
+        params = {
+                  'structure_format': 'smiles', 'structures': 'CCO Ethanol',
+                  'metabolize': 'on',
+                  'n_reaction_steps': 2,
+                  'metabolism_types': 'phase1,phase2',
+                  'mz_precision': 0.001,
+                  'ms_intensity_cutoff': 200000,
+                  'msms_intensity_cutoff': 0.1,
+                  'ionisation_mode': 1,
+                  'max_broken_bonds': 4,
+                  'precursor_mz_precision': 0.001,
+                  'use_all_peaks': False,
+                  'skip_fragmentation': False
+                  }
+        query = self.jobquery.add_structures(params, True)
+
+        sf = 'structures.dat'
+        script  = "{magma} add_structures -t smiles structures.dat {db}\n"
+        script += "{magma} metabolize -s 2 -m phase1,phase2 {db}\n"
+        script += "{magma} annotate -p 0.001 -c 200000 -d 0.1 -i 1 -b 4 --precursor_mz_precision 0.001 {db}\n"
+        expected_query = JobQuery(**{
+                          'id': self.jobid,
+                          'dir': self.jobdir,
+                          'prestaged': [sf],
+                          'script': script
+                          })
+        self.assertEqual(query, expected_query)
+
+class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
+
+    def test_it(self):
+        import tempfile
+        from cgi import FieldStorage
+        msfile = tempfile.TemporaryFile()
+        msfile.write('foo')
+        msfile.flush()
+        msfield = FieldStorage()
+        msfield.file = msfile
+        params = {
+                  'ms_data_format': 'mzxml',
+                  'ms_data_file': msfield,
+                  'max_ms_level': 3,
+                  'abs_peak_cutoff': 1000,
+                  'rel_peak_cutoff': 0.01
+                  }
+
+        query = self.jobquery.add_ms_data(params)
+
+        expected_query = JobQuery(**{
+                          'id': self.jobid,
+                          'dir': self.jobdir,
+                          'prestaged': ['ms_data.dat'],
+                          'script': "{magma} add_ms_data --ms_data_format mzxml -l 3 -a 1000 -r 0.01 ms_data.dat {db}\n"
+                          })
+        self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
+
+    def test_with_annotate(self):
+        import tempfile
+        from cgi import FieldStorage
+        msfile = tempfile.TemporaryFile()
+        msfile.write('foo')
+        msfile.flush()
+        msfield = FieldStorage()
+        msfield.file = msfile
+        params = {
+                  'ms_data_format': 'mzxml',
+                  'ms_data_file': msfield,
+                  'max_ms_level': 3,
+                  'abs_peak_cutoff': 1000,
+                  'rel_peak_cutoff': 0.01,
+                  'mz_precision': 0.001,
+                  'ms_intensity_cutoff': 200000,
+                  'msms_intensity_cutoff': 0.1,
+                  'ionisation_mode': 1,
+                  'max_broken_bonds': 4,
+                  'precursor_mz_precision': 0.001,
+                  'use_all_peaks': False,
+                  'skip_fragmentation': False
+                  }
+
+        query = self.jobquery.add_ms_data(params, True)
+
+        script  = "{magma} add_ms_data --ms_data_format mzxml -l 3 -a 1000 -r 0.01 ms_data.dat {db}\n"
+        script += "{magma} annotate -p 0.001 -c 200000 -d 0.1 -i 1 -b 4 --precursor_mz_precision 0.001 {db}\n"
+        expected_query = JobQuery(**{
+                          'id': self.jobid,
+                          'dir': self.jobdir,
+                          'prestaged': ['ms_data.dat'],
+                          'script': script
+                          })
+        self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
+
+
+class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
+
+    def test_it(self):
+        params = {
+                  'n_reaction_steps': 2,
+                  'metabolism_types': 'phase1,phase2'
+                  }
+
+        query = self.jobquery.metabolize(params)
+
+        expected_query = JobQuery(**{
+                          'id': self.jobid,
+                          'dir': self.jobdir,
+                          'prestaged': [],
+                          'script': "{magma} metabolize -s 2 -m phase1,phase2 {db}\n"
+                          })
+        self.assertEqual(query, expected_query)
+
+    def test_with_annotate(self):
+        self.jobquery.maxMSLevel = Mock(return_value=1)
+        params = {
+                  'n_reaction_steps': 2,
+                  'metabolism_types': 'phase1,phase2',
+                  'mz_precision': 0.001,
+                  'ms_intensity_cutoff': 200000,
+                  'msms_intensity_cutoff': 0.1,
+                  'ionisation_mode': 1,
+                  'max_broken_bonds': 4,
+                  'precursor_mz_precision': 0.001,
+                  'use_all_peaks': False,
+                  'skip_fragmentation': False
+                  }
+
+        query = self.jobquery.metabolize(params, True)
+
+        script  = "{magma} metabolize -s 2 -m phase1,phase2 {db}\n"
+        script += "{magma} annotate -p 0.001 -c 200000 -d 0.1 -i 1 -b 4 --precursor_mz_precision 0.001 {db}\n"
+        expected_query = JobQuery(**{
+                          'id': self.jobid,
+                          'dir': self.jobdir,
+                          'prestaged': [],
+                          'script': script
+                          })
+        self.assertEqual(query, expected_query)
+
+class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
+
+    def test_it(self):
+        params = {
+                  'metid': 123,
+                  'n_reaction_steps': 2,
+                  'metabolism_types': 'phase1,phase2'
+                  }
+
+        query = self.jobquery.metabolize_one(params)
+
+        expected_query = JobQuery(**{
+                          'id': self.jobid,
+                          'dir': self.jobdir,
+                          'prestaged': [],
+                          'script': "{magma} metabolize --metid 123 -s 2 -m phase1,phase2 {db}\n"
+                          })
+        self.assertEqual(query, expected_query)
+
+    def test_with_annotate(self):
+        params = {
+                  'metid': 123,
+                  'n_reaction_steps': 2,
+                  'metabolism_types': 'phase1,phase2',
+                  'mz_precision': 0.001,
+                  'ms_intensity_cutoff': 200000,
+                  'msms_intensity_cutoff': 0.1,
+                  'ionisation_mode': 1,
+                  'max_broken_bonds': 4,
+                  'precursor_mz_precision': 0.001,
+                  'use_all_peaks': False,
+                  'skip_fragmentation': False
+                  }
+
+        query = self.jobquery.metabolize_one(params, True)
+
+        script  = "{magma} metabolize --metid 123 -s 2 -m phase1,phase2 {db}\n"
+        script += "{magma} annotate -p 0.001 -c 200000 -d 0.1 -i 1 -b 4 --precursor_mz_precision 0.001 {db}\n"
+        expected_query = JobQuery(**{
+                          'id': self.jobid,
+                          'dir': self.jobdir,
+                          'prestaged': [],
+                          'script': script
+                          })
+        self.assertEqual(query, expected_query)
+
+class JobQueryAnnotateTestCase(JobQueryActionTestCase):
+
+    def test_it(self):
+        params = {
+                'mz_precision': 0.001,
+                'ms_intensity_cutoff': 200000,
+                'msms_intensity_cutoff': 0.1,
+                'ionisation_mode': 1,
+                'max_broken_bonds': 4,
+                'precursor_mz_precision': 0.001,
+                'use_all_peaks': False,
+                'skip_fragmentation': False
+                }
+
+        query = self.jobquery.annotate(params)
+
+        expected_query = JobQuery(**{
+                          'id': self.jobid,
+                          'dir': self.jobdir,
+                          'prestaged': [],
+                          'script': "{magma} annotate -p 0.001 -c 200000 -d 0.1 -i 1 -b 4 --precursor_mz_precision 0.001 {db}\n"
+                          })
+        self.assertEqual(query, expected_query)
+
+    def test_all_peaks_skip(self):
+        params = {
+                'mz_precision': 0.001,
+                'ms_intensity_cutoff': 200000,
+                'msms_intensity_cutoff': 0.1,
+                'ionisation_mode': 1,
+                'max_broken_bonds': 4,
+                'precursor_mz_precision': 0.001,
+                'use_all_peaks': True,
+                'skip_fragmentation': False
+                }
+
+        query = self.jobquery.annotate(params)
+
+        expected_query = JobQuery(**{
+                          'id': self.jobid,
+                          'dir': self.jobdir,
+                          'prestaged': [],
+                          'script': "{magma} annotate -p 0.001 -c 200000 -d 0.1 -i 1 -b 4 --precursor_mz_precision 0.001 -u {db}\n"
+                          })
+        self.assertEqual(query, expected_query)
+
+    def test_no_fragmentation(self):
+        params = {
+                'mz_precision': 0.001,
+                'ms_intensity_cutoff': 200000,
+                'msms_intensity_cutoff': 0.1,
+                'ionisation_mode': 1,
+                'max_broken_bonds': 4,
+                'precursor_mz_precision': 0.001,
+                'use_all_peaks': False,
+                'skip_fragmentation': True
+                }
+
+        query = self.jobquery.annotate(params)
+
+        expected_query = JobQuery(**{
+                          'id': self.jobid,
+                          'dir': self.jobdir,
+                          'prestaged': [],
+                          'script': "{magma} annotate -p 0.001 -c 200000 -d 0.1 -i 1 -b 4 --precursor_mz_precision 0.001 -f {db}\n"
+                          })
+        self.assertEqual(query, expected_query)
+
+
+class JobQueryAllInOneTestCase(JobQueryActionTestCase):
+
+    def test_it(self):
+        self.maxDiff = 100000
+        import tempfile
+        from cgi import FieldStorage
+        ms_data_file = tempfile.NamedTemporaryFile()
+        ms_data_file.write('foo')
+        ms_data_file.flush()
+        msfield = FieldStorage()
+        msfield.file = ms_data_file
+        params = {
+                'n_reaction_steps': 2,
+                'ionisation_mode': 1,
+                'ms_intensity_cutoff': 200000,
+                'msms_intensity_cutoff': 0.1,
+                'use_all_peaks': False,
+                'abs_peak_cutoff': 1000,
+                'rel_peak_cutoff': 0.01,
+                'precursor_mz_precision': 0.001,
+                'skip_fragmentation': False,
+                'max_broken_bonds': 4,
+                'mz_precision': 0.001,
+                'metabolism_types': 'phase1,phase2',
+                'max_ms_level': 3,
+                'structures': 'C1CCCC1 comp1',
+                'ms_data_file': msfield,
+                'structure_format': 'smiles',
+                'ms_data_format': 'mzxml'
+                }
+
+        query = self.jobquery.allinone(params)
+
+        expected_script  = "{magma} add_ms_data --ms_data_format mzxml -l 3 -a 1000 -r 0.01 ms_data.dat {db}\n"
+        expected_script += "{magma} add_structures -t smiles structures.dat {db}\n"
+        expected_script += "{magma} metabolize -s 2 -m phase1,phase2 {db}\n"
+        expected_script += "{magma} annotate -p 0.001 -c 200000 -d 0.1 -i 1 -b 4 --precursor_mz_precision 0.001 {db}\n"
+
+        expected_query = JobQuery(**{
+                          'id': self.jobid,
+                          'dir': self.jobdir,
+                          'prestaged': ['ms_data.dat', 'structures.dat'],
+                          'script': expected_script
+                          })
+        self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual(params['structures'], self.fetch_file('structures.dat'))
+        self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
+

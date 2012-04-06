@@ -15,17 +15,20 @@ extjsroot = ext-4.0.7
 
 jobfactory.root_dir = %(here)s/data/jobs
 # url to which job request is submitted
-jobfactory.submiturl = http://localhost:9998/job
-# filename where job manager will write the state of the job
-jobfactory.state = job.state
+jobfactory.submit_url = http://localhost:9998/job
 
 # To submit job to grid a script and tarball is required
-# tarball contains frozen magma application and script untars tarball and runs magma application
+# tarball contains frozen magma application and script untars tarball and puts magma in path
 # Example script:
 # tar -zxf Magma-1.1.tar.gz
 # Magma-1.1/magma "$@"
-jobfactory.script = /home/stefanv/workspace/magmajobmanager/magma.sh
+jobfactory.init_script: tar -zxf Magma-1.1-rh57-x86_64.tar.gz
+  export PATH=Magma-1.1:$PATH
 jobfactory.tarball = /home/stefanv/workspace/magmajobmanager/Magma-1.1.tar.gz
+
+# To submit job to local installation of MAGMaJob
+jobfactory.init_script = . /home/stefanv/workspace/MAGMaJob/env2/bin/activate
+
 
 [server:main]
 use = egg:waitress#main

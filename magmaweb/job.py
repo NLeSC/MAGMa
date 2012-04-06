@@ -11,7 +11,7 @@ from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import desc, asc, distinct
 from sqlalchemy.orm.exc import NoResultFound
-from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
+from magmaweb.models import Base, Metabolite, Scan, Peak, Fragment, Run
 
 class ScanRequiredError(Exception):
     """ Raised when a scan identifier is required, but non is supplied"""
@@ -30,100 +30,180 @@ class JobNotFound(Exception):
     def __init__(self, jobid):
         self.jobid = jobid
 
+def make_job_factory(params):
+    """ Returns JobFactory instance based on params dict
+
+    All keys starting with 'jobfactory.' are used.
+    From keys 'jobfactory.' is removed.
+
+    Can be used to create job factory from a config file
+    """
+    prefix = 'jobfactory.'
+    d = {k.replace(prefix, ''):v for k,v in params.iteritems() if k.startswith(prefix)}
+    return JobFactory(**d)
+
 class JobQuery(object):
-    structures = None
-    ms_data_file = None
-    n_reaction_steps = None
-    metabolism_types = None
-    max_broken_bonds = None
-    ionisation_mode = None
-    skip_fragmentation = None
-    use_all_peaks = None
-    ms_intensity_cutoff = None
-    msms_intensity_cutoff = None
-    mz_precision = None
-    precursor_mz_precision = None
-    abs_peak_cutoff = None
-    rel_peak_cutoff = None
-    max_ms_level = None
-    description = None
-    ms_data_format = None
-    structure_format = None
+    """ Perform actions on a Job by parsing post params, staging files and building magma cli commands"""
+    def __init__(self, id, dir, script='', prestaged=[]):
+        self.id = id
+        self.dir = dir
+        self.script = script
+        self.prestaged = prestaged
 
     def __eq__(self, other):
-        """ Compares all attributes except file objects"""
-        return (
-                self.structures == other.structures
-                and
-                self.n_reaction_steps == other.n_reaction_steps
-                and
-                self.metabolism_types == other.metabolism_types
-                and
-                self.max_broken_bonds == other.max_broken_bonds
-                and
-                self.ionisation_mode == other.ionisation_mode
-                and
-                self.use_all_peaks == other.use_all_peaks
-                and
-                self.skip_fragmentation == other.skip_fragmentation
-                and
-                self.abs_peak_cutoff == other.abs_peak_cutoff
-                and
-                self.rel_peak_cutoff == other.rel_peak_cutoff
-                and
-                self.ms_intensity_cutoff == other.ms_intensity_cutoff
-                and
-                self.msms_intensity_cutoff == other.msms_intensity_cutoff
-                and
-                self.mz_precision == other.mz_precision
-                and
-                self.precursor_mz_precision == other.precursor_mz_precision
-                and
-                self.max_ms_level == other.max_ms_level
-                and
-                self.description == other.description
-                and
-                self.ms_data_format == other.ms_data_format
-                and
-                self.structure_format == other.structure_format
-                )
+        return (self.id == other.id and self.dir == other.dir and
+            self.script == other.script and self.prestaged == other.prestaged)
+
+    def __repr__(self):
+        """Return a printable representation."""
+        return "JobQuery({!r}, {!r}, {!r}, {!r})".format(self.id, self.dir, self.script, self.prestaged)
+
+    def add_structures(self, params, has_ms_data=False):
+        metsfile = file(os.path.join(self.dir, 'structures.dat'), 'w')
+        if (('structures_file' in params) and (params['structures_file'] != '')):
+            sf = params['structures_file'].file
+            sf.seek(0)
+            while 1:
+                data = sf.read(2 << 16)
+                if not data:
+                    break
+                metsfile.write(data)
+            sf.close()
+        else:
+            metsfile.write(params['structures'])
+        metsfile.close()
+
+        script = "{{magma}} add_structures -t {structure_format} structures.dat {{db}}\n"
+        self.script += script.format(structure_format=params['structure_format'])
+        self.prestaged.append('structures.dat')
+
+        if ('metabolize' in params):
+            self.metabolize(params, has_ms_data)
+        else:
+            # dont annotate when metabolize is also done
+            # as metabolize will call annotate
+            if (has_ms_data):
+                self.annotate(params)
+
+        return self
+
+    def add_ms_data(self, params, has_metabolites=False):
+        msfile = file(os.path.join(self.dir, 'ms_data.dat'), 'w')
+        msf = params['ms_data_file'].file
+        msf.seek(0)
+        while 1:
+            data = msf.read(2 << 16)
+            if not data:
+                break
+            msfile.write(data)
+        msf.close()
+        msfile.close()
+
+        script = "{{magma}} add_ms_data --ms_data_format {ms_data_format} -l {max_ms_level} -a {abs_peak_cutoff} -r {rel_peak_cutoff} ms_data.dat {{db}}\n"
+        self.script += script.format(
+                               ms_data_format=params['ms_data_format'],
+                               max_ms_level=params['max_ms_level'],
+                               abs_peak_cutoff=params['abs_peak_cutoff'],
+                               rel_peak_cutoff=params['rel_peak_cutoff']
+                               )
+        self.prestaged.append('ms_data.dat')
+
+        if (has_metabolites):
+            self.annotate(params)
+
+        return self
+
+    def metabolize(self, params, has_ms_data=False):
+        script = "{{magma}} metabolize -s {n_reaction_steps} -m {metabolism_types} {{db}}\n"
+        self.script += script.format(
+                               n_reaction_steps=params['n_reaction_steps'],
+                               metabolism_types=params['metabolism_types']
+                               )
+
+        if (has_ms_data):
+            self.annotate(params)
+
+        return self
+
+    def metabolize_one(self, params, has_ms_data=False):
+        script = "{{magma}} metabolize --metid {metid} -s {n_reaction_steps} -m {metabolism_types} {{db}}\n"
+        self.script += script.format(
+                               metid=params['metid'],
+                               n_reaction_steps=params['n_reaction_steps'],
+                               metabolism_types=params['metabolism_types']
+                               )
+
+        if (has_ms_data):
+            self.annotate(params)
+
+        return self
+
+    def annotate(self, params):
+        script = "{{magma}} annotate -p {mz_precision} -c {ms_intensity_cutoff} -d {msms_intensity_cutoff} -i {ionisation_mode} -b {max_broken_bonds} --precursor_mz_precision {precursor_mz_precision} "
+        script = script.format(
+                               mz_precision=params['mz_precision'],
+                               ms_intensity_cutoff=params['ms_intensity_cutoff'],
+                               msms_intensity_cutoff=params['msms_intensity_cutoff'],
+                               ionisation_mode=params['ionisation_mode'],
+                               max_broken_bonds=params['max_broken_bonds'],
+                               precursor_mz_precision=params['precursor_mz_precision']
+                               )
+
+        if (params['use_all_peaks']):
+            script += '-u '
+
+        if (params['skip_fragmentation']):
+            script += '-f '
+
+        script += "{db}\n"
+        self.script += script
+
+        return self
+
+    def allinone(self, params):
+        return self.add_ms_data(params).add_structures(params).metabolize(params).annotate(params)
 
 class JobFactory(object):
     """ Factory which can create jobs """
     def __init__(
-                 self, jobrootdir, job_script, job_tarball, dbname = 'results.db',
-                 submiturl='http://localhost:9998', jobstatefilename = 'job.state',
-                 time_max=30
+                 self, root_dir,
+                 init_script='', tarball=None, script_fn='script.sh',
+                 db_fn = 'results.db', state_fn = 'job.state',
+                 submit_url='http://localhost:9998', time_max=30
                  ):
         """
-        jobrootdir
+        root_dir
             Directory in which jobs are created, retrieved
 
-        dbname
+        db_fn
             Sqlite db file name in job directory (default results.db)
 
-        submiturl
+        submit_url
             Url of job manager daemon where job can be submitted (default http://localhost:9998)
 
-        job_script
-            Local absolute location of script which must be run by job manager daemon
+        script_fn
+            Script in job directory which must be run by job manager daemon
 
-        job_tarball
-            Local absolute location of tarball which contains application which job_script will unpack and run
+        init_script
+            String containing os commands to put magma in path, eg. activate virtualenv or unpack tarball
 
-        jobstatefilename
+        tarball
+            Local absolute location of tarball which contains application which init_script will unpack and run
+
+        state_fn
             Filename where job manager daemon writes job state (default job.state)
 
         time_max
             Maximum time in minutes a job can take (default 30)
         """
-        self.jobrootdir = jobrootdir
-        self.dbname = dbname
-        self.submiturl = submiturl
-        self.jobstatefilename = jobstatefilename
-        self.job_script = job_script
-        self.job_tarball = job_tarball
+        self.root_dir = root_dir
+        self.db_fn = db_fn
+        self.submit_url = submit_url
+        self.state_fn = state_fn
+        self.script_fn = script_fn
+        self.tarball = tarball
         self.time_max = time_max
+        self.init_script = init_script
 
     def fromId(self, jobid):
         """
@@ -135,13 +215,24 @@ class JobFactory(object):
 
         Raises JobNotFound exception when job is not found by jobid
         """
+        return Job(jobid,  self._makeJobSession(jobid)(), self.id2jobdir(jobid))
+
+    def _makeJobSession(self, jobid):
+        """ Create job db connection """
         engine = create_engine(self.id2url(jobid))
         try:
             engine.connect()
         except OperationalError:
             raise JobNotFound(jobid)
-        session = sessionmaker(bind=engine)
-        return Job(jobid, session(), self.id2jobdir(jobid))
+        return sessionmaker(bind=engine)
+
+    def _makeJobDir(self):
+        """ Create job dir and returns the job id"""
+        jobid = uuid.uuid4()
+
+        # create job dir
+        os.makedirs(self.id2jobdir(jobid))
+        return jobid
 
     def fromDb(self, dbfile):
         """
@@ -152,10 +243,7 @@ class JobFactory(object):
             The sqlite result db
 
         """
-        jobid = uuid.uuid4()
-
-        # create job dir
-        os.makedirs(self.id2jobdir(jobid))
+        jobid = self._makeJobDir()
         # copy dbfile into job dir
         jobdb = open(self.id2db(jobid), 'wb')
         dbfile.seek(0)
@@ -168,10 +256,26 @@ class JobFactory(object):
 
         return self.fromId(jobid)
 
+    def fromScratch(self):
+        """ Creates job from scratch with empty results db """
+        jobid = self._makeJobDir()
+        session = self._makeJobSession(jobid)()
+        Base.metadata.create_all(session.connection())
+        return Job(jobid, session, self.id2jobdir(jobid))
+
+    def cloneJob(self, job):
+        """ Returns new job which has copy of 'job' db. """
+        return self.fromDb(open(self.id2db(job.id)))
 
     def submitJob2Manager(self, body):
+        """ Submits job query to jobmanager daemon
+
+        body is a dict which is submitted as json.
+
+        returns job identifier of job submitted to jobmanager (not the same as job.id).
+        """
         request = urllib2.Request(
-                                  self.submiturl,
+                                  self.submit_url,
                                   json.dumps(body),
                                   { 'Content-Type': 'application/json' }
                                   )
@@ -183,82 +287,42 @@ class JobFactory(object):
 
     def submitQuery(self, query):
         """
-        A job directory is created, the query input files are written to directory and job is submitted to job manager
-
-        query is JobQuery object
 
         Returns job identifier
         """
 
-        jobid = uuid.uuid4()
-        jobdir = self.id2jobdir(jobid)
-        os.makedirs(jobdir)
-
-        # copy mzxml file
-        job_ms_data_file = open(os.path.join(jobdir, 'ms_data.dat'), 'wb')
-        query.ms_data_file.seek(0)
-        while 1:
-            data = query.ms_data_file.read(2 << 16)
-            if not data:
-                break
-            job_ms_data_file.write(data)
-        job_ms_data_file.close()
-
-        # copy metabolites string to file
-        metsfile = file(os.path.join(jobdir, 'structures.dat'), 'w')
-        metsfile.write(query.structures)
-        metsfile.close()
+        # write job script into job dir
+        script = open(os.path.join(query['dir'], self.script_fn), 'w')
+        script.write(self.init_script)
+        script.write(query['script'].format(db=self.db_fn, magma='magma'))
+        script.close()
 
         body = {
-                'jobdir': jobdir+'/',
+                'jobdir': query['dir']+'/',
                 'executable': "/bin/sh",
                 'prestaged': [
-                              self.job_script,
-                              self.job_tarball,
-                              'ms_data.dat', 'structures.dat'
+                              self.script_fn,
+                              self.db_fn
                               ],
-                "poststaged": [self.dbname],
+                "poststaged": [ self.db_fn],
                 "stderr": "stderr.txt",
                 "stdout": "stdout.txt",
                 "time_max": self.time_max,
-                'arguments': [
-                              self.job_script,
-                              "all_in_one",
-                              "--max_ms_level", query.max_ms_level,
-                              "--mz_precision", query.mz_precision,
-                              "--ms_intensity_cutoff", query.ms_intensity_cutoff,
-                              "--msms_intensity_cutoff", query.msms_intensity_cutoff,
-                              "--ionisation_mode", query.ionisation_mode,
-                              "--n_reaction_steps", query.n_reaction_steps,
-                              "--metabolism_types", ",".join(query.metabolism_types),
-                              "--max_broken_bonds", query.max_broken_bonds,
-                              "--abs_peak_cutoff", query.abs_peak_cutoff,
-                              "--rel_peak_cutoff", query.rel_peak_cutoff,
-                              "--precursor_mz_precision", query.precursor_mz_precision,
-                              "--structure_format", query.structure_format,
-                              "--ms_data_format", query.ms_data_format,
-                              'ms_data.dat', 'structures.dat',
-                              self.dbname
-                              ]
-                 }
-        if query.use_all_peaks:
-            body['arguments'].insert(-3, "--use_all_peaks")
-        if query.skip_fragmentation:
-            body['arguments'].insert(-3, "--skip_fragmentation")
-        if query.description:
-            body['arguments'].insert(-3, "--description")
-            # Quote taken from http://docs.python.org/dev/library/shlex
-            quoted_desc = "'" + query.description.replace("'", "'\"'\"'") + "'"
-            body['arguments'].insert(-3, quoted_desc)
+                'arguments': [ self.script_fn ]
+                }
+        body['prestaged'].extend(query['prestaged'])
+
+        if (self.tarball != None):
+            body['prestaged'].append(self.tarball)
 
         self.submitJob2Manager(body)
 
-        return jobid
+        return query['id']
 
     def state(self, id):
         """ Returns state of job, see ibis org.gridlab.gat.resources.Job JobState enum for possible states."""
         try:
-            jobstatefile = open(os.path.join(self.id2jobdir(id), self.jobstatefilename))
+            jobstatefile = open(os.path.join(self.id2jobdir(id), self.state_fn))
             jobstate = jobstatefile.readline().strip()
             jobstatefile.close()
             return jobstate
@@ -266,12 +330,12 @@ class JobFactory(object):
             return 'UNKNOWN'
 
     def id2jobdir(self, id):
-        """ Returns job directory based on id and jobrootdir """
-        return os.path.join(self.jobrootdir, str(id))
+        """ Returns job directory based on id and root_dir """
+        return os.path.join(self.root_dir, str(id))
 
     def id2db(self, id):
         """ Returns sqlite db of job with id """
-        return os.path.join(self.id2jobdir(id), self.dbname)
+        return os.path.join(self.id2jobdir(id), self.db_fn)
 
     def id2url(self, id):
         """ Returns sqlalchemy url of sqlite db of job with id """
@@ -295,6 +359,10 @@ class Job(object):
         self.session = session
         self.dir = dir
 
+    def jobquery(self):
+        """ Returns JobQuery """
+        return JobQuery(self.id, self.dir)
+
     def maxMSLevel(self):
         """ Returns the maximum nr of MS levels """
         return self.session.query(func.max(Scan.mslevel)).scalar() or 0
@@ -302,6 +370,9 @@ class Job(object):
     def runInfo(self):
         """ Returns run info"""
         return self.session.query(Run).one()
+
+    def metabolitesTotalCount(self):
+        return self.session.query(Metabolite).count()
 
     def extjsgridfilter(self, q, column, filter):
         """Query helper to convert a extjs grid filter to a sqlalchemy query filter"""

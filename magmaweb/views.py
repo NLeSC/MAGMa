@@ -2,7 +2,7 @@ import json
 from pyramid.response import Response
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPNotFound, HTTPFound
-from magmaweb.job import JobFactory, JobNotFound, JobQuery
+from magmaweb.job import make_job_factory, JobNotFound
 
 """Views for pyramid based web application"""
 
@@ -18,13 +18,7 @@ def fetch_job(request):
 
 def job_factory(request):
     """ Returns a job factory"""
-    return JobFactory(
-                      submiturl=request.registry.settings['jobfactory.submiturl'],
-                      jobstatefilename=request.registry.settings['jobfactory.state'],
-                      jobrootdir=request.registry.settings['jobfactory.root_dir'],
-                      job_script=request.registry.settings['jobfactory.script'],
-                      job_tarball=request.registry.settings['jobfactory.tarball'],
-                      )
+    return make_job_factory(request.registry.settings)
 
 @view_config(route_name='home', renderer='home.mak')
 def home(request):
@@ -36,41 +30,12 @@ def home(request):
     """
 
     if (request.method == 'POST'):
-        post = request.POST
+        jf = job_factory(request)
+        job = jf.fromScratch()
+        jobquery = job.jobquery().allinone(request.POST)
+        jf.submitQuery(jobquery)
 
-        q = JobQuery()
-        q.ms_data_file=post['ms_data_file'].file
-        q.mz_precision=post['mz_precision']
-        q.ms_intensity_cutoff=post['ms_intensity_cutoff']
-        q.msms_intensity_cutoff=post['msms_intensity_cutoff']
-        q.ionisation_mode=post['ionisation_mode']
-        q.structures=post['structures']
-        q.n_reaction_steps=post['n_reaction_steps']
-        q.metabolism_types=post['metabolism_types'].split(', ') # Extjs concats multiselect with ', '
-        q.max_broken_bonds=post['max_broken_bonds']
-        q.abs_peak_cutoff=post['abs_peak_cutoff']
-        q.rel_peak_cutoff=post['rel_peak_cutoff']
-        q.max_ms_level=post['max_ms_level']
-        q.precursor_mz_precision=post['precursor_mz_precision']
-        q.description = post['description']
-        q.structure_format = post['structure_format']
-        q.ms_data_format = post['ms_data_format']
-        if ('use_all_peaks' in post):
-            q.use_all_peaks = True
-        else:
-            q.use_all_peaks = False
-        if ('skip_fragmentation' in post):
-            q.skip_fragmentation = True
-        else:
-            q.skip_fragmentation = False
-
-        if post['structures_file'] != '':
-            sf = post['structures_file'].file
-            sf.seek(0)
-            q.structures = sf.read()
-
-        jobid = job_factory(request).submitQuery(q)
-        return Response(json.dumps({"success": True, "jobid": str(jobid) }), content_type='text/html')
+        return Response(json.dumps({"success": True, "jobid": str(job.id) }), content_type='text/html')
 
     return dict()
 
@@ -90,6 +55,13 @@ def results(request):
 
 @view_config(route_name='status', renderer='status.mak')
 def job_status(request):
+    """Returns status of a job"""
+    jobid = request.matchdict['jobid']
+    jobstate = job_factory(request).state(jobid)
+    return dict(status=jobstate, jobid=jobid)
+
+@view_config(route_name='status.json', renderer='json')
+def job_statusjson(request):
     """Returns status of a job"""
     jobid = request.matchdict['jobid']
     jobstate = job_factory(request).state(jobid)
@@ -217,3 +189,4 @@ def stderr(request):
     response = Response(content_type='text/plain')
     response.app_iter = job.stderr()
     return response
+
