@@ -149,10 +149,10 @@ class JobQuery(object):
                                max_broken_bonds=params['max_broken_bonds']
                                )
 
-        if (params['use_all_peaks']):
+        if ('use_all_peaks' in params):
             script += '-u '
 
-        if (params['skip_fragmentation']):
+        if ('skip_fragmentation' in params):
             script += '-f '
 
         script += "{db}\n"
@@ -287,37 +287,41 @@ class JobFactory(object):
 
     def submitQuery(self, query):
         """
+        Writes job script to job dir and submits job to job manager
+
+        query is a JobQuery object
 
         Returns job identifier
         """
 
         # write job script into job dir
-        script = open(os.path.join(query['dir'], self.script_fn), 'w')
+        script = open(os.path.join(query.dir, self.script_fn), 'w')
         script.write(self.init_script)
-        script.write(query['script'].format(db=self.db_fn, magma='magma'))
+        script.write("\n") # hard to add newline in ini file so add it here
+        script.write(query.script.format(db=self.db_fn, magma='magma'))
         script.close()
 
         body = {
-                'jobdir': query['dir']+'/',
+                'jobdir': query.dir+'/',
                 'executable': "/bin/sh",
                 'prestaged': [
                               self.script_fn,
                               self.db_fn
                               ],
-                "poststaged": [ self.db_fn],
+                "poststaged": [ self.db_fn ],
                 "stderr": "stderr.txt",
                 "stdout": "stdout.txt",
                 "time_max": self.time_max,
                 'arguments': [ self.script_fn ]
                 }
-        body['prestaged'].extend(query['prestaged'])
+        body['prestaged'].extend(query.prestaged)
 
         if (self.tarball != None):
             body['prestaged'].append(self.tarball)
 
         self.submitJob2Manager(body)
 
-        return query['id']
+        return query.id
 
     def state(self, id):
         """ Returns state of job, see ibis org.gridlab.gat.resources.Job JobState enum for possible states."""

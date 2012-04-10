@@ -327,27 +327,21 @@ class JobFactoryTestCase(unittest.TestCase):
 
     def test_submitQuery(self):
         import os
-        self.factory.init_script = "# make magma available\n"
+        self.factory.init_script = "# make magma available"
         job = self.factory.fromScratch()
 
         self.factory.script_fn = 'script.sh'
-        query = {}
-        query['id'] = job.id
-        query['dir'] = job.dir
-        query['prestaged'] = ['structures.dat']
-        query['script'] = "magma add_structures -t smiles structures.dat results.db\n"
+        jobquery = JobQuery(job.id, job.dir, "magma add_structures -t smiles structures.dat results.db\n", ['structures.dat'])
 
         self.factory.submitJob2Manager = Mock()
 
-        jobid = self.factory.submitQuery(query)
+        jobid = self.factory.submitQuery(jobquery)
 
-        self.assertEqual(jobid, job.id)
-        job_script = open(os.path.join(job.dir, self.factory.script_fn)).read()
-        self.assertMultiLineEqual(job_script, """# make magma available
-magma add_structures -t smiles structures.dat results.db
-""")
+        self.assertEqual(jobid, jobquery.id)
+        job_script = open(os.path.join(jobquery.dir, self.factory.script_fn)).read()
+        self.assertMultiLineEqual(job_script, """# make magma available\nmagma add_structures -t smiles structures.dat results.db\n""")
         jobmanager_query = {
-                            'jobdir': job.dir+'/',
+                            'jobdir': jobquery.dir+'/',
                             'executable': "/bin/sh",
                             'prestaged': [
                                           self.factory.script_fn,
@@ -362,22 +356,22 @@ magma add_structures -t smiles structures.dat results.db
                             }
         self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
 
-    def test_submitQuery_tarball(self):
+    def test_submitQuery_with_tarball(self):
         self.factory.tarball = 'Magma-1.1.tar.gz'
         self.factory.submitJob2Manager = Mock()
         job = self.factory.fromScratch()
-        query = { 'id': job.id, 'dir': job.dir, 'prestaged': [], 'script': ''}
+        jobquery = JobQuery(job.id, job.dir, "", [])
 
-        jobid = self.factory.submitQuery(query)
+        jobid = self.factory.submitQuery(jobquery)
 
-        self.assertEqual(jobid, job.id)
+        self.assertEqual(jobid, jobquery.id)
         jobmanager_query = {
-                            'jobdir': job.dir+'/',
+                            'jobdir': jobquery.dir+'/',
                             'executable': "/bin/sh",
                             'prestaged': [
                                           self.factory.script_fn,
                                           'results.db',
-                                          'Magma-1.1.tar.gz'
+                                          'Magma-1.1.tar.gz' # tarball is staged as well
                                           ],
                             "poststaged": ['results.db'],
                             "stderr": "stderr.txt",
@@ -1058,9 +1052,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                   'ms_intensity_cutoff': 200000,
                   'msms_intensity_cutoff': 0.1,
                   'ionisation_mode': 1,
-                  'max_broken_bonds': 4,
-                  'use_all_peaks': False,
-                  'skip_fragmentation': False
+                  'max_broken_bonds': 4
                   }
         query = self.jobquery.add_structures(params, True)
 
@@ -1085,9 +1077,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                   'ms_intensity_cutoff': 200000,
                   'msms_intensity_cutoff': 0.1,
                   'ionisation_mode': 1,
-                  'max_broken_bonds': 4,
-                  'use_all_peaks': False,
-                  'skip_fragmentation': False
+                  'max_broken_bonds': 4
                   }
         query = self.jobquery.add_structures(params, True)
 
@@ -1152,9 +1142,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                   'msms_intensity_cutoff': 0.1,
                   'ionisation_mode': 1,
                   'max_broken_bonds': 4,
-                  'precursor_mz_precision': 0.005,
-                  'use_all_peaks': False,
-                  'skip_fragmentation': False
+                  'precursor_mz_precision': 0.005
                   }
 
         query = self.jobquery.add_ms_data(params, True)
@@ -1198,9 +1186,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                   'ms_intensity_cutoff': 200000,
                   'msms_intensity_cutoff': 0.1,
                   'ionisation_mode': 1,
-                  'max_broken_bonds': 4,
-                  'use_all_peaks': False,
-                  'skip_fragmentation': False
+                  'max_broken_bonds': 4
                   }
 
         query = self.jobquery.metabolize(params, True)
@@ -1243,9 +1229,7 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
                   'ms_intensity_cutoff': 200000,
                   'msms_intensity_cutoff': 0.1,
                   'ionisation_mode': 1,
-                  'max_broken_bonds': 4,
-                  'use_all_peaks': False,
-                  'skip_fragmentation': False
+                  'max_broken_bonds': 4
                   }
 
         query = self.jobquery.metabolize_one(params, True)
@@ -1268,9 +1252,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                 'ms_intensity_cutoff': 200000,
                 'msms_intensity_cutoff': 0.1,
                 'ionisation_mode': 1,
-                'max_broken_bonds': 4,
-                'use_all_peaks': False,
-                'skip_fragmentation': False
+                'max_broken_bonds': 4
                 }
 
         query = self.jobquery.annotate(params)
@@ -1290,8 +1272,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                 'msms_intensity_cutoff': 0.1,
                 'ionisation_mode': 1,
                 'max_broken_bonds': 4,
-                'use_all_peaks': True,
-                'skip_fragmentation': False
+                'use_all_peaks': 'on'
                 }
 
         query = self.jobquery.annotate(params)
@@ -1311,8 +1292,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                 'msms_intensity_cutoff': 0.1,
                 'ionisation_mode': 1,
                 'max_broken_bonds': 4,
-                'use_all_peaks': False,
-                'skip_fragmentation': True
+                'skip_fragmentation': 'on'
                 }
 
         query = self.jobquery.annotate(params)
@@ -1342,11 +1322,9 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
                 'ionisation_mode': 1,
                 'ms_intensity_cutoff': 200000,
                 'msms_intensity_cutoff': 0.1,
-                'use_all_peaks': False,
                 'abs_peak_cutoff': 1000,
                 'rel_peak_cutoff': 0.01,
                 'precursor_mz_precision': 0.005,
-                'skip_fragmentation': False,
                 'max_broken_bonds': 4,
                 'mz_precision': 0.001,
                 'metabolism_types': 'phase1,phase2',
