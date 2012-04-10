@@ -1,3 +1,4 @@
+import json
 from pyramid.config import Configurator
 from pyramid.events import subscriber, NewRequest
 
@@ -10,6 +11,8 @@ def main(global_config, **settings):
     """ This function returns the Magma WSGI application.
     """
     config = Configurator(settings=settings)
+    config.add_renderer('jsonhtml', jsonhtml_renderer_factory)
+
     config.add_static_view('static', 'magmaweb:static', cache_max_age=3600)
     config.add_route('home','/')
     config.add_route('results','/results/{jobid}')
@@ -33,3 +36,13 @@ def main(global_config, **settings):
 
     config.scan('magmaweb')
     return config.make_wsgi_app()
+
+def jsonhtml_renderer_factory(info):
+    """ Json renderer with text/html content type"""
+    def _render(value, system):
+        request = system.get('request')
+        if request is not None:
+            response = request.response
+            response.content_type = 'text/html'
+        return json.dumps(value)
+    return _render

@@ -82,8 +82,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
-        self.assertEqual(response.content_type, 'text/html') # required for extjs iframe file upload
-        self.assertEqual(response.body, '{"success": true, "jobid": "'+str(self.jobid)+'"}')
+        self.assertEquals(response, { 'success': True, 'jobid': self.jobid})
 
     def test_addmsdata(self):
         self.jobquery.add_ms_data.return_value = self.jq
@@ -95,8 +94,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
-        self.assertEqual(response.content_type, 'text/html') # required for extjs iframe file upload
-        self.assertEqual(response.body, '{"success": true, "jobid": "'+str(self.jobid)+'"}')
+        self.assertEquals(response, { 'success': True, 'jobid': self.jobid})
 
     def test_metabolize(self):
         self.jobquery.metabolize.return_value = self.jq
@@ -142,5 +140,4 @@ class RpcViewsTestCase(unittest.TestCase):
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
-        self.assertEqual(response.content_type, 'text/html') # required for extjs iframe file upload
-        self.assertEqual(response.body, '{"success": true, "jobid": "'+str(self.jobid)+'"}')
+        self.assertEquals(response, { 'success': True, 'jobid': self.jobid})
