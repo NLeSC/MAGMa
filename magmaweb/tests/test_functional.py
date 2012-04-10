@@ -1,31 +1,41 @@
 import unittest
-from mock import patch
 
 class FunctionalTests(unittest.TestCase):
     def setUp(self):
+        import tempfile
         from magmaweb import main
-        settings = { 'mako.directories': 'magmaweb:templates', 'extjsroot': 'ext' }
-        app = main({}, **settings)
+        self.root_dir = tempfile.mkdtemp()
+        self.settings = {
+                    'jobfactory.root_dir': self.root_dir,
+                    'mako.directories': 'magmaweb:templates', 'extjsroot': 'ext'
+                    }
+        app = main({}, **self.settings)
         from webtest import TestApp
         self.testapp = TestApp(app)
 
     def tearDown(self):
+        import shutil
+        shutil.rmtree(self.root_dir)
         del self.testapp
 
     def test_home(self):
         res = self.testapp.get('/', status=200)
         self.assertTrue('Homepage' in res.body)
 
-    @patch('magmaweb.views.fetch_job')
-    def test_metabolites(self, mocked_fetch_job):
-        import uuid, tempfile, shutil
-        from test_job import initTestingDB
-        from magmaweb.job import Job
-        jobdir = tempfile.mkdtemp()
-        job = Job(uuid.uuid1(), initTestingDB(), jobdir)
-        mocked_fetch_job.return_value = job
+    def fake_jobid(self):
+        """ Create job in self.root_dir filled with test db"""
+        from magmaweb.job import make_job_factory
+        jf = make_job_factory(self.settings)
+        job = jf.fromScratch()
+        from test_job import populateTestingDB
+        populateTestingDB(job.session)
+        job.session.commit()
+        return job.id
 
-        res = self.testapp.get('/results/'+str(job.id)+'/metabolites.json?limit=10&start=0', status=200)
+    def test_metabolites(self):
+        jobid = self.fake_jobid()
+
+        res = self.testapp.get('/results/'+str(jobid)+'/metabolites.json?limit=10&start=0', status=200)
         import json
         self.assertEqual(json.loads(res.body),{
             'total': 2,
@@ -60,5 +70,3 @@ class FunctionalTests(unittest.TestCase):
                 'mim': 208.07355, 'logp':2.763
             }]
         })
-
-        shutil.rmtree(jobdir)
