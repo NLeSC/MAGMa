@@ -52,7 +52,7 @@ class RpcViews(object):
         jobquery = job.jobquery().metabolize(self.request.POST, job.maxMSLevel() > 0)
         """ Submit job script to job manager """
         self.job_factory.submitQuery(jobquery)
-        return { 'success': True, 'jobid': job.id }
+        return { 'success': True, 'jobid': str(job.id) }
 
     @view_config(route_name='rpc.metabolize_one')
     def metabolize_one(self):
@@ -61,7 +61,7 @@ class RpcViews(object):
         jobquery = job.jobquery().metabolize_one(self.request.POST, job.maxMSLevel() > 0)
         """ Submit job script to job manager """
         self.job_factory.submitQuery(jobquery)
-        return { 'success': True, 'jobid': job.id }
+        return { 'success': True, 'jobid': str(job.id) }
 
     @view_config(route_name='rpc.annotate')
     def annotate(self):
@@ -70,7 +70,7 @@ class RpcViews(object):
         jobquery = job.jobquery().annotate(self.request.POST)
         """ Submit job script to job manager """
         self.job_factory.submitQuery(jobquery)
-        return { 'success': True, 'jobid': job.id }
+        return { 'success': True, 'jobid': str(job.id) }
 
     @view_config(route_name='rpc.allinone')
     def allinone(self):
