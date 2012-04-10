@@ -99,10 +99,11 @@ class JobQuery(object):
         msf.close()
         msfile.close()
 
-        script = "{{magma}} add_ms_data --ms_data_format {ms_data_format} -l {max_ms_level} -a {abs_peak_cutoff} -r {rel_peak_cutoff} ms_data.dat {{db}}\n"
+        script = "{{magma}} add_ms_data --ms_data_format {ms_data_format} -l {max_ms_level} -a {abs_peak_cutoff} -r {rel_peak_cutoff} --precursor_mz_precision {precursor_mz_precision} ms_data.dat {{db}}\n"
         self.script += script.format(
                                ms_data_format=params['ms_data_format'],
                                max_ms_level=params['max_ms_level'],
+                               precursor_mz_precision=params['precursor_mz_precision'],
                                abs_peak_cutoff=params['abs_peak_cutoff'],
                                rel_peak_cutoff=params['rel_peak_cutoff']
                                )
@@ -139,14 +140,13 @@ class JobQuery(object):
         return self
 
     def annotate(self, params):
-        script = "{{magma}} annotate -p {mz_precision} -c {ms_intensity_cutoff} -d {msms_intensity_cutoff} -i {ionisation_mode} -b {max_broken_bonds} --precursor_mz_precision {precursor_mz_precision} "
+        script = "{{magma}} annotate -p {mz_precision} -c {ms_intensity_cutoff} -d {msms_intensity_cutoff} -i {ionisation_mode} -b {max_broken_bonds} "
         script = script.format(
                                mz_precision=params['mz_precision'],
                                ms_intensity_cutoff=params['ms_intensity_cutoff'],
                                msms_intensity_cutoff=params['msms_intensity_cutoff'],
                                ionisation_mode=params['ionisation_mode'],
-                               max_broken_bonds=params['max_broken_bonds'],
-                               precursor_mz_precision=params['precursor_mz_precision']
+                               max_broken_bonds=params['max_broken_bonds']
                                )
 
         if (params['use_all_peaks']):
