@@ -70,6 +70,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
         this.resetScans();
         this.clearExtractedIonChromatogram();
     }, this);
+    this.application.on('rpcsubmitsuccess', function() {
+        Ext.ComponentQuery.query('chromatogrampanel tool[action=upload]')[0].disable();
+    });
 
     /**
      * @property {Boolean} hasStructures
@@ -259,7 +262,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
                   defaults: { bodyPadding: 5 },
                   border: false,
                   autoScroll: true,
-                  url: me.rpcUrl('add_ms_data'),
+                  url: me.application.rpcUrl('add_ms_data'),
                   items: [{
                       xtype: 'uploadmsdatafieldset'
                   }, {
@@ -277,7 +280,8 @@ Ext.define('Esc.magmaweb.controller.Scans', {
                               form.submit({
                                   waitMsg: 'Submitting action ...',
                                   success: function(fp, o) {
-                                      console.log('Action submitted');
+                                      var response = Ext.JSON.decode(o.response.responseText);
+                                      me.application.fireEvent('rpcsubmitsuccess', response.jobid);
                                       wf.hide();
                                   },
                                   failure: function(form, action) {

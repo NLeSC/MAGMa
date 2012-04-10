@@ -118,5 +118,11 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
    */
   getFragmentScoreColumn: function() {
       return this.columns.filter(function(c) { return (c.dataIndex == "score")})[0];
+  },
+  /**
+   * @return {Ext.grid.column.Column}
+   */
+  getCommandsColumn: function() {
+      return this.columns.filter(function(c) { return (c.text == "Commands")})[0];
   }
 });

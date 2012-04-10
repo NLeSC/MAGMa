@@ -102,6 +102,15 @@ svg {
     background-image: url(${request.extjsroot}/examples/writer/images/add.png) !important;
 }
 
+.icon-annot {
+    background-image: url(${request.extjsroot}/examples/feed-viewer/images/post_go.gif);
+}
+
+.icon-loading {
+    background-image: url(${request.extjsroot}/resources/themes/images/default/grid/loading.gif);
+    cursor: wait;
+}
+
 </style>
 <script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb-libs.js')}"></script>
 <script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb.js')}"></script>

@@ -59,6 +59,11 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
      */
     this.hasMSData = false;
     this.application.on('chromatogramload', this.onChromatrogramLoad, this);
+    this.application.on('rpcsubmitsuccess', function() {
+      Ext.getCmp('addstructuresaction').disable();
+      Ext.getCmp('metabolizeaction').disable();
+      me.getMetaboliteList().getCommandsColumn().disableAction();
+    });
 
     this.application.addEvents(
         /**
@@ -91,6 +96,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     this.actionsMenu = Ext.create('Ext.menu.Menu', {
         items: [{
             iconCls: 'icon-add',
+            id: 'addstructuresaction',
             text: 'Add structures',
             handler: this.showAddStructuresForm.bind(this)
         }, {
@@ -113,6 +119,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       // the nr_scans column has an active filter
       // so do not use list.store.load() , but trigger a filter update to load
       this.getMetaboliteList().filters.createFilters();
+      this.getMetabolitesStore().load();
       // combo isnt available during init to select pagesize in onlaunch
       Ext.ComponentQuery.query("metabolitelist combo[action=pagesize]")[0].select(this.getMetabolitesStore().pageSize);
   },
@@ -398,22 +405,24 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
      Ext.getCmp('metabolizeaction').setDisabled(!enabled);
   },
   actionHandler: function(form) {
-      var wf = form.up('window');
-      form = form.getForm();
-      if (form.isValid()) {
-          form.submit({
-              waitMsg: 'Submitting action ...',
-              success: function(fp, o) {
-                  console.log('Action submitted');
-                  wf.hide();
-              },
-              failure: function(form, action) {
-                  console.log(action.failureType);
-                  console.log(action.result);
-                  wf.hide();
-              }
-          });
-      }
+    var me = this;
+    var wf = form.up('window');
+    form = form.getForm();
+    if (form.isValid()) {
+      form.submit({
+        waitMsg: 'Submitting action ...',
+        success: function(fp, o) {
+          var response = Ext.JSON.decode(o.response.responseText);
+          me.application.fireEvent('rpcsubmitsuccess', response.jobid);
+          wf.hide();
+        },
+        failure: function(form, action) {
+          console.log(action.failureType);
+          console.log(action.result);
+          wf.hide();
+        }
+      });
+    }
   },
   showActionsMenu: function(tool, event) {
     if (this.actionsMenu.isHidden()) {
