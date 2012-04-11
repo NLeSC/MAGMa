@@ -479,6 +479,21 @@ class JobTestCase(unittest.TestCase):
         self.assertEqual(runInfo.use_all_peaks, True)
         self.assertEqual(runInfo.description, 'My first description')
 
+    def test_runInfo_maxrunid(self):
+        self.session.add(Run(
+            n_reaction_steps=2, metabolism_types='phase1,phase2' ,
+            ionisation_mode=-1, skip_fragmentation=True,
+            ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
+            mz_precision=0.01, use_all_peaks=True,
+            ms_filename = 'F123456.mzxml', abs_peak_cutoff=1000,
+            rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=0.01,
+            max_broken_bonds=4, description='My second description'
+        ))
+
+        runInfo = self.job.runInfo()
+
+        self.assertEqual(runInfo.description, 'My second description')
+
     def test_maxMSLevel(self):
         maxmslevel = self.job.maxMSLevel()
         self.assertEqual(maxmslevel, 3)
@@ -501,11 +516,14 @@ class JobTestCase(unittest.TestCase):
         }])
 
     def test_chromatogram(self):
-        self.assertEqual(
-            self.job.chromatogram(),[
-            { 'id': 641, 'rt': 933.317, 'intensity': 807577.0 },
-            { 'id': 870, 'rt': 1254.15, 'intensity': 1972180.0 }
-        ])
+        expected_chromatogram = {
+                                 'scans':[
+                                          { 'id': 641, 'rt': 933.317, 'intensity': 807577.0 },
+                                          { 'id': 870, 'rt': 1254.15, 'intensity': 1972180.0 }
+                                          ],
+                                 'cutoff': 200000.0
+                                 }
+        self.assertEqual(self.job.chromatogram(), expected_chromatogram)
 
     def test_stderr(self):
         log = self.job.stderr()
@@ -521,6 +539,38 @@ class JobTestCase(unittest.TestCase):
         self.assertIsInstance(jobquery, JobQuery)
         self.assertEqual(jobquery.id, self.job.id)
         self.assertEqual(jobquery.dir, self.job.dir)
+
+class JobEmptyDatasetTestCase(unittest.TestCase):
+    def setUp(self):
+        import uuid
+        self.jobid = uuid.uuid1()
+        # mock job session
+        self.session = initTestingDB(dataset=None)
+        self.jobdir = '/somedir'
+        self.job = Job(self.jobid, self.session, self.jobdir)
+
+    def test_runInfo(self):
+        runInfo = self.job.runInfo()
+        self.assertIsNone(runInfo)
+
+    def test_maxMSLevel(self):
+        maxmslevel = self.job.maxMSLevel()
+        self.assertEqual(maxmslevel, 0)
+
+    def test_chromatogram(self):
+        self.assertEqual(self.job.chromatogram(), {
+                                                   'scans': [],
+                                                   'cutoff': None
+                                                   })
+
+    def test_stderr(self):
+        open_stub = Mock(side_effect=IOError('File not found'))
+        with patch('__builtin__.open', open_stub):
+            log = self.job.stderr()
+            self.assertEqual(log.read(), '')
+
+    def test_metabolitesTotalCount(self):
+        self.assertEqual(self.job.metabolitesTotalCount(), 0)
 
 class JobMetabolitesTestCase(unittest.TestCase):
     def setUp(self):

@@ -8,7 +8,6 @@
  *     @example
  *     app = Ext.create('Esc.magmaweb.resultsApp', {
  *       maxmslevel: 3,
- *       ms_intensity_cutoff: 20000,
  *       urls: {
  *         home: '/',
  *         fragments: '/fragments/{0}/{1}.json',
@@ -51,11 +50,6 @@ Ext.define('Esc.magmaweb.resultsApp', {
      * @cfg {Number}
      */
     maxmslevel: 2,
-    /**
-     * MS intensity cutoff. Intensity under which peaks are ignored.
-     * @cfg {Number}
-     */
-    ms_intensity_cutoff: null,
     /**
      * Job identifier
      * @cfg String

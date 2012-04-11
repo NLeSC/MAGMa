@@ -372,8 +372,8 @@ class Job(object):
         return self.session.query(func.max(Scan.mslevel)).scalar() or 0
 
     def runInfo(self):
-        """ Returns run info"""
-        return self.session.query(Run).one()
+        """ Returns last run info or None if there is no run info"""
+        return self.session.query(Run).order_by(Run.runid.desc()).first()
 
     def metabolitesTotalCount(self):
         return self.session.query(Metabolite).count()
@@ -550,7 +550,9 @@ class Job(object):
         return chromatogram
 
     def chromatogram(self):
-        """Returns list of dicts with the id, rt and basepeakintensity for each lvl1 scan"""
+        """Returns dict with scans key with list of dicts with the id, rt and basepeakintensity for each lvl1 scan
+        and cutoff key with ms_intensity_cutoff
+        """
         scans = []
         # TODO add left join to find if scan has metabolite hit
         for scan in self.session.query(Scan).filter_by(mslevel=1):
@@ -560,7 +562,17 @@ class Job(object):
                 'intensity': scan.basepeakintensity
             })
 
-        return scans
+        runInfo = self.runInfo()
+        if (runInfo !=None):
+            return {
+                    'scans': scans,
+                    'cutoff': runInfo.ms_intensity_cutoff
+                    }
+        else:
+            return {
+                    'scans': scans,
+                    'cutoff': None
+                    }
 
     def mspectra(self, scanid, mslevel=None):
         """Returns dict with peaks of a scan
@@ -670,5 +682,8 @@ class Job(object):
             return fragments
 
     def stderr(self):
-        """Returns stderr text file"""
-        return open(os.path.join(self.dir, 'stderr.txt'), 'rb')
+        """Returns stderr text file or empty string if stderr does not exist"""
+        try:
+            return open(os.path.join(self.dir, 'stderr.txt'), 'rb')
+        except IOError:
+            return StringIO.StringIO()

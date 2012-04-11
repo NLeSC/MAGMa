@@ -26,7 +26,6 @@ describe('Scans controller', function() {
     spyOn(d3, 'json');
     ctrl.onLaunch();
     expect(ctrl.getChromatogram()).toBeDefined();
-    expect(mocked_chromatogram.cutoff).toEqual(2000000);
     expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(true);
     expect(d3.json).toHaveBeenCalledWith('data/chromatogram.json', jasmine.any(Function));
   });
@@ -39,15 +38,37 @@ describe('Scans controller', function() {
     spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
     Ext.util.Observable.capture(ctrl.application, f.callback);
 
-    var data = [1,2,3,4];
+    var data = { scans:[1,2,3,4], cutoff:1000 };
     ctrl.loadChromatogramCallback(data);
 
     expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(false);
-    expect(mocked_chromatogram.setData).toHaveBeenCalledWith(data);
+    expect(mocked_chromatogram.cutoff).toEqual(1000);
+    expect(mocked_chromatogram.setData).toHaveBeenCalledWith([1,2,3,4]);
     expect(ctrl.resetScans).toHaveBeenCalled();
 
     expect(f.callback).toHaveBeenCalledWith('chromatogramload', jasmine.any(Object));
     Ext.util.Observable.releaseCapture(ctrl.application);
+  });
+
+  it('loadChromatogramCallback no cutoff', function() {
+      mocked_chromatogram.cutoff = 1000;
+      spyOn(mocked_chromatogram, 'setLoading');
+      spyOn(mocked_chromatogram, 'setData');
+      spyOn(ctrl, 'resetScans');
+      var f = { callback: function() {} };
+      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      Ext.util.Observable.capture(ctrl.application, f.callback);
+
+      var data = { scans:[1,2,3,4], cutoff:null };
+      ctrl.loadChromatogramCallback(data);
+
+      expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(false);
+      expect(mocked_chromatogram.cutoff).toEqual(1000);
+      expect(mocked_chromatogram.setData).toHaveBeenCalledWith([1,2,3,4]);
+      expect(ctrl.resetScans).toHaveBeenCalled();
+
+      expect(f.callback).toHaveBeenCalledWith('chromatogramload', jasmine.any(Object));
+      Ext.util.Observable.releaseCapture(ctrl.application);
   });
 
   it('loadChromatogramCallback error', function() {

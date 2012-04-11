@@ -14,7 +14,6 @@ Ext.onReady(function() {
   Application = Ext.create('Esc.magmaweb.resultsApp', {
       appFolder: "../../../static/app",
       maxmslevel: 3,
-      ms_intensity_cutoff: 2000000,
       jobid: '3ad25048-26f6-11e1-851e-00012e260790',
       urls: {
         home: '/',

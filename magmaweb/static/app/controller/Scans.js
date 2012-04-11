@@ -109,7 +109,6 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     // config chromatogram,
     // must be done after viewport so canvas is avaliable
     var chromatogram = this.getChromatogram();
-    chromatogram.cutoff = this.application.getMs_intensity_cutoff();
     chromatogram.setLoading(true);
     d3.json(
         me.application.getUrls().chromatogram,
@@ -132,7 +131,10 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     var chromatogram = this.getChromatogram();
     chromatogram.setLoading(false);
     console.log('Loading chromatogram');
-    chromatogram.setData(data);
+    if (data.cutoff != null) {
+        chromatogram.cutoff = data.cutoff;
+    }
+    chromatogram.setData(data.scans);
     me.resetScans();
     this.application.fireEvent('chromatogramload', chromatogram);
   },
