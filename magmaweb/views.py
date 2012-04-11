@@ -37,6 +37,12 @@ class Views(object):
         else:
             return {}
 
+    @view_config(route_name='jobfromscratch')
+    def jobfromscratch(self):
+        """ Initializes a new job and redirects to its results page"""
+        job = self.job_factory.fromScratch()
+        return HTTPFound(location=self.request.route_url('results', jobid=job.id))
+
     @view_config(route_name='results', renderer='results.mak')
     def results(self):
         """Returns results page"""

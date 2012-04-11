@@ -99,6 +99,16 @@ class ViewsTestCase(unittest.TestCase):
         views.job_factory.fromDb.assert_called_with(dbfile.file)
         self.assertEqual(response.location, 'http://example.com/results/foo')
 
+    def test_jobfromscratch(self):
+        self.config.add_route('results', '/results/{jobid}')
+        request = testing.DummyRequest()
+        views = Views(request)
+        views.job_factory.fromScratch = Mock(return_value=self.fake_job())
+
+        response = views.jobfromscratch()
+
+        self.assertEqual(response.location, 'http://example.com/results/foo')
+
     def test_results(self):
         request = testing.DummyRequest()
         views = Views(request)

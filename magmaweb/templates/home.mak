@@ -63,8 +63,6 @@ Ext.onReady(function() {
         xtype : 'uploadmsdatafieldset'
     }, {
         xtype : 'metabolizefieldset',
-        checkboxToggle: true,
-        checkboxName: 'metabolize',
         collapsed : true,
         collapsible : true
     }, {
@@ -73,6 +71,10 @@ Ext.onReady(function() {
         collapsible : true
     }],
     buttons: [{
+      text: 'Start from scratch',
+      tooltip: 'Do no fill form, but go straight to empty result page which can be filled later',
+      url: '${request.route_url('jobfromscratch')}'
+    },{
       text: 'Submit',
       handler: function(){
           var form = this.up('form').getForm();
@@ -105,8 +107,6 @@ Ext.onReady(function() {
       }
     }]
   });
-  // ms_data_file is optional on home page
-  form.down('component[name=ms_data_file]').allowBlank = true;
 
   Ext.create('Ext.container.Viewport', {
     layout: 'border',

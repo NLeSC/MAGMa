@@ -15,6 +15,7 @@ def main(global_config, **settings):
 
     config.add_static_view('static', 'magmaweb:static', cache_max_age=3600)
     config.add_route('home','/')
+    config.add_route('jobfromscratch', '/results/')
     config.add_route('results','/results/{jobid}')
     config.add_route('status.json','/status/{jobid}.json')
     config.add_route('status','/status/{jobid}')
