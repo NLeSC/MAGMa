@@ -22,45 +22,35 @@ class RpcViews(object):
     @view_config(route_name='rpc.add_structures', renderer='jsonhtml')
     def add_structures(self):
         job = self.new_job()
-        """ stage input files and write job script """
         jobquery = job.jobquery().add_structures(self.request.POST, job.maxMSLevel() > 0)
-        """ Submit job script to job manager """
         self.job_factory.submitQuery(jobquery)
         return { 'success': True, 'jobid': str(job.id) }
 
     @view_config(route_name='rpc.add_ms_data', renderer='jsonhtml')
     def add_ms_data(self):
         job = self.new_job()
-        """ stage input files and write job script """
         jobquery = job.jobquery().add_ms_data(self.request.POST, job.metabolitesTotalCount() > 0)
-        """ Submit job script to job manager """
         self.job_factory.submitQuery(jobquery)
         return { 'success': True, 'jobid': str(job.id) }
 
     @view_config(route_name='rpc.metabolize', renderer='json')
     def metabolize(self):
         job = self.new_job()
-        """ stage input files and write job script """
         jobquery = job.jobquery().metabolize(self.request.POST, job.maxMSLevel() > 0)
-        """ Submit job script to job manager """
         self.job_factory.submitQuery(jobquery)
         return { 'success': True, 'jobid': str(job.id) }
 
     @view_config(route_name='rpc.metabolize_one', renderer='json')
     def metabolize_one(self):
         job = self.new_job()
-        """ stage input files and write job script """
         jobquery = job.jobquery().metabolize_one(self.request.POST, job.maxMSLevel() > 0)
-        """ Submit job script to job manager """
         self.job_factory.submitQuery(jobquery)
         return { 'success': True, 'jobid': str(job.id) }
 
     @view_config(route_name='rpc.annotate', renderer='json')
     def annotate(self):
         job = self.new_job()
-        """ stage input files and write job script """
         jobquery = job.jobquery().annotate(self.request.POST)
-        """ Submit job script to job manager """
         self.job_factory.submitQuery(jobquery)
         return { 'success': True, 'jobid': str(job.id) }
 
@@ -68,8 +58,13 @@ class RpcViews(object):
     @view_config(route_name='home', renderer='jsonhtml', request_method='POST')
     def allinone(self):
         job = self.new_job()
-        """ stage input files and write job script """
         jobquery = job.jobquery().allinone(self.request.POST)
-        """ Submit job script to job manager """
         self.job_factory.submitQuery(jobquery)
+        return { 'success': True, 'jobid': str(job.id) }
+
+    @view_config(route_name='rpc.set_description', renderer='json')
+    def set_description(self):
+        job = self.job()
+        desc = self.request.POST['description']
+        job.description(desc)
         return { 'success': True, 'jobid': str(job.id) }

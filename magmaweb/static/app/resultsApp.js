@@ -397,7 +397,26 @@ Ext.define('Esc.magmaweb.resultsApp', {
         width: 600,
         autoHeight: true,
         closeAction: 'hide',
-        contentEl: 'resultsinfo'
+        contentEl: 'resultsinfo',
+        tools: [{
+            type: 'gear',
+            tooltip: 'Set description',
+            handler: function() {
+                Ext.MessageBox.prompt('Description', 'Please enter a description:', function(button, description) {
+                    if (button == 'ok') {
+                        Ext.Ajax.request({
+                            url: me.rpcUrl('set_description'),
+                            params: {
+                                description: description
+                            },
+                            success: function(response) {
+                                Ext.get('description').setHTML(description);
+                            }
+                        });
+                    }
+                }, this, true, Ext.get('description').getHTML());
+            }
+        }]
     });
 
     // header

@@ -540,6 +540,10 @@ class JobTestCase(unittest.TestCase):
         self.assertEqual(jobquery.id, self.job.id)
         self.assertEqual(jobquery.dir, self.job.dir)
 
+    def test_set_description(self):
+        self.job.description('My second description')
+        self.assertEqual(self.job.runInfo().description, 'My second description')
+
 class JobEmptyDatasetTestCase(unittest.TestCase):
     def setUp(self):
         import uuid
@@ -571,6 +575,10 @@ class JobEmptyDatasetTestCase(unittest.TestCase):
 
     def test_metabolitesTotalCount(self):
         self.assertEqual(self.job.metabolitesTotalCount(), 0)
+
+    def test_set_description(self):
+        self.job.description('My second description')
+        self.assertEqual(self.job.runInfo().description, 'My second description')
 
 class JobMetabolitesTestCase(unittest.TestCase):
     def setUp(self):

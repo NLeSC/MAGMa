@@ -21,7 +21,6 @@ class RpcViewsTestCase(unittest.TestCase):
         self.job.jobquery.return_value = self.jobquery
         self.job.maxMSLevel.return_value = 1
         self.job.metabolitesTotalCount.return_value = 1
-        self.rpc.job = self.job
         self.rpc.new_job = Mock(return_value=self.job)
         self.rpc.job_factory.submitQuery = Mock()
 
@@ -140,4 +139,13 @@ class RpcViewsTestCase(unittest.TestCase):
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
+        self.assertEquals(response, { 'success': True, 'jobid': self.jobid})
+
+    def test_set_description(self):
+        self.rpc.request.POST = { 'description': 'My description'}
+        self.rpc.job = Mock(return_value=self.job)
+
+        response = self.rpc.set_description()
+
+        self.job.description.assert_called_with('My description')
         self.assertEquals(response, { 'success': True, 'jobid': self.jobid})

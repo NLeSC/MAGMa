@@ -43,6 +43,6 @@ No
 <br/>
 </fieldset>
 % else:
-<p id="description">No information as nothing has been done</p>
+<p id="description">No information, nothing has been done</p>
 % endif
 </div>

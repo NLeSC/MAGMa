@@ -375,6 +375,16 @@ class Job(object):
         """ Returns last run info or None if there is no run info"""
         return self.session.query(Run).order_by(Run.runid.desc()).first()
 
+    def description(self, description):
+        """ Sets description column in run table, if there is no run row it is added"""
+        runInfo = self.runInfo()
+        if (runInfo == None):
+            runInfo = Run()
+
+        runInfo.description = description
+        self.session.add(runInfo)
+        self.session.commit()
+
     def metabolitesTotalCount(self):
         return self.session.query(Metabolite).count()
 
