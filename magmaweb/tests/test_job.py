@@ -999,7 +999,7 @@ class JobQueryTestCase(unittest.TestCase):
     def setUp(self):
         self.jobid = 12345
         self.jobdir = '/somedir'
-        self.jobquery = JobQuery(id=self.jobid, dir=self.jobdir, script='', prestaged=[])
+        self.jobquery = JobQuery(id=self.jobid, dir=self.jobdir)
 
     def test_eq(self):
         self.assertTrue(

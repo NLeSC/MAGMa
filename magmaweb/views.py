@@ -31,6 +31,7 @@ class Views(object):
 
     @view_config(route_name='uploaddb', renderer='uploaddb.mak')
     def uploaddb(self):
+        """Upload a sqlitedb as ``db_file`` param in POST request and redirects to job results page"""
         if (self.request.method == 'POST'):
             job = self.job_factory.fromDb(self.request.POST['db_file'].file)
             return HTTPFound(location=self.request.route_url('results', jobid=job.id))

@@ -458,6 +458,7 @@ class Job(object):
         self.session.commit()
 
     def metabolitesTotalCount(self):
+        """Returns unfiltered and not paged count of metabolites"""
         return self.session.query(Metabolite).count()
 
     def extjsgridfilter(self, q, column, filter):
