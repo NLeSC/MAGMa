@@ -31,7 +31,7 @@ class JobNotFound(Exception):
         self.jobid = jobid
 
 def make_job_factory(params):
-    """ Returns JobFactory instance based on params dict
+    """ Returns :class:`JobFactory` instance based on ``params`` dict
 
     All keys starting with 'jobfactory.' are used.
     From keys 'jobfactory.' is removed.
@@ -43,12 +43,12 @@ def make_job_factory(params):
     return JobFactory(**d)
 
 class JobQuery(object):
-    """ Perform actions on a Job by parsing post params, staging files and building magma cli commands"""
-    def __init__(self, id, dir, script='', prestaged=[]):
+    """ Perform actions on a :class:`Job` by parsing post params, staging files and building magma cli commands"""
+    def __init__(self, id, dir, script='', prestaged=None):
         self.id = id
         self.dir = dir
         self.script = script
-        self.prestaged = prestaged
+        self.prestaged = prestaged or []
 
     def __eq__(self, other):
         return (self.id == other.id and self.dir == other.dir and
@@ -59,6 +59,18 @@ class JobQuery(object):
         return "JobQuery({!r}, {!r}, {!r}, {!r})".format(self.id, self.dir, self.script, self.prestaged)
 
     def add_structures(self, params, has_ms_data=False):
+        """
+        Configure job query to add_structures from params.
+
+        ``params`` is a dict from which the following keys are used:
+
+        * structure_format, in which format is structures or structure_file
+        * structures, string with structures
+        * structures_file, file-like object with structures
+        * metabolize, when key is set then :meth:`~magmaweb.job.JobQuery.metabolize` will be called.
+
+        If ``has_ms_data`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
+        """
         metsfile = file(os.path.join(self.dir, 'structures.dat'), 'w')
         if (('structures_file' in params) and (params['structures_file'] != '')):
             sf = params['structures_file'].file
@@ -88,6 +100,21 @@ class JobQuery(object):
         return self
 
     def add_ms_data(self, params, has_metabolites=False):
+        """
+        Configure job query to add ms data from params.
+
+        ``params`` is a dict from which the following keys are used:
+
+        * ms_data_format
+        * ms_data_file
+        * max_ms_level
+        * precursor_mz_precision
+        * abs_peak_cutoff
+        * rel_peak_cutoff
+
+        If ``has_metabolites`` is True then :meth:`~magmaweb.job.JobQuery.metabolize` will be called.
+
+        """
         msfile = file(os.path.join(self.dir, 'ms_data.dat'), 'w')
         msf = params['ms_data_file'].file
         msf.seek(0)
@@ -115,6 +142,16 @@ class JobQuery(object):
         return self
 
     def metabolize(self, params, has_ms_data=False):
+        """
+        Configure job query to metabolize all structures.
+
+        ``params`` is a dict from which the following keys are used:
+
+        * n_reaction_steps
+        * metabolism_types, comma seperated string with metabolism types
+
+        If ``has_ms_data`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
+        """
         script = "{{magma}} metabolize -s {n_reaction_steps} -m {metabolism_types} {{db}}\n"
         self.script += script.format(
                                n_reaction_steps=params['n_reaction_steps'],
@@ -127,6 +164,17 @@ class JobQuery(object):
         return self
 
     def metabolize_one(self, params, has_ms_data=False):
+        """
+        Configure job query to metabolize one structure.
+
+        ``params`` is a dict from which the following keys are used:
+
+        * metid, metabolite identifier to metabolize
+        * n_reaction_steps
+        * metabolism_types, comma seperated string with metabolism types
+
+        If ``has_ms_data`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
+        """
         script = "{{magma}} metabolize --metid {metid} -s {n_reaction_steps} -m {metabolism_types} {{db}}\n"
         self.script += script.format(
                                metid=params['metid'],
@@ -140,6 +188,20 @@ class JobQuery(object):
         return self
 
     def annotate(self, params):
+        """
+        Configure job query to annotate.
+
+        ``params`` is a dict from which the following keys are used:
+
+        * mz_precision
+        * ms_intensity_cutoff
+        * msms_intensity_cutoff
+        * ionisation_mode
+        * max_broken_bonds
+        * use_all_peaks, when key is set then all peaks are used
+        * skip_fragmentation, when key is set then the no fragmentation of structures is performed.
+
+        """
         script = "{{magma}} annotate -p {mz_precision} -c {ms_intensity_cutoff} -d {msms_intensity_cutoff} -i {ionisation_mode} -b {max_broken_bonds} "
         script = script.format(
                                mz_precision=params['mz_precision'],
@@ -161,6 +223,16 @@ class JobQuery(object):
         return self
 
     def allinone(self, params):
+        """
+        Configure job query to do all sub commands in one go.
+
+        See
+        :meth:`~magmaweb.job.JobQuery.add_ms_data`,
+        :meth:`~magmaweb.job.JobQuery.add_structures`,
+        :meth:`~magmaweb.job.JobQuery.metabolize`,
+        :meth:`~magmaweb.job.JobQuery.annotate` for params.
+
+        """
         return self.add_ms_data(params).add_structures(params).metabolize(params).annotate(params)
 
 class JobFactory(object):
@@ -208,12 +280,12 @@ class JobFactory(object):
     def fromId(self, jobid):
         """
         Finds job db in job root dir.
-        Returns a Job instance
+        Returns a :class:`Job` instance
 
-        jobid
+        ``jobid``
             Job identifier
 
-        Raises JobNotFound exception when job is not found by jobid
+        Raises :class:`JobNotFound` exception when job is not found by jobid
         """
         return Job(jobid,  self._makeJobSession(jobid)(), self.id2jobdir(jobid))
 
@@ -239,9 +311,10 @@ class JobFactory(object):
         A job directory is created and the dbfile is copied into it
         Returns a Job instance
 
-        dbfile
+        ``dbfile``
             The sqlite result db
 
+        Returns a :class:`Job` instance
         """
         jobid = self._makeJobDir()
         # copy dbfile into job dir
@@ -257,18 +330,18 @@ class JobFactory(object):
         return self.fromId(jobid)
 
     def fromScratch(self):
-        """ Creates job from scratch with empty results db """
+        """ Returns :class:`Job` from scratch with empty results db """
         jobid = self._makeJobDir()
         session = self._makeJobSession(jobid)()
         Base.metadata.create_all(session.connection())
         return Job(jobid, session, self.id2jobdir(jobid))
 
     def cloneJob(self, job):
-        """ Returns new job which has copy of 'job' db. """
+        """ Returns new :class:`Job` which has copy of 'job' db. """
         return self.fromDb(open(self.id2db(job.id)))
 
     def submitJob2Manager(self, body):
-        """ Submits job query to jobmanager daemon
+        """Submits job query to jobmanager daemon
 
         body is a dict which is submitted as json.
 
@@ -286,10 +359,9 @@ class JobFactory(object):
         return urllib2.urlopen(request)
 
     def submitQuery(self, query):
-        """
-        Writes job script to job dir and submits job to job manager
+        """Writes job script to job dir and submits job to job manager
 
-        query is a JobQuery object
+        query is a :class:`JobQuery` object
 
         Returns job identifier
         """
@@ -324,7 +396,7 @@ class JobFactory(object):
         return query.id
 
     def state(self, id):
-        """ Returns state of job, see ibis org.gridlab.gat.resources.Job JobState enum for possible states."""
+        """Returns state of job, see ibis org.gridlab.gat.resources.Job JobState enum for possible states."""
         try:
             jobstatefile = open(os.path.join(self.id2jobdir(id), self.state_fn))
             jobstate = jobstatefile.readline().strip()
@@ -334,15 +406,15 @@ class JobFactory(object):
             return 'UNKNOWN'
 
     def id2jobdir(self, id):
-        """ Returns job directory based on id and root_dir """
+        """Returns job directory based on id and root_dir """
         return os.path.join(self.root_dir, str(id))
 
     def id2db(self, id):
-        """ Returns sqlite db of job with id """
+        """Returns sqlite db of job with id """
         return os.path.join(self.id2jobdir(id), self.db_fn)
 
     def id2url(self, id):
-        """ Returns sqlalchemy url of sqlite db of job with id """
+        """Returns sqlalchemy url of sqlite db of job with id """
         # 3rd / is for username:pw@host which sqlite does not need
         return 'sqlite:///' + self.id2db(id)
 
@@ -364,19 +436,19 @@ class Job(object):
         self.dir = dir
 
     def jobquery(self):
-        """ Returns JobQuery """
+        """Returns :class:`JobQuery` """
         return JobQuery(self.id, self.dir)
 
     def maxMSLevel(self):
-        """ Returns the maximum nr of MS levels """
+        """Returns the maximum nr of MS levels """
         return self.session.query(func.max(Scan.mslevel)).scalar() or 0
 
     def runInfo(self):
-        """ Returns last run info or None if there is no run info"""
+        """Returns last run info or None if there is no run info"""
         return self.session.query(Run).order_by(Run.runid.desc()).first()
 
     def description(self, description):
-        """ Sets description column in run table, if there is no run row it is added"""
+        """Sets description column in run table, if there is no run row it is added"""
         runInfo = self.runInfo()
         if (runInfo == None):
             runInfo = Run()
@@ -404,9 +476,8 @@ class Job(object):
         elif (filter['type'] == 'boolean'):
             return q.filter(column == filter['value'])
 
-    def metabolites(self, start=0, limit=10, sorts=[{"property":"probability", "direction":"DESC"}, {"property":"metid", "direction":"ASC"}], scanid=None, filters=[]):
-        """
-        Returns dict with total and rows attribute
+    def metabolites(self, start=0, limit=10, sorts=None, scanid=None, filters=None):
+        """Returns dict with total and rows attribute
 
         start
             Offset
@@ -418,8 +489,14 @@ class Job(object):
             List of dicts which is generated by ExtJS component Ext.ux.grid.FiltersFeature
         sorts
             How to sort metabolites. List of dicts. Eg.
+
+        .. code-block:: python
+
                 [{"property":"probability","direction":"DESC"},{"property":"metid","direction":"ASC"}]
+
         """
+        sorts = sorts or [{"property":"probability", "direction":"DESC"}, {"property":"metid", "direction":"ASC"}]
+        filters = filters or []
         mets = []
         q = self.session.query(Metabolite)
 
@@ -489,14 +566,13 @@ class Job(object):
         return { 'total': total, 'rows': mets }
 
     def metabolites2csv(self, metabolites):
-        """
-        Converts array of metabolites to csv file handler
+        """Converts array of metabolites to csv file handler
 
         Params:
         metabolites array like metabolites()['rows']
 
         Return
-        StringIO
+        :class:`StringIO.StringIO`
         """
         csvstr = StringIO.StringIO()
         headers = [
@@ -514,16 +590,17 @@ class Job(object):
 
         return csvstr
 
-    def scansWithMetabolites(self, filters=[], metid=None):
+    def scansWithMetabolites(self, filters=None, metid=None):
         """Returns id and rt of lvl1 scans which have a fragment in it and for which the filters in params pass
 
         params:
 
-        metid
+        ``metid``
             Only return scans that have hits with metabolite with this identifier
-        filters
-            List which is generated by ExtJS component Ext.ux.grid.FiltersFeature, with columns from Metabolite grid
+        ``filters``
+            List which is generated by ExtJS component Ext.ux.grid.FiltersFeature, with columns from Metabolite grid.
         """
+        filters = filters or []
         fq = self.session.query(Fragment.scanid).filter(Fragment.parentfragid == 0)
         if (metid != None):
             fq = fq.filter(Fragment.metid == metid)
@@ -547,7 +624,7 @@ class Job(object):
         return hits
 
     def extractedIonChromatogram(self, metid):
-        """ Returns extracted ion chromatogram of metabolite with id metid """
+        """Returns extracted ion chromatogram of metabolite with id metid """
         chromatogram = []
         mzq = self.session.query(func.avg(Fragment.mz)).filter(Fragment.metid == metid).filter(Fragment.parentfragid == 0).scalar()
         mzoffset = self.session.query(Run.mz_precision).scalar()
@@ -628,13 +705,13 @@ class Job(object):
 
         Can be used in a Extjs.data.TreeStore if jsonified.
 
-        scanid
+        ``scanid``
             Fragments on scan with this identifier
 
-        metid
+        ``metid``
             Fragments of metabolite with this identifier
 
-        node
+        ``node``
             The fragment identifier to fetch children fragments for. Optional.
 
         Raises FragmentNotFound when no fragment is found with scanid/metid combination
@@ -692,7 +769,7 @@ class Job(object):
             return fragments
 
     def stderr(self):
-        """Returns stderr text file or empty string if stderr does not exist"""
+        """Returns stderr text file or empty file if stderr does not exist"""
         try:
             return open(os.path.join(self.dir, 'stderr.txt'), 'rb')
         except IOError:
