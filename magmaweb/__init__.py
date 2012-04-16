@@ -4,11 +4,11 @@ from pyramid.events import subscriber, NewRequest
 
 @subscriber(NewRequest)
 def extjsurl(event):
-    """ Adds extjsroot url to request using extjsroot setting"""
+    """Adds extjsroot url to request using extjsroot setting"""
     event.request.extjsroot = event.request.static_url('magmaweb:static/'+event.request.registry.settings['extjsroot'])
 
 def main(global_config, **settings):
-    """ This function returns the Magma WSGI application.
+    """This function returns the Magma WSGI application.
     """
     config = Configurator(settings=settings)
     config.add_renderer('jsonhtml', jsonhtml_renderer_factory)
@@ -40,7 +40,12 @@ def main(global_config, **settings):
     return config.make_wsgi_app()
 
 def jsonhtml_renderer_factory(info):
-    """ Json renderer with text/html content type"""
+    """Json renderer with text/html content type
+
+    ExtJS form with file upload requires json response with text/html content type.
+
+    See http://extjs.com/deploy/dev/docs/?class=Ext.form.BasicForm hasUpload().
+    """
     def _render(value, system):
         request = system.get('request')
         if request is not None:

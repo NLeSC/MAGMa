@@ -377,7 +377,7 @@ class Views(object):
 
     @view_config(route_name='stderr.txt')
     def stderr(self):
-        """ Returns file object of stderr.txt file of job"""
+        """Returns file object of stderr.txt file of job"""
         response = Response(content_type='text/plain')
         response.app_iter = self.job().stderr()
         return response

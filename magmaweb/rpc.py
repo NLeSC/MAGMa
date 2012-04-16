@@ -3,7 +3,6 @@ from magmaweb.job import make_job_factory
 
 class RpcViews(object):
     """Rpc endpoints"""
-    # TODO RpcViews is a wrapper around JobQuery, make self smaller
     def __init__(self, request):
         self.request = request
         self.job_factory = make_job_factory(request.registry.settings)

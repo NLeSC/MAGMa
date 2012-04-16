@@ -4,7 +4,6 @@ import csv
 import StringIO
 import urllib2
 import json
-
 from sqlalchemy import create_engine, and_
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, aliased
@@ -14,24 +13,24 @@ from sqlalchemy.orm.exc import NoResultFound
 from magmaweb.models import Base, Metabolite, Scan, Peak, Fragment, Run
 
 class ScanRequiredError(Exception):
-    """ Raised when a scan identifier is required, but non is supplied"""
+    """Raised when a scan identifier is required, but non is supplied"""
     pass
 
 class ScanNotFound(Exception):
-    """ Raised when a scan identifier is not found"""
+    """Raised when a scan identifier is not found"""
     pass
 
 class FragmentNotFound(Exception):
-    """ Raised when a fragment is not found"""
+    """Raised when a fragment is not found"""
     pass
 
 class JobNotFound(Exception):
-    """ Raised when a job with a identifier is not found"""
+    """Raised when a job with a identifier is not found"""
     def __init__(self, jobid):
         self.jobid = jobid
 
 def make_job_factory(params):
-    """ Returns :class:`JobFactory` instance based on ``params`` dict
+    """Returns :class:`JobFactory` instance based on ``params`` dict
 
     All keys starting with 'jobfactory.' are used.
     From keys 'jobfactory.' is removed.
@@ -59,8 +58,7 @@ class JobQuery(object):
         return "JobQuery({!r}, {!r}, {!r}, {!r})".format(self.id, self.dir, self.script, self.prestaged)
 
     def add_structures(self, params, has_ms_data=False):
-        """
-        Configure job query to add_structures from params.
+        """Configure job query to add_structures from params.
 
         ``params`` is a dict from which the following keys are used:
 
@@ -100,8 +98,7 @@ class JobQuery(object):
         return self
 
     def add_ms_data(self, params, has_metabolites=False):
-        """
-        Configure job query to add ms data from params.
+        """Configure job query to add ms data from params.
 
         ``params`` is a dict from which the following keys are used:
 
@@ -142,8 +139,7 @@ class JobQuery(object):
         return self
 
     def metabolize(self, params, has_ms_data=False):
-        """
-        Configure job query to metabolize all structures.
+        """Configure job query to metabolize all structures.
 
         ``params`` is a dict from which the following keys are used:
 
@@ -164,8 +160,7 @@ class JobQuery(object):
         return self
 
     def metabolize_one(self, params, has_ms_data=False):
-        """
-        Configure job query to metabolize one structure.
+        """Configure job query to metabolize one structure.
 
         ``params`` is a dict from which the following keys are used:
 
@@ -188,8 +183,7 @@ class JobQuery(object):
         return self
 
     def annotate(self, params):
-        """
-        Configure job query to annotate.
+        """Configure job query to annotate.
 
         ``params`` is a dict from which the following keys are used:
 
@@ -223,8 +217,7 @@ class JobQuery(object):
         return self
 
     def allinone(self, params):
-        """
-        Configure job query to do all sub commands in one go.
+        """Configure job query to do all sub commands in one go.
 
         See
         :meth:`~magmaweb.job.JobQuery.add_ms_data`,
@@ -236,7 +229,7 @@ class JobQuery(object):
         return self.add_ms_data(params).add_structures(params).metabolize(params).annotate(params)
 
 class JobFactory(object):
-    """ Factory which can create jobs """
+    """Factory which can create jobs """
     def __init__(
                  self, root_dir,
                  init_script='', tarball=None, script_fn='script.sh',
@@ -419,8 +412,7 @@ class JobFactory(object):
         return 'sqlite:///' + self.id2db(id)
 
 class Job(object):
-    """
-    Job contains results database of Magma calculation run
+    """Job contains results database of Magma calculation run
     """
     def __init__(self, id, session, dir):
         """
