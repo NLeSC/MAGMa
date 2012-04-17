@@ -1084,12 +1084,16 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         self.assertMultiLineEqual('foo', self.fetch_file('structures.dat'))
 
     def test_with_metabolize(self):
-        params = {
-                  'structure_format': 'smiles', 'structures': 'CCO Ethanol',
-                  'metabolize': 'on',
-                  'n_reaction_steps': 2,
-                  'metabolism_types': 'phase1,phase2'
-                  }
+        from webob.multidict import MultiDict
+        params = MultiDict(
+                           structure_format='smiles',
+                           structures='CCO Ethanol',
+                           metabolize='on',
+                           n_reaction_steps=2,
+                           metabolism_types='phase1'
+                           )
+        params.add('metabolism_types', 'phase2')
+
         query = self.jobquery.add_structures(params)
 
         sf = 'structures.dat'
@@ -1126,17 +1130,20 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         self.assertEqual(query, expected_query)
 
     def test_with_metabolize_and_annotate(self):
-        params = {
-                  'structure_format': 'smiles', 'structures': 'CCO Ethanol',
-                  'metabolize': 'on',
-                  'n_reaction_steps': 2,
-                  'metabolism_types': 'phase1,phase2',
-                  'mz_precision': 0.001,
-                  'ms_intensity_cutoff': 200000,
-                  'msms_intensity_cutoff': 0.1,
-                  'ionisation_mode': 1,
-                  'max_broken_bonds': 4
-                  }
+        from webob.multidict import MultiDict
+        params = MultiDict(
+                           structure_format='smiles',
+                           structures='CCO Ethanol',
+                           metabolize='on',
+                           n_reaction_steps=2,
+                           metabolism_types='phase1',
+                           mz_precision=0.001,
+                           ms_intensity_cutoff=200000,
+                           msms_intensity_cutoff=0.1,
+                           ionisation_mode=1,
+                           max_broken_bonds=4
+                           )
+        params.add('metabolism_types', 'phase2')
         query = self.jobquery.add_structures(params, True)
 
         sf = 'structures.dat'
@@ -1220,10 +1227,11 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
 class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 
     def test_it(self):
-        params = {
-                  'n_reaction_steps': 2,
-                  'metabolism_types': 'phase1,phase2'
-                  }
+        from webob.multidict import MultiDict
+        params = MultiDict(
+                           n_reaction_steps=2,
+                           metabolism_types='phase1'
+                           )
 
         query = self.jobquery.metabolize(params)
 
@@ -1231,22 +1239,22 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                           'id': self.jobid,
                           'dir': self.jobdir,
                           'prestaged': [],
-                          'script': "{magma} metabolize -s 2 -m phase1,phase2 {db}\n"
+                          'script': "{magma} metabolize -s 2 -m phase1 {db}\n"
                           })
         self.assertEqual(query, expected_query)
 
     def test_with_annotate(self):
-        self.jobquery.maxMSLevel = Mock(return_value=1)
-        params = {
-                  'n_reaction_steps': 2,
-                  'metabolism_types': 'phase1,phase2',
-                  'mz_precision': 0.001,
-                  'ms_intensity_cutoff': 200000,
-                  'msms_intensity_cutoff': 0.1,
-                  'ionisation_mode': 1,
-                  'max_broken_bonds': 4
-                  }
-
+        from webob.multidict import MultiDict
+        params = MultiDict([
+                            ('n_reaction_steps', 2),
+                            ('metabolism_types', 'phase1'),
+                            ('metabolism_types', 'phase2'),
+                            ('mz_precision', 0.001),
+                            ('ms_intensity_cutoff', 200000),
+                            ('msms_intensity_cutoff', 0.1),
+                            ('ionisation_mode', 1),
+                            ('max_broken_bonds', 4)
+                            ])
         query = self.jobquery.metabolize(params, True)
 
         script  = "{magma} metabolize -s 2 -m phase1,phase2 {db}\n"
@@ -1262,11 +1270,13 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
     def test_it(self):
-        params = {
-                  'metid': 123,
-                  'n_reaction_steps': 2,
-                  'metabolism_types': 'phase1,phase2'
-                  }
+        from webob.multidict import MultiDict
+        params = MultiDict(
+                  metid=123,
+                  n_reaction_steps=2,
+                  metabolism_types='phase1'
+                  )
+        params.add('metabolism_types', 'phase2')
 
         query = self.jobquery.metabolize_one(params)
 
@@ -1279,16 +1289,18 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
         self.assertEqual(query, expected_query)
 
     def test_with_annotate(self):
-        params = {
-                  'metid': 123,
-                  'n_reaction_steps': 2,
-                  'metabolism_types': 'phase1,phase2',
-                  'mz_precision': 0.001,
-                  'ms_intensity_cutoff': 200000,
-                  'msms_intensity_cutoff': 0.1,
-                  'ionisation_mode': 1,
-                  'max_broken_bonds': 4
-                  }
+        from webob.multidict import MultiDict
+        params = MultiDict(
+                  metid=123,
+                  n_reaction_steps=2,
+                  metabolism_types='phase1',
+                  mz_precision=0.001,
+                  ms_intensity_cutoff=200000,
+                  msms_intensity_cutoff=0.1,
+                  ionisation_mode=1,
+                  max_broken_bonds=4
+                  )
+        params.add('metabolism_types', 'phase2')
 
         query = self.jobquery.metabolize_one(params, True)
 
@@ -1375,23 +1387,25 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         ms_data_file.flush()
         msfield = FieldStorage()
         msfield.file = ms_data_file
-        params = {
-                'n_reaction_steps': 2,
-                'ionisation_mode': 1,
-                'ms_intensity_cutoff': 200000,
-                'msms_intensity_cutoff': 0.1,
-                'abs_peak_cutoff': 1000,
-                'rel_peak_cutoff': 0.01,
-                'precursor_mz_precision': 0.005,
-                'max_broken_bonds': 4,
-                'mz_precision': 0.001,
-                'metabolism_types': 'phase1,phase2',
-                'max_ms_level': 3,
-                'structures': 'C1CCCC1 comp1',
-                'ms_data_file': msfield,
-                'structure_format': 'smiles',
-                'ms_data_format': 'mzxml'
-                }
+        from webob.multidict import MultiDict
+        params = MultiDict(
+                           n_reaction_steps=2,
+                           ionisation_mode=1,
+                           ms_intensity_cutoff=200000,
+                           msms_intensity_cutoff=0.1,
+                           abs_peak_cutoff=1000,
+                           rel_peak_cutoff=0.01,
+                           precursor_mz_precision=0.005,
+                           max_broken_bonds=4,
+                           mz_precision=0.001,
+                           metabolism_types='phase1',
+                           max_ms_level=3,
+                           structures='C1CCCC1 comp1',
+                           ms_data_file=msfield,
+                           structure_format='smiles',
+                           ms_data_format='mzxml'
+                           )
+        params.add('metabolism_types', 'phase2')
 
         query = self.jobquery.allinone(params)
 

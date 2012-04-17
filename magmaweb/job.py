@@ -60,7 +60,7 @@ class JobQuery(object):
     def add_structures(self, params, has_ms_data=False):
         """Configure job query to add_structures from params.
 
-        ``params`` is a dict from which the following keys are used:
+        ``params`` is a MultiDict from which the following keys are used:
 
         * structure_format, in which format is structures or structure_file
         * structures, string with structures
@@ -141,7 +141,7 @@ class JobQuery(object):
     def metabolize(self, params, has_ms_data=False):
         """Configure job query to metabolize all structures.
 
-        ``params`` is a dict from which the following keys are used:
+        ``params`` is a MultiDict from which the following keys are used:
 
         * n_reaction_steps
         * metabolism_types, comma seperated string with metabolism types
@@ -151,7 +151,7 @@ class JobQuery(object):
         script = "{{magma}} metabolize -s {n_reaction_steps} -m {metabolism_types} {{db}}\n"
         self.script += script.format(
                                n_reaction_steps=params['n_reaction_steps'],
-                               metabolism_types=params['metabolism_types']
+                               metabolism_types=','.join(params.getall('metabolism_types'))
                                )
 
         if (has_ms_data):
@@ -162,7 +162,7 @@ class JobQuery(object):
     def metabolize_one(self, params, has_ms_data=False):
         """Configure job query to metabolize one structure.
 
-        ``params`` is a dict from which the following keys are used:
+        ``params`` is a MultiDict from which the following keys are used:
 
         * metid, metabolite identifier to metabolize
         * n_reaction_steps
@@ -174,7 +174,7 @@ class JobQuery(object):
         self.script += script.format(
                                metid=params['metid'],
                                n_reaction_steps=params['n_reaction_steps'],
-                               metabolism_types=params['metabolism_types']
+                               metabolism_types=','.join(params.getall('metabolism_types'))
                                )
 
         if (has_ms_data):
@@ -218,6 +218,8 @@ class JobQuery(object):
 
     def allinone(self, params):
         """Configure job query to do all sub commands in one go.
+
+        params is a MultiDict
 
         See
         :meth:`~magmaweb.job.JobQuery.add_ms_data`,

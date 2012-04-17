@@ -21,7 +21,7 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeFieldSet', {
                         store : ['phase1', 'phase2'],
                         multiSelect : true,
                         allowBlank : false,
-                        value : 'phase1, phase2',
+                        value : ['phase1', 'phase2'],
                         name : 'metabolism_types'
                     }]
         });
