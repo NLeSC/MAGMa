@@ -281,7 +281,6 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
                         collapsible : true
                     }, {
                         xtype : 'annotatefieldset',
-                        disabled: !this.hasMSData,
                         collapsed : true,
                         collapsible : true
                     }],
@@ -300,6 +299,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
               }
           });
       }
+      this.addStructuresForm.query('annotatefieldset')[0].setDisabled(!this.hasMSData);
       this.addStructuresForm.show();
   },
   /**
@@ -326,7 +326,6 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
                     xtype : 'metabolizefieldset'
                 }, {
                     xtype : 'annotatefieldset',
-                    disabled: !this.hasMSData,
                     collapsed : true,
                     collapsible : true
                 }],
@@ -345,6 +344,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
             }
         });
     }
+    this.MetabolizeForm.query('annotatefieldset')[0].setDisabled(!this.hasMSData);
     this.MetabolizeForm.show();
   },
   /**
@@ -380,7 +380,6 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
                     xtype : 'metabolizefieldset'
                 }, {
                     xtype : 'annotatefieldset',
-                    disabled: !this.hasMSData,
                     collapsed : true,
                     collapsible : true
                 }],
@@ -399,6 +398,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
             }
         });
     }
+    this.metabolizeStructureForm.query('annotatefieldset')[0].setDisabled(!this.hasMSData);
     this.metabolizeStructureForm.show();
   },
   metabolizable: function(enabled) {

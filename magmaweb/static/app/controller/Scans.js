@@ -269,7 +269,6 @@ Ext.define('Esc.magmaweb.controller.Scans', {
                       xtype: 'uploadmsdatafieldset'
                   }, {
                       xtype : 'annotatefieldset',
-                      disabled: !this.hasStructures,
                       collapsed : true,
                       collapsible : true
                   }],
@@ -303,6 +302,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
               }
           });
       }
+      this.uploadForm.query('annotatefieldset')[0].setDisabled(!this.hasStructures);
       this.uploadForm.show();
   }
 });
