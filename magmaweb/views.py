@@ -157,7 +157,8 @@ class Views(object):
             scanid=scanid, filters=filters, sorts=sorts
         )
         scans = job.scansWithMetabolites(filters=filters)
-        return { 'total':metabolites['total'], 'rows':metabolites['rows'], 'scans':scans}
+        totalUnfiltered = job.metabolitesTotalCount()
+        return { 'totalUnfiltered': totalUnfiltered, 'total':metabolites['total'], 'rows':metabolites['rows'], 'scans':scans}
 
     @view_config(route_name='metabolites.csv')
     def metabolitescsv(self):

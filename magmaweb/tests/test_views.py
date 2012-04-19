@@ -20,6 +20,7 @@ class ViewsTestCase(unittest.TestCase):
         job.runInfo.return_value = 'bla'
         job.maxMSLevel.return_value = 3
         job.metabolites.return_value = {'total':3, 'rows':[1,2,3]}
+        job.metabolitesTotalCount.return_value = 3
         job.scansWithMetabolites.return_value = [4,5]
         job.chromatogram.return_value = [1,2,3]
         job.extractedIonChromatogram.return_value = [1,2,3]
@@ -143,7 +144,7 @@ class ViewsTestCase(unittest.TestCase):
 
         response = views.metabolitesjson()
 
-        self.assertEqual(response, { 'total':3, 'rows':[1,2,3], 'scans':[4,5]})
+        self.assertEqual(response, { 'totalUnfiltered': 3, 'total':3, 'rows':[1,2,3], 'scans':[4,5]})
 
     def test_metabolitesjson_minimalparams(self):
         request = testing.DummyRequest(params={
@@ -205,6 +206,20 @@ class ViewsTestCase(unittest.TestCase):
         views.metabolitesjson()
 
         job.metabolites.assert_called_with(start=0, limit=10, sorts=sort_expected,scanid=None, filters=[])
+
+    def test_metabolitesjson_notfilledreturn(self):
+        request = testing.DummyRequest(params={
+                                               'start':0,
+                                               'limit':10
+                                               })
+        views = Views(request)
+        job = self.fake_job()
+        job.metabolitesTotalCount.return_value = 0
+        views.job = Mock(return_value=job)
+
+        response = views.metabolitesjson()
+
+        self.assertEqual(response, { 'totalUnfiltered': 0, 'total':3, 'rows':[1,2,3], 'scans':[4,5]})
 
     def test_metabolitescsv(self):
         import StringIO

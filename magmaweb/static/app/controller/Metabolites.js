@@ -135,7 +135,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
         console.log('Only one metabolite loaded and its not selected, selecting it');
         this.getMetaboliteList().getSelectionModel().select(0);
     }
-    this.metabolizable(store.getTotalCount() > 0);
+    this.metabolizable(store.getTotalUnfilteredCount() > 0);
   },
   /**
    * Listens for chromatogram load event.

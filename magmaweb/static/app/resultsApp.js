@@ -322,7 +322,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
     });
 
     this.on('metaboliteload', function(store) {
-        this.annotatable.structures = store.getTotalCount() > 0;
+        this.annotatable.structures = store.getTotalUnfilteredCount() > 0;
         if (this.annotatable.structures && this.annotatable.msdata) {
             Ext.getCmp('annotateaction').enable();
         } else {

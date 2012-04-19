@@ -38,6 +38,7 @@ class FunctionalTests(unittest.TestCase):
         res = self.testapp.get('/results/'+str(jobid)+'/metabolites.json?limit=10&start=0', status=200)
         import json
         self.assertEqual(json.loads(res.body),{
+            'totalUnfiltered': 2,
             'total': 2,
             'scans': [{
                 'rt': 933.317,

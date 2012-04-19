@@ -12,18 +12,12 @@ describe('Metabolites', function() {
     it('create', function() {
       expect(store).toBeDefined();
       expect(store.getProxy().url).toBeUndefined();
-      expect(store.isLoaded).toBeFalsy();
       expect(store.pageSize).toEqual(25);
     });
 
     it('setUrl', function() {
       store.setUrl(url);
       expect(store.getProxy().url).toEqual(url);
-    });
-
-    it('isLoaded true', function() {
-      store.fireEvent('load', store);
-      expect(store.isLoaded).toBeTruthy();
     });
 
     it('removeScanFilter, unfiltered', function() {
@@ -82,6 +76,22 @@ describe('Metabolites', function() {
             operation: 'foo'
         });
         Ext.Error.handle = oldhandle;
+    });
+
+    describe('totalUnfilteredCount' , function() {
+        it('no rawdata', function() {
+            expect(store.getTotalUnfilteredCount()).toEqual(0);
+        });
+
+        it('rawdata with totalUnfiltered', function() {
+            store.getProxy().getReader().rawData = {totalUnfiltered: 123};
+            expect(store.getTotalUnfilteredCount()).toEqual(123);
+        });
+
+        it('rawdata without totalUnfiltered', function() {
+            store.getProxy().getReader().rawData = {};
+            expect(store.getTotalUnfilteredCount()).toEqual(0);
+        });
     });
   });
 

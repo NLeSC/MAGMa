@@ -31,7 +31,6 @@ Ext.define('Esc.magmaweb.store.Metabolites', {
   }],
   remoteSort: true,
   remoteFilter: true,
-  isLoaded: false,
   /**
    * Shortcut for this.getProxy().url
    *
@@ -39,11 +38,6 @@ Ext.define('Esc.magmaweb.store.Metabolites', {
    */
   setUrl: function(url) {
     this.getProxy().url = url;
-  },
-  listeners: {
-    load: function(store) {
-      this.isLoaded = true;
-    }
   },
   /**
    * Removes scan filter from metabolite store.
@@ -74,5 +68,20 @@ Ext.define('Esc.magmaweb.store.Metabolites', {
   setPageSize: function(pageSize) {
     this.pageSize = pageSize;
     this.loadPage(1);
+  },
+  /**
+   * Returns the total number of metabolites on server without filtering or paging applied.
+   *
+   * The `totalUnfiltered` property of the json response.
+   *
+   * @return {Number} The total number of unfiltered metabolites
+   */
+  getTotalUnfilteredCount: function() {
+      var reader = this.getProxy().getReader()
+      if ('rawData' in reader) {
+          return reader.rawData.totalUnfiltered || 0;
+      } else {
+          return 0;
+      }
   }
 });
