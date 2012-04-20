@@ -337,5 +337,69 @@ describe('Fragments', function() {
         });
         Ext.Error.handle = oldhandle;
     });
+
+    it('showAnnotateForm', function() {
+        ctrl.showAnnotateForm();
+
+        expect(ctrl.annotateForm.isVisible()).toBeTruthy();
+        ctrl.annotateForm.hide();
+    });
+
+    it('annotateHandler', function() {
+        ctrl.showAnnotateForm();
+        var form = ctrl.annotateForm.getForm();
+        spyOn(form, 'submit');
+
+        ctrl.annotateHandler();
+
+        expect(form.submit).toHaveBeenCalledWith({
+            url: '/rpc/'+Application.jobid+'/annotate',
+            waitMsg: jasmine.any(String),
+            success: jasmine.any(Function),
+            failure: jasmine.any(Function)
+        });
+        ctrl.annotateForm.hide();
+    });
+
+    it('getAnnotateActionButton', function() {
+      spyOn(Ext,'getCmp');
+      ctrl.getAnnotateActionButton();
+      expect(Ext.getCmp).toHaveBeenCalledWith('annotateaction');
+    });
+
+    it('rpcSubmitted', function() {
+      var newjobid = '3ad25048-26f6-11e1-851e-00012e260791';
+      spyOn(Ext.TaskManager, 'start');
+      button = {
+        setIconCls: function() {},
+        setText: function() {},
+        setTooltip: function() {},
+        setHandler: function() {},
+      };
+      spyOn(ctrl, 'getAnnotateActionButton').andReturn(button);
+
+      ctrl.rpcSubmitted(newjobid);
+
+      expect(ctrl.newjobid).toEqual(newjobid);
+      expect(Ext.TaskManager.start).toHaveBeenCalledWith({
+          run: ctrl.pollJobStatus,
+          interval: 5000,
+          scope: ctrl
+      });
+    });
+
+    it('pollJobStatus', function() {
+        ctrl.newjobid = '3ad25048-26f6-11e1-851e-00012e260791';
+        spyOn(Ext.Ajax, 'request');
+
+        ctrl.pollJobStatus();
+
+        expect(Ext.Ajax.request).toHaveBeenCalledWith({
+            url: '/status/3ad25048-26f6-11e1-851e-00012e260791.json',
+            scope: ctrl,
+            success: jasmine.any(Function),
+            failure: jasmine.any(Function)
+        });
+    });
   });
 });

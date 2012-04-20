@@ -14,7 +14,7 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
   rootVisible: false,
   singleExpand: true,
   useArrows: true,
-  requires: [ 'Esc.chemdoodle.Column' ],
+  requires: [ 'Esc.chemdoodle.Column', 'Ext.selection.CheckboxModel' ],
   viewConfig: {
     // animate is default true causing refresh event to be blocked
     // we use refresh event to render molecules

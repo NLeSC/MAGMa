@@ -1,8 +1,15 @@
+/**
+ * Fieldset with annotate options.
+ *
+ * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
+ */
 Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
     extend : 'Ext.form.FieldSet',
     alias : 'widget.annotatefieldset',
-    requires : ['Ext.form.field.Number', 'Ext.form.RadioGroup',
-            'Ext.form.field.Checkbox'],
+    requires : [
+        'Ext.form.field.Number', 'Ext.form.RadioGroup',
+        'Ext.form.field.Checkbox', 'Ext.form.field.Radio'
+    ],
     title : 'Annotate options',
     defaults : {
         labelWidth : 300

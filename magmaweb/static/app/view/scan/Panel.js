@@ -1,13 +1,17 @@
 /**
- * Chromatogram of lc-ms.
+ * Chromatogram of lc-ms and ms data upload form in card layout.
  *
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.magmaweb.view.scan.Chromatogram', {
+Ext.define('Esc.magmaweb.view.scan.Panel', {
   extend: 'Ext.panel.Panel',
-  alias: 'widget.chromatogrampanel',
+  alias: 'widget.scanpanel',
   title: 'Chromatogram',
-  requires: ['Esc.d3.Chromatogram'],
+  id: 'scanpanel',
+  requires: [
+    'Esc.d3.Chromatogram',
+    'Esc.magmaweb.view.scan.UploadForm'
+  ],
   tools:[{
     type:'search',
     tooltip: 'Select lvl1 scan by identifier',
@@ -25,10 +29,21 @@ Ext.define('Esc.magmaweb.view.scan.Chromatogram', {
     tooltip: 'Upload MS data',
     action: 'upload'
   }],
-  layout: 'fit',
-  items: {
+  layout: 'card',
+  items: [{
       emptyText: 'No chromatogram available: Upload ms data',
       axesPadding: [16, 5, 58, 80],
       xtype: 'chromatogram'
+  }, {
+      xtype: 'scanuploadform',
+      bodyPadding: 10
+  }],
+  /**
+   * Shortcut to {@link Ext.layout.container.Card#setActiveItem setActiveItem} in layout.
+   *
+   * @param {Number} newCard 0 == chromatogram, 1 == upload form
+   */
+  setActiveItem: function(newCard) {
+      this.getLayout().setActiveItem(newCard);
   }
 });

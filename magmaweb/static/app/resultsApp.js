@@ -35,9 +35,8 @@ Ext.define('Esc.magmaweb.resultsApp', {
     'Ext.container.Viewport',
     'Ext.layout.container.Border',
     'Ext.Img',
-    'Ext.window.Window',
-    'Ext.form.Panel',
-    'Esc.magmaweb.view.fragment.AnnotateFieldSet'
+    'Ext.toolbar.Spacer',
+    'Ext.container.ButtonGroup'
   ],
   config: {
     /**
@@ -108,68 +107,6 @@ Ext.define('Esc.magmaweb.resultsApp', {
    */
   selected: { scanid: false, metid: false },
   /**
-   * Can only annotate when there are structures and ms data.
-   * @property {Object} annotatable
-   * @property {Boolean} annotabable.structures Whether there are structures
-   * @property {Boolean} annotabable.msdata Whether there is ms data
-   */
-  annotatable: { structures: false, msdata: false },
-  /**
-   * Shows annotate form in modal window
-   */
-  showAnnotateForm: function() {
-    var me = this;
-    if (!this.annotateForm) {
-        this.annotateForm = Ext.create('Ext.window.Window', {
-            title: 'Annotate all structures',
-            modal: true,
-            height: 400,
-            width: 600,
-            layout: 'fit',
-            closeAction: 'hide',
-            items: {
-                xtype: 'form',
-                bodyPadding: 5,
-                defaults: { bodyPadding: 5 },
-                border: false,
-                autoScroll: true,
-                url: me.rpcUrl('annotate'),
-                items: [{
-                    xtype : 'annotatefieldset'
-                }],
-                buttons: [{
-                  text: 'Submit',
-                  handler: function() {
-                    var form = this.up('form').getForm();
-                    var wf = this.up('window');
-                    if (form.isValid()) {
-                      form.submit({
-                        waitMsg: 'Submitting action ...',
-                        success: function(fp, o) {
-                          var response = Ext.JSON.decode(o.response.responseText);
-                          me.fireEvent('rpcsubmitsuccess', response.jobid);
-                          wf.hide();
-                        },
-                        failure: function(form, action) {
-                          console.log(action.failureType);
-                          console.log(action.result);
-                          wf.hide();
-                        }
-                      });
-                    }
-                  }
-                }, {
-                  text: 'Reset',
-                  handler: function() {
-                    this.up('form').getForm().reset();
-                  }
-                }]
-            }
-        });
-    }
-    this.annotateForm.show();
-  },
-  /**
    * Logs error in console and shows a error message box to user
    *
    * @param {Ext.Error} err The raised error
@@ -191,61 +128,6 @@ Ext.define('Esc.magmaweb.resultsApp', {
    */
   rpcUrl: function(method) {
     return this.urls.home+'rpc/'+this.jobid+'/'+method;
-  },
-  /**
-   * Pols status of jobid and when completed redirects to results of new job.
-   * @param {String} jobid Identifier of new job
-   */
-  rpcSubmitted: function(jobid) {
-      var me = this;
-      me.newjobid = jobid;
-      // Overwrite annotate button to waiting/cancel button
-      var annot_button = Ext.getCmp('annotateaction');
-      annot_button.setIconCls('icon-loading');
-      annot_button.setText('Waiting');
-      annot_button.setTooltip('Job submitted, waiting for completion');
-      annot_button.setHandler(function() {
-        Ext.MessageBox.confirm('Cancel job', 'Job is still running. Do you want to cancel it?', function(but) {
-            if (but == 'yes') {
-                // TODO cancel job
-                console.log('Cancelling job');
-            }
-        }, me);
-      });
-      // Start polling
-      me.pollTask = Ext.TaskManager.start({
-        run: function() {
-            Ext.Ajax.request({
-              url: me.urls.home+'status/'+me.newjobid+'.json',
-              success: function(o) {
-                var response = Ext.JSON.decode(o.responseText);
-                console.log(response.status);
-                if (response.status == 'STOPPED') {
-                  Ext.TaskManager.stop(me.pollTask);
-                  delete me.pollTask;
-                  annot_button.setIconCls('');
-                  annot_button.setText('Fetch result');
-                  annot_button.setTooltip('Job completed, fetch results');
-                  annot_button.setHandler(function() {
-                    Ext.MessageBox.confirm('Fetch result', 'Job has been completed. Do you want to fetch results?', function(but) {
-                        if (but == 'yes') {
-                            window.location = me.urls.home+'results/'+me.newjobid;
-                        }
-                    }, me);
-                  });
-                } else {
-                    annot_button.setTooltip('Job '+response.status+', waiting for completion');
-                }
-              },
-              failure: function() {
-                Ext.TaskManager.stop(me.pollTask);
-                delete me.pollTask;
-              },
-              scope: me
-            });
-        },
-        interval: 5000
-      });
   },
   /**
    * Creates mspectraspanels and viewport and fires/listens for mspectra events
@@ -320,24 +202,6 @@ Ext.define('Esc.magmaweb.resultsApp', {
     this.on('peakmouseover', function(peak, mslevel, scanid) {
       Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' scan '+scanid+' (m/z='+peak.mz+', intensity='+peak.intensity+')');
     });
-
-    this.on('metaboliteload', function(store) {
-        this.annotatable.structures = store.getTotalUnfilteredCount() > 0;
-        if (this.annotatable.structures && this.annotatable.msdata) {
-            Ext.getCmp('annotateaction').enable();
-        } else {
-            Ext.getCmp('annotateaction').disable();
-        }
-    }, this);
-    this.on('chromatogramload', function(chromatogram) {
-        this.annotatable.msdata = chromatogram.data.length > 0;
-        if (this.annotatable.structures && this.annotatable.msdata) {
-            Ext.getCmp('annotateaction').enable();
-        } else {
-            Ext.getCmp('annotateaction').disable();
-        }
-    }, this);
-    this.on('rpcsubmitsuccess', this.rpcSubmitted, this);
 
     console.log('Launch app');
 
@@ -467,7 +331,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
               tooltip: 'Annotate all structures',
               id: 'annotateaction',
               iconCls: 'icon-annot',
-              handler: me.showAnnotateForm.bind(me),
+              handler: me.getController('Fragments').showAnnotateForm.bind(me),
               disabled: true
             },{
               text: 'Help',
@@ -491,14 +355,14 @@ Ext.define('Esc.magmaweb.resultsApp', {
       items:[{
         region:'center',
         border: false,
-        xtype: 'metabolitelist'
+        xtype: 'metabolitepanel'
       },{
         region:'south',
         hideCollapseTool: true,
         collapsible: true,
         height: '50%',
         split: true,
-        xtype: 'chromatogrampanel',
+        xtype: 'scanpanel',
         border: false
       }]
     });

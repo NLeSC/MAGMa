@@ -8,9 +8,8 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
   requires: [
     'Ext.ux.grid.FiltersFeature', 'Esc.chemdoodle.Column',
     'Ext.toolbar.Paging', 'Ext.grid.column.Boolean',
-    'Ext.form.field.ComboBox', 'Ext.grid.column.Action'
+    'Ext.grid.column.Action', 'Ext.selection.CheckboxModel'
   ],
-  title: 'Query molecules & Metabolites',
   store: 'Metabolites',
   viewConfig: {
     emptyText: 'No structures available: Add structures or relax filters'
@@ -19,15 +18,6 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
     allowDeselect: true,
     mode: 'SINGLE'
   }),
-  tools: [{
-     type:'save',
-     tooltip: 'Save metabolites as comma seperated file',
-     action: 'download'
-  }, {
-     type: 'gear',
-     tooltip: 'Perform actions on metabolites',
-     action: 'actions'
-  }],
   dockedItems: [{
     xtype: 'pagingtoolbar',
     store: 'Metabolites',   // same store GridPanel is using
@@ -112,15 +102,20 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
   clearFilters: function() {
     this.getView().getFeature('mfilter').clearFilters();
   },
-
   /**
+   * Get column with scores.
+   *
+   * Column should only be shown when a scan has been selected.
+   *
    * @return {Ext.grid.column.Column}
    */
   getFragmentScoreColumn: function() {
       return this.columns.filter(function(c) { return (c.dataIndex == "score")})[0];
   },
   /**
-   * @return {Ext.grid.column.Column}
+   * Get column with commands.
+   *
+   * @return {Ext.grid.column.Action}
    */
   getCommandsColumn: function() {
       return this.columns.filter(function(c) { return (c.text == "Commands")})[0];

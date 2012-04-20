@@ -6,20 +6,19 @@
  */
 Ext.define('Esc.magmaweb.controller.Metabolites', {
   extend: 'Ext.app.Controller',
-  views: [ 'metabolite.List' ],
+  views: [ 'metabolite.Panel' ],
   stores: [ 'Metabolites' ],
   models: [ 'Metabolite' ],
   uses: [
-    'Ext.window.Window',
-    'Ext.form.Panel',
-    'Ext.form.field.Hidden',
-    'Ext.form.field.Display',
-    'Esc.magmaweb.view.metabolite.AddFieldSet',
-    'Esc.magmaweb.view.metabolite.MetabolizeFieldSet',
-    'Esc.magmaweb.view.fragment.AnnotateFieldSet'
+    'Esc.magmaweb.view.metabolite.MetabolizeForm',
+    'Esc.magmaweb.view.metabolite.MetabolizeOneForm'
   ],
   refs: [{
     ref: 'metaboliteList', selector: 'metabolitelist'
+  }, {
+    ref: 'metaboliteAddForm', selector: 'metaboliteaddform'
+  }, {
+    ref: 'metabolitePanel', selector: 'metabolitepanel'
   }],
   init: function() {
     console.log('Metabolites controller init');
@@ -41,11 +40,23 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       'metabolitelist component[action=pagesize]': {
         select: this.onPageSizeChange
       },
-      'metabolitelist component[action=download]': {
+      'metabolitepanel component[action=download]': {
         click: this.download
       },
-      'metabolitelist component[action=actions]': {
+      'metabolitepanel component[action=actions]': {
         click: this.showActionsMenu
+      },
+      'metaboliteaddform component[action=addstructures]': {
+        click: this.addStructuresHandler
+      },
+      'metaboliteaddform component[action=addstructurescancel]': {
+        click: this.showGrid
+      },
+      'metabolizeform component[action=metabolize]': {
+        click: this.metabolizeHandler
+      },
+      'metabolizeoneform component[action=metabolize_one]': {
+        click: this.metabolizeOneHandler
       }
     });
 
@@ -131,11 +142,14 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
    */
   onLoad: function(store) {
     this.application.fireEvent('metaboliteload', store);
+    this.metabolizable(store.getTotalUnfilteredCount() > 0);
     if (store.getCount() == 1 && !this.getMetaboliteList().getSelectionModel().hasSelection()) {
         console.log('Only one metabolite loaded and its not selected, selecting it');
         this.getMetaboliteList().getSelectionModel().select(0);
     }
-    this.metabolizable(store.getTotalUnfilteredCount() > 0);
+    if (store.getTotalUnfilteredCount() == 0) {
+        this.showAddStructuresForm();
+    }
   },
   /**
    * Listens for chromatogram load event.
@@ -252,164 +266,60 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     window.open(url, 'metabolites.csv');
   },
   /**
-   * Shows add structures form in modal window.
+   * Shows add structures form in metabolites panel.
+   * Disables annotation fieldset when there is no ms data
    */
   showAddStructuresForm: function() {
-      var me = this;
-      if (!this.addStructuresForm) {
-          this.addStructuresForm = Ext.create('Ext.window.Window', {
-              title: 'Add structure(s)',
-              height: 500,
-              width: 600,
-              layout: 'fit',
-              modal: true,
-              closeAction: 'hide',
-              items: {
-                    xtype: 'form',
-                    bodyPadding: 5,
-                    defaults: { bodyPadding: 5 },
-                    border: false,
-                    autoScroll: true,
-                    url: me.application.rpcUrl('add_structures'),
-                    items : [{
-                        xtype : 'addstructurefieldset'
-                    }, {
-                        xtype : 'metabolizefieldset',
-                        checkboxToggle: true,
-                        checkboxName: 'metabolize',
-                        collapsed : true,
-                        collapsible : true
-                    }, {
-                        xtype : 'annotatefieldset',
-                        collapsed : true,
-                        collapsible : true
-                    }],
-                    buttons: [{
-                        text: 'Submit',
-                        handler: function() {
-                            var form = this.up('form');
-                            me.actionHandler(form);
-                        }
-                    }, {
-                        text: 'Reset',
-                        handler: function() {
-                            this.up('form').getForm().reset();
-                        }
-                    }]
-              }
-          });
-      }
-      this.addStructuresForm.query('annotatefieldset')[0].setDisabled(!this.hasMSData);
-      this.addStructuresForm.show();
+      this.getMetaboliteAddForm().setDisabledAnnotateFieldset(!this.hasMSData);
+      this.getMetabolitePanel().setActiveItem(1);
+  },
+  /**
+   * Shows list or grid in metabolite panel.
+   */
+  showGrid: function() {
+      this.getMetabolitePanel().setActiveItem(0);
+  },
+  /**
+   * Handler for submit button in Add structures form.
+   *
+   */
+  addStructuresHandler: function() {
+    var me = this;
+    var form = this.getMetaboliteAddForm().getForm();
+    if (form.isValid()) {
+      form.submit({
+        url: me.application.rpcUrl('add_structures'),
+        waitMsg: 'Submitting action ...',
+        success: function(fp, o) {
+          var response = Ext.JSON.decode(o.response.responseText);
+          me.application.fireEvent('rpcsubmitsuccess', response.jobid);
+          // switch back to grid so results can still be used while job is running
+          me.showGrid();
+        },
+        failure: function(form, action) {
+          console.log(action.failureType);
+          console.log(action.result);
+        }
+      });
+    }
   },
   /**
    * Shows metabolize form in modal window
    */
   showMetabolizeForm: function() {
-    var me = this;
-    if (!this.MetabolizeForm) {
-        this.MetabolizeForm = Ext.create('Ext.window.Window', {
-            title: 'Metabolize all structures',
-            modal: true,
-            height: 300,
-            width: 600,
-            layout: 'fit',
-            closeAction: 'hide',
-            items: {
-                xtype: 'form',
-                bodyPadding: 5,
-                defaults: { bodyPadding: 5 },
-                border: false,
-                autoScroll: true,
-                url: me.application.rpcUrl('metabolize'),
-                items: [{
-                    xtype : 'metabolizefieldset'
-                }, {
-                    xtype : 'annotatefieldset',
-                    collapsed : true,
-                    collapsible : true
-                }],
-                buttons: [{
-                    text: 'Submit',
-                    handler: function() {
-                        var form = this.up('form');
-                        me.actionHandler(form);
-                    }
-                }, {
-                    text: 'Reset',
-                    handler: function() {
-                        this.up('form').getForm().reset();
-                    }
-                }]
-            }
-        });
+    if (!this.metabolizeForm) {
+        this.metabolizeForm = Ext.create('Esc.magmaweb.view.metabolite.MetabolizeForm');
     }
-    this.MetabolizeForm.query('annotatefieldset')[0].setDisabled(!this.hasMSData);
-    this.MetabolizeForm.show();
+    this.metabolizeForm.setDisabledAnnotateFieldset(!this.hasMSData);
+    this.metabolizeForm.show();
   },
-  /**
-   * Shows metabolize form in modal window for one metabolite/structure
-   * @param {Ext.data.Model} rec Record to metabolize
-   */
-  showMetabolizeStructureForm: function(rec) {
+  metabolizeHandler: function(button) {
     var me = this;
-    if (!this.metabolizeStructureForm) {
-        this.metabolizeStructureForm = Ext.create('Ext.window.Window', {
-            title: 'Metabolize',
-            modal: true,
-            height: 300,
-            width: 600,
-            layout: 'fit',
-            closeAction: 'hide',
-            items: {
-                xtype: 'form',
-                url: me.application.rpcUrl('metabolize_one'),
-                bodyPadding: 5,
-                defaults: { bodyPadding: 5 },
-                border: false,
-                autoScroll: true,
-                items: [{
-                    xtype: 'displayfield',
-                    fieldLabel: 'Name',
-                    value: rec.get('origin')
-                },{
-                    xtype: 'hiddenfield',
-                    name: 'metid',
-                    value: rec.get('metid')
-                },{
-                    xtype : 'metabolizefieldset'
-                }, {
-                    xtype : 'annotatefieldset',
-                    collapsed : true,
-                    collapsible : true
-                }],
-                buttons: [{
-                    text: 'Submit',
-                    handler: function() {
-                        var form = this.up('form');
-                        me.actionHandler(form);
-                    }
-                }, {
-                    text: 'Reset',
-                    handler: function() {
-                        this.up('form').getForm().reset();
-                    }
-                }]
-            }
-        });
-    }
-    this.metabolizeStructureForm.query('annotatefieldset')[0].setDisabled(!this.hasMSData);
-    this.metabolizeStructureForm.show();
-  },
-  metabolizable: function(enabled) {
-     Ext.getCmp('metabolizeaction').setDisabled(!enabled);
-  },
-  actionHandler: function(form) {
-    var me = this;
-    var wf = form.up('window');
-    form = form.getForm();
+    var wf = this.metabolizeForm;
+    var form = wf.getForm();
     if (form.isValid()) {
       form.submit({
+        url : me.application.rpcUrl('metabolize'),
         waitMsg: 'Submitting action ...',
         success: function(fp, o) {
           var response = Ext.JSON.decode(o.response.responseText);
@@ -424,12 +334,53 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       });
     }
   },
-  showActionsMenu: function(tool, event) {
-    if (this.actionsMenu.isHidden()) {
-        this.actionsMenu.showAt(event.getXY());
-    } else {
-        this.actionsMenu.hide();
+  /**
+   * Shows metabolize form in modal window for one metabolite/structure
+   * @param {Ext.data.Model} rec Record to metabolize
+   */
+  showMetabolizeStructureForm: function(rec) {
+    var me = this;
+    if (!this.metabolizeStructureForm) {
+        this.metabolizeStructureForm = Ext.create('Esc.magmaweb.view.metabolite.MetabolizeOneForm');
     }
+    this.metabolizeStructureForm.setMetabolite(rec);
+    this.metabolizeStructureForm.setDisabledAnnotateFieldset(!this.hasMSData);
+    this.metabolizeStructureForm.show();
+  },
+  /**
+   * Handler for submit button for metabolize one structure form.
+   */
+  metabolizeOneHandler: function() {
+    var me = this;
+    var wf = this.metabolizeStructureForm;
+    var form = wf.getForm();
+    if (form.isValid()) {
+      form.submit({
+        url : me.application.rpcUrl('metabolize_one'),
+        waitMsg: 'Submitting action ...',
+        success: function(fp, o) {
+          var response = Ext.JSON.decode(o.response.responseText);
+          me.application.fireEvent('rpcsubmitsuccess', response.jobid);
+          wf.hide();
+        },
+        failure: function(form, action) {
+          console.log(action.failureType);
+          console.log(action.result);
+          wf.hide();
+        }
+      });
+    }
+  },
+  /**
+   * Enable or disable metabolize action.
+   *
+   * @param {Boolean} enabled True is metabolizable
+   */
+  metabolizable: function(enabled) {
+     Ext.getCmp('metabolizeaction').setDisabled(!enabled);
+  },
+  showActionsMenu: function(tool, event) {
+     this.actionsMenu.showAt(event.getXY());
   }
 });
 

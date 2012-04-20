@@ -349,6 +349,7 @@ describe('Metabolites', function() {
 
     it('load metabolites, zero metabolites', function() {
        spyOn(ctrl, 'metabolizable');
+       spyOn(ctrl, 'showAddStructuresForm');
        var f = { callback: function() {} };
        spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
        Ext.util.Observable.capture(ctrl.application, f.callback);
@@ -357,11 +358,13 @@ describe('Metabolites', function() {
        store.loadRawData({
             rows: [],
             total: 0,
+            totalUnfiltered: 0,
             scans: []
        });
 
        expect(f.callback).toHaveBeenCalledWith('metaboliteload', jasmine.any(Object));
        expect(ctrl.metabolizable).toHaveBeenCalledWith(false);
+       expect(ctrl.showAddStructuresForm).toHaveBeenCalledWith();
 
        Ext.util.Observable.releaseCapture(ctrl.application);
     });
@@ -446,6 +449,134 @@ describe('Metabolites', function() {
           }));
           expect(window.open).toHaveBeenCalledWith(url ,'metabolites.csv');
       });
+    });
+
+    it('showAddStructuresForm', function() {
+        ctrl.hasMSData = false;
+        var addform = { setDisabledAnnotateFieldset: function() {} };
+        spyOn(addform, 'setDisabledAnnotateFieldset');
+        spyOn(ctrl, 'getMetaboliteAddForm').andReturn(addform);
+        var panel = { setActiveItem: function() {} };
+        spyOn(panel, 'setActiveItem');
+        spyOn(ctrl, 'getMetabolitePanel').andReturn(panel);
+
+        ctrl.showAddStructuresForm();
+
+        expect(addform.setDisabledAnnotateFieldset).toHaveBeenCalledWith(true);
+        expect(panel.setActiveItem).toHaveBeenCalledWith(1);
+    });
+
+    it('showGrid', function() {
+        var panel = { setActiveItem: function() {} };
+        spyOn(panel, 'setActiveItem');
+        spyOn(ctrl, 'getMetabolitePanel').andReturn(panel);
+
+        ctrl.showGrid();
+
+        expect(panel.setActiveItem).toHaveBeenCalledWith(0);
+    });
+
+    it('addStructuresHandler', function() {
+        var form = {
+            isValid: function() { return true; },
+            submit: function() {}
+        };
+        spyOn(form, 'submit');
+        var panel = { getForm: function() { return form; } };
+        spyOn(ctrl, 'getMetaboliteAddForm').andReturn(panel);
+
+        ctrl.addStructuresHandler();
+
+        expect(form.submit).toHaveBeenCalledWith({
+            url: '/rpc/'+Application.jobid+'/add_structures',
+            waitMsg: jasmine.any(String),
+            success: jasmine.any(Function),
+            failure: jasmine.any(Function)
+        });
+    });
+
+    it('showMetabolizeForm', function() {
+        ctrl.showMetabolizeForm();
+
+        expect(ctrl.metabolizeForm.isVisible()).toBeTruthy();
+        ctrl.metabolizeForm.hide();
+    });
+
+    it('metabolizeHandler', function() {
+        var form = {
+            isValid: function() { return true; },
+            submit: function() {}
+        };
+        spyOn(form, 'submit');
+        var wf = { getForm: function() { return form }};
+        ctrl.metabolizeForm = wf;
+
+        ctrl.metabolizeHandler();
+
+        expect(form.submit).toHaveBeenCalledWith({
+            url: '/rpc/'+Application.jobid+'/metabolize',
+            waitMsg: jasmine.any(String),
+            success: jasmine.any(Function),
+            failure: jasmine.any(Function)
+        });
+    });
+
+    it('showMetabolizeStructureForm', function() {
+        ctrl.hasMSData = false;
+        var form = {
+            setMetabolite: function() {},
+            setDisabledAnnotateFieldset: function() {},
+            show: function() {}
+        };
+        spyOn(form, 'setMetabolite');
+        spyOn(form, 'setDisabledAnnotateFieldset');
+        spyOn(form, 'show');
+        ctrl.metabolizeStructureForm = form;
+
+        ctrl.showMetabolizeStructureForm(1234);
+
+        expect(form.setMetabolite).toHaveBeenCalledWith(1234);
+        expect(form.setDisabledAnnotateFieldset).toHaveBeenCalledWith(true);
+        expect(form.show).toHaveBeenCalledWith();
+    });
+
+    it('metabolizeOneHandler', function() {
+        var form = {
+            isValid: function() { return true; },
+            submit: function() {}
+        };
+        spyOn(form, 'submit');
+        var wf = { getForm: function() { return form }};
+        ctrl.metabolizeStructureForm = wf;
+
+        ctrl.metabolizeOneHandler();
+
+        expect(form.submit).toHaveBeenCalledWith({
+            url: '/rpc/'+Application.jobid+'/metabolize_one',
+            waitMsg: jasmine.any(String),
+            success: jasmine.any(Function),
+            failure: jasmine.any(Function)
+        });
+    });
+
+    it('metabolizable', function() {
+        var button = { setDisabled: function() {}};
+        spyOn(button, 'setDisabled');
+        spyOn(Ext, 'getCmp').andReturn(button);
+
+        ctrl.metabolizable(true);
+
+        expect(Ext.getCmp).toHaveBeenCalledWith('metabolizeaction');
+        expect(button.setDisabled).toHaveBeenCalledWith(false);
+    });
+
+    it('showActionsMenu', function() {
+        var event = { getXY: function() { return [5,10]; }};
+        spyOn(ctrl.actionsMenu, 'showAt');
+
+        ctrl.showActionsMenu('tool', event);
+
+        expect(ctrl.actionsMenu.showAt).toHaveBeenCalledWith([5,10]);
     });
   });
 });

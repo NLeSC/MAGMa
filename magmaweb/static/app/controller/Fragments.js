@@ -12,6 +12,14 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
   refs: [{
     ref: 'fragmentTree', selector: 'fragmenttree'
   }],
+  uses: [ 'Esc.magmaweb.view.fragment.AnnotateForm' ],
+  /**
+   * Can only annotate when there are structures and ms data.
+   * @property {Object} annotatable
+   * @property {Boolean} annotabable.structures Whether there are structures
+   * @property {Boolean} annotabable.msdata Whether there is ms data
+   */
+  annotatable: { structures: false, msdata: false },
   init: function() {
     console.log('Fragments controller init');
 
@@ -23,6 +31,9 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
         deselect: this.onDeselect,
         itemcollapse: this.onFragmentCollapse,
         itemexpand: this.onFragmentExpand
+      },
+      'annotateform component[action=annotate]': {
+          click: this.annotateHandler
       }
     });
 
@@ -31,6 +42,24 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     this.application.on('mspectraload', this.initMolecules, this);
     this.application.on('peakdeselect', this.clearFragmentSelection, this);
     this.application.on('peakselect', this.selectFragmentByPeak, this);
+
+    this.application.on('metaboliteload', function(store) {
+        this.annotatable.structures = store.getTotalUnfilteredCount() > 0;
+        if (this.annotatable.structures && this.annotatable.msdata) {
+            this.getAnnotateActionButton().enable();
+        } else {
+            this.getAnnotateActionButton().disable();
+        }
+    }, this);
+    this.application.on('chromatogramload', function(chromatogram) {
+        this.annotatable.msdata = chromatogram.data.length > 0;
+        if (this.annotatable.structures && this.annotatable.msdata) {
+            this.getAnnotateActionButton().enable();
+        } else {
+            this.getAnnotateActionButton().disable();
+        }
+    }, this);
+    this.application.on('rpcsubmitsuccess', this.rpcSubmitted, this);
 
     this.application.addEvents(
       /**
@@ -177,5 +206,114 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
    */
   initMolecules: function() {
     this.getFragmentTree().initMolecules();
+  },
+  /**
+   * Shows annotate form in modal window
+   */
+  showAnnotateForm: function() {
+    var me = this;
+    if (!this.annotateForm) {
+        this.annotateForm = Ext.create('Esc.magmaweb.view.fragment.AnnotateForm');
+    }
+    this.annotateForm.show();
+  },
+  /**
+   * Handler for submission of annotate form.
+   */
+  annotateHandler: function() {
+    var me = this;
+    var wf = this.annotateForm;
+    var form = wf.getForm();
+    if (form.isValid()) {
+      form.submit({
+        url: this.application.rpcUrl('annotate'),
+        waitMsg: 'Submitting action ...',
+        success: function(fp, o) {
+          var response = Ext.JSON.decode(o.response.responseText);
+          me.application.fireEvent('rpcsubmitsuccess', response.jobid);
+          wf.hide();
+        },
+        failure: function(form, action) {
+          console.log(action.failureType);
+          console.log(action.result);
+          wf.hide();
+        }
+      });
+    }
+  },
+  getAnnotateActionButton: function() {
+      return Ext.getCmp('annotateaction');
+  },
+  /**
+   * Pols status of jobid and when completed redirects to results of new job.
+   * @param {String} jobid Identifier of new job
+   */
+  rpcSubmitted: function(jobid) {
+      var me = this;
+      var app = this.application;
+      /**
+       * @property {String} newjobid
+       * Keep track of id of submitted job
+       */
+      me.newjobid = jobid;
+      // Overwrite annotate button to waiting/cancel button
+      var annot_button = this.getAnnotateActionButton();
+      annot_button.setIconCls('icon-loading');
+      annot_button.setText('Waiting');
+      annot_button.setTooltip('Job submitted, waiting for completion');
+      annot_button.setHandler(function() {
+        Ext.MessageBox.confirm('Cancel job', 'Job is still running. Do you want to cancel it?', function(but) {
+            if (but == 'yes') {
+                // TODO cancel job
+                console.log('Cancelling job');
+            }
+        }, me);
+      });
+      /**
+       * @property {Ext.util.TaskRunner.Task} pollTask
+       * Polls status of submitted job
+       */
+      me.pollTask = Ext.TaskManager.start({
+        run: this.pollJobStatus,
+        interval: 5000,
+        scope: this
+      });
+  },
+  /**
+   * Polls status of job with id this.newjobid on server.
+   *
+   * When status is STOPPED then change annotate button to fetch result button.
+   */
+  pollJobStatus: function() {
+    var me = this;
+    var app = this.application;
+    Ext.Ajax.request({
+      url: app.urls.home+'status/'+me.newjobid+'.json',
+      success: function(o) {
+        var response = Ext.JSON.decode(o.responseText);
+        console.log(response.status);
+        if (response.status == 'STOPPED') {
+          Ext.TaskManager.stop(me.pollTask);
+          delete me.pollTask;
+          annot_button.setIconCls('');
+          annot_button.setText('Fetch result');
+          annot_button.setTooltip('Job completed, fetch results');
+          annot_button.setHandler(function() {
+            Ext.MessageBox.confirm('Fetch result', 'Job has been completed. Do you want to fetch results?', function(but) {
+                if (but == 'yes') {
+                    window.location = app.urls.home+'results/'+me.newjobid;
+                }
+            }, me);
+          });
+        } else {
+            annot_button.setTooltip('Job '+response.status+', waiting for completion');
+        }
+      },
+      failure: function() {
+        Ext.TaskManager.stop(me.pollTask);
+        delete me.pollTask;
+      },
+      scope: me
+    });
   }
 });

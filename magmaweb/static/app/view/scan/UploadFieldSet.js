@@ -1,3 +1,8 @@
+/**
+ * Fieldset with ms data upload options.
+ *
+ * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
+ */
 Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
     extend: 'Ext.container.Container',
     alias: 'widget.uploadmsdatafieldset',

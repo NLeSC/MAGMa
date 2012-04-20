@@ -342,4 +342,48 @@ describe('Scans controller', function() {
 
       expect(mocked_chromatogram.resetScales).toHaveBeenCalled();
   });
+
+  it('showUploadForm', function() {
+      ctrl.hasStructures = false;
+      var addform = { setDisabledAnnotateFieldset: function() {} };
+      spyOn(addform, 'setDisabledAnnotateFieldset');
+      spyOn(ctrl, 'getUploadForm').andReturn(addform);
+      var panel = { setActiveItem: function() {} };
+      spyOn(panel, 'setActiveItem');
+      spyOn(ctrl, 'getChromatogramPanel').andReturn(panel);
+
+      ctrl.showUploadForm();
+
+      expect(addform.setDisabledAnnotateFieldset).toHaveBeenCalledWith(true);
+      expect(panel.setActiveItem).toHaveBeenCalledWith(1);
+  });
+
+  it('showChromatogram', function() {
+      var panel = { setActiveItem: function() {} };
+      spyOn(panel, 'setActiveItem');
+      spyOn(ctrl, 'getChromatogramPanel').andReturn(panel);
+
+      ctrl.showChromatogram();
+
+      expect(panel.setActiveItem).toHaveBeenCalledWith(0);
+  });
+
+  it('uploadHandler', function() {
+      var form = {
+          isValid: function() { return true; },
+          submit: function() {}
+      };
+      spyOn(form, 'submit');
+      var panel = { getForm: function() { return form; } };
+      spyOn(ctrl, 'getUploadForm').andReturn(panel);
+
+      ctrl.uploadHandler();
+
+      expect(form.submit).toHaveBeenCalledWith({
+          url: '/rpc/'+Application.jobid+'/add_ms_data',
+          waitMsg: jasmine.any(String),
+          success: jasmine.any(Function),
+          failure: jasmine.any(Function)
+      });
+  });
 });

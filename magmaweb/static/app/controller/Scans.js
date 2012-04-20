@@ -6,11 +6,13 @@
  */
 Ext.define('Esc.magmaweb.controller.Scans', {
   extend: 'Ext.app.Controller',
-  views: [ 'scan.Chromatogram' ],
+  views: [ 'scan.Panel' ],
   refs: [{
-      ref: 'chromatogramPanel', selector: 'chromatogrampanel'
+      ref: 'chromatogramPanel', selector: 'scanpanel'
   }, {
       ref: 'chromatogram', selector: 'chromatogram'
+  }, {
+      ref: 'uploadForm', selector: 'scanuploadform'
   }],
   uses: [
          'Ext.window.MessageBox',
@@ -46,17 +48,23 @@ Ext.define('Esc.magmaweb.controller.Scans', {
             }
         }
       },
-      'chromatogrampanel tool[action=search]': {
+      'scanpanel tool[action=search]': {
         click: this.searchScan
       },
-      'chromatogrampanel tool[action=clearselection]': {
+      'scanpanel tool[action=clearselection]': {
         click: this.clearScanSelection
       },
-      'chromatogrampanel tool[action=center]': {
+      'scanpanel tool[action=center]': {
         click: this.center
       },
-      'chromatogrampanel tool[action=upload]': {
+      'scanpanel tool[action=upload]': {
         click: this.showUploadForm
+      },
+      'scanuploadform component[action=uploadmsdata]': {
+        click: this.uploadHandler
+      },
+      'scanuploadform component[action=uploadmsdatacancel]': {
+        click: this.showChromatogram
       }
     });
 
@@ -71,7 +79,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
         this.clearExtractedIonChromatogram();
     }, this);
     this.application.on('rpcsubmitsuccess', function() {
-        Ext.ComponentQuery.query('chromatogrampanel tool[action=upload]')[0].disable();
+        Ext.ComponentQuery.query('scanpanel tool[action=upload]')[0].disable();
     });
 
     /**
@@ -136,6 +144,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     }
     chromatogram.setData(data.scans);
     me.resetScans();
+    if (data.scans.length == 0) {
+        this.showUploadForm();
+    }
     this.application.fireEvent('chromatogramload', chromatogram);
   },
   clearExtractedIonChromatogram: function() {
@@ -249,60 +260,28 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       this.getChromatogram().resetScales();
   },
   showUploadForm: function() {
+      this.getUploadForm().setDisabledAnnotateFieldset(!this.hasStructures);
+      this.getChromatogramPanel().setActiveItem(1);
+  },
+  showChromatogram: function() {
+      this.getChromatogramPanel().setActiveItem(0);
+  },
+  uploadHandler: function() {
       var me = this;
-      if (!this.uploadForm) {
-          this.uploadForm = Ext.create('Ext.window.Window', {
-              title: 'Upload MS data',
-              height: 320,
-              width: 600,
-              layout: 'fit',
-              modal: true,
-              closeAction: 'hide',
-              items: {
-                  xtype: 'form',
-                  bodyPadding: 5,
-                  defaults: { bodyPadding: 5 },
-                  border: false,
-                  autoScroll: true,
-                  url: me.application.rpcUrl('add_ms_data'),
-                  items: [{
-                      xtype: 'uploadmsdatafieldset'
-                  }, {
-                      xtype : 'annotatefieldset',
-                      collapsed : true,
-                      collapsible : true
-                  }],
-                  buttons: [{
-                      text: 'Submit',
-                      handler: function() {
-                          var form = this.up('form').getForm();
-                          var wf = this.up('window');
-                          if (form.isValid()) {
-                              form.submit({
-                                  waitMsg: 'Submitting action ...',
-                                  success: function(fp, o) {
-                                      var response = Ext.JSON.decode(o.response.responseText);
-                                      me.application.fireEvent('rpcsubmitsuccess', response.jobid);
-                                      wf.hide();
-                                  },
-                                  failure: function(form, action) {
-                                      console.log(action.failureType);
-                                      console.log(action.result);
-                                      wf.hide();
-                                  }
-                              });
-                          }
-                      }
-                  }, {
-                      text: 'Reset',
-                      handler: function() {
-                          this.up('form').getForm().reset();
-                      }
-                  }]
+      var form = this.getUploadForm().getForm();
+      if (form.isValid()) {
+          form.submit({
+              url: this.application.rpcUrl('add_ms_data'),
+              waitMsg: 'Submitting action ...',
+              success: function(fp, o) {
+                  var response = Ext.JSON.decode(o.response.responseText);
+                  me.application.fireEvent('rpcsubmitsuccess', response.jobid);
+              },
+              failure: function(form, action) {
+                  console.log(action.failureType);
+                  console.log(action.result);
               }
           });
       }
-      this.uploadForm.query('annotatefieldset')[0].setDisabled(!this.hasStructures);
-      this.uploadForm.show();
   }
 });

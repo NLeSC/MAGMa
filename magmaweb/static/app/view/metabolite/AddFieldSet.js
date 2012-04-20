@@ -1,3 +1,24 @@
+/**
+ * Form element for adding structures via textarea, file upload or draw using ChemDoodle sketcher.
+ *
+ * The sketcher requires a dom element:
+ *
+ *      <div id="sketcher_content" class="x-hidden">
+ *        <script language="javascript">
+ *            var sketcher = new ChemDoodle.SketcherCanvas(
+ *                'sketcher_canvas', 500, 300,
+ *                '${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/icons/')}',
+ *                ChemDoodle.featureDetection.supports_touch(), false);
+ *            sketcher.repaint();
+ *            sketcher.toolbarManager.buttonSave.disable();
+ *            sketcher.toolbarManager.buttonOpen.disable();
+ *        </script>
+ *      </div>
+ *
+ *  Also ChemDoodle sketcher css and js need to be included, see http://web.chemdoodle.com/tutorial/2d-structure-canvases/sketcher-canvas
+ *
+ * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
+ */
 Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
     extend : 'Ext.tab.Panel',
     alias : 'widget.addstructurefieldset',

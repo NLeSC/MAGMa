@@ -77,7 +77,7 @@ This only needs to be done if magmaweb.results.jsb3 does not yet create.
 export PATH=$PATH:/home/stefanv/SenchaSDKTools-1.2.3/:/home/stefanv/SenchaSDKTools-1.2.3/command/:/home/stefanv/SenchaSDKTools-1.2.3/lib/:home/stefanv/SenchaSDKTools-1.2.3/command/:/home/stefanv/SenchaSDKTools-1.2.3/appbuilder/:/home/stefanv/SenchaSDKTools-1.2.3/jsbuilder/
 cd MAGMaWeb/magmaweb
 # in results.mak comment resultsApp-all.js, so all dependencies are dynamicly loaded
-sencha create jsb -v -p magmaweb.results.jsb3 -a 'http://localhost/magmaweb/results?jobid=2a398f64-3522-11e1-ac1a-0800272c0b38'
+sencha create jsb -v -p magmaweb.results.jsb3 -a 'http://localhost/magma/results/e6c54335-ad9c-4ca4-92ff-f350e3f5fec0'
 # create jsb exits with error, but output file is ok
 
 Edit magmaweb.results.jsb3
