@@ -375,6 +375,7 @@ describe('Fragments', function() {
         setText: function() {},
         setTooltip: function() {},
         setHandler: function() {},
+        enable: function() {}
       };
       spyOn(ctrl, 'getAnnotateActionButton').andReturn(button);
 

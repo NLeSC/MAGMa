@@ -272,6 +272,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
             }
         }, me);
       });
+      annot_button.enable();
       /**
        * @property {Ext.util.TaskRunner.Task} pollTask
        * Polls status of submitted job
@@ -309,6 +310,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
                 }
             }, me);
           });
+          annot_button.enable();
         } else {
             me.getAnnotateActionButton().setTooltip('Job '+response.status+', waiting for completion');
         }
