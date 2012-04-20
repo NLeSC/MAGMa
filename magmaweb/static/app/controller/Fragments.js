@@ -34,6 +34,9 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
       },
       'annotateform component[action=annotate]': {
           click: this.annotateHandler
+      },
+      '#annotateaction': {
+          click: this.showAnnotateForm
       }
     });
 
@@ -295,6 +298,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
         if (response.status == 'STOPPED') {
           Ext.TaskManager.stop(me.pollTask);
           delete me.pollTask;
+          var annot_button = me.getAnnotateActionButton();
           annot_button.setIconCls('');
           annot_button.setText('Fetch result');
           annot_button.setTooltip('Job completed, fetch results');
@@ -306,7 +310,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
             }, me);
           });
         } else {
-            annot_button.setTooltip('Job '+response.status+', waiting for completion');
+            me.getAnnotateActionButton().setTooltip('Job '+response.status+', waiting for completion');
         }
       },
       failure: function() {

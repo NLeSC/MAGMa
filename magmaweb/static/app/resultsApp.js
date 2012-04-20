@@ -331,7 +331,6 @@ Ext.define('Esc.magmaweb.resultsApp', {
               tooltip: 'Annotate all structures',
               id: 'annotateaction',
               iconCls: 'icon-annot',
-              handler: me.getController('Fragments').showAnnotateForm.bind(me),
               disabled: true
             },{
               text: 'Help',
