@@ -202,6 +202,7 @@ class StructureEngine(object):
         reactor.stdin.write(parent.mol+'$$$$\n')
         reactor.stdin.close()
 
+        metids=[]
         line=reactor.stdout.readline()
         while line != "":
             name=line
@@ -225,17 +226,20 @@ class StructureEngine(object):
                     if sequence=='PARENT\n':
                         isquery=1
                 line=reactor.stdout.readline()
-            self.add_structure(mol,name,prob,level,sequence,isquery)
+            metids.append(self.add_structure(mol,name,prob,level,sequence,isquery))
             line=reactor.stdout.readline()
         reactor.stdout.close()
         self.db_session.commit()
+        return metids
 
     def metabolize_all(self,metabolism,nsteps):
         logging.warn('Metabolize all')
         parentids = self.db_session.query(Metabolite.metid).all()
         # print parentids
+        metids=[]
         for parentid, in parentids:
-            self.metabolize(parentid,metabolism,nsteps)
+            metids.extend(self.metabolize(parentid,metabolism,nsteps))
+        return set(metids)
 
 
 class MsDataEngine(object):
@@ -437,7 +441,13 @@ class AnnotateEngine(object):
         for structure in self.db_session.query(Metabolite).all():
             self.search_structure(structure)
 
+    def search_some_structures(self,metids):
+        logging.warn('Searching some structures')
+        for structure in self.db_session.query(Metabolite).filter(Metabolite.metid.in_(metids)).all():
+            self.search_structure(structure)
+
     def search_structure(self,structure):
+        # logging.warn('Structure: '+str(structure.metid))
         Fragmented=False
         hits=[]                # [hits]
         mol=Chem.MolFromMolBlock(str(structure.mol))
