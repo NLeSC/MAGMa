@@ -36,7 +36,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
           click: this.annotateHandler
       },
       '#annotateaction': {
-          click: this.showAnnotateForm
+          click: this.annotateAction
       }
     });
 
@@ -265,12 +265,12 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
       annot_button.setText('Waiting');
       annot_button.setTooltip('Job submitted, waiting for completion');
       annot_button.setHandler(function() {
-        Ext.MessageBox.confirm('Cancel job', 'Job is still running. Do you want to cancel it?', function(but) {
-            if (but == 'yes') {
-                // TODO cancel job
-                console.log('Cancelling job');
-            }
-        }, me);
+          Ext.MessageBox.confirm('Cancel job', 'Job is still running. Do you want to cancel it?', function(but) {
+              if (but == 'yes') {
+                  // TODO cancel job
+                  console.log('Cancelling job');
+              }
+          });
       });
       annot_button.enable();
       /**
@@ -304,11 +304,11 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
           annot_button.setText('Fetch result');
           annot_button.setTooltip('Job completed, fetch results');
           annot_button.setHandler(function() {
-            Ext.MessageBox.confirm('Fetch result', 'Job has been completed. Do you want to fetch results?', function(but) {
-                if (but == 'yes') {
-                    window.location = app.urls.home+'results/'+me.newjobid;
-                }
-            }, me);
+              Ext.MessageBox.confirm('Fetch result', 'Job has been completed. Do you want to fetch results?', function(but) {
+                  if (but == 'yes') {
+                      window.location = app.urls.home+'results/'+me.newjobid;
+                  }
+              });
           });
           annot_button.enable();
         } else {
@@ -321,5 +321,12 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
       },
       scope: me
     });
+  },
+  annotateAction: function() {
+      if ('newjobid' in this) {
+          // job running or completed, do not annotate
+      } else {
+          this.showAnnotateForm();
+      }
   }
 });
