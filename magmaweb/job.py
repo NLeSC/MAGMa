@@ -83,17 +83,20 @@ class JobQuery(object):
             metsfile.write(params['structures'])
         metsfile.close()
 
-        script = "{{magma}} add_structures -t {structure_format} structures.dat {{db}}\n"
+        script = "{{magma}} add_structures -t {structure_format} structures.dat {{db}}"
         self.script += script.format(structure_format=params['structure_format'])
         self.prestaged.append('structures.dat')
 
         if ('metabolize' in params):
-            self.metabolize(params, has_ms_data)
-        else:
+            self.script += " |"
+            self.metabolize(params, has_ms_data, True)
+        elif (has_ms_data):
             # dont annotate when metabolize is also done
             # as metabolize will call annotate
-            if (has_ms_data):
-                self.annotate(params)
+            self.script += " |"
+            self.annotate(params, True)
+        else:
+            self.script += "\n"
 
         return self
 
@@ -138,7 +141,7 @@ class JobQuery(object):
 
         return self
 
-    def metabolize(self, params, has_ms_data=False):
+    def metabolize(self, params, has_ms_data=False, from_subset=False):
         """Configure job query to metabolize all structures.
 
         ``params`` is a MultiDict from which the following keys are used:
@@ -147,15 +150,21 @@ class JobQuery(object):
         * metabolism_types, comma seperated string with metabolism types
 
         If ``has_ms_data`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
+        If ``from_subset`` is True then metids are read from stdin
         """
-        script = "{{magma}} metabolize -s {n_reaction_steps} -m {metabolism_types} {{db}}\n"
+        script = "{{magma}} metabolize -s {n_reaction_steps} -m {metabolism_types}"
         self.script += script.format(
                                n_reaction_steps=params['n_reaction_steps'],
                                metabolism_types=','.join(params.getall('metabolism_types'))
                                )
+        if from_subset:
+            self.script+= " -j -"
 
         if (has_ms_data):
-            self.annotate(params)
+            self.script+= " {db} |";
+            self.annotate(params, True)
+        else:
+            self.script+= " {db}\n";
 
         return self
 
@@ -170,7 +179,7 @@ class JobQuery(object):
 
         If ``has_ms_data`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
         """
-        script = "{{magma}} metabolize --metid {metid} -s {n_reaction_steps} -m {metabolism_types} {{db}}\n"
+        script = "{{magma}} metabolize --metid {metid} -s {n_reaction_steps} -m {metabolism_types} {{db}}"
         self.script += script.format(
                                metid=params['metid'],
                                n_reaction_steps=params['n_reaction_steps'],
@@ -178,11 +187,14 @@ class JobQuery(object):
                                )
 
         if (has_ms_data):
-            self.annotate(params)
+            self.script+=" |"
+            self.annotate(params, True)
+        else:
+            self.script+="\n"
 
         return self
 
-    def annotate(self, params):
+    def annotate(self, params, from_subset=False):
         """Configure job query to annotate.
 
         ``params`` is a dict from which the following keys are used:
@@ -195,6 +207,7 @@ class JobQuery(object):
         * use_all_peaks, when key is set then all peaks are used
         * skip_fragmentation, when key is set then the no fragmentation of structures is performed.
 
+        If ``from_subset`` is True then metids are read from stdin
         """
         script = "{{magma}} annotate -p {mz_precision} -c {ms_intensity_cutoff} -d {msms_intensity_cutoff} -i {ionisation_mode} -b {max_broken_bonds} "
         script = script.format(
@@ -210,6 +223,9 @@ class JobQuery(object):
 
         if ('skip_fragmentation' in params):
             script += '-f '
+
+        if from_subset:
+            script +='-j - '
 
         script += "{db}\n"
         self.script += script
