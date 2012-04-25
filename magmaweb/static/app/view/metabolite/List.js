@@ -14,10 +14,11 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
   viewConfig: {
     emptyText: 'No structures available: Add structures or relax filters'
   },
-  selModel: Ext.create('Ext.selection.CheckboxModel', {
+  selModel: {
+    xtype: 'checkboxmodel',
     allowDeselect: true,
     mode: 'SINGLE'
-  }),
+  },
   dockedItems: [{
     xtype: 'pagingtoolbar',
     store: 'Metabolites',   // same store GridPanel is using

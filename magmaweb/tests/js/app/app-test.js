@@ -31,6 +31,8 @@ Ext.onReady(function() {
           jasmine.getEnv().execute();
       },
       // mock runinfo url to a static file
-      runInfoUrl: function() { return 'data/runinfo.json' }
+      runInfoUrl: function() { return 'data/runinfo.json' },
+      // do not create views, all tests mock views
+      autoCreateViewport: false
   });
 });

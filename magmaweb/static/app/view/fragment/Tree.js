@@ -14,6 +14,11 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
   rootVisible: false,
   singleExpand: true,
   useArrows: true,
+  tools: [{
+     type: 'save',
+     disabled: true,
+     tooltip: 'Save fragment tree'
+  }],
   requires: [ 'Esc.chemdoodle.Column', 'Ext.selection.CheckboxModel' ],
   viewConfig: {
     // animate is default true causing refresh event to be blocked

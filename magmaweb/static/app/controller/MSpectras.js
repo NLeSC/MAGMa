@@ -34,7 +34,6 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   init: function() {
     this.setUrl(this.application.getUrls().mspectra);
     this.setMaxmslevel(this.application.getMaxmslevel());
-    this.initMSpectras();
 
     this.application.on('selectscan', this.loadMSpectra1, this);
     this.application.on('fragmentexpand', this.loadMSpectraFromFragment, this);
@@ -44,6 +43,15 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     this.application.on('noselectscan', this.clearMSpectra1, this);
     this.application.on('scanandmetabolitenoselect', this.clearMSpectraFrom2, this);
     this.application.on('fragmentcollapse', this.clearMSpectraFromFragment, this);
+    this.application.on('mspectraload', function(scanid, mslevel) {
+        Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' scan '+scanid);
+    });
+    this.application.on('mspectraclear', function(mslevel) {
+        Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' scan ...');
+    });
+    this.application.on('peakmouseover', function(peak, mslevel, scanid) {
+        Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' scan '+scanid+' (m/z='+peak.mz+', intensity='+peak.intensity+')');
+    });
 
     this.addEvents(
       /**
@@ -92,11 +100,12 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     }
   },
   /**
-   * Initializes MSpectra views
-   * @private
+   * Initializes MSpectra scan panels
+   *
+   * @param {Ext.application.Application} app
    */
-  initMSpectras: function() {
-    var app = this.application;
+  onLaunch: function(app) {
+    var msspectrapanels = [];
     for (var mslevel = 1; mslevel <= this.getMaxmslevel(); mslevel++) {
       this.mspectras[mslevel] = Ext.create('Esc.d3.MSpectra', {
         mslevel: mslevel,
@@ -118,6 +127,30 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
           }
         }
       });
+      msspectrapanels.push({
+          title: 'Level '+mslevel+' scan ...',
+          id: 'mspectra'+mslevel+'panel',
+          collapsible: true,
+          tools: [{
+            type: 'restore',
+            tooltip: 'Center level '+mslevel+' scan',
+            disabled: true,
+            action: 'center'
+          }, {
+            type: 'save',
+            disabled: true,
+            tooltip: 'Save scan'
+          }],
+          items: this.mspectras[mslevel]
+      });
+    }
+    var panel = Ext.getCmp('mspectrapanel');
+    if (this.getMaxmslevel() > 0) {
+        // Each scan panel has header with title, hide parent header for extra room
+        panel.getHeader().hide();
+        panel.add(msspectrapanels);
+    } else {
+        panel.update('No scans available: Upload ms data');
     }
   },
   /**

@@ -11,19 +11,16 @@ describe('MSpectras controller', function() {
     expect(ctrl.getUrl()).toEqual('data/mspectra.{0}.json?mslevel={1}');
   });
 
-  it('has mspectras', function() {
-    expect(ctrl.mspectras.length-1).toEqual(ctrl.getMaxmslevel());
-    expect(ctrl.mspectras[1].self.getName()).toEqual('Esc.d3.MSpectra');
-  });
-
   it('getMSpectra', function() {
+    ctrl.mspectras[1] = 5;
     var mspectra = ctrl.getMSpectra(1);
-    expect(mspectra.mslevel).toEqual(1);
+    expect(mspectra).toEqual(5);
   });
 
   it('loadMSpectra', function() {
     var mslevel = 1, scanid = 1133, markers = [];
-    var mspectra = ctrl.getMSpectra(mslevel);
+    var mspectra = Ext.create('Esc.d3.MSpectra');
+    spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
     spyOn(mspectra, 'setLoading');
     spyOn(d3, 'json');
 
@@ -34,6 +31,7 @@ describe('MSpectras controller', function() {
       'data/mspectra.'+scanid+'.json?mslevel='+mslevel,
       jasmine.any(Function)
     );
+    mspectra.destroy();
   });
 
   describe('onLoadMSpectra', function() {
@@ -67,7 +65,7 @@ describe('MSpectras controller', function() {
           "intensity" : 582.663879394531
         }]
       };
-      var mspectra = ctrl.getMSpectra(mslevel);
+      var mspectra = Ext.create('Esc.d3.MSpectra');
       spyOn(mspectra, 'setLoading');
       spyOn(mspectra, 'setData');
       spyOn(mspectra, 'setMarkers');
@@ -76,6 +74,8 @@ describe('MSpectras controller', function() {
               return { enable: function() { return true} };
           }};
       });
+      spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
+
       spyOn(Ext.MessageBox, 'show');
       var f = { callback: function() {} };
       spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
@@ -92,6 +92,7 @@ describe('MSpectras controller', function() {
       expect(Ext.MessageBox.show).not.toHaveBeenCalled();
       expect(f.callback).toHaveBeenCalledWith('mspectraload', scanid, mslevel);
       Ext.util.Observable.releaseCapture(ctrl.application);
+      mspectra.destroy();
     });
   });
 
@@ -149,7 +150,8 @@ describe('MSpectras controller', function() {
         childNodes:[child],
         data: { id: 'root' }
       };
-      var mspectra = ctrl.getMSpectra(1);
+      var mspectra = Ext.create('Esc.d3.MSpectra');
+      spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
       spyOn(mspectra, 'setMarkers');
       spyOn(mspectra, 'selectPeak');
       spyOn(ctrl, 'loadMSpectra2');
@@ -160,6 +162,7 @@ describe('MSpectras controller', function() {
       expect(mspectra.setMarkers).toHaveBeenCalledWith([{mz:123}]);
       expect(mspectra.selectPeak).toHaveBeenCalledWith(123);
       expect(ctrl.loadMSpectra2).not.toHaveBeenCalled();
+      mspectra.destroy();
     });
 
     it('lvl 1 fragment with children', function() {
@@ -175,7 +178,8 @@ describe('MSpectras controller', function() {
         childNodes:[child],
         data: { id: 'root' }
       };
-      var mspectra = ctrl.getMSpectra(1);
+      var mspectra = Ext.create('Esc.d3.MSpectra');
+      spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
       spyOn(mspectra, 'setMarkers');
       spyOn(mspectra, 'selectPeak');
       spyOn(ctrl, 'loadMSpectra2');
@@ -188,23 +192,27 @@ describe('MSpectras controller', function() {
           1135,
           [{mz: 56}]
       );
+      mspectra.destroy();
     });
 
     it('lvl 2 fragment', function() {
       var frag = {
         data: { mslevel:2, mz: 123 }
       };
-      var mspectra = ctrl.getMSpectra(2);
+      var mspectra = Ext.create('Esc.d3.MSpectra');
+      spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
       spyOn(mspectra, 'selectPeak');
 
       ctrl.loadMSpectrasFromFragment(frag, []);
       expect(mspectra.selectPeak).toHaveBeenCalledWith(123);
+      mspectra.destroy();
     });
   });
 
   it('clearMSpectra', function() {
     var mslevel = 2;
-    var mspectra = ctrl.getMSpectra(mslevel);
+    var mspectra = Ext.create('Esc.d3.MSpectra');
+    spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
     spyOn(mspectra, 'setData');
     spyOn(mspectra, 'up').andCallFake(function() {
         return { down: function() {
@@ -222,6 +230,7 @@ describe('MSpectras controller', function() {
     expect(f.callback).toHaveBeenCalledWith('mspectraclear', mslevel);
     expect(mspectra.up).toHaveBeenCalled();
     Ext.util.Observable.releaseCapture(ctrl.application);
+    mspectra.destroy();
   });
 
   it('clearMSpectra1', function() {
@@ -233,8 +242,10 @@ describe('MSpectras controller', function() {
   });
 
   it('clearMSpectraFrom2', function() {
+    var mspectra = Ext.create('Esc.d3.MSpectra');
+    spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
     spyOn(ctrl, 'clearMSpectra');
-    spyOn(ctrl.getMSpectra(1), 'setMarkers');
+    spyOn(mspectra, 'setMarkers');
 
     ctrl.clearMSpectraFrom2();
 
@@ -242,6 +253,7 @@ describe('MSpectras controller', function() {
     expect(ctrl.clearMSpectra).not.toHaveBeenCalledWith(1);
     expect(ctrl.clearMSpectra).toHaveBeenCalledWith(2);
     expect(ctrl.clearMSpectra).toHaveBeenCalledWith(3);
+    mspectra.destroy();
   });
 
   it('clearMSpectraFromFragment', function() {
@@ -255,6 +267,18 @@ describe('MSpectras controller', function() {
   });
 
   describe('selectPeakFromFragment', function() {
+    beforeEach(function() {
+       function fakeMspectra() {
+           return {
+               selectPeak: function() {},
+               clearPeakSelection: function() {},
+           };
+       }
+       ctrl.mspectras[1] = fakeMspectra();
+       ctrl.mspectras[2] = fakeMspectra();
+       ctrl.mspectras[3] = fakeMspectra();
+    });
+
     it('in lvl1', function() {
       spyOn(ctrl.mspectras[1], 'selectPeak');
       spyOn(ctrl.mspectras[2], 'clearPeakSelection');
@@ -311,7 +335,8 @@ describe('MSpectras controller', function() {
   });
 
   it('center', function() {
-      var mspectra = ctrl.getMSpectra(1);
+      var mspectra = Ext.create('Esc.d3.MSpectra');
+      spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
       spyOn(mspectra, 'resetScales');
       var tool = {
           up: function() {
@@ -324,5 +349,6 @@ describe('MSpectras controller', function() {
       ctrl.center(tool);
 
       expect(mspectra.resetScales).toHaveBeenCalled();
+      mspectra.destroy();
   });
 });

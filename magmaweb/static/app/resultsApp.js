@@ -21,6 +21,7 @@
  * Note! Example requires that Esc.magmaweb, Esc namespaces to be resolvable.
  */
 Ext.define('Esc.magmaweb.resultsApp', {
+  name: 'Esc.magmaweb',
   extend:'Ext.app.Application',
   constructor: function(config) {
     console.log('Construct app');
@@ -28,16 +29,8 @@ Ext.define('Esc.magmaweb.resultsApp', {
     this.callParent(arguments);
     return this;
   },
-  name: 'Esc.magmaweb',
+  autoCreateViewport: true,
   controllers: [ 'Metabolites', 'Fragments', 'Scans', 'MSpectras' ],
-  requires: [
-    'Ext.panel.Panel',
-    'Ext.container.Viewport',
-    'Ext.layout.container.Border',
-    'Ext.Img',
-    'Ext.toolbar.Spacer',
-    'Ext.container.ButtonGroup'
-  ],
   config: {
     /**
      * Metabolite grid page size.
@@ -200,70 +193,13 @@ Ext.define('Esc.magmaweb.resultsApp', {
         this.selected.metid = false;
     }, this);
 
-    this.on('mspectraload', function(scanid, mslevel) {
-      Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' scan '+scanid);
-    });
-    this.on('mspectraclear', function(mslevel) {
-      Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' scan ...');
-    });
-    this.on('peakmouseover', function(peak, mslevel, scanid) {
-      Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' scan '+scanid+' (m/z='+peak.mz+', intensity='+peak.intensity+')');
-    });
-
     console.log('Launch app');
 
-    var msspectrapanels = [];
-    var mspectras = this.getController('MSpectras').mspectras;
-    for (var mslevel = 1; mslevel <= this.getMaxmslevel(); mslevel++) {
-      msspectrapanels.push({
-        title: 'Level '+mslevel+' scan ...',
-        id: 'mspectra'+mslevel+'panel',
-        collapsible: true,
-        tools: [{
-          type: 'restore',
-          tooltip: 'Center level '+mslevel+' scan',
-          disabled: true,
-          action: 'center'
-        }],
-        items: mspectras[mslevel]
-      });
-    }
-    if (this.getMaxmslevel() > 0) {
-        var mspectrapanel = Ext.create('Ext.panel.Panel', {
-            region:'south',
-            height: '50%',
-            split: true,
-            collapsible: true,
-            hideCollapseTool: true,
-            border: false,
-            preventHeader: true,
-            id: 'mspectrapanel',
-            layout: {
-              type: 'vbox',
-              align: 'stretch'
-            },
-            defaults: {
-              flex: 1,
-              layout:'fit',
-              border: false
-            },
-            items: msspectrapanels
-        });
-    } else {
-        var mspectrapanel = Ext.create('Ext.panel.Panel', {
-            region:'south',
-            height: '50%',
-            split: true,
-            collapsible: true,
-            hideCollapseTool: true,
-            border: false,
-            title: 'Scans',
-            id: 'mspectrapanel',
-            html: 'No scans available: Upload ms data'
-        });
-    }
-
-    var infoWindow = Ext.create('Ext.window.Window', {
+    /**
+     * @property {Ext.window.Window} infoWindow
+     * Information window which shows settings used, description and error log.
+     */
+    this.infoWindow = Ext.create('Ext.window.Window', {
         title: 'Information',
         width: 600,
         autoHeight: true,
@@ -287,114 +223,20 @@ Ext.define('Esc.magmaweb.resultsApp', {
                     }
                 }, this, true, Ext.get('description').getHTML());
             }
+        }, {
+            type: 'save',
+            tooltip: 'Save log file',
+            handler: function() {
+                window.open(me.urls.stderr, 'Log');
+            }
         }]
     });
-
-    // header
-    var header_side = Ext.create('Ext.panel.Panel', {
-      region: 'north',
-      layout: {
-        type: 'hbox',
-        align: 'middle',
-        padding: 2
-      },
-      items: [{
-        xtype: 'component',
-        cls: 'x-logo',
-        html: '<a href="'+me.urls.home+'" data-qtip="<b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites">MAGMa</a>'
-      }, {
-        xtype:'tbspacer',
-        flex:1 // aligns buttongroup right
-      }, {
-          xtype: 'buttongroup',
-          columns: 3,
-          items: [{
-              text: 'Restart',
-              handler: function() {
-                window.location = me.urls.home;
-              },
-              tooltip: 'Upload a new dataset'
-            },{
-              text: 'Download',
-              tooltip: 'Download the different results files',
-              menu: {
-                  items: [{
-                      text: 'Metabolites',
-                      handler: function() {
-                          // TODO replace handler with action
-                          me.getController('Metabolites').download();
-                      }
-                  }, {
-                      text: 'Fragments',
-                      disabled: true
-                  }, {
-                      text: 'Error log',
-                      href: me.urls.stderr,
-                      hrefTarget: '_new'
-                  }]
-              }
-            },{
-              text: 'Annotate',
-              tooltip: 'Annotate all structures',
-              id: 'annotateaction',
-              iconCls: 'icon-annot',
-              disabled: true
-            },{
-              text: 'Help',
-              tooltip: 'Goto help pages',
-              disabled: true
-            }, {
-              text: 'Information',
-              tooltip: 'Information about analysis parameters',
-              handler: function() {
-                  infoWindow.show();
-              }
-            }]
-        }]
+    // cant use this.control, find component and setHandler
+    Ext.ComponentQuery.query('component[action=information]')[0].setHandler(function() {
+        me.infoWindow.show();
     });
-
-    var master_side = Ext.create('Ext.panel.Panel', {
-      // master side
-      region: 'center',
-      layout: 'border',
-      border: false,
-      items:[{
-        region:'center',
-        border: false,
-        xtype: 'metabolitepanel'
-      },{
-        region:'south',
-        hideCollapseTool: true,
-        collapsible: true,
-        height: '50%',
-        split: true,
-        xtype: 'scanpanel',
-        border: false
-      }]
-    });
-
-    // detail side
-    var detail_side = Ext.create('Ext.panel.Panel', {
-      region: 'east',
-      split: true,
-      collapsible: true,
-      layout: 'border',
-      width: 600,
-      hideCollapseTool: true,
-      border: false,
-      preventHeader: true,
-      items:[{
-        region: 'center',
-        xtype: 'fragmenttree',
-        border: false
-      },
-      mspectrapanel
-      ]
-    });
-
-    Ext.create('Ext.Viewport', {
-      layout: 'border',
-      items:[ master_side, detail_side, header_side ]
+    Ext.ComponentQuery.query('component[action=restart]')[0].setHandler(function() {
+        window.location = me.urls.home;
     });
   }
 });
