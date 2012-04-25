@@ -35,7 +35,6 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
             name: 'max_ms_level',
             fieldLabel: 'Maximum MS level',
             allowBlank: false,
-            value: 3,
             minValue: 1,
             maxValue: 5,
             decimalPrecision: 0
@@ -44,21 +43,18 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
             name: 'precursor_mz_precision',
             fieldLabel: 'Precision for matching precursor mz with peak mz in parent scan',
             allowBlank: false,
-            value: 0.001,
             decimalPrecision: 5
         },{
             xtype: 'numberfield',
             name: 'abs_peak_cutoff',
             fieldLabel: 'Absolute intensity threshold for storing peaks in database',
             allowBlank: false,
-            value: 1000,
             decimalPrecision: 5
         },{
             xtype: 'numberfield',
             name: 'rel_peak_cutoff',
             fieldLabel: 'Fraction of basepeak intensity threshold threshold for storing peaks in database',
             allowBlank: false,
-            value: 0.01,
             decimalPrecision: 5
         }]
     }]

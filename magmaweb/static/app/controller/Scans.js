@@ -260,7 +260,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       this.getChromatogram().resetScales();
   },
   showUploadForm: function() {
+      var me = this;
       this.getUploadForm().setDisabledAnnotateFieldset(!this.hasStructures);
+      this.getUploadForm().loadDefaults(me.application.runInfoUrl());
       this.getChromatogramPanel().setActiveItem(1);
   },
   showChromatogram: function() {

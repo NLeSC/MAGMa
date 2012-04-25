@@ -16,7 +16,7 @@ describe('Scans controller', function() {
       hasData: function() {},
       setMarkers: function() {},
       redraw: function() {},
-      resetScales: function() {},
+      resetScales: function() {}
     };
     spyOn(ctrl, 'getChromatogram').andReturn(mocked_chromatogram);
   });
@@ -345,7 +345,10 @@ describe('Scans controller', function() {
 
   it('showUploadForm', function() {
       ctrl.hasStructures = false;
-      var addform = { setDisabledAnnotateFieldset: function() {} };
+      var addform = {
+        setDisabledAnnotateFieldset: function() {},
+        loadDefaults: function() {}
+      };
       spyOn(addform, 'setDisabledAnnotateFieldset');
       spyOn(ctrl, 'getUploadForm').andReturn(addform);
       var panel = { setActiveItem: function() {} };

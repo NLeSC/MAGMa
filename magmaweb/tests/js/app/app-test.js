@@ -29,6 +29,8 @@ Ext.onReady(function() {
           //include the tests in the test.html head
           jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
           jasmine.getEnv().execute();
-      }
+      },
+      // mock runinfo url to a static file
+      runInfoUrl: function() { return 'data/runinfo.json' }
   });
 });

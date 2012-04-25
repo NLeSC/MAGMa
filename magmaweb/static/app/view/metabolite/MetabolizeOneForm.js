@@ -27,6 +27,7 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeOneForm', {
         },
         border : false,
         autoScroll : true,
+        trackResetOnLoad: true,
         items : [ {
             xtype: 'displayfield',
             fieldLabel: 'Name',
@@ -78,5 +79,23 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeOneForm', {
      */
     getForm: function() {
         return this.down('form').getForm();
+    },
+    /**
+     * Load form defaults from server.
+     * During loading this.loading will be true.
+     *
+     * @param {String} url Url to load defaults from.
+     */
+    loadDefaults: function(url) {
+        var me = this;
+        this.loading = true;
+        this.getForm().load({
+            url: url,
+            method: 'GET',
+            waitMsg: 'Fetching defaults',
+            success: function(form) {
+                delete me.loading;
+            }
+        });
     }
 });

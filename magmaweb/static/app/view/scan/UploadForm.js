@@ -7,6 +7,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadForm', {
     extend: 'Ext.form.Panel',
     alias: 'widget.scanuploadform',
     autoScroll: true,
+    trackResetOnLoad: true,
     items: [{
         xtype: 'uploadmsdatafieldset'
     }, {
@@ -33,5 +34,17 @@ Ext.define('Esc.magmaweb.view.scan.UploadForm', {
      */
     setDisabledAnnotateFieldset: function(disabled) {
         this.query('annotatefieldset')[0].setDisabled(disabled);
+    },
+    /**
+     * Load form defaults from server.
+     *
+     * @param {String} url Url to load defaults from.
+     */
+    loadDefaults: function(url) {
+        this.load({
+            url: url,
+            method: 'GET',
+            waitMsg: 'Fetching defaults'
+        });
     }
 });

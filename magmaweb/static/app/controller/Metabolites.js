@@ -271,6 +271,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
    */
   showAddStructuresForm: function() {
       this.getMetaboliteAddForm().setDisabledAnnotateFieldset(!this.hasMSData);
+      this.getMetaboliteAddForm().loadDefaults(this.application.runInfoUrl());
       this.getMetabolitePanel().setActiveItem(1);
   },
   /**
@@ -307,8 +308,10 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
    * Shows metabolize form in modal window
    */
   showMetabolizeForm: function() {
+    var me = this;
     if (!this.metabolizeForm) {
         this.metabolizeForm = Ext.create('Esc.magmaweb.view.metabolite.MetabolizeForm');
+        this.metabolizeForm.loadDefaults(me.application.runInfoUrl());
     }
     this.metabolizeForm.setDisabledAnnotateFieldset(!this.hasMSData);
     this.metabolizeForm.show();
@@ -342,6 +345,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     var me = this;
     if (!this.metabolizeStructureForm) {
         this.metabolizeStructureForm = Ext.create('Esc.magmaweb.view.metabolite.MetabolizeOneForm');
+        this.metabolizeStructureForm.loadDefaults(me.application.runInfoUrl());
     }
     this.metabolizeStructureForm.setMetabolite(rec);
     this.metabolizeStructureForm.setDisabledAnnotateFieldset(!this.hasMSData);

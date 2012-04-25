@@ -453,7 +453,10 @@ describe('Metabolites', function() {
 
     it('showAddStructuresForm', function() {
         ctrl.hasMSData = false;
-        var addform = { setDisabledAnnotateFieldset: function() {} };
+        var addform = {
+            setDisabledAnnotateFieldset: function() {},
+            loadDefaults: function() {}
+        };
         spyOn(addform, 'setDisabledAnnotateFieldset');
         spyOn(ctrl, 'getMetaboliteAddForm').andReturn(addform);
         var panel = { setActiveItem: function() {} };
@@ -498,8 +501,21 @@ describe('Metabolites', function() {
     it('showMetabolizeForm', function() {
         ctrl.showMetabolizeForm();
 
+        waitsFor(
+            function() { return !ctrl.metabolizeForm.loading;},
+            'Form defaults never loaded',
+            1000
+        );
+
         expect(ctrl.metabolizeForm.isVisible()).toBeTruthy();
         ctrl.metabolizeForm.hide();
+
+        runs(function() {
+            expect(ctrl.metabolizeForm.getForm().getValues()).toEqual({
+                "metabolism_types": ["phase1", "phase2"],
+                "n_reaction_steps": '1'
+            });
+        });
     });
 
     it('metabolizeHandler', function() {

@@ -341,6 +341,21 @@ describe('Fragments', function() {
     it('showAnnotateForm', function() {
         ctrl.showAnnotateForm();
 
+        waitsFor(
+            function() { return !ctrl.annotateForm.loading;},
+            'Form defaults never loaded',
+            1000
+        );
+
+        runs(function() {
+            expect(ctrl.annotateForm.getForm().getValues()).toEqual({
+                ionisation_mode: -1,
+                max_broken_bonds: '4',
+                ms_intensity_cutoff: '200000',
+                msms_intensity_cutoff: '0.1',
+                mz_precision: '0.001'
+            });
+        });
         expect(ctrl.annotateForm.isVisible()).toBeTruthy();
         ctrl.annotateForm.hide();
     });

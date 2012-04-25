@@ -7,6 +7,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddForm', {
     extend: 'Ext.form.Panel',
     alias: 'widget.metaboliteaddform',
     autoScroll: true,
+    trackResetOnLoad: true,
     requires: [
        'Esc.magmaweb.view.metabolite.AddFieldSet',
        'Esc.magmaweb.view.metabolite.MetabolizeFieldSet',
@@ -44,5 +45,17 @@ Ext.define('Esc.magmaweb.view.metabolite.AddForm', {
      */
     setDisabledAnnotateFieldset: function(disabled) {
         this.query('annotatefieldset')[0].setDisabled(disabled);
+    },
+    /**
+     * Load form defaults from server.
+     *
+     * @param {String} url Url to load defaults from.
+     */
+    loadDefaults: function(url) {
+        this.load({
+            url: url,
+            method: 'GET',
+            waitMsg: 'Fetching defaults'
+        });
     }
 });

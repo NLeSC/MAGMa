@@ -360,3 +360,69 @@ class ViewsTestCase(unittest.TestCase):
 
         self.assertEqual(response.content_type, 'text/plain')
         self.assertMultiLineEqual(response.app_iter.read(), 'bla')
+
+    def test_runinfojson(self):
+        request = testing.DummyRequest()
+        views = Views(request)
+        job = self.fake_job()
+        from magmaweb.models import Run
+        job.runInfo.return_value = Run(
+            n_reaction_steps=2, metabolism_types='phase1,phase2' ,
+            ionisation_mode=-1, skip_fragmentation=True,
+            ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
+            mz_precision=0.01, use_all_peaks=True,
+            ms_filename = 'F123456.mzxml', abs_peak_cutoff=1000,
+            rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=0.01,
+            max_broken_bonds=4, description='My first description'
+        )
+        views.job = Mock(return_value=job)
+
+        response = views.runinfojson()
+
+        self.assertEqual(response, {
+                                    'success': True,
+                                    'data': dict(
+                                                 n_reaction_steps=2,
+                                                 metabolism_types=['phase1', 'phase2'],
+                                                 ionisation_mode=-1,
+                                                 skip_fragmentation=True,
+                                                 ms_intensity_cutoff=200000.0,
+                                                 msms_intensity_cutoff=0.5,
+                                                 mz_precision=0.01,
+                                                 use_all_peaks=True,
+                                                 abs_peak_cutoff=1000,
+                                                 rel_peak_cutoff=0.001,
+                                                 max_ms_level=3,
+                                                 precursor_mz_precision=0.01,
+                                                 max_broken_bonds=4
+                                                 )
+                                    })
+
+    def test_runinfojson_norundone(self):
+        request = testing.DummyRequest()
+        views = Views(request)
+        job = self.fake_job()
+        job.runInfo.return_value = None
+        views.job = Mock(return_value=job)
+
+        response = views.runinfojson()
+
+        self.assertEqual(response, {
+                                    'success': True,
+                                    'data': dict(
+                                                 n_reaction_steps=2,
+                                                 metabolism_types=['phase1', 'phase2'],
+                                                 ionisation_mode=-1,
+                                                 skip_fragmentation=False,
+                                                 ms_intensity_cutoff=200000.0,
+                                                 msms_intensity_cutoff=0.1,
+                                                 mz_precision=0.001,
+                                                 use_all_peaks=False,
+                                                 abs_peak_cutoff=1000,
+                                                 rel_peak_cutoff=0.01,
+                                                 max_ms_level=3,
+                                                 precursor_mz_precision=0.001,
+                                                 max_broken_bonds=4
+                                                 )
+                                    })
+

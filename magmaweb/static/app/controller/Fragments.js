@@ -217,6 +217,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     var me = this;
     if (!this.annotateForm) {
         this.annotateForm = Ext.create('Esc.magmaweb.view.fragment.AnnotateForm');
+        this.annotateForm.loadDefaults(me.application.runInfoUrl());
     }
     this.annotateForm.show();
   },

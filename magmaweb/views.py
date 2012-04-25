@@ -382,3 +382,46 @@ class Views(object):
         response = Response(content_type='text/plain')
         response.app_iter = self.job().stderr()
         return response
+
+    @view_config(route_name='runinfo.json', renderer="json")
+    def runinfojson(self):
+        """ Returns settings used for job run, """
+        r = self.job().runInfo()
+        if (r is None):
+            return {
+                        'success': True,
+                        'data': dict(
+                                     n_reaction_steps=2,
+                                     metabolism_types=['phase1', 'phase2'],
+                                     ionisation_mode=-1,
+                                     skip_fragmentation=False,
+                                     ms_intensity_cutoff=200000.0,
+                                     msms_intensity_cutoff=0.1,
+                                     mz_precision=0.001,
+                                     use_all_peaks=False,
+                                     abs_peak_cutoff=1000,
+                                     rel_peak_cutoff=0.01,
+                                     max_ms_level=3,
+                                     precursor_mz_precision=0.001,
+                                     max_broken_bonds=4
+                                     )
+                    }
+        else:
+            return {
+                      'success': True,
+                      'data': dict(
+                                   n_reaction_steps=r.n_reaction_steps,
+                                   metabolism_types=r.metabolism_types.split(','),
+                                   ionisation_mode=r.ionisation_mode,
+                                   skip_fragmentation=r.skip_fragmentation,
+                                   ms_intensity_cutoff=r.ms_intensity_cutoff,
+                                   msms_intensity_cutoff=r.msms_intensity_cutoff,
+                                   mz_precision=r.mz_precision,
+                                   use_all_peaks=r.use_all_peaks,
+                                   abs_peak_cutoff=r.abs_peak_cutoff,
+                                   rel_peak_cutoff=r.rel_peak_cutoff,
+                                   max_ms_level=r.max_ms_level,
+                                   precursor_mz_precision=r.precursor_mz_precision,
+                                   max_broken_bonds=r.max_broken_bonds
+                                   )
+                    }

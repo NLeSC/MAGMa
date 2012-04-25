@@ -130,6 +130,13 @@ Ext.define('Esc.magmaweb.resultsApp', {
     return this.urls.home+'rpc/'+this.jobid+'/'+method;
   },
   /**
+   * Get url of runinfo json, used to set defaults in forms.
+   * @return {Url}
+   */
+  runInfoUrl: function() {
+    return this.urls.home+'results/'+this.jobid+'/runinfo.json'
+  },
+  /**
    * Creates mspectraspanels and viewport and fires/listens for mspectra events
    * Registers error handle
    */

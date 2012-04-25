@@ -16,7 +16,6 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeFieldSet', {
         name : 'n_reaction_steps',
         xtype : 'numberfield',
         allowBlank : false,
-        value : 2,
         maxValue : 10,
         minValue : 0,
         decimalPrecision : 0
@@ -26,7 +25,6 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeFieldSet', {
         store : [ 'phase1', 'phase2' ],
         multiSelect : true,
         allowBlank : false,
-        value : [ 'phase1', 'phase2' ],
         name : 'metabolism_types'
     } ]
 });
