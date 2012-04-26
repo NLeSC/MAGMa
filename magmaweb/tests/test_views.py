@@ -398,6 +398,40 @@ class ViewsTestCase(unittest.TestCase):
                                                  )
                                     })
 
+    def test_runinfojson_onlymsdatadone(self):
+        self.maxDiff =200000
+        request = testing.DummyRequest()
+        views = Views(request)
+        job = self.fake_job()
+        from magmaweb.models import Run
+        job.runInfo.return_value = Run(
+            abs_peak_cutoff=1100,
+            rel_peak_cutoff=0.012
+        )
+        views.job = Mock(return_value=job)
+
+        response = views.runinfojson()
+
+        self.assertEqual(response, {
+                                    'success': True,
+                                    'data': dict(
+                                                 n_reaction_steps=2,
+                                                 metabolism_types=['phase1', 'phase2'],
+                                                 ionisation_mode=1,
+                                                 skip_fragmentation=False,
+                                                 ms_intensity_cutoff=1000000.0,
+                                                 msms_intensity_cutoff=0.1,
+                                                 mz_precision=0.001,
+                                                 use_all_peaks=False,
+                                                 abs_peak_cutoff=1100,
+                                                 rel_peak_cutoff=0.012,
+                                                 max_ms_level=10,
+                                                 precursor_mz_precision=0.005,
+                                                 max_broken_bonds=4
+                                                 )
+                                    })
+
+
     def test_runinfojson_norundone(self):
         request = testing.DummyRequest()
         views = Views(request)
@@ -412,16 +446,16 @@ class ViewsTestCase(unittest.TestCase):
                                     'data': dict(
                                                  n_reaction_steps=2,
                                                  metabolism_types=['phase1', 'phase2'],
-                                                 ionisation_mode=-1,
+                                                 ionisation_mode=1,
                                                  skip_fragmentation=False,
-                                                 ms_intensity_cutoff=200000.0,
+                                                 ms_intensity_cutoff=1000000.0,
                                                  msms_intensity_cutoff=0.1,
                                                  mz_precision=0.001,
                                                  use_all_peaks=False,
                                                  abs_peak_cutoff=1000,
                                                  rel_peak_cutoff=0.01,
-                                                 max_ms_level=3,
-                                                 precursor_mz_precision=0.001,
+                                                 max_ms_level=10,
+                                                 precursor_mz_precision=0.005,
                                                  max_broken_bonds=4
                                                  )
                                     })

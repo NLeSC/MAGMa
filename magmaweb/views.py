@@ -385,43 +385,44 @@ class Views(object):
 
     @view_config(route_name='runinfo.json', renderer="json")
     def runinfojson(self):
-        """ Returns settings used for job run, """
+        """ Returns settings used for job run or if job has not run the default value """
         r = self.job().runInfo()
+        defaults = dict(
+                        n_reaction_steps=2,
+                        metabolism_types=['phase1', 'phase2'],
+                        ionisation_mode=1,
+                        skip_fragmentation=False,
+                        ms_intensity_cutoff=1000000.0,
+                        msms_intensity_cutoff=0.1,
+                        mz_precision=0.001,
+                        use_all_peaks=False,
+                        abs_peak_cutoff=1000,
+                        rel_peak_cutoff=0.01,
+                        max_ms_level=10,
+                        precursor_mz_precision=0.005,
+                        max_broken_bonds=4
+                        )
         if (r is None):
             return {
                         'success': True,
-                        'data': dict(
-                                     n_reaction_steps=2,
-                                     metabolism_types=['phase1', 'phase2'],
-                                     ionisation_mode=-1,
-                                     skip_fragmentation=False,
-                                     ms_intensity_cutoff=200000.0,
-                                     msms_intensity_cutoff=0.1,
-                                     mz_precision=0.001,
-                                     use_all_peaks=False,
-                                     abs_peak_cutoff=1000,
-                                     rel_peak_cutoff=0.01,
-                                     max_ms_level=3,
-                                     precursor_mz_precision=0.001,
-                                     max_broken_bonds=4
-                                     )
+                        'data': defaults
                     }
         else:
             return {
                       'success': True,
                       'data': dict(
-                                   n_reaction_steps=r.n_reaction_steps,
-                                   metabolism_types=r.metabolism_types.split(','),
-                                   ionisation_mode=r.ionisation_mode,
-                                   skip_fragmentation=r.skip_fragmentation,
-                                   ms_intensity_cutoff=r.ms_intensity_cutoff,
-                                   msms_intensity_cutoff=r.msms_intensity_cutoff,
-                                   mz_precision=r.mz_precision,
-                                   use_all_peaks=r.use_all_peaks,
-                                   abs_peak_cutoff=r.abs_peak_cutoff,
-                                   rel_peak_cutoff=r.rel_peak_cutoff,
-                                   max_ms_level=r.max_ms_level,
-                                   precursor_mz_precision=r.precursor_mz_precision,
-                                   max_broken_bonds=r.max_broken_bonds
+                                   n_reaction_steps=r.n_reaction_steps if r.n_reaction_steps else defaults['n_reaction_steps'],
+                                   metabolism_types=r.metabolism_types.split(',') if r.metabolism_types else defaults['metabolism_types'],
+                                   ionisation_mode=r.ionisation_mode if r.ionisation_mode else defaults['ionisation_mode'],
+                                   skip_fragmentation=r.skip_fragmentation if r.skip_fragmentation else defaults['skip_fragmentation'],
+                                   ms_intensity_cutoff=r.ms_intensity_cutoff if r.ms_intensity_cutoff else defaults['ms_intensity_cutoff'],
+                                   msms_intensity_cutoff=r.msms_intensity_cutoff if r.msms_intensity_cutoff else defaults['msms_intensity_cutoff'],
+                                   mz_precision=r.mz_precision if r.mz_precision else defaults['mz_precision'],
+                                   use_all_peaks=r.use_all_peaks if r.use_all_peaks else defaults['use_all_peaks'],
+                                   abs_peak_cutoff=r.abs_peak_cutoff if r.abs_peak_cutoff else defaults['abs_peak_cutoff'],
+                                   rel_peak_cutoff=r.rel_peak_cutoff if r.rel_peak_cutoff else defaults['rel_peak_cutoff'],
+                                   max_ms_level=r.max_ms_level if r.max_ms_level else defaults['max_ms_level'],
+                                   precursor_mz_precision=r.precursor_mz_precision if r.precursor_mz_precision else defaults['precursor_mz_precision'],
+                                   max_broken_bonds=r.max_broken_bonds if r.max_broken_bonds else defaults['max_broken_bonds']
                                    )
                     }

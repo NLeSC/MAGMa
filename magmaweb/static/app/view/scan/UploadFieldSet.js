@@ -36,7 +36,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
             fieldLabel: 'Maximum MS level',
             allowBlank: false,
             minValue: 1,
-            maxValue: 5,
+            maxValue: 15,
             decimalPrecision: 0
         },{
             xtype: 'numberfield',
