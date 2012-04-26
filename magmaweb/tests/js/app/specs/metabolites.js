@@ -288,6 +288,14 @@ describe('Metabolites', function() {
      });
 
      describe('onChromatrogramLoad', function() {
+        var form;
+        beforeEach(function() {
+            form = {
+                setDisabledAnnotateFieldset: function() {}
+            };
+            spyOn(form, 'setDisabledAnnotateFieldset');
+            spyOn(ctrl, 'getMetaboliteAddForm').andReturn(form);
+        });
 
         it('initially', function() {
             expect(ctrl.hasMSData).toBeFalsy();
@@ -297,12 +305,14 @@ describe('Metabolites', function() {
             chromatogram = { data: [] };
             ctrl.onChromatrogramLoad(chromatogram);
             expect(ctrl.hasMSData).toBeFalsy();
+            expect(form.setDisabledAnnotateFieldset).toHaveBeenCalledWith(true);
         });
 
         it('filled chormatogram', function() {
             chromatogram = { data: [1] };
             ctrl.onChromatrogramLoad(chromatogram);
             expect(ctrl.hasMSData).toBeTruthy();
+            expect(form.setDisabledAnnotateFieldset).toHaveBeenCalledWith(false);
         });
      });
 
@@ -451,13 +461,12 @@ describe('Metabolites', function() {
       });
     });
 
-    it('showAddStructuresForm', function() {
+    it('showAddStructuresForm loads defaults and show it', function() {
         ctrl.hasMSData = false;
         var addform = {
-            setDisabledAnnotateFieldset: function() {},
             loadDefaults: function() {}
         };
-        spyOn(addform, 'setDisabledAnnotateFieldset');
+        spyOn(addform, 'loadDefaults');
         spyOn(ctrl, 'getMetaboliteAddForm').andReturn(addform);
         var panel = { setActiveItem: function() {} };
         spyOn(panel, 'setActiveItem');
@@ -465,8 +474,8 @@ describe('Metabolites', function() {
 
         ctrl.showAddStructuresForm();
 
-        expect(addform.setDisabledAnnotateFieldset).toHaveBeenCalledWith(true);
         expect(panel.setActiveItem).toHaveBeenCalledWith(1);
+        expect(addform.loadDefaults).toHaveBeenCalled();
     });
 
     it('showGrid', function() {

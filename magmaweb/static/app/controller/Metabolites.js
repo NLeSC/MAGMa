@@ -153,10 +153,12 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
   },
   /**
    * Listens for chromatogram load event.
+   * And toggles annotation fieldset in add structures form.
    * @param {Esc.d3.Chromatagram} chromatogram
    */
   onChromatrogramLoad: function(chromatogram) {
     this.hasMSData = chromatogram.data.length > 0;
+    this.getMetaboliteAddForm().setDisabledAnnotateFieldset(!this.hasMSData);
   },
   /**
    * Only allow metabolite with a scans to be selected.
@@ -266,11 +268,10 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     window.open(url, 'metabolites.csv');
   },
   /**
+   * Loads defaults of add structures form and
    * Shows add structures form in metabolites panel.
-   * Disables annotation fieldset when there is no ms data
    */
   showAddStructuresForm: function() {
-      this.getMetaboliteAddForm().setDisabledAnnotateFieldset(!this.hasMSData);
       this.getMetaboliteAddForm().loadDefaults(this.application.runInfoUrl());
       this.getMetabolitePanel().setActiveItem(1);
   },
