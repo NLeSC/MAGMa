@@ -351,6 +351,7 @@ describe('Fragments', function() {
             expect(ctrl.annotateForm.getForm().getValues()).toEqual({
                 ionisation_mode: -1,
                 max_broken_bonds: '4',
+                precursor_mz_precision: '0.001',
                 ms_intensity_cutoff: '200000',
                 msms_intensity_cutoff: '0.1',
                 mz_precision: '0.001'

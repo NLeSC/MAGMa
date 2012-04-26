@@ -43,6 +43,12 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         xtype : 'checkbox',
         fieldLabel : 'Annotate all lvl1 peaks, including those without fragmentation data',
         name : 'use_all_peaks'
+    },{
+        xtype: 'numberfield',
+        name: 'precursor_mz_precision',
+        fieldLabel: 'Precision for matching precursor mz with peak mz in parent scan',
+        allowBlank: false,
+        decimalPrecision: 5
     }, {
         xtype : 'numberfield',
         name : 'ms_intensity_cutoff',

@@ -40,12 +40,6 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
             decimalPrecision: 0
         },{
             xtype: 'numberfield',
-            name: 'precursor_mz_precision',
-            fieldLabel: 'Precision for matching precursor mz with peak mz in parent scan',
-            allowBlank: false,
-            decimalPrecision: 5
-        },{
-            xtype: 'numberfield',
             name: 'abs_peak_cutoff',
             fieldLabel: 'Absolute intensity threshold for storing peaks in database',
             allowBlank: false,

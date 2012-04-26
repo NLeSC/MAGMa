@@ -108,7 +108,6 @@ class JobQuery(object):
         * ms_data_format
         * ms_data_file
         * max_ms_level
-        * precursor_mz_precision
         * abs_peak_cutoff
         * rel_peak_cutoff
 
@@ -126,11 +125,10 @@ class JobQuery(object):
         msf.close()
         msfile.close()
 
-        script = "{{magma}} read_ms_data --ms_data_format {ms_data_format} -l {max_ms_level} -a {abs_peak_cutoff} -r {rel_peak_cutoff} --precursor_mz_precision {precursor_mz_precision} ms_data.dat {{db}}\n"
+        script = "{{magma}} read_ms_data --ms_data_format {ms_data_format} -l {max_ms_level} -a {abs_peak_cutoff} -r {rel_peak_cutoff} ms_data.dat {{db}}\n"
         self.script += script.format(
                                ms_data_format=params['ms_data_format'],
                                max_ms_level=params['max_ms_level'],
-                               precursor_mz_precision=params['precursor_mz_precision'],
                                abs_peak_cutoff=params['abs_peak_cutoff'],
                                rel_peak_cutoff=params['rel_peak_cutoff']
                                )
@@ -199,6 +197,7 @@ class JobQuery(object):
 
         ``params`` is a dict from which the following keys are used:
 
+        * precursor_mz_precision
         * mz_precision
         * ms_intensity_cutoff
         * msms_intensity_cutoff
@@ -209,8 +208,10 @@ class JobQuery(object):
 
         If ``from_subset`` is True then metids are read from stdin
         """
-        script = "{{magma}} annotate -p {mz_precision} -c {ms_intensity_cutoff} -d {msms_intensity_cutoff} -i {ionisation_mode} -b {max_broken_bonds} "
+        script = "{{magma}} annotate -p {mz_precision} -c {ms_intensity_cutoff} -d {msms_intensity_cutoff} "
+        script+= "-i {ionisation_mode} -b {max_broken_bonds} --precursor_mz_precision {precursor_mz_precision} "
         script = script.format(
+                               precursor_mz_precision=params['precursor_mz_precision'],
                                mz_precision=params['mz_precision'],
                                ms_intensity_cutoff=params['ms_intensity_cutoff'],
                                msms_intensity_cutoff=params['msms_intensity_cutoff'],
