@@ -460,3 +460,28 @@ class ViewsTestCase(unittest.TestCase):
                                                  )
                                     })
 
+
+    def test_defaultsjson(self):
+        request = testing.DummyRequest()
+        views = Views(request)
+        response = views.defaults()
+
+        self.assertEqual(response, {
+                                    'success': True,
+                                    'data': dict(
+                                                 n_reaction_steps=2,
+                                                 metabolism_types=['phase1', 'phase2'],
+                                                 ionisation_mode=1,
+                                                 skip_fragmentation=False,
+                                                 ms_intensity_cutoff=1000000.0,
+                                                 msms_intensity_cutoff=0.1,
+                                                 mz_precision=0.001,
+                                                 use_all_peaks=False,
+                                                 abs_peak_cutoff=1000,
+                                                 rel_peak_cutoff=0.01,
+                                                 max_ms_level=10,
+                                                 precursor_mz_precision=0.005,
+                                                 max_broken_bonds=4
+                                                 )
+                                    })
+

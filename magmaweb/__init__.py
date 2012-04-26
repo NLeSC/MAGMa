@@ -28,6 +28,7 @@ def main(global_config, **settings):
     config.add_route('stderr.txt', '/results/{jobid}/stderr.txt')
     config.add_route('uploaddb', '/uploaddb')
     config.add_route('runinfo.json', '/results/{jobid}/runinfo.json')
+    config.add_route('defaults.json', '/defaults.json')
 
     config.add_route('rpc.add_structures', '/rpc/{jobid}/add_structures')
     config.add_route('rpc.add_ms_data', '/rpc/{jobid}/add_ms_data')

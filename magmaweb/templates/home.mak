@@ -73,7 +73,8 @@ Ext.onReady(function() {
     buttons: [{
       text: 'Start from scratch',
       tooltip: 'Do no fill form, but go straight to empty result page which can be filled later',
-      url: '${request.route_url('jobfromscratch')}'
+      href: '${request.route_url('jobfromscratch')}',
+      hrefTarget: '_self'
     },{
       text: 'Submit',
       handler: function(){
@@ -106,6 +107,11 @@ Ext.onReady(function() {
         this.up('form').getForm().reset();
       }
     }]
+  });
+  form.load({
+      url: '${request.route_url('defaults.json')}',
+      method: 'GET',
+      waitMsg: 'Fetching defaults'
   });
 
   Ext.create('Ext.container.Viewport', {
