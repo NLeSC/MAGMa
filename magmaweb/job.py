@@ -126,7 +126,7 @@ class JobQuery(object):
         msf.close()
         msfile.close()
 
-        script = "{{magma}} add_ms_data --ms_data_format {ms_data_format} -l {max_ms_level} -a {abs_peak_cutoff} -r {rel_peak_cutoff} --precursor_mz_precision {precursor_mz_precision} ms_data.dat {{db}}\n"
+        script = "{{magma}} read_ms_data --ms_data_format {ms_data_format} -l {max_ms_level} -a {abs_peak_cutoff} -r {rel_peak_cutoff} --precursor_mz_precision {precursor_mz_precision} ms_data.dat {{db}}\n"
         self.script += script.format(
                                ms_data_format=params['ms_data_format'],
                                max_ms_level=params['max_ms_level'],
@@ -179,7 +179,7 @@ class JobQuery(object):
 
         If ``has_ms_data`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
         """
-        script = "{{magma}} metabolize --metid {metid} -s {n_reaction_steps} -m {metabolism_types} {{db}}"
+        script = "echo {metid} | {{magma}} metabolize -j - -s {n_reaction_steps} -m {metabolism_types} {{db}}"
         self.script += script.format(
                                metid=params['metid'],
                                n_reaction_steps=params['n_reaction_steps'],
