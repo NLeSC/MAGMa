@@ -61,7 +61,7 @@ Python documentation generation with
   make html
 
 Javascript documentation generation with
-  jsduck magmaweb/static/ext-4.0.7/src magmaweb/static/ext-4.0.7/examples/ux magmaweb/static/d3/d3.v2.js magmaweb/static/esc magmaweb/static/app --builtin-classes --output jsdoc --images magmaweb/static/ext-4.0.7/docs/images
+  jsduck magmaweb/static/extjs-4.1.0/src magmaweb/static/extjs-4.1.0/examples/ux magmaweb/static/d3/d3.v2.js magmaweb/static/esc magmaweb/static/app --builtin-classes --output jsdoc --images magmaweb/static/extjs-4.1.0/docs/images
 or minimal
   jsduck magmaweb/static/esc magmaweb/static/app --output jsdoc
 
