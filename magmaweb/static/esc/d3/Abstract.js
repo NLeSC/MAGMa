@@ -112,7 +112,9 @@ Ext.define('Esc.d3.Abstract', {
     }
 
     var m = this.axesPadding;
-    this.svg = d3.select('#'+this.id).append('svg:svg').append("g")
+    this.svg = d3.select('#'+this.id).append('svg:svg')
+        .attr('width', '100%').attr('height', '100%')
+        .append("g")
         .attr("transform", "translate(" + m[3] + "," + m[0] + ")")
     ;
 
