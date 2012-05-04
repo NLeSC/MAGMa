@@ -49,7 +49,7 @@ $HTTP["url"] =~ "/magma" {
     )
   }
   $HTTP["url"] =~ "/magma/static" {
-    expire.url = ( "" => "access plus 7 days" )
+    expire.url = ( "" => "access plus 70 days" )
   }
 }
 

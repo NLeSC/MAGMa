@@ -1,5 +1,6 @@
 [app:MAGMaWeb]
 use = egg:MAGMaWeb
+filter-with = gzip
 
 pyramid.reload_templates = false
 pyramid.debug_authorization = false
@@ -45,6 +46,9 @@ port = 6543
 [composite:main]
 use = egg:Paste#urlmap
 /magma = MAGMaWeb
+
+[filter:gzip]
+use = egg:Paste#gzip
 
 # Begin logging configuration
 
