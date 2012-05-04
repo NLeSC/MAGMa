@@ -1196,6 +1196,10 @@
                     "name": "Month.js"
                 },
                 {
+                    "path": "static/app/view/",
+                    "name": "Viewport.js"
+                },
+                {
                     "path": "static/extjs-4.1.0/src/picker/",
                     "name": "Date.js"
                 }
