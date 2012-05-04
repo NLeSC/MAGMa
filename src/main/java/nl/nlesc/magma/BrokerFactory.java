@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.nlesc.magma;
+package nl.nlesc.magma;
 
 import java.net.URISyntaxException;
 

@@ -1,4 +1,4 @@
-package org.nlesc.magma.resources;
+package nl.nlesc.magma.resources;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
@@ -12,6 +12,12 @@ import java.util.UUID;
 
 import junit.framework.TestCase;
 
+import nl.nlesc.magma.BrokerFactory;
+import nl.nlesc.magma.JobStateListener;
+import nl.nlesc.magma.entities.JobSubmitRequest;
+import nl.nlesc.magma.entities.JobSubmitResponse;
+import nl.nlesc.magma.resources.JobResource;
+
 import org.gridlab.gat.GAT;
 import org.gridlab.gat.io.File;
 import org.gridlab.gat.monitoring.MetricListener;
@@ -19,10 +25,6 @@ import org.gridlab.gat.resources.Job;
 import org.gridlab.gat.resources.JobDescription;
 import org.gridlab.gat.resources.ResourceBroker;
 import org.junit.Test;
-import org.nlesc.magma.BrokerFactory;
-import org.nlesc.magma.JobStateListener;
-import org.nlesc.magma.entities.JobSubmitRequest;
-import org.nlesc.magma.entities.JobSubmitResponse;
 
 public class JobResourceTest extends TestCase {
     JobResource resource;

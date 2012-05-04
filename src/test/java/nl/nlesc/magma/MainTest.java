@@ -1,6 +1,8 @@
-package org.nlesc.magma;
+package nl.nlesc.magma;
 
 import java.util.UUID;
+
+import nl.nlesc.magma.Main;
 
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;

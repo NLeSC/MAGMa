@@ -1,11 +1,12 @@
-package org.nlesc.magma;
+package nl.nlesc.magma;
+
+import nl.nlesc.magma.entities.JobSubmitRequest;
 
 import org.gridlab.gat.GAT;
 import org.gridlab.gat.GATObjectCreationException;
 import org.gridlab.gat.io.File;
 import org.gridlab.gat.resources.JobDescription;
 import org.gridlab.gat.resources.SoftwareDescription;
-import org.nlesc.magma.entities.JobSubmitRequest;
 
 public class JobDescriptionFactory {
 

@@ -1,4 +1,4 @@
-package org.nlesc.magma;
+package nl.nlesc.magma;
 
 import static org.junit.Assert.assertArrayEquals;
 
@@ -8,13 +8,15 @@ import java.util.UUID;
 
 import junit.framework.TestCase;
 
+import nl.nlesc.magma.JobDescriptionFactory;
+import nl.nlesc.magma.entities.JobSubmitRequest;
+
 import org.gridlab.gat.GAT;
 import org.gridlab.gat.GATObjectCreationException;
 import org.gridlab.gat.io.File;
 import org.gridlab.gat.resources.JobDescription;
 import org.gridlab.gat.resources.SoftwareDescription;
 import org.junit.Test;
-import org.nlesc.magma.entities.JobSubmitRequest;
 
 public class JobDescriptionFactoryTest extends TestCase {
     protected JobDescriptionFactory fact;

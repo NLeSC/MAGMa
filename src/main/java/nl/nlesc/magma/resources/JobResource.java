@@ -1,4 +1,4 @@
-package org.nlesc.magma.resources;
+package nl.nlesc.magma.resources;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -6,11 +6,12 @@ import java.net.URISyntaxException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 
-import org.nlesc.magma.BrokerFactory;
-import org.nlesc.magma.JobDescriptionFactory;
-import org.nlesc.magma.JobStateListener;
-import org.nlesc.magma.entities.JobSubmitRequest;
-import org.nlesc.magma.entities.JobSubmitResponse;
+import nl.nlesc.magma.BrokerFactory;
+import nl.nlesc.magma.JobDescriptionFactory;
+import nl.nlesc.magma.JobStateListener;
+import nl.nlesc.magma.entities.JobSubmitRequest;
+import nl.nlesc.magma.entities.JobSubmitResponse;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

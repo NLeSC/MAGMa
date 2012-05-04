@@ -1,4 +1,4 @@
-package org.nlesc.magma;
+package nl.nlesc.magma;
 
 import com.sun.jersey.api.container.grizzly2.GrizzlyServerFactory;
 import com.sun.jersey.api.core.PackagesResourceConfig;
@@ -45,7 +45,7 @@ public class Main {
     protected static HttpServer startServer() throws IOException {
         System.out.println("Starting grizzly...");
         ResourceConfig rc = new PackagesResourceConfig(
-                "org.nlesc.magma.resources");
+                "nl.nlesc.magma.resources");
         return GrizzlyServerFactory.createHttpServer(BASE_URI, rc);
     }
 

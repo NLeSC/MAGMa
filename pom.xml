@@ -1,10 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.nlesc</groupId>
+    <groupId>nl.nlesc</groupId>
     <artifactId>magmajobmanager</artifactId>
     <packaging>jar</packaging>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.2-SNAPSHOT</version>
     <name>Magma Job Manager</name>
     <description>Retrieves magma job submission requests via a REST handler and submits job to grid using JavaGAT.</description>
     <scm>
@@ -142,12 +142,12 @@
                             <value>${gat-adaptor-path}</value>
                         </systemProperty>
                     </systemProperties>
-                    <mainClass>org.nlesc.magma.Main</mainClass>
+                    <mainClass>nl.nlesc.magma.Main</mainClass>
                 </configuration>
             </plugin>
 
             <!-- To run ws as standalone use 'mvn clean package;java -Dgat.adaptor.path=${gat-adaptor-path}
-                -jar target/magmajobmanager-1.1-SNAPSHOT.jar' -->
+                -jar target/magmajobmanager-1.2-SNAPSHOT.jar' -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -164,7 +164,7 @@
                                     implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                                 <transformer
                                     implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <Main-Class>org.nlesc.magma.Main</Main-Class>
+                                    <Main-Class>nl.nlesc.magma.Main</Main-Class>
                                 </transformer>
                             </transformers>
                         </configuration>

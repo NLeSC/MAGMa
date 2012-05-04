@@ -1,4 +1,4 @@
-package org.nlesc.magma.entities;
+package nl.nlesc.magma.entities;
 
 import javax.xml.bind.annotation.XmlRootElement;
 

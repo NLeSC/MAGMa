@@ -1,4 +1,4 @@
-package org.nlesc.magma;
+package nl.nlesc.magma;
 
 import java.io.FileWriter;
 import java.io.IOException;

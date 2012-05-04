@@ -1,9 +1,11 @@
-package org.nlesc.magma;
+package nl.nlesc.magma;
 
 
 import java.net.URISyntaxException;
 
 import junit.framework.TestCase;
+
+import nl.nlesc.magma.BrokerFactory;
 
 import org.gridlab.gat.GAT;
 import org.gridlab.gat.GATContext;

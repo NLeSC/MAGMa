@@ -1,4 +1,4 @@
-package org.nlesc.magma;
+package nl.nlesc.magma;
 
 
 import static org.mockito.Mockito.mock;
@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.util.UUID;
 
 import junit.framework.TestCase;
+
+import nl.nlesc.magma.JobStateListener;
 
 import org.gridlab.gat.GAT;
 import org.gridlab.gat.GATObjectCreationException;
