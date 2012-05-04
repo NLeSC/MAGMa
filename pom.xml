@@ -249,7 +249,7 @@
         </plugins>
     </build>
     <properties>
-        <jersey-version>1.11</jersey-version>
+        <jersey-version>1.12</jersey-version>
         <gat-adaptor-path>lib/adaptors</gat-adaptor-path>
     </properties>
     <repositories>
