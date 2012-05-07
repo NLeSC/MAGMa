@@ -149,3 +149,14 @@ class RpcViewsTestCase(unittest.TestCase):
 
         self.job.description.assert_called_with('My description')
         self.assertEquals(response, { 'success': True, 'jobid': self.jobid})
+
+    def test_submit_query_withoutjobmanager(self):
+        from urllib2 import URLError
+        from pyramid.httpexceptions import HTTPInternalServerError
+        import json
+
+        self.rpc.job_factory.submitQuery = Mock(side_effect=URLError('[Errno 111] Connection refused'))
+        with self.assertRaises(HTTPInternalServerError) as e:
+            self.rpc.submit_query({})
+
+        self.assertEquals(json.loads(e.exception.body), { 'success': False, 'msg': 'Unable to submit query'})

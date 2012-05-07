@@ -280,8 +280,12 @@ Ext.define('Esc.magmaweb.controller.Scans', {
                   me.application.fireEvent('rpcsubmitsuccess', response.jobid);
               },
               failure: function(form, action) {
-                  console.log(action.failureType);
-                  console.log(action.result);
+                  if (action.failureType === "connect") {
+                      Ext.Error.raise(Ext.JSON.decode(action.response.responseText).msg);
+                    } else {
+                      console.log(action.failureType);
+                      console.log(action.response);
+                    }
               }
           });
       }

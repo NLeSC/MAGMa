@@ -238,9 +238,13 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
           wf.hide();
         },
         failure: function(form, action) {
-          console.log(action.failureType);
-          console.log(action.result);
-          wf.hide();
+            wf.hide();
+            if (action.failureType === "connect") {
+              Ext.Error.raise(Ext.JSON.decode(action.response.responseText).msg);
+            } else {
+              console.log(action.failureType);
+              console.log(action.response);
+            }
         }
       });
     }
