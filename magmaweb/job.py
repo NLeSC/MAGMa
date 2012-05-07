@@ -57,6 +57,10 @@ class JobQuery(object):
         """Return a printable representation."""
         return "JobQuery({!r}, {!r}, {!r}, {!r})".format(self.id, self.dir, self.script, self.prestaged)
 
+    def escape(self, string):
+        """ Replaces single quote with its html escape sequence"""
+        return str(string).replace("'", '&#39;')
+
     def add_structures(self, params, has_ms_data=False):
         """Configure job query to add_structures from params.
 
@@ -83,8 +87,8 @@ class JobQuery(object):
             metsfile.write(params['structures'])
         metsfile.close()
 
-        script = "{{magma}} add_structures -t {structure_format} structures.dat {{db}}"
-        self.script += script.format(structure_format=params['structure_format'])
+        script = "{{magma}} add_structures -t '{structure_format}' structures.dat {{db}}"
+        self.script += script.format(structure_format=self.escape(params['structure_format']))
         self.prestaged.append('structures.dat')
 
         if ('metabolize' in params):
@@ -125,12 +129,12 @@ class JobQuery(object):
         msf.close()
         msfile.close()
 
-        script = "{{magma}} read_ms_data --ms_data_format {ms_data_format} -l {max_ms_level} -a {abs_peak_cutoff} -r {rel_peak_cutoff} ms_data.dat {{db}}\n"
+        script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}' -l '{max_ms_level}' -a '{abs_peak_cutoff}' -r '{rel_peak_cutoff}' ms_data.dat {{db}}\n"
         self.script += script.format(
-                               ms_data_format=params['ms_data_format'],
-                               max_ms_level=params['max_ms_level'],
-                               abs_peak_cutoff=params['abs_peak_cutoff'],
-                               rel_peak_cutoff=params['rel_peak_cutoff']
+                               ms_data_format=self.escape(params['ms_data_format']),
+                               max_ms_level=self.escape(params['max_ms_level']),
+                               abs_peak_cutoff=self.escape(params['abs_peak_cutoff']),
+                               rel_peak_cutoff=self.escape(params['rel_peak_cutoff'])
                                )
         self.prestaged.append('ms_data.dat')
 
@@ -150,10 +154,10 @@ class JobQuery(object):
         If ``has_ms_data`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
         If ``from_subset`` is True then metids are read from stdin
         """
-        script = "{{magma}} metabolize -s {n_reaction_steps} -m {metabolism_types}"
+        script = "{{magma}} metabolize -s '{n_reaction_steps}' -m '{metabolism_types}'"
         self.script += script.format(
-                               n_reaction_steps=params['n_reaction_steps'],
-                               metabolism_types=','.join(params.getall('metabolism_types'))
+                               n_reaction_steps=self.escape(params['n_reaction_steps']),
+                               metabolism_types=self.escape(','.join(params.getall('metabolism_types')))
                                )
         if from_subset:
             self.script+= " -j -"
@@ -177,11 +181,11 @@ class JobQuery(object):
 
         If ``has_ms_data`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
         """
-        script = "echo {metid} | {{magma}} metabolize -j - -s {n_reaction_steps} -m {metabolism_types} {{db}}"
+        script = "echo '{metid}' | {{magma}} metabolize -j - -s '{n_reaction_steps}' -m '{metabolism_types}' {{db}}"
         self.script += script.format(
-                               metid=params['metid'],
-                               n_reaction_steps=params['n_reaction_steps'],
-                               metabolism_types=','.join(params.getall('metabolism_types'))
+                               metid=self.escape(params['metid']),
+                               n_reaction_steps=self.escape(params['n_reaction_steps']),
+                               metabolism_types=self.escape(','.join(params.getall('metabolism_types')))
                                )
 
         if (has_ms_data):
@@ -208,15 +212,15 @@ class JobQuery(object):
 
         If ``from_subset`` is True then metids are read from stdin
         """
-        script = "{{magma}} annotate -p {mz_precision} -c {ms_intensity_cutoff} -d {msms_intensity_cutoff} "
-        script+= "-i {ionisation_mode} -b {max_broken_bonds} --precursor_mz_precision {precursor_mz_precision} "
+        script = "{{magma}} annotate -p '{mz_precision}' -c '{ms_intensity_cutoff}' -d '{msms_intensity_cutoff}' "
+        script+= "-i '{ionisation_mode}' -b '{max_broken_bonds}' --precursor_mz_precision '{precursor_mz_precision}' "
         script = script.format(
-                               precursor_mz_precision=params['precursor_mz_precision'],
-                               mz_precision=params['mz_precision'],
-                               ms_intensity_cutoff=params['ms_intensity_cutoff'],
-                               msms_intensity_cutoff=params['msms_intensity_cutoff'],
-                               ionisation_mode=params['ionisation_mode'],
-                               max_broken_bonds=params['max_broken_bonds']
+                               precursor_mz_precision=self.escape(params['precursor_mz_precision']),
+                               mz_precision=self.escape(params['mz_precision']),
+                               ms_intensity_cutoff=self.escape(params['ms_intensity_cutoff']),
+                               msms_intensity_cutoff=self.escape(params['msms_intensity_cutoff']),
+                               ionisation_mode=self.escape(params['ionisation_mode']),
+                               max_broken_bonds=self.escape(params['max_broken_bonds'])
                                )
 
         if ('use_all_peaks' in params):
