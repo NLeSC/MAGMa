@@ -501,6 +501,7 @@ describe('Metabolites', function() {
 
         expect(form.submit).toHaveBeenCalledWith({
             url: '/rpc/'+Application.jobid+'/add_structures',
+            submitEmptyText : false,
             waitMsg: jasmine.any(String),
             success: jasmine.any(Function),
             failure: jasmine.any(Function)
@@ -540,6 +541,7 @@ describe('Metabolites', function() {
 
         expect(form.submit).toHaveBeenCalledWith({
             url: '/rpc/'+Application.jobid+'/metabolize',
+            submitEmptyText : false,
             waitMsg: jasmine.any(String),
             success: jasmine.any(Function),
             failure: jasmine.any(Function)
@@ -578,6 +580,7 @@ describe('Metabolites', function() {
 
         expect(form.submit).toHaveBeenCalledWith({
             url: '/rpc/'+Application.jobid+'/metabolize_one',
+            submitEmptyText : false,
             waitMsg: jasmine.any(String),
             success: jasmine.any(Function),
             failure: jasmine.any(Function)

@@ -370,6 +370,7 @@ describe('Fragments', function() {
 
         expect(form.submit).toHaveBeenCalledWith({
             url: '/rpc/'+Application.jobid+'/annotate',
+            submitEmptyText : false,
             waitMsg: jasmine.any(String),
             success: jasmine.any(Function),
             failure: jasmine.any(Function)

@@ -384,6 +384,7 @@ describe('Scans controller', function() {
 
       expect(form.submit).toHaveBeenCalledWith({
           url: '/rpc/'+Application.jobid+'/add_ms_data',
+          submitEmptyText : false,
           waitMsg: jasmine.any(String),
           success: jasmine.any(Function),
           failure: jasmine.any(Function)
