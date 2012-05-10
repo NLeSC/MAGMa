@@ -292,6 +292,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       form.submit({
         url: me.application.rpcUrl('add_structures'),
         waitMsg: 'Submitting action ...',
+        submitEmptyText: false,
         success: function(fp, o) {
           var response = Ext.JSON.decode(o.response.responseText);
           me.application.fireEvent('rpcsubmitsuccess', response.jobid);
@@ -329,6 +330,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       form.submit({
         url : me.application.rpcUrl('metabolize'),
         waitMsg: 'Submitting action ...',
+        submitEmptyText: false,
         success: function(fp, o) {
           var response = Ext.JSON.decode(o.response.responseText);
           me.application.fireEvent('rpcsubmitsuccess', response.jobid);
@@ -371,6 +373,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       form.submit({
         url : me.application.rpcUrl('metabolize_one'),
         waitMsg: 'Submitting action ...',
+        submitEmptyText: false,
         success: function(fp, o) {
           var response = Ext.JSON.decode(o.response.responseText);
           me.application.fireEvent('rpcsubmitsuccess', response.jobid);

@@ -275,6 +275,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
           form.submit({
               url: this.application.rpcUrl('add_ms_data'),
               waitMsg: 'Submitting action ...',
+              submitEmptyText: false,
               success: function(fp, o) {
                   var response = Ext.JSON.decode(o.response.responseText);
                   me.application.fireEvent('rpcsubmitsuccess', response.jobid);

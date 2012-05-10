@@ -232,6 +232,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
       form.submit({
         url: this.application.rpcUrl('annotate'),
         waitMsg: 'Submitting action ...',
+        submitEmptyText: false,
         success: function(fp, o) {
           var response = Ext.JSON.decode(o.response.responseText);
           me.application.fireEvent('rpcsubmitsuccess', response.jobid);
