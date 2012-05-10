@@ -93,6 +93,10 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeOneForm', {
             url: url,
             method: 'GET',
             waitMsg: 'Fetching defaults',
+            failure: function(form, action) {
+                delete me.loading;
+                Ext.Error.raise(action.response.responseText);
+            },
             success: function(form) {
                 delete me.loading;
             }

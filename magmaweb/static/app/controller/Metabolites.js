@@ -300,11 +300,10 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
           me.showGrid();
         },
         failure: function(form, action) {
-          if (action.failureType === "connect") {
-            Ext.Error.raise(Ext.JSON.decode(action.response.responseText).msg);
+          if (action.failureType === "server") {
+            Ext.Error.raise(Ext.JSON.decode(action.response.responseText));
           } else {
-            console.log(action.failureType);
-            console.log(action.response);
+            Ext.Error.raise(action.response.responseText);
           }
         }
       });
@@ -338,11 +337,10 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
         },
         failure: function(form, action) {
           wf.hide();
-          if (action.failureType === "connect") {
-            Ext.Error.raise(Ext.JSON.decode(action.response.responseText).msg);
+          if (action.failureType === "server") {
+            Ext.Error.raise(Ext.JSON.decode(action.response.responseText));
           } else {
-            console.log(action.failureType);
-            console.log(action.response);
+            Ext.Error.raise(action.response.responseText);
           }
         }
       });
@@ -381,11 +379,10 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
         },
         failure: function(form, action) {
           wf.hide();
-          if (action.failureType === "connect") {
-            Ext.Error.raise(Ext.JSON.decode(action.response.responseText).msg);
+          if (action.failureType === "server") {
+            Ext.Error.raise(Ext.JSON.decode(action.response.responseText));
           } else {
-            console.log(action.failureType);
-            console.log(action.response);
+            Ext.Error.raise(action.response.responseText);
           }
         }
       });

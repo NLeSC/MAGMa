@@ -44,7 +44,10 @@ Ext.define('Esc.magmaweb.view.scan.UploadForm', {
         this.load({
             url: url,
             method: 'GET',
-            waitMsg: 'Fetching defaults'
+            waitMsg: 'Fetching defaults',
+            failure: function(form, action) {
+                Ext.Error.raise(action.response.responseText);
+            }
         });
     }
 });
