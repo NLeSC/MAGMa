@@ -11,7 +11,8 @@ requires = [
     'pyramid',
     'SQLAlchemy',
     'pyramid_debugtoolbar',
-    'gunicorn'
+    'gunicorn',
+    'colander'
     ]
 
 tests_require = [

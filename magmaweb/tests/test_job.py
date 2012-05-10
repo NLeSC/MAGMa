@@ -1036,6 +1036,33 @@ class JobQueryTestCase(unittest.TestCase):
         jq = JobQuery('x','/y')
         self.assertEquals(jq.escape("'"), '&#39;')
 
+class JobQueryFileTestCase(unittest.TestCase):
+    def test_valid(self):
+        from cgi import FieldStorage
+        f = FieldStorage()
+        df = JobQuery.File().deserialize(None, f)
+
+        self.assertEquals(f,df)
+
+    def test_null(self):
+        from colander import null
+        self.assertEquals(JobQuery.File().deserialize(None, null), null)
+
+    def test_emptystring(self):
+        from colander import null
+        self.assertEquals(JobQuery.File().deserialize(None, ''), null)
+
+    def test_invalid(self):
+        from colander import Invalid, SchemaNode
+        n = SchemaNode(JobQuery.File(), name='filefield')
+        with self.assertRaises(Invalid) as e:
+            n.deserialize(12345)
+
+        self.assertDictEqual(e.exception.asdict(),{ 'filefield': '12345 is not a cgi.FieldStorage'})
+
+    def test_serialize(self):
+        self.assertEquals(JobQuery.File().serialize(None, 12345), 12345)
+
 class JobQueryActionTestCase(unittest.TestCase):
     def setUp(self):
         import uuid, tempfile
@@ -1126,7 +1153,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
 
         sf = 'structures.dat'
         script  = "{magma} add_structures -t 'smiles' structures.dat {db} |"
-        script += "{magma} annotate -p '0.001' -c '200000' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
+        script += "{magma} annotate -p '0.001' -c '200000.0' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
         expected_query = JobQuery(**{
                           'id': self.jobid,
                           'dir': self.jobdir,
@@ -1142,7 +1169,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                            structures='CCO Ethanol',
                            metabolize='on',
                            n_reaction_steps=2,
-                           metabolism_types='phase1',
+                           metabolism_types='phase2',
                            precursor_mz_precision=0.005,
                            mz_precision=0.001,
                            ms_intensity_cutoff=200000,
@@ -1150,13 +1177,12 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                            ionisation_mode=1,
                            max_broken_bonds=4
                            )
-        params.add('metabolism_types', 'phase2')
         query = self.jobquery.add_structures(params, True)
 
         sf = 'structures.dat'
         script  = "{magma} add_structures -t 'smiles' structures.dat {db} |"
-        script += "{magma} metabolize -s '2' -m 'phase1,phase2' -j - {db} |"
-        script += "{magma} annotate -p '0.001' -c '200000' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
+        script += "{magma} metabolize -s '2' -m 'phase2' -j - {db} |"
+        script += "{magma} annotate -p '0.001' -c '200000.0' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
         expected_query = JobQuery(**{
                           'id': self.jobid,
                           'dir': self.jobdir,
@@ -1164,6 +1190,40 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                           'script': script
                           })
         self.assertEqual(query, expected_query)
+
+    def test_without_structures(self):
+        params = {
+                  'structure_format': 'smiles',
+                  'structures_file':'',
+                  'structures': ''
+                  }
+        from colander import Invalid
+        with self.assertRaises(Invalid) as e:
+            self.jobquery.add_structures(params, False)
+
+        expected = {
+                    'structures': 'Either structures or structure_file must be set',
+                    'structures_file': 'Either structures or structure_file must be set'
+                    }
+        self.assertDictEqual(e.exception.asdict(), expected)
+
+    def test_with_string_and_file(self):
+        import tempfile
+        from cgi import FieldStorage
+        sfile = tempfile.TemporaryFile()
+        sfile.write('foo')
+        sfile.flush()
+        sfield = FieldStorage()
+        sfield.file = sfile
+        params = {
+                  'structure_format': 'smiles',
+                  'structures_file': sfield,
+                  'structures': 'bar'
+        }
+
+        self.jobquery.add_structures(params)
+        # File is kept and string is ignored
+        self.assertMultiLineEqual('foo', self.fetch_file('structures.dat'))
 
 class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
 
@@ -1189,7 +1249,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                           'id': self.jobid,
                           'dir': self.jobdir,
                           'prestaged': ['ms_data.dat'],
-                          'script': "{magma} read_ms_data --ms_data_format 'mzxml' -l '3' -a '1000' -r '0.01' ms_data.dat {db}\n"
+                          'script': "{magma} read_ms_data --ms_data_format 'mzxml' -l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
                           })
         self.assertEqual(query, expected_query)
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
@@ -1218,8 +1278,8 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.add_ms_data(params, True)
 
-        script  = "{magma} read_ms_data --ms_data_format 'mzxml' -l '3' -a '1000' -r '0.01' ms_data.dat {db}\n"
-        script += "{magma} annotate -p '0.001' -c '200000' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' {db}\n"
+        script  = "{magma} read_ms_data --ms_data_format 'mzxml' -l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
+        script += "{magma} annotate -p '0.001' -c '200000.0' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' {db}\n"
         expected_query = JobQuery(**{
                           'id': self.jobid,
                           'dir': self.jobdir,
@@ -1265,7 +1325,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
         query = self.jobquery.metabolize(params, True)
 
         script  = "{magma} metabolize -s '2' -m 'phase1,phase2' {db} |"
-        script += "{magma} annotate -p '0.001' -c '200000' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
+        script += "{magma} annotate -p '0.001' -c '200000.0' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
         expected_query = JobQuery(**{
                           'id': self.jobid,
                           'dir': self.jobdir,
@@ -1308,12 +1368,11 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
                   ionisation_mode=1,
                   max_broken_bonds=4
                   )
-        params.add('metabolism_types', 'phase2')
 
         query = self.jobquery.metabolize_one(params, True)
 
-        script  = "echo '123' | {magma} metabolize -j - -s '2' -m 'phase1,phase2' {db} |"
-        script += "{magma} annotate -p '0.001' -c '200000' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
+        script  = "echo '123' | {magma} metabolize -j - -s '2' -m 'phase1' {db} |"
+        script += "{magma} annotate -p '0.001' -c '200000.0' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
         expected_query = JobQuery(**{
                           'id': self.jobid,
                           'dir': self.jobdir,
@@ -1340,7 +1399,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                           'id': self.jobid,
                           'dir': self.jobdir,
                           'prestaged': [],
-                          'script': "{magma} annotate -p '0.001' -c '200000' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' {db}\n"
+                          'script': "{magma} annotate -p '0.001' -c '200000.0' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' {db}\n"
                           })
         self.assertEqual(query, expected_query)
 
@@ -1361,7 +1420,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                           'id': self.jobid,
                           'dir': self.jobdir,
                           'prestaged': [],
-                          'script': "{magma} annotate -p '0.001' -c '200000' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' -u {db}\n"
+                          'script': "{magma} annotate -p '0.001' -c '200000.0' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' -u {db}\n"
                           })
         self.assertEqual(query, expected_query)
 
@@ -1382,7 +1441,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                           'id': self.jobid,
                           'dir': self.jobdir,
                           'prestaged': [],
-                          'script': "{magma} annotate -p '0.001' -c '200000' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' -f {db}\n"
+                          'script': "{magma} annotate -p '0.001' -c '200000.0' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' -f {db}\n"
                           })
         self.assertEqual(query, expected_query)
 
@@ -1420,10 +1479,10 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.allinone(params)
 
-        expected_script  = "{magma} read_ms_data --ms_data_format 'mzxml' -l '3' -a '1000' -r '0.01' ms_data.dat {db}\n"
+        expected_script  = "{magma} read_ms_data --ms_data_format 'mzxml' -l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
         expected_script += "{magma} add_structures -t 'smiles' structures.dat {db}\n"
         expected_script += "{magma} metabolize -s '2' -m 'phase1,phase2' {db}\n"
-        expected_script += "{magma} annotate -p '0.001' -c '200000' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' {db}\n"
+        expected_script += "{magma} annotate -p '0.001' -c '200000.0' -d '0.1' -i '1' -b '4' --precursor_mz_precision '0.005' {db}\n"
 
         expected_query = JobQuery(**{
                           'id': self.jobid,
@@ -1434,49 +1493,4 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         self.assertEqual(query, expected_query)
         self.assertMultiLineEqual(params['structures'], self.fetch_file('structures.dat'))
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
-
-    def test_withquotes(self):
-        self.maxDiff = 100000
-        import tempfile
-        from cgi import FieldStorage
-        ms_data_file = tempfile.NamedTemporaryFile()
-        ms_data_file.write('foo')
-        ms_data_file.flush()
-        msfield = FieldStorage()
-        msfield.file = ms_data_file
-        from webob.multidict import MultiDict
-        params = MultiDict(
-                           n_reaction_steps="2'",
-                           ionisation_mode="1'",
-                           ms_intensity_cutoff="200000'",
-                           msms_intensity_cutoff="0.1'",
-                           abs_peak_cutoff="1000'",
-                           rel_peak_cutoff="0.01'",
-                           precursor_mz_precision="0.005'",
-                           max_broken_bonds="4'",
-                           mz_precision="0.001'",
-                           metabolism_types="phase1'",
-                           max_ms_level="3'",
-                           structures='C1CCCC1 comp1',
-                           ms_data_file=msfield,
-                           structure_format="'smiles'",
-                           ms_data_format="'mzxml'"
-                           )
-        params.add('metabolism_types', "'phase2'")
-
-        query = self.jobquery.allinone(params)
-
-        expected_script  = "{magma} read_ms_data --ms_data_format '&#39;mzxml&#39;' -l '3&#39;' -a '1000&#39;' -r '0.01&#39;' ms_data.dat {db}\n"
-        expected_script += "{magma} add_structures -t '&#39;smiles&#39;' structures.dat {db}\n"
-        expected_script += "{magma} metabolize -s '2&#39;' -m 'phase1&#39;,&#39;phase2&#39;' {db}\n"
-        expected_script += "{magma} annotate -p '0.001&#39;' -c '200000&#39;' -d '0.1&#39;' -i '1&#39;' -b '4&#39;' --precursor_mz_precision '0.005&#39;' {db}\n"
-
-        expected_query = JobQuery(**{
-                          'id': self.jobid,
-                          'dir': self.jobdir,
-                          'prestaged': ['ms_data.dat', 'structures.dat'],
-                          'script': expected_script
-                          })
-        self.assertEqual(query, expected_query)
-
 

@@ -4,6 +4,8 @@ import csv
 import StringIO
 import urllib2
 import json
+from cgi import FieldStorage
+import colander
 from sqlalchemy import create_engine, and_
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, aliased
@@ -43,7 +45,31 @@ def make_job_factory(params):
 
 class JobQuery(object):
     """ Perform actions on a :class:`Job` by parsing post params, staging files and building magma cli commands"""
+
+    class File(object):
+        """ Colander schema type for file upload field"""
+        def serialize(self, node, appstruct):
+            return appstruct
+
+        def deserialize(self, node, cstruct):
+            if cstruct is colander.null:
+                return colander.null
+            if cstruct == '':
+                return colander.null
+            if not isinstance(cstruct, FieldStorage):
+                raise colander.Invalid(node, '{} is not a cgi.FieldStorage'.format(cstruct))
+            return cstruct
+
     def __init__(self, id, dir, script='', prestaged=None):
+        """Contruct JobQuery
+
+        Params:
+        - id, job identifier
+        - dir, job directory
+        - script, script to run in job directory
+        - prestaged, list of files to prestage
+
+        """
         self.id = id
         self.dir = dir
         self.script = script
@@ -61,6 +87,29 @@ class JobQuery(object):
         """ Replaces single quote with its html escape sequence"""
         return str(string).replace("'", '&#39;')
 
+    def _addAnnotateSchema(self, schema):
+        schema.add(colander.SchemaNode(colander.Float(), name='precursor_mz_precision'))
+        schema.add(colander.SchemaNode(colander.Float(), name='mz_precision'))
+        schema.add(colander.SchemaNode(colander.Float(), name='ms_intensity_cutoff'))
+        schema.add(colander.SchemaNode(colander.Float(), name='msms_intensity_cutoff'))
+        schema.add(colander.SchemaNode(
+                                       colander.Integer(),
+                                       validator=colander.OneOf([-1, 1]),
+                                       name='ionisation_mode'
+                                       ))
+        schema.add(colander.SchemaNode(colander.Integer(),
+                                       validator=colander.Range(min=0),
+                                       name='max_broken_bonds'))
+        schema.add(colander.SchemaNode(colander.Boolean(), default=False, missing=False, name='use_all_peaks'))
+        schema.add(colander.SchemaNode(colander.Boolean(), default=False, missing=False, name='skip_fragmentation'))
+
+    def _addMetabolizeSchema(self, schema):
+        metabolism_type = colander.SchemaNode(colander.String(),
+                                              validator=colander.OneOf(['phase1', 'phase2'])
+                                              )
+        schema.add(colander.SchemaNode(colander.Sequence(), metabolism_type, name='metabolism_types'))
+        schema.add(colander.SchemaNode(colander.Integer(), validator=colander.Range(0, 10), name='n_reaction_steps'))
+
     def add_structures(self, params, has_ms_data=False):
         """Configure job query to add_structures from params.
 
@@ -72,9 +121,40 @@ class JobQuery(object):
         * metabolize, when key is set then :meth:`~magmaweb.job.JobQuery.metabolize` will be called.
 
         If ``has_ms_data`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
+        If both ``stuctures`` and ``structures_file`` is filled then ``structures`` is ignored.
         """
+        def textarea_or_file(node, value):
+            """ Validator with tests that either textarea or file upload is filled"""
+            if not(not value['structures'] is colander.null or not value['structures_file'] is colander.null):
+                error = 'Either structures or structure_file must be set'
+                exception = colander.Invalid(node)
+                exception.add(colander.Invalid(structuresSchema, error))
+                exception.add(colander.Invalid(structures_fileSchema, error))
+                raise exception
+
+        schema = colander.SchemaNode(colander.Mapping(), validator=textarea_or_file)
+        schema.add(colander.SchemaNode(colander.String(),
+                                       validator=colander.OneOf(['smiles', 'sdf']),
+                                       name='structure_format'
+                                       ))
+        structuresSchema = colander.SchemaNode(colander.String(), validator=colander.Length(min=1), missing=colander.null, name='structures')
+        schema.add(structuresSchema)
+        structures_fileSchema = colander.SchemaNode(self.File(), missing=colander.null, name='structures_file')
+        schema.add(structures_fileSchema)
+        schema.add(colander.SchemaNode(colander.Boolean(), default=False, missing=False, name='metabolize'))
+        if has_ms_data:
+            self._addAnnotateSchema(schema)
+        if ('metabolize' in params):
+            self._addMetabolizeSchema(schema)
+        if hasattr(params, 'mixed'):
+            # unflatten multidict
+            params = params.mixed()
+        if 'metabolism_types' in params and isinstance(params['metabolism_types'], basestring):
+            params['metabolism_types'] = [params['metabolism_types']]
+        params = schema.deserialize(params)
+
         metsfile = file(os.path.join(self.dir, 'structures.dat'), 'w')
-        if (('structures_file' in params) and (params['structures_file'] != '')):
+        if not params['structures_file'] is colander.null:
             sf = params['structures_file'].file
             sf.seek(0)
             while 1:
@@ -91,7 +171,7 @@ class JobQuery(object):
         self.script += script.format(structure_format=self.escape(params['structure_format']))
         self.prestaged.append('structures.dat')
 
-        if ('metabolize' in params):
+        if params['metabolize']:
             self.script += " |"
             self.metabolize(params, has_ms_data, True)
         elif (has_ms_data):
@@ -115,9 +195,22 @@ class JobQuery(object):
         * abs_peak_cutoff
         * rel_peak_cutoff
 
-        If ``has_metabolites`` is True then :meth:`~magmaweb.job.JobQuery.metabolize` will be called.
+        If ``has_metabolites`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
 
         """
+        schema = colander.SchemaNode(colander.Mapping())
+        schema.add(colander.SchemaNode(colander.String(),
+                                       validator=colander.OneOf(['mzxml']),
+                                       name='ms_data_format'
+                                       ))
+        schema.add(colander.SchemaNode(self.File(), name='ms_data_file'))
+        schema.add(colander.SchemaNode(colander.Integer(), validator=colander.Range(min=0), name='max_ms_level'))
+        schema.add(colander.SchemaNode(colander.Float(), validator=colander.Range(min=0), name='abs_peak_cutoff'))
+        schema.add(colander.SchemaNode(colander.Float(), validator=colander.Range(0,1), name='rel_peak_cutoff'))
+        if has_metabolites:
+            self._addAnnotateSchema(schema)
+        params = schema.deserialize(params)
+
         msfile = file(os.path.join(self.dir, 'ms_data.dat'), 'w')
         msf = params['ms_data_file'].file
         msf.seek(0)
@@ -154,10 +247,21 @@ class JobQuery(object):
         If ``has_ms_data`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
         If ``from_subset`` is True then metids are read from stdin
         """
+        schema = colander.SchemaNode(colander.Mapping())
+        self._addMetabolizeSchema(schema)
+        if has_ms_data:
+            self._addAnnotateSchema(schema)
+        if hasattr(params, 'mixed'):
+            # unflatten multidict
+            params = params.mixed()
+        if 'metabolism_types' in params and isinstance(params['metabolism_types'], basestring):
+            params['metabolism_types'] = [params['metabolism_types']]
+        params = schema.deserialize(params)
+
         script = "{{magma}} metabolize -s '{n_reaction_steps}' -m '{metabolism_types}'"
         self.script += script.format(
                                n_reaction_steps=self.escape(params['n_reaction_steps']),
-                               metabolism_types=self.escape(','.join(params.getall('metabolism_types')))
+                               metabolism_types=self.escape(','.join(params['metabolism_types']))
                                )
         if from_subset:
             self.script+= " -j -"
@@ -181,11 +285,23 @@ class JobQuery(object):
 
         If ``has_ms_data`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
         """
+        schema = colander.SchemaNode(colander.Mapping())
+        schema.add(colander.SchemaNode(colander.Integer(), validator=colander.Range(min=0), name='metid'))
+        self._addMetabolizeSchema(schema)
+        if has_ms_data:
+            self._addAnnotateSchema(schema)
+        if hasattr(params, 'mixed'):
+            # unflatten multidict
+            params = params.mixed()
+        if 'metabolism_types' in params and isinstance(params['metabolism_types'], basestring):
+            params['metabolism_types'] = [params['metabolism_types']]
+        params = schema.deserialize(params)
+
         script = "echo '{metid}' | {{magma}} metabolize -j - -s '{n_reaction_steps}' -m '{metabolism_types}' {{db}}"
         self.script += script.format(
                                metid=self.escape(params['metid']),
                                n_reaction_steps=self.escape(params['n_reaction_steps']),
-                               metabolism_types=self.escape(','.join(params.getall('metabolism_types')))
+                               metabolism_types=self.escape(','.join(params['metabolism_types']))
                                )
 
         if (has_ms_data):
@@ -212,6 +328,10 @@ class JobQuery(object):
 
         If ``from_subset`` is True then metids are read from stdin
         """
+        schema = colander.SchemaNode(colander.Mapping())
+        self._addAnnotateSchema(schema)
+        params = schema.deserialize(params)
+
         script = "{{magma}} annotate -p '{mz_precision}' -c '{ms_intensity_cutoff}' -d '{msms_intensity_cutoff}' "
         script+= "-i '{ionisation_mode}' -b '{max_broken_bonds}' --precursor_mz_precision '{precursor_mz_precision}' "
         script = script.format(
@@ -223,10 +343,10 @@ class JobQuery(object):
                                max_broken_bonds=self.escape(params['max_broken_bonds'])
                                )
 
-        if ('use_all_peaks' in params):
+        if (params['use_all_peaks']):
             script += '-u '
 
-        if ('skip_fragmentation' in params):
+        if (params['skip_fragmentation']):
             script += '-f '
 
         if from_subset:
