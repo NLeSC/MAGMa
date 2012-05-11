@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys,base64,subprocess
-import sqlite3,struct
+import sqlite3,struct,zlib
 import pkg_resources
 import numpy as np
 import logging
@@ -242,7 +242,14 @@ class StructureEngine(object):
         for parentid, in parentids:
             metids.extend(self.metabolize(parentid,metabolism,nsteps))
         return set(metids)
-
+    
+    def retrieve_structures(self,mass):
+        dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
+        conn = sqlite3.connect(dbfilename)
+        c = conn.cursor()
+        result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass-0.01,mass+0.01))
+        for (id,mim,molblock,smiles,chebi_name) in result:
+            self.add_structure(zlib.decompress(molblock),str(chebi_name),1.0,1,"",1)
 
 class MsDataEngine(object):
     def __init__(self,db_session,abs_peak_cutoff,rel_peak_cutoff,max_ms_level):
@@ -275,9 +282,10 @@ class MsDataEngine(object):
             namespace='{'+root.nsmap[None]+'}'
             for mzxmlScan in root.findall(namespace+"msRun/"+namespace+"scan"):
             # mzxmlScan = root.findall(namespace+"msRun/"+namespace+"scan")[0]
-                self.store_mzxml_scan(mzxmlScan,0,namespace)+1
+                self.store_mzxml_scan(mzxmlScan,0,namespace)
         else:
             sys.exit('Attempt to read MS data twice')
+        self.db_session.commit()
 
     def store_mzxml_scan(self,mzxmlScan,precScan,namespace):
         scan=Scan(
@@ -346,7 +354,6 @@ class MsDataEngine(object):
         for peak in peaklist:
             self.db_session.add(Peak(scanid=scanid+1,mz=peak[0],intensity=peak[1]))
         self.db_session.commit()
-
 
 class AnnotateEngine(object):
     def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,
@@ -444,6 +451,24 @@ class AnnotateEngine(object):
         for dbscan in self.db_session.query(Scan).filter(Scan.mslevel==1).all():
             self.scans.append(ScanType(dbscan))
 
+    def get_chebi_candidates(self):
+        dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
+        conn = sqlite3.connect(dbfilename)
+        c = conn.cursor()
+        db_candidates={}
+        # First a dictionary is created with candidate molecules based on all level1 peaks
+        # In this way duplicates originating from repeated detection of the same component
+        # are removed before attempting to add the candidates to the database
+        for scan in self.scans:
+            for peak in scan.peaks:
+                mass=peak.mz-self.ionisation_mode*Hmass
+                if not ((not self.use_all_peaks) and peak.childscan==None):
+                    result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass-self.mz_precision,mass+self.mz_precision))
+                    for (id,mim,molblock,chebi_name) in result:
+                        db_candidates[id]=[molblock,chebi_name]
+                    print str(mass)+' --> '+str(len(db_candidates))+' candidates'
+        return db_candidates
+                    
     def search_all_structures(self):
         logging.warn('Searching all structures')
         for structure in self.db_session.query(Metabolite).all():
@@ -659,8 +684,8 @@ class AnnotateEngine(object):
                 # besthit=None
                 besthit=hittype(peak,0,None,0,0,0)
                 # print peak.missingfragmentscore
-                # result=np.where(np.where(self.fragment_masses < (peak.mz+me.mz_precision),self.fragment_masses,0) > (peak.mz-me.mz_precision))
-                result=np.where(np.where(self.fragment_masses < (peak.mz*1.00001),self.fragment_masses,0) > (peak.mz/1.00001))
+                result=np.where(np.where(self.fragment_masses < (peak.mz+me.mz_precision),self.fragment_masses,0) > (peak.mz-me.mz_precision))
+                # result=np.where(np.where(self.fragment_masses < (peak.mz*1.00001),self.fragment_masses,0) > (peak.mz/1.00001))
                 for i in range(len(result[0])):
                     fid=result[0][i]
                     if self.fragments[fid] & parent == self.fragments[fid]:
@@ -754,7 +779,7 @@ class AnnotateEngine(object):
             for peak in scan.peaks:
                 if not ((not self.use_all_peaks) and peak.childscan==None):
                     protonation=self.ionisation_mode-(structure.molformula.find('+')>=0)*1
-                    deltaH=peak.massmatch_rel(structure.mim,protonation,protonation)
+                    deltaH=peak.massmatch(structure.mim,protonation,protonation)
                     if type(deltaH)==int:
                         if not Fragmented:
                             sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+str(structure.reactionsequence)+'\n')
