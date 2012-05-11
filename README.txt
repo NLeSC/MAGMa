@@ -53,6 +53,12 @@ $HTTP["url"] =~ "/magma" {
   }
 }
 
+For https add setenv module and add 
+setenv.add-request-header = (
+      "X-FORWARDED-PROTOCOL" => "ssl"
+    )
+Above proxy.serve = ...
+
 Documentation
 -------------
 
