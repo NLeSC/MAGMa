@@ -117,6 +117,17 @@ describe('Metabolites', function() {
         );
      });
 
+     afterEach(function() {
+        if (ctrl) {
+            if ('metabolizeForm' in ctrl && 'destroy' in ctrl.metabolizeForm) {
+                ctrl.metabolizeForm.destroy();
+            }
+            if ('metabolizeStructureForm' in ctrl && 'destroy' in ctrl.metabolizeStructureForm) {
+                ctrl.metabolizeStructureForm.destroy();
+            }
+        }
+     });
+
      it('should have metabolites', function() {
         expect(store.getCount()).toBeGreaterThan(1);
      });
@@ -195,13 +206,12 @@ describe('Metabolites', function() {
      it('apply scan filter', function() {
        // mock list
        var sm = { hasSelection: function() {} };
-       var scorecol = { show: function() {} };
        var list = {
          getSelectionModel: function() { return sm; },
-         getFragmentScoreColumn: function() { return scorecol; }
+         showFragmentScoreColumn: function() {}
        };
        spyOn(ctrl, 'getMetaboliteList').andReturn(list);
-       spyOn(scorecol, 'show');
+       spyOn(list, 'showFragmentScoreColumn');
        spyOn(sm, 'hasSelection').andReturn(false);
 
        // mock store
@@ -212,21 +222,24 @@ describe('Metabolites', function() {
        var scanid = 1133;
        ctrl.applyScanFilter(scanid);
 
-       expect(scorecol.show).toHaveBeenCalled();
+       expect(list.showFragmentScoreColumn).toHaveBeenCalled();
        expect(mockedstore.setScanFilter).toHaveBeenCalledWith(scanid);
        expect(sm.hasSelection).toHaveBeenCalled();
      });
 
      describe('clear scan filter', function() {
-       var mockedstore, scorecol, sm;
+       var mockedstore, list, sm;
        beforeEach(function() {
            // mock list
-           sm = { hasSelection: function() {} };
-           scorecol = { show: function() {}, hide: function() {} };
-           var list = {
+           sm = { hasSelection: function() {}, deselectAll: function() {} };
+           list = {
                getSelectionModel: function() { return sm; },
-               getFragmentScoreColumn: function() { return scorecol; }
+               getFragmentScoreColumn: function() { return scorecol; },
+               hideFragmentScoreColumn: function() { },
+               showFragmentScoreColumn: function() { }
            };
+
+           spyOn(list, 'hideFragmentScoreColumn');
            spyOn(ctrl, 'getMetaboliteList').andReturn(list);
            spyOn(sm, 'hasSelection').andReturn(false);
 
@@ -236,7 +249,6 @@ describe('Metabolites', function() {
                removeScanFilter: function() {}
            };
            spyOn(ctrl, 'getMetabolitesStore').andReturn(mockedstore);
-           spyOn(scorecol, 'hide');
            spyOn(mockedstore, 'setScanFilter');
            spyOn(mockedstore, 'removeScanFilter');
        });
@@ -248,9 +260,8 @@ describe('Metabolites', function() {
 
            ctrl.clearScanFilter();
 
-           expect(scorecol.hide).toHaveBeenCalled();
            expect(mockedstore.removeScanFilter).toHaveBeenCalled();
-           expect(sm.hasSelection).toHaveBeenCalled();
+           expect(list.hideFragmentScoreColumn).toHaveBeenCalled();
        });
 
        it('with score filter and sort', function() {
@@ -301,14 +312,14 @@ describe('Metabolites', function() {
             expect(ctrl.hasMSData).toBeFalsy();
         });
 
-        it('empty chormatogram', function() {
+        it('empty chromatogram', function() {
             chromatogram = { data: [] };
             ctrl.onChromatrogramLoad(chromatogram);
             expect(ctrl.hasMSData).toBeFalsy();
             expect(form.setDisabledAnnotateFieldset).toHaveBeenCalledWith(true);
         });
 
-        it('filled chormatogram', function() {
+        it('filled chromatogram', function() {
             chromatogram = { data: [1] };
             ctrl.onChromatrogramLoad(chromatogram);
             expect(ctrl.hasMSData).toBeTruthy();

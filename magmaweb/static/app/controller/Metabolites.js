@@ -185,6 +185,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
   },
   /**
    * If metabolite is selected then try to reselect it after load
+   * If it fails to reselect it fires a metabolitedeselect event.
    * @private
    */
   reselectAfterLoad: function() {
@@ -195,7 +196,12 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
           var selected = sm.getSelection()[0].getId();
 
           var reselect = function() {
-              sm.select(store.getById(selected));
+              var record = store.getById(selected);
+              if (record != null) {
+                sm.select(record);
+              } else {
+                this.application.fireEvent('metabolitedeselect', selected, 'not found');
+              }
               store.removeListener('load', reselect, me);
           }
 
@@ -212,7 +218,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
   applyScanFilter: function(scanid) {
       this.reselectAfterLoad();
       this.getMetabolitesStore().setScanFilter(scanid);
-      this.getMetaboliteList().getFragmentScoreColumn().show();
+      this.getMetaboliteList().showFragmentScoreColumn();
       // TODO in spectra add markers for metabolites present in scan
   },
   /**
@@ -220,6 +226,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
    * And hides fragment score column.
    * And deactivates filters on fragment score column if any
    * And resets sort if store is sorted on fragment score.
+   * Tries to keep selection.
    */
   clearScanFilter: function() {
       var store = this.getMetabolitesStore();
@@ -229,8 +236,9 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       if ('sorters' in store) {
           store.sorters.removeAtKey('score');
       }
+      this.reselectAfterLoad();
       store.removeScanFilter();
-      this.getMetaboliteList().getFragmentScoreColumn().hide();
+      this.getMetaboliteList().hideFragmentScoreColumn();
   },
   onPageSizeChange: function(combo) {
       this.getMetabolitesStore().setPageSize(combo.getValue());

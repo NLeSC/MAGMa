@@ -375,7 +375,7 @@ describe('Fragments', function() {
             success: jasmine.any(Function),
             failure: jasmine.any(Function)
         });
-        ctrl.annotateForm.hide();
+        ctrl.annotateForm.destroy();
     });
 
     it('getAnnotateActionButton', function() {

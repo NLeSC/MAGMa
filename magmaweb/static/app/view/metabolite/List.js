@@ -14,8 +14,8 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
   viewConfig: {
     emptyText: 'No structures available: Add structures or relax filters'
   },
+  selType: 'checkboxmodel',
   selModel: {
-    xtype: 'checkboxmodel',
     allowDeselect: true,
     mode: 'SINGLE'
   },
@@ -120,5 +120,17 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
    */
   getCommandsColumn: function() {
       return this.columns.filter(function(c) { return (c.text == "Commands")})[0];
+  },
+  /**
+   * Hides column with scores.
+   */
+  hideFragmentScoreColumn: function() {
+    this.getFragmentScoreColumn().hide();
+  },
+  /**
+   * Shows column with scores.
+   */
+  showFragmentScoreColumn: function() {
+    this.getFragmentScoreColumn().show();
   }
 });
