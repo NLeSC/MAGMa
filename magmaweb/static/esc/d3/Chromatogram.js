@@ -250,9 +250,13 @@ Ext.define('Esc.d3.Chromatogram', {
   },
   /**
    * Select scan by their id
+   * When there is another scan already selected the unselectscan event is fired.
    * @param {Number} scanid Scan identifier.
    */
   selectScan: function(scanid) {
+    if (this.selectedScan != -1 && this.selectedScan != scanid) {
+       this.fireEvent('unselectscan', this.selectedScan);
+    }
     this.markerSelect(function(d) {
       return (scanid == d.id);
     });

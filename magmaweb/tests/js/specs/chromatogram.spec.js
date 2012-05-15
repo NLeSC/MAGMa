@@ -170,8 +170,9 @@ describe('Esc.d3.Chromatogram', function() {
   });
 
   describe('selectScan', function() {
-    it('select1', function() {
-      var chart = Ext.create('Esc.d3.Chromatogram', {
+    var chart;
+    beforeEach(function() {
+      chart = Ext.create('Esc.d3.Chromatogram', {
         width: 500, height: 400, data: data,
         cutoff: 10, markers: data
       });
@@ -179,6 +180,9 @@ describe('Esc.d3.Chromatogram', function() {
       chart.chartWidth = 500;
       chart.chartHeight = 400;
       chart.svg = mockSvg();
+    });
+
+    it('select1', function() {
       spyOn(chart,'markerSelect');
 
       chart.selectScan(data[0].id);
@@ -188,20 +192,36 @@ describe('Esc.d3.Chromatogram', function() {
     });
 
     it('select0', function() {
-      var chart = Ext.create('Esc.d3.Chromatogram', {
-        width: 500, height: 400, data: data,
-        cutoff: 10, markers: data
-      });
-      // mock initSvg
-      chart.chartWidth = 500;
-      chart.chartHeight = 400;
-      chart.svg = mockSvg();
       spyOn(chart,'markerSelect');
 
       chart.selectScan(null);
 
       expect(chart.markerSelect).toHaveBeenCalled();
       expect(chart.selectedScan).toEqual(-1);
+    });
+
+    it('another scan already selected -> deselect', function() {
+        chart.selectScan(data[0].id);
+
+        spyOn(chart,'markerSelect');
+        spyOn(chart,'fireEvent');
+
+        chart.selectScan(data[1].id);
+
+        expect(chart.fireEvent).toHaveBeenCalledWith('unselectscan', 4);
+        expect(chart.selectedScan).toEqual(5);
+    });
+
+    it('same scan already selected -> no deselect', function() {
+        chart.selectScan(data[0].id);
+
+        spyOn(chart,'markerSelect');
+        spyOn(chart,'fireEvent');
+
+        chart.selectScan(data[0].id);
+
+        expect(chart.fireEvent).not.toHaveBeenCalledWith('unselectscan', 4);
+        expect(chart.selectedScan).toEqual(4);
     });
   });
 

@@ -214,14 +214,15 @@ describe('Fragments', function() {
       it('root node', function() {
           var node = {
             isRoot: function() { return true;},
-            expand: function() {}
+            expand: function() {},
+            childNodes: 'foo'
           };
           spyOn(node, 'expand');
           var f = { callback: function() {} };
           spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
           Ext.util.Observable.capture(ctrl.application, f.callback);
 
-          store.fireEvent('load', store, node, 'foo');
+          store.fireEvent('load', store, node, 'bar');
 
           expect(f.callback).toHaveBeenCalledWith('fragmentload', node, 'foo');
           expect(node.expand).toHaveBeenCalled();
@@ -231,14 +232,15 @@ describe('Fragments', function() {
       it('non root node', function() {
           var node = {
             isRoot: function() { return false;},
-            expand: function() {}
+            expand: function() {},
+            childNodes: 'foo'
           };
           spyOn(node, 'expand');
           var f = { callback: function() {} };
           spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
           Ext.util.Observable.capture(ctrl.application, f.callback);
 
-          store.fireEvent('load', store, node, 'foo');
+          store.fireEvent('load', store, node, 'bar');
 
           expect(f.callback).toHaveBeenCalledWith('fragmentload', node, 'foo');
           expect(node.expand).not.toHaveBeenCalled();

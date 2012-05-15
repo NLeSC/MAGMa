@@ -19,7 +19,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
      * Tokenized string with scanid and mslevel tokens.
      * @cfg {String}
      */
-    url: null,
+    url: null
   },
   /**
    * @property {Array} mspectras Array of Ext.esc.MSpectra
@@ -162,6 +162,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   },
   /**
    * Load a MSpectra.
+   * Clears all mspectras with higher mslevel
    *
    * @param {Number} mslevel MS level
    * @param {Number} scanid Scan identifier.
@@ -171,6 +172,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     var me = this;
     console.log('Loading msspectra level '+mslevel+' with id '+scanid);
     this.getMSpectra(mslevel).setLoading(true);
+    this.clearMSpectraFrom(mslevel+1);
     d3.json(
       Ext.String.format(this.getUrl(), scanid, mslevel),
       function(data) {
@@ -192,7 +194,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     var mspectra = this.getMSpectra(mslevel);
     if (!data) {
       Ext.Error.raise({
-          msg: 'Unable to find mspectra scan on level '+mslevel+' with id '+scanid,
+          msg: 'Unable to find mspectra scan on level '+mslevel+' with id '+scanid
       });
       return;
     }
@@ -246,8 +248,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
    * @param {Array} children child fragments
    */
   loadMSpectrasFromFragment: function(parent, children) {
-    // TODO remove ... || when extjs 4.1 is final
-    if (('id' in parent.data && parent.data.id == 'root' ) || parent.data.root) {
+    if (parent.isRoot()) {
       // lvl1 fragment
       console.log('Selecting metabolite peak in lvl1 mspectra and loading lvl2 mspectra');
       var mspectra = this.getMSpectra(1);

@@ -22,6 +22,7 @@ describe('MSpectras controller', function() {
     var mspectra = Ext.create('Esc.d3.MSpectra');
     spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
     spyOn(mspectra, 'setLoading');
+    spyOn(ctrl, 'clearMSpectraFrom');
     spyOn(d3, 'json');
 
     ctrl.loadMSpectra(mslevel, scanid, markers);
@@ -31,6 +32,7 @@ describe('MSpectras controller', function() {
       'data/mspectra.'+scanid+'.json?mslevel='+mslevel,
       jasmine.any(Function)
     );
+    expect(ctrl.clearMSpectraFrom).toHaveBeenCalledWith(2);
     mspectra.destroy();
   });
 
@@ -148,7 +150,7 @@ describe('MSpectras controller', function() {
       var frag = {
         firstChild: child,
         childNodes:[child],
-        data: { id: 'root' }
+        isRoot: function() {return true}
       };
       var mspectra = Ext.create('Esc.d3.MSpectra');
       spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
@@ -176,7 +178,7 @@ describe('MSpectras controller', function() {
       var frag = {
         firstChild: child,
         childNodes:[child],
-        data: { id: 'root' }
+        isRoot: function() {return true}
       };
       var mspectra = Ext.create('Esc.d3.MSpectra');
       spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
@@ -197,7 +199,8 @@ describe('MSpectras controller', function() {
 
     it('lvl 2 fragment', function() {
       var frag = {
-        data: { mslevel:2, mz: 123 }
+        data: { mslevel:2, mz: 123 },
+        isRoot: function() {return false}
       };
       var mspectra = Ext.create('Esc.d3.MSpectra');
       spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
