@@ -6,7 +6,7 @@ Ext.define('Esc.magmaweb.model.Metabolite', {
   idProperty: 'metid',
   extend:'Ext.data.Model',
   fields: [{
-    name: 'metid',
+    name: 'metid'
   },{
     name: 'mol', type:'string'
   },{

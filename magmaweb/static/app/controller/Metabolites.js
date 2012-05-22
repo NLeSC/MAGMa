@@ -147,7 +147,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
         console.log('Only one metabolite loaded and its not selected, selecting it');
         this.getMetaboliteList().getSelectionModel().select(0);
     }
-    if (store.getTotalUnfilteredCount() == 0) {
+    if (store.getTotalUnfilteredCount() === 0) {
         this.showAddStructuresForm();
     }
   },
@@ -197,13 +197,13 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
 
           var reselect = function() {
               var record = store.getById(selected);
-              if (record != null) {
+              if (record !== null) {
                 sm.select(record);
               } else {
                 this.application.fireEvent('metabolitedeselect', selected, 'not found');
               }
               store.removeListener('load', reselect, me);
-          }
+          };
 
           store.on('load', reselect , me);
       }

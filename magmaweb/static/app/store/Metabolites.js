@@ -77,7 +77,7 @@ Ext.define('Esc.magmaweb.store.Metabolites', {
    * @return {Number} The total number of unfiltered metabolites
    */
   getTotalUnfilteredCount: function() {
-      var reader = this.getProxy().getReader()
+      var reader = this.getProxy().getReader();
       if ('rawData' in reader) {
           return reader.rawData.totalUnfiltered || 0;
       } else {

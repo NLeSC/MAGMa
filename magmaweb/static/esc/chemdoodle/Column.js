@@ -100,15 +100,16 @@ Ext.define('Esc.chemdoodle.Column', {
     Ext.Array.forEach(
         Ext.DomQuery.select('canvas[class*="'+this.getCanvasClass()+'"]',this.grid.getView().dom),
         function(canvas) {
+          var row;
           var canvasid = canvas.id;
           var rowid = canvasid.replace(this.grid.getView().id+'-', '');
           rowid = rowid.replace(/-\d$/, ''); // remove column id
           var store = this.grid.getStore();
           // TreeStore doesn't have data.getByKey use getNodeById
           if ('getNodeById' in store) {
-              var row = store.getNodeById(rowid);
+              row = store.getNodeById(rowid);
           } else {
-              var row = store.data.getByKey(rowid);
+              row = store.data.getByKey(rowid);
           }
           if (row && row.data[this.dataIndex]) {
             this.initCanvas(canvasid,this.getCanvasWidth(),this.getCanvasHeight(),row.data[this.dataIndex],row);

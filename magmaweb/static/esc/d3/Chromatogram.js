@@ -54,7 +54,7 @@ Ext.define('Esc.d3.Chromatogram', {
         chartWidth: 0,
         chartHeight: 0,
         // array of {rt:,intensity:}
-        metabolitedata: [],
+        metabolitedata: []
     };
 
     Ext.applyIf(this, defConfig);
@@ -191,7 +191,7 @@ Ext.define('Esc.d3.Chromatogram', {
         // fetch intensity of metabolite if available
         if (me.metabolitedata.length) {
             scan.metaboliteintensity = me.metabolitedata.filter(function(d) {
-               return (scan.rt == d.rt)
+               return (scan.rt == d.rt);
             })[0].intensity;
         }
         me.fireEvent('mouseoverscan', scan);
@@ -280,8 +280,9 @@ Ext.define('Esc.d3.Chromatogram', {
    * When a scan has been selected scan it is reselected if scan is still marked
    */
   setMarkers: function(data) {
+      var selectedScan;
       if (this.selectedScan != -1) {
-          var selectedScan = this.selectedScan;
+          selectedScan = this.selectedScan;
       }
     this.clearScanSelection();
     this.svg.selectAll('.marker').remove();

@@ -28,7 +28,7 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
     animate: false,
     blockRefresh: false,
     deferEmptyText: false,
-    emptyText: 'Select a metabolite and scan, to show its fragments',
+    emptyText: 'Select a metabolite and scan, to show its fragments'
   },
   initComponent: function() {
     console.log('Init fragment tree');
@@ -80,7 +80,7 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
         { text: 'Fragment atoms', dataIndex: 'atoms', hidden: true},
         { text: 'H Delta', dataIndex: 'deltah'}
       ],
-      plugins: [fmolcol],
+      plugins: [fmolcol]
     });
 
     this.callParent(arguments);

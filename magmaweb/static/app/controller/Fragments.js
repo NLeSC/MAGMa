@@ -149,7 +149,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     this.application.fireEvent('fragmentcollapse', fragment);
   },
   onFragmentExpand: function(fragment) {
-    if (fragment.firstChild == null) {
+    if (fragment.firstChild === null) {
       return; // root node auto expands, but is no fragment, so dont fire event
     }
     this.application.fireEvent('fragmentexpand', fragment);

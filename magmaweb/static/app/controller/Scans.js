@@ -139,12 +139,12 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     var chromatogram = this.getChromatogram();
     chromatogram.setLoading(false);
     console.log('Loading chromatogram');
-    if (data.cutoff != null) {
+    if (data.cutoff !== null) {
         chromatogram.cutoff = data.cutoff;
     }
     chromatogram.setData(data.scans);
     me.resetScans();
-    if (data.scans.length == 0) {
+    if (data.scans.length === 0) {
         this.showUploadForm();
     }
     this.application.fireEvent('chromatogramload', chromatogram);

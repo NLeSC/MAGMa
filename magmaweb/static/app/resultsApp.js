@@ -127,7 +127,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
    * @return {Url}
    */
   runInfoUrl: function() {
-    return this.urls.home+'results/'+this.jobid+'/runinfo.json'
+    return this.urls.home+'results/'+this.jobid+'/runinfo.json';
   },
   /**
    * Creates mspectraspanels and viewport and fires/listens for mspectra events

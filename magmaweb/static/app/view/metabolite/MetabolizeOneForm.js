@@ -62,7 +62,7 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeOneForm', {
         form.setValues({
             'name': rec.get('origin'),
             'metid': rec.get('metid')
-        })
+        });
     },
     /**
      * Enable or disable annotate fieldset.

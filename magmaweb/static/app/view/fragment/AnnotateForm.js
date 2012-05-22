@@ -26,7 +26,7 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateForm', {
         border : false,
         autoScroll : true,
         items : [ {
-            xtype : 'annotatefieldset',
+            xtype : 'annotatefieldset'
         }],
         buttons : [ {
             text : 'Annotate',

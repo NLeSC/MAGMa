@@ -72,8 +72,8 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         {text: 'Reaction seq.', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }, renderer: function(v) {
           return '<ol><li>'+v.replace("\n","</li><li>")+'</li></ol>';
         }},
-        {text: 'Scans', dataIndex: 'nr_scans', filter: { type: 'numeric'
-            , value:{gt:0}, active: true
+        {text: 'Scans', dataIndex: 'nr_scans', filter: {
+            type: 'numeric', value:{gt:0}, active: true
         }},
         {text: 'Smile', dataIndex: 'smiles', hidden:true},
         {text: 'Formula', dataIndex: 'molformula', filter: { type: 'string' }},
@@ -111,7 +111,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
    * @return {Ext.grid.column.Column}
    */
   getFragmentScoreColumn: function() {
-      return this.columns.filter(function(c) { return (c.dataIndex == "score")})[0];
+      return this.columns.filter(function(c) { return (c.dataIndex == "score");})[0];
   },
   /**
    * Get column with commands.
@@ -119,7 +119,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
    * @return {Ext.grid.column.Action}
    */
   getCommandsColumn: function() {
-      return this.columns.filter(function(c) { return (c.text == "Commands")})[0];
+      return this.columns.filter(function(c) { return (c.text == "Commands");})[0];
   },
   /**
    * Hides column with scores.

@@ -6,9 +6,9 @@ Ext.define('Esc.magmaweb.model.Fragment', {
   extend:'Ext.data.Model',
   idProperty: 'fragid',
   fields: [{
-    name: 'fragid',
+    name: 'fragid'
   },{
-    name: 'metid',
+    name: 'metid'
   },{
     name: 'scanid'
   },{

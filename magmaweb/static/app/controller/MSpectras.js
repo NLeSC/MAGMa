@@ -117,7 +117,6 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
         listeners: {
           selectpeak: function(mz) {
             app.fireEvent('peakselect', mz, this.mslevel);
-            // TODO unselect peaks of child scans
           },
           unselectpeak: function(mz) {
             app.fireEvent('peakdeselect', mz, this.mslevel);
