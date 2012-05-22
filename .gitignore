@@ -9,6 +9,7 @@ magmaweb/static/extjs-*
 magmaweb/static/app/resultsApp-all*.js
 cover
 .coverage
+.tox
 docs/_build/
 jsdoc
 /data
