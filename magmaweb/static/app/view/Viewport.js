@@ -22,7 +22,7 @@ Ext.define('Esc.magmaweb.view.Viewport', {
           items: [{
             xtype: 'component',
             cls: 'x-logo',
-            html: '<a href="../.." data-qtip="<b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites">MAGMa</a>'
+            html: '<a href=".." data-qtip="<b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites">MAGMa</a>'
           }, {
             xtype:'tbspacer',
             flex:1 // aligns buttongroup right
