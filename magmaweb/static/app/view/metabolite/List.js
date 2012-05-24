@@ -17,7 +17,8 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
   selType: 'checkboxmodel',
   selModel: {
     allowDeselect: true,
-    mode: 'SINGLE'
+    mode: 'SINGLE',
+    showHeaderCheckbox: false
   },
   dockedItems: [{
     xtype: 'pagingtoolbar',

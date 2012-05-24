@@ -9,6 +9,11 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
   title: 'Fragments',
   store: 'Fragments',
   selType: 'checkboxmodel',
+  selModel: {
+     allowDeselect: true,
+     mode: 'SINGLE',
+     showHeaderCheckbox: false
+  },
   cls: 'fragmenttree', // So height of column can be set with .fragmenttree .x-grid-cell-inner{height: 106px !important;}
   multiSelect: false,
   rootVisible: false,
