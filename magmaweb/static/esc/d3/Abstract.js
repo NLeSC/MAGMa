@@ -103,6 +103,7 @@ Ext.define('Esc.d3.Abstract', {
   },
   /**
    * @protected
+   *
    * Adds svg canvas to component.
    */
   initSvg: function() {

@@ -70,6 +70,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         molcol,
         {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: ['0','1','2','3'] }, hidden:true},
         {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }},
+        {text: 'Name', dataIndex: 'origin', flex:1, filter: { type: 'string' }},
         {text: 'Reaction seq.', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }, renderer: function(v) {
           return '<ol><li>'+v.replace("\n","</li><li>")+'</li></ol>';
         }},
@@ -80,7 +81,6 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         {text: 'Formula', dataIndex: 'molformula', filter: { type: 'string' }},
         {text: 'Monoisotopic mass', dataIndex: 'mim', filter: { type: 'numeric' }, hidden: true},
         {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
-        {text: 'Name', dataIndex: 'origin', hidden: true, filter: { type: 'string' }},
         {text: 'Fragment score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }},
         {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true},
         {xtype: 'actioncolumn', width:30, text:'Commands',
