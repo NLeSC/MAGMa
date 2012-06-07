@@ -22,8 +22,8 @@ class MagmaCommand(object):
         # read_ms_data arguments
         sc.add_argument('ms_data', type=argparse.FileType('r'), help="file with MS/MS data")
         sc.add_argument('--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml"])
-        sc.add_argument('-l', '--max_ms_level', help="Maximum ms level to be processsed (default: %(default)s)", default=10,type=int)
-        sc.add_argument('-a', '--abs_peak_cutoff', help="abs intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
+        sc.add_argument('-l', '--max_ms_level', help="Maximum MS level to be processsed (default: %(default)s)", default=10,type=int)
+        sc.add_argument('-a', '--abs_peak_cutoff', help="Absolute intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
         sc.add_argument('-r', '--rel_peak_cutoff', help="fraction of basepeak intensity threshold for storing peaks in database (default: %(default)s)", default=0.01,type=float)
         # add_structures arguments
         sc.add_argument('structures', type=argparse.FileType('rb'), help="File with smiles used as structures")
@@ -31,14 +31,14 @@ class MagmaCommand(object):
         sc.add_argument('-s', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=2,type=int)
         sc.add_argument('-m', '--metabolism_types', help="1 and/or 2 for phase 1 and 2 biotransformations (default: %(default)s)", default="phase1,phase2", type=str)
         # annotate arguments
-        sc.add_argument('-p', '--mz_precision', help="precision in Dalton (default: %(default)s)", default=0.001,type=float)
-        sc.add_argument('-c', '--ms_intensity_cutoff', help="cutoff value to filter MS peaks (absolute) (default: %(default)s)", default=1e6,type=float)
-        sc.add_argument('-d', '--msms_intensity_cutoff', help="cutoff value to filter MSMS peaks (relative to basepeak) (default: %(default)s)", default=0.1,type=float)
+        sc.add_argument('-p', '--mz_precision', help="Mass precision for matching calculated masses with peaks (default: %(default)s)", default=0.001,type=float)
+        sc.add_argument('-c', '--ms_intensity_cutoff', help="Minimum intensity of level 1 peaks to be annotated (default: %(default)s)", default=1e6,type=float)
+        sc.add_argument('-d', '--msms_intensity_cutoff', help="Minimum intensity of of fragment peaks to be annotated, as fraction of basepeak (default: %(default)s)", default=0.1,type=float)
         sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
-        sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bonds broken in substructures generated from metabolites (default: %(default)s)", default=4,type=int)
-        sc.add_argument('--precursor_mz_precision', help="precision for matching precursor mz with peak mz in parent scan (default: %(default)s)", default=0.005,type=float)
-        sc.add_argument('-u', '--use_all_peaks', help="annotate all peaks, including those without fragmentation data (default: %(default)s)", action="store_true")
-        sc.add_argument('-f', '--skip_fragmentation', action="store_true")
+        sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bond breaks to generate substructures (default: %(default)s)", default=4,type=int)
+        sc.add_argument('--precursor_mz_precision', help="Mass precision for matching peaks and precursor ions (default: %(default)s)", default=0.005,type=float)
+        sc.add_argument('-u', '--use_all_peaks', help="Annotate all level 1 peaks, including those not fragmented (default: %(default)s)", action="store_true")
+        sc.add_argument('-f', '--skip_fragmentation', help="Skip substructure annotation of fragment peaks", action="store_true")
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.all_in_one)
 
@@ -68,8 +68,8 @@ class MagmaCommand(object):
         # read_ms_data arguments
         sc.add_argument('ms_data', type=argparse.FileType('r'), help="file with MS/MS data")
         sc.add_argument('--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml"])
-        sc.add_argument('-l', '--max_ms_level', help="Maximum ms level to be processsed (default: %(default)s)", default=10,type=int)
-        sc.add_argument('-a', '--abs_peak_cutoff', help="abs intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
+        sc.add_argument('-l', '--max_ms_level', help="Maximum MS level to be processsed (default: %(default)s)", default=10,type=int)
+        sc.add_argument('-a', '--abs_peak_cutoff', help="Absolute intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
         sc.add_argument('-r', '--rel_peak_cutoff', help="fraction of basepeak intensity threshold for storing peaks in database (default: %(default)s)", default=0.01,type=float)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.read_ms_data)
@@ -77,15 +77,15 @@ class MagmaCommand(object):
         sc = subparsers.add_parser("annotate", help=self.annotate.__doc__, description=self.annotate.__doc__)
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # annotate arguments
-        sc.add_argument('-p', '--mz_precision', help="precision in Dalton (default: %(default)s)", default=0.001,type=float)
-        sc.add_argument('-c', '--ms_intensity_cutoff', help="cutoff value to filter MS peaks (absolute) (default: %(default)s)", default=1e6,type=float)
-        sc.add_argument('-d', '--msms_intensity_cutoff', help="cutoff value to filter MSMS peaks (relative to basepeak) (default: %(default)s)", default=0.1,type=float)
+        sc.add_argument('-p', '--mz_precision', help="Mass precision for matching calculated masses with peaks (default: %(default)s)", default=0.001,type=float)
+        sc.add_argument('-c', '--ms_intensity_cutoff', help="Minimum intensity of level 1 peaks to be annotated (default: %(default)s)", default=1e6,type=float)
+        sc.add_argument('-d', '--msms_intensity_cutoff', help="Minimum intensity of of fragment peaks to be annotated, as fraction of basepeak (default: %(default)s)", default=0.1,type=float)
         sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
         sc.add_argument('-j', '--metids', type=argparse.FileType('rb'), help="File with structure ids")
-        sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bonds broken in substructures generated from metabolites (default: %(default)s)", default=4,type=int)
-        sc.add_argument('--precursor_mz_precision', help="precision for matching precursor mz with peak mz in parent scan (default: %(default)s)", default=0.005,type=float)
-        sc.add_argument('-u', '--use_all_peaks', help="annotate all peaks, including those without fragmentation data (default: %(default)s)", action="store_true")
-        sc.add_argument('-f', '--skip_fragmentation', action="store_true")
+        sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bond breaks to generate substructures (default: %(default)s)", default=4,type=int)
+        sc.add_argument('--precursor_mz_precision', help="Mass precision for matching peaks and precursor ions (default: %(default)s)", default=0.005,type=float)
+        sc.add_argument('-u', '--use_all_peaks', help="Annotate all level 1 peaks, including those not fragmented (default: %(default)s)", action="store_true")
+        sc.add_argument('-f', '--skip_fragmentation', help="Skip substructure annotation of fragment peaks", action="store_true")
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
 
@@ -147,7 +147,10 @@ class MagmaCommand(object):
                 metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 'PARENT', 1))
         elif args.structure_format == 'sdf':
             for mol in Chem.SDMolSupplier(args.structures.name):
-                metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 'PARENT', 1))
+                try:
+                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 'PARENT', 1))
+                except:
+                    print sys.exc_info()
         return metids
 
     def _metabolize(self, args, magma_session):
