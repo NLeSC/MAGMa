@@ -306,25 +306,24 @@ class MsDataEngine(object):
             if child.tag == namespace+'peaks':
                 self.store_mzxml_peaks(scan,child.text)
             if child.tag == namespace+'scan' and int(child.attrib['msLevel'])<=self.max_ms_level:
-                if scan.mslevel == 1:
-                    cutoff=0.0
-                else:
-                    cutoff=max(scan.basepeakintensity*self.rel_peak_cutoff,self.abs_peak_cutoff)
-                if float(child.attrib['basePeakIntensity'])>cutoff:
-                    self.store_mzxml_scan(child,scan.scanid,namespace)
+#                if scan.mslevel == 1:
+#                    cutoff=0.0
+#                else:
+#                    cutoff=max(scan.basepeakintensity*self.rel_peak_cutoff,self.abs_peak_cutoff)
+#                if float(child.attrib['basePeakIntensity'])>cutoff:
+                self.store_mzxml_scan(child,scan.scanid,namespace)
         self.db_session.add(scan)
 
     def store_mzxml_peaks(self,scan,line):
-        dbpeak_cutoff=scan.basepeakintensity*self.rel_peak_cutoff
-        if dbpeak_cutoff<self.abs_peak_cutoff:
-            dbpeak_cutoff=self.abs_peak_cutoff
+#        dbpeak_cutoff=scan.basepeakintensity*self.rel_peak_cutoff
+#        if dbpeak_cutoff<self.abs_peak_cutoff:
+#            dbpeak_cutoff=self.abs_peak_cutoff
         decoded = base64.decodestring(line)
         tmp_size = len(decoded)/4
         unpack_format1 = ">%df" % tmp_size
         unpacked = struct.unpack(unpack_format1,decoded)
-        # loop over odd=mz, even=intensity
         for mz, intensity in zip(unpacked[::2], unpacked[1::2]):
-            if intensity > dbpeak_cutoff:
+            if intensity > self.abs_peak_cutoff:
                 self.db_session.add(Peak(scanid=scan.scanid,mz=mz,intensity=intensity))
 
     def store_peak_list(self,scanid,rt,precursormz,basepeak,peaklist):
