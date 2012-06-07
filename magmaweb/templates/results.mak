@@ -60,8 +60,8 @@ line.peak {
   stroke: lightgreen;
 }
 
-.assigned {
-  stroke: #afdddd;
+line.assigned {
+  stroke: orange !important;  /* #afdddd; */
 }
 
 .annotatedandassigned {

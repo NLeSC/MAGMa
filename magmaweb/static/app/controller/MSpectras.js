@@ -32,6 +32,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     return this;
   },
   init: function() {
+    var me = this;
     this.setUrl(this.application.getUrls().mspectra);
     this.setMaxmslevel(this.application.getMaxmslevel());
 
@@ -51,6 +52,10 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     });
     this.application.on('peakmouseover', function(peak, mslevel, scanid) {
         Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' scan '+scanid+' (m/z='+peak.mz+', intensity='+peak.intensity+')');
+    });
+    this.application.on('assignmentchanged', function(isAssigned, params) {
+		// reload mspectra to show (un)assigned peak update
+        me.loadMSpectra(1, params.scanid, me.getMSpectra(1).markers);
     });
 
     this.addEvents(
@@ -171,7 +176,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     var me = this;
     console.log('Loading msspectra level '+mslevel+' with id '+scanid);
     this.getMSpectra(mslevel).setLoading(true);
-    this.clearMSpectraFrom(mslevel+1);
+    this.clearMSpectraFrom(mslevel+1); // TODO stop this when (un)assinging a structure to a peak
     d3.json(
       Ext.String.format(this.getUrl(), scanid, mslevel),
       function(data) {

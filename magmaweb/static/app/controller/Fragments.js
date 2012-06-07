@@ -98,7 +98,17 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
        * @param {Esc.magmaweb.model.Fragment} parent
        * @param {Array} children Array of fragment children.
        */
-      'fragmentload'
+      'fragmentload',
+      /**
+       * @event
+       * Triggered when a structure/peak assignent is changed (assigned or unassigned).
+       * @param {Boolean} isAssigned
+       * @param {Object} params
+       * @param {Number} params.metid Metaobolite identifier
+       * @param {Number} params.scanid Scan identifier
+       * @param {Number} params.mz M/z of peak
+       */
+      'assignmentchanged'
     );
   },
   /**
@@ -147,7 +157,11 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
   clearFragments: function() {
     console.log('Clearing fragments and mspectra >lvl1');
     this.getFragmentsStore().getRootNode().removeAll();
-    this.getAssignStruct2PeakButton().disable();
+
+	// (un)assignment not possible when no fragment is selected
+    var abut = this.getAssignStruct2PeakButton();
+    abut.disable();
+    abut.toggle(false);
   },
   onFragmentCollapse: function(fragment) {
     this.application.fireEvent('fragmentcollapse', fragment);
@@ -189,7 +203,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
         var abut = this.getAssignStruct2PeakButton();
         var data = parent.childNodes[0].data;
         abut.setParams({ scanid: data.scanid, metid: data.metid, mz: data.mz});
-        // TODO from data also determine if fragment has been assigned or not
+        abut.toggle(data.isAssigned);
         abut.enable();
     }
     this.application.fireEvent('fragmentload', parent, parent.childNodes);
@@ -346,6 +360,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
       }
   },
   assign_struct2peakAction: function(button) {
+      var me = this;
       var url = this.application.rpcUrl('unassign');
       if (button.pressed) {
           url = this.application.rpcUrl('assign');
@@ -354,10 +369,14 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
           url: url,
           params: button.params,
           success: function(o) {
-              console.log('(un)assign done');
+              me.application.fireEvent('assignmentchanged', button.pressed, button.params);
           },
           failure: function() {
-              console.log('(un)assign failed');
+              if (action.failureType === "server") {
+                Ext.Error.raise(Ext.JSON.decode(action.response.responseText));
+              } else {
+                Ext.Error.raise(action.response.responseText);
+              }
           }
      });
   },

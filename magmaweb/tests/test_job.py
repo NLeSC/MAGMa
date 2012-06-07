@@ -858,6 +858,7 @@ class JobFragmentsTestCase(unittest.TestCase):
         self.job = Job(uuid.uuid1(), initTestingDB(), '/tmp')
 
     def test_metabolitewithoutfragments(self):
+        self.maxDiff = None
         response = self.job.fragments(metid=72, scanid=641)
         self.assertEqual(response, {
             'children': [{
@@ -873,11 +874,13 @@ class JobFragmentsTestCase(unittest.TestCase):
                 'mslevel': 1,
                 'mz': 109.0296783,
                 'scanid': 641,
-                'score': 200.0
+                'score': 200.0,
+                'isAssigned': False,
             }], 'expanded': True
         })
 
     def test_metabolitewithfragments(self):
+        self.maxDiff = None
         response = self.job.fragments(metid=352, scanid=870)
         self.assertEqual(response, {
             'children': [{
@@ -919,7 +922,8 @@ class JobFragmentsTestCase(unittest.TestCase):
                 'mslevel': 1,
                 'mz': 207.0663147,
                 'scanid': 870,
-                'score': 100
+                'score': 100,
+                'isAssigned': False
             }], 'expanded': True
         })
 
@@ -939,6 +943,28 @@ class JobFragmentsTestCase(unittest.TestCase):
             'scanid': 872,
             'score': 4
         }])
+
+    def test_metabolitewithassignedpeak(self):
+        self.job.assign_metabolite2peak(641, 109.0295639038086, 72)
+        response = self.job.fragments(metid=72, scanid=641)
+        self.assertEqual(response, {
+            'children': [{
+                'atoms': u'0,1,2,3,4,5,6,7',
+                'children': [],
+                'deltah': -1.0,
+                'expanded': True,
+                'fragid': 948,
+                'leaf': True,
+                'mass': 110.0367794368,
+                'metid': 72,
+                'mol': u'Molfile',
+                'mslevel': 1,
+                'mz': 109.0296783,
+                'scanid': 641,
+                'score': 200.0,
+                'isAssigned': True,
+            }], 'expanded': True
+        })
 
     def test_badfragment(self):
         from magmaweb.job import FragmentNotFound
@@ -990,7 +1016,8 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                 'mslevel': 1,
                 'mz': 287.015686035156,
                 'scanid': 1,
-                'score': 0.0
+                'score': 0.0,
+                'isAssigned': False
             }, {
                 'atoms': u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
                 'deltah': -1.0,
@@ -1004,6 +1031,7 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                 'mass': 288.0303734299,
                 'scanid': 1,
                 'score': 0.5,
+                'isAssigned': False,
                 'children': [{
                     'fragid':  19,
                     'metid':  12,

@@ -868,7 +868,7 @@ class Job(object):
                 'mz': frag.mz,
                 'mass': frag.mass,
                 'deltah': frag.deltah,
-                'mslevel': mslevel,
+                'mslevel': mslevel
             }
             if (len(frag.children) > 0):
                 f['expanded'] = False
@@ -889,6 +889,13 @@ class Job(object):
                                   Fragment.parentfragid == 0
                          ):
                 structure = fragment2json(row)
+
+                structure['isAssigned'] = self.session.query(
+                                                         func.count('*')).filter(
+                                                         Peak.scanid == scanid).filter(
+                                                         Peak.assigned_metid == metid).scalar() > 0
+
+                # load children
                 structure['children'] = []
                 for frow in q().filter(Fragment.parentfragid == structure['fragid']):
                     structure['expanded'] = True

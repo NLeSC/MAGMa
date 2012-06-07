@@ -65,7 +65,7 @@ describe('Fragments', function() {
      * Loads fragment tree with static json file
      */
     var fill = function(callback) {
-      assignbut = jasmine.createSpyObj('abut', [ 'setParams', 'disable', 'enable']);
+      assignbut = jasmine.createSpyObj('abut', [ 'setParams', 'disable', 'enable', 'toggle']);
       spyOn(ctrl,'getAssignStruct2PeakButton').andReturn(assignbut);
       ctrl.loadFragments(1133, 352);
       waitsFor(
@@ -91,6 +91,7 @@ describe('Fragments', function() {
         ctrl.clearFragments();
         expect(store.getRootNode().hasChildNodes()).toBeFalsy();
         expect(assignbut.disable).toHaveBeenCalled();
+        expect(assignbut.toggle).toHaveBeenCalledWith(false);
       });
     });
 
@@ -219,7 +220,8 @@ describe('Fragments', function() {
         var data = {
           metid: 123,
           scanid: 45,
-          mz: 6789
+          mz: 6789,
+          isAssigned: true
         };
         var node = {
           isRoot: function() { return true;},
@@ -232,13 +234,17 @@ describe('Fragments', function() {
         var f = { callback: function() {} };
         spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
         Ext.util.Observable.capture(ctrl.application, f.callback);
-        assignbut = jasmine.createSpyObj('abut', [ 'setParams', 'disable', 'enable']);
+        assignbut = jasmine.createSpyObj('abut', [ 'setParams', 'disable', 'enable', 'toggle']);
         spyOn(ctrl, 'getAssignStruct2PeakButton').andReturn(assignbut);
 
         store.fireEvent('load', store, node, 'bar');
 
-        expect(assignbut.setParams).toHaveBeenCalledWith(data);
+        expect(assignbut.setParams).toHaveBeenCalledWith({
+          metid: 123,
+          scanid: 45,
+          mz: 6789});
         expect(assignbut.enable).toHaveBeenCalled();
+        expect(assignbut.toggle).toHaveBeenCalledWith(true);
         expect(f.callback).toHaveBeenCalledWith('fragmentload', node, [{data: data}]);
         expect(node.expand).toHaveBeenCalled();
         Ext.util.Observable.releaseCapture(ctrl.application);
