@@ -37,6 +37,9 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
       },
       '#annotateaction': {
           click: this.annotateAction
+      },
+      'component[action=assign_struct2peak]': {
+          click: this.assign_struct2peakAction
       }
     });
 
@@ -144,6 +147,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
   clearFragments: function() {
     console.log('Clearing fragments and mspectra >lvl1');
     this.getFragmentsStore().getRootNode().removeAll();
+    this.getAssignStruct2PeakButton().disable();
   },
   onFragmentCollapse: function(fragment) {
     this.application.fireEvent('fragmentcollapse', fragment);
@@ -180,6 +184,13 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     // when parent is root node then expand it
     if (parent.isRoot()) {
         parent.expand();
+
+        // remember which molecule to which peak to assign
+        var abut = this.getAssignStruct2PeakButton();
+        var data = parent.childNodes[0].data;
+        abut.setParams({ scanid: data.scanid, metid: data.metid, mz: data.mz});
+        // TODO from data also determine if fragment has been assigned or not
+        abut.enable();
     }
     this.application.fireEvent('fragmentload', parent, parent.childNodes);
   },
@@ -333,5 +344,24 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
       } else {
           this.showAnnotateForm();
       }
+  },
+  assign_struct2peakAction: function(button) {
+      var url = this.application.rpcUrl('unassign');
+      if (button.pressed) {
+          url = this.application.rpcUrl('assign');
+      }
+      Ext.Ajax.request({
+          url: url,
+          params: button.params,
+          success: function(o) {
+              console.log('(un)assign done');
+          },
+          failure: function() {
+              console.log('(un)assign failed');
+          }
+     });
+  },
+  getAssignStruct2PeakButton: function() {
+      return this.getFragmentTree().getAssignStruct2PeakButton();
   }
 });

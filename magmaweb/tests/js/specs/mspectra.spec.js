@@ -34,7 +34,7 @@ describe('Esc.d3.MSpectra', function() {
       width: 500, height: 400
     });
     expect(chart.cutoffCls).toEqual('cutoffline');
-    expect(chart.selectedPeakCls).toEqual('selectedpeak');
+    expect(chart.selectedPeakCls).toEqual('selected');
     expect(chart.selectedPeak).toEqual(-1);
     expect(chart.cutoff).toEqual(0);
   });
@@ -268,8 +268,8 @@ describe('Esc.d3.MSpectra', function() {
 
       chart.onMarkersReady();
 
-      expect(chart.svg.attr).toHaveBeenCalledWith('class', 'marker lowermarker');
-      expect(chart.svg.attr).toHaveBeenCalledWith('class', 'marker uppermarker');
+      expect(chart.svg.attr).toHaveBeenCalledWith('class', 'marker lowermarker annotated');
+      expect(chart.svg.attr).toHaveBeenCalledWith('class', 'marker uppermarker annotated');
       expect(chart.svg.attr).toHaveBeenCalledWith('transform', jasmine.any(Function));
       expect(chart.svg.text).toHaveBeenCalledWith(jasmine.any(Function));
       expect(chart.svg.on).toHaveBeenCalledWith('click', jasmine.any(Function));

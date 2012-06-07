@@ -49,6 +49,7 @@ describe('Fragments', function() {
 
   describe('controller', function() {
     var store = null, ctrl= null;
+    var assignbut = null;
 
     beforeEach(function() {
        if (!ctrl) {
@@ -64,6 +65,8 @@ describe('Fragments', function() {
      * Loads fragment tree with static json file
      */
     var fill = function(callback) {
+      assignbut = jasmine.createSpyObj('abut', [ 'setParams', 'disable', 'enable']);
+      spyOn(ctrl,'getAssignStruct2PeakButton').andReturn(assignbut);
       ctrl.loadFragments(1133, 352);
       waitsFor(
         function() { return !store.isLoading();},
@@ -87,6 +90,7 @@ describe('Fragments', function() {
         expect(store.getRootNode().hasChildNodes()).toBeTruthy();
         ctrl.clearFragments();
         expect(store.getRootNode().hasChildNodes()).toBeFalsy();
+        expect(assignbut.disable).toHaveBeenCalled();
       });
     });
 
@@ -212,21 +216,32 @@ describe('Fragments', function() {
 
     describe('onLoad', function() {
       it('root node', function() {
-          var node = {
-            isRoot: function() { return true;},
-            expand: function() {},
-            childNodes: 'foo'
-          };
-          spyOn(node, 'expand');
-          var f = { callback: function() {} };
-          spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
-          Ext.util.Observable.capture(ctrl.application, f.callback);
+        var data = {
+          metid: 123,
+          scanid: 45,
+          mz: 6789
+        };
+        var node = {
+          isRoot: function() { return true;},
+          expand: function() {},
+          childNodes: [{
+            data: data
+          }]
+        };
+        spyOn(node, 'expand');
+        var f = { callback: function() {} };
+        spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+        Ext.util.Observable.capture(ctrl.application, f.callback);
+        assignbut = jasmine.createSpyObj('abut', [ 'setParams', 'disable', 'enable']);
+        spyOn(ctrl, 'getAssignStruct2PeakButton').andReturn(assignbut);
 
-          store.fireEvent('load', store, node, 'bar');
+        store.fireEvent('load', store, node, 'bar');
 
-          expect(f.callback).toHaveBeenCalledWith('fragmentload', node, 'foo');
-          expect(node.expand).toHaveBeenCalled();
-          Ext.util.Observable.releaseCapture(ctrl.application);
+        expect(assignbut.setParams).toHaveBeenCalledWith(data);
+        expect(assignbut.enable).toHaveBeenCalled();
+        expect(f.callback).toHaveBeenCalledWith('fragmentload', node, [{data: data}]);
+        expect(node.expand).toHaveBeenCalled();
+        Ext.util.Observable.releaseCapture(ctrl.application);
       });
 
       it('non root node', function() {

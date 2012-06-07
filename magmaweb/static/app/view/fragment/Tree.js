@@ -24,6 +24,22 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
      disabled: true,
      tooltip: 'Save fragment tree'
   }],
+  dockedItems: [{
+      xtype: 'toolbar',
+      dock: 'bottom',
+      layout: {
+        type: 'hbox',
+        align: 'middle',
+        pack: 'center'
+      },
+      items: [{
+          iconCls: 'icon-connect',
+          text: 'Assign molecule to peak',
+          action: 'assign_struct2peak',
+          disabled: true,
+          enableToggle: true
+      }]
+  }],
   requires: [ 'Esc.chemdoodle.Column', 'Ext.selection.CheckboxModel' ],
   viewConfig: {
     // animate is default true causing refresh event to be blocked
@@ -96,5 +112,8 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
   initMolecules: function() {
     // force fragment molecule rendering, hopyfully canvas have been rendered after spectra has been loaded
     return this.getPlugin('fmolcol').initCanvases();
+  },
+  getAssignStruct2PeakButton: function() {
+      return this.query('component[action=assign_struct2peak]')[0];
   }
 });

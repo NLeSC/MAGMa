@@ -33,7 +33,7 @@ describe('Esc.d3.Chromatogram', function() {
       width: 500, height: 400
     });
     expect(chart.cutoffCls).toEqual('cutoffline');
-    expect(chart.selectedScanCls).toEqual('selectedscan');
+    expect(chart.selectedScanCls).toEqual('selected');
     expect(chart.selectedScan).toEqual(-1);
     expect(chart.cutoff).toEqual(2000000);
   });
@@ -332,8 +332,8 @@ describe('Esc.d3.Chromatogram', function() {
 
       chart.onMarkersReady();
 
-      expect(chart.svg.attr).toHaveBeenCalledWith('class', 'marker lowermarker');
-      expect(chart.svg.attr).toHaveBeenCalledWith('class', 'marker uppermarker');
+      expect(chart.svg.attr).toHaveBeenCalledWith('class', 'marker lowermarker annotated');
+      expect(chart.svg.attr).toHaveBeenCalledWith('class', 'marker uppermarker annotated');
       expect(chart.svg.attr).toHaveBeenCalledWith('transform', jasmine.any(Function));
       expect(chart.svg.text).toHaveBeenCalledWith(jasmine.any(Function));
       expect(chart.svg.on).toHaveBeenCalledWith('click', jasmine.any(Function));

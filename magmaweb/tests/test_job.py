@@ -544,6 +544,30 @@ class JobTestCase(unittest.TestCase):
         self.job.description('My second description')
         self.assertEqual(self.job.runInfo().description, 'My second description')
 
+    def test_assign_metabolite2peak(self):
+        metid = 72
+        scanid = 641
+        mz = 109.0295639038086
+        self.job.assign_metabolite2peak(scanid, mz, metid)
+
+        self.assertEqual(
+                         self.session.query(Peak.assigned_metid).filter(Peak.scanid==scanid).filter(Peak.mz==mz).scalar()
+                         , metid
+                         )
+
+    def test_unassign_metabolite2peak(self):
+        metid = 72
+        scanid = 641
+        mz = 109.0295639038086
+        self.job.assign_metabolite2peak(scanid, mz, metid)
+
+        self.job.unassign_metabolite2peak(scanid, mz)
+
+        self.assertEqual(
+                         self.session.query(Peak.assigned_metid).filter(Peak.scanid==scanid).filter(Peak.mz==mz).scalar()
+                         , None
+                         )
+
 class JobEmptyDatasetTestCase(unittest.TestCase):
     def setUp(self):
         import uuid
@@ -773,8 +797,8 @@ class JobMSpectraTestCase(unittest.TestCase):
             self.job.mspectra(641),
             {
                 'peaks': [
-                    {'intensity': 345608.65625, 'mz': 109.0295639038086},
-                    {'intensity': 807576.625, 'mz': 305.033508300781}
+                    {'intensity': 345608.65625, 'mz': 109.0295639038086, 'assigned_metid': None},
+                    {'intensity': 807576.625, 'mz': 305.033508300781, 'assigned_metid': None}
                 ],
                 'cutoff': 200000.0,
                 'mslevel': 1,
@@ -787,8 +811,8 @@ class JobMSpectraTestCase(unittest.TestCase):
             self.job.mspectra(641, 1),
             {
                 'peaks': [
-                    {'intensity': 345608.65625, 'mz': 109.0295639038086},
-                    {'intensity': 807576.625, 'mz': 305.033508300781}
+                    {'intensity': 345608.65625, 'mz': 109.0295639038086, 'assigned_metid': None},
+                    {'intensity': 807576.625, 'mz': 305.033508300781, 'assigned_metid': None}
                 ],
                 'cutoff': 200000.0,
                 'mslevel': 1,
@@ -805,13 +829,28 @@ class JobMSpectraTestCase(unittest.TestCase):
         response = self.job.mspectra(871, 2)
         self.assertEqual(response, {
             'peaks': [
-                {'intensity': 211603.046875, 'mz': 123.04508972168},
-                {'intensity': 279010.28125, 'mz': 163.076232910156}
+                {'intensity': 211603.046875, 'mz': 123.04508972168, 'assigned_metid': None},
+                {'intensity': 279010.28125, 'mz': 163.076232910156, 'assigned_metid': None}
             ],
             'cutoff': 139505.0,
             'mslevel': 2,
             'precursor': { 'id': 870, 'mz': 207.0663147 }
         })
+
+    def test_withassigned_met2peak(self):
+        self.job.assign_metabolite2peak(641, 109.0295639038086, 72)
+        self.assertEqual(
+            self.job.mspectra(641),
+            {
+                'peaks': [
+                    {'intensity': 345608.65625, 'mz': 109.0295639038086, 'assigned_metid': 72},
+                    {'intensity': 807576.625, 'mz': 305.033508300781, 'assigned_metid': None}
+                ],
+                'cutoff': 200000.0,
+                'mslevel': 1,
+                'precursor': { 'id': None, 'mz': None }
+            }
+        )
 
 class JobFragmentsTestCase(unittest.TestCase):
     def setUp(self):

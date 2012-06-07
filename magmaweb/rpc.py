@@ -123,3 +123,20 @@ class RpcViews(object):
         body = {'success': False, 'errors': self.context.asdict()}
         return HTTPInternalServerError(body=json.dumps(body))
 
+    @view_config(route_name='rpc.assign', renderer='json')
+    def assign_metabolite2peak(self):
+        job = self.job()
+        scanid = self.request.POST['scanid']
+        mz = self.request.POST['mz']
+        metid = self.request.POST['metid']
+        job.assign_metabolite2peak(scanid, mz, metid)
+        return { 'success': True, 'jobid': str(job.id) }
+
+    @view_config(route_name='rpc.unassign', renderer='json')
+    def unassign_metabolite2peak(self):
+        job = self.job()
+        scanid = self.request.POST['scanid']
+        mz = self.request.POST['mz']
+        job.unassign_metabolite2peak(scanid, mz)
+        return { 'success': True, 'jobid': str(job.id) }
+

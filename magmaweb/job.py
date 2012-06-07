@@ -830,7 +830,8 @@ class Job(object):
         for peak in self.session.query(Peak).filter_by(scanid=scanid):
             peaks.append({
                 'mz': peak.mz,
-                'intensity': peak.intensity
+                'intensity': peak.intensity,
+                'assigned_metid': peak.assigned_metid
             })
 
         return { 'peaks': peaks, 'cutoff': cutoff, 'mslevel': scan.mslevel, 'precursor': { 'id': scan.precursorscanid, 'mz': scan.precursormz } }
@@ -910,3 +911,19 @@ class Job(object):
             return open(os.path.join(self.dir, 'stderr.txt'), 'rb')
         except IOError:
             return StringIO.StringIO()
+
+    def _peak(self, scanid, mz):
+        return self.session.query(Peak).filter(Peak.scanid==scanid).filter(Peak.mz == mz).one()
+
+    def assign_metabolite2peak(self, scanid, mz, metid):
+        peak = self._peak(scanid, mz)
+        peak.assigned_metid = metid
+        self.session.add(peak)
+        self.session.commit()
+
+    def unassign_metabolite2peak(self, scanid, mz):
+        peak = self._peak(scanid, mz)
+        peak.assigned_metid = None
+        self.session.add(peak)
+        self.session.commit()
+

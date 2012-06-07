@@ -57,6 +57,7 @@ class Peak(Base):
     scanid = Column(Integer, ForeignKey('scans.scanid'), primary_key=True) #: Scan identifier to which peaks belongs
     mz = Column(Float, primary_key=True) #: m/z of peak (x-coordinate)
     intensity = Column(Float) #: Intensity of peak (y-coordinate)
+    assigned_metid = Column(Integer, ForeignKey('metabolites.metid')) # which metabolite is assigned to this peak
 
 class Fragment(Base):
     """Fragment model for fragments table"""
