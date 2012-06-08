@@ -154,7 +154,7 @@ Ext.define('Esc.d3.Chromatogram', {
         .append("svg:text")
           .attr("x",this.chartWidth/2).attr("y",30)
           .attr("text-anchor","middle")
-          .text('Retention time (s)')
+          .text('Retention time (min)')
     ;
 
     // Add the y-axis.

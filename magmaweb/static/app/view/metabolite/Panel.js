@@ -6,7 +6,7 @@ Ext.define('Esc.magmaweb.view.metabolite.Panel', {
   extend: 'Ext.panel.Panel',
   alias: 'widget.metabolitepanel',
   id: 'metabolitepanel',
-  title: 'Query molecules & Metabolites',
+  title: 'Molecules',
   requires: [
     'Esc.magmaweb.view.metabolite.List',
     'Esc.magmaweb.view.metabolite.AddForm'

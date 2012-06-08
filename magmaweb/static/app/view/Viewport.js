@@ -20,13 +20,6 @@ Ext.define('Esc.magmaweb.view.Viewport', {
             padding: 2
           },
           items: [{
-            xtype: 'component',
-            cls: 'x-logo',
-            html: '<a href=".." data-qtip="<b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites">MAGMa</a>'
-          }, {
-            xtype:'tbspacer',
-            flex:1 // aligns buttongroup right
-          }, {
               xtype: 'buttongroup',
               columns: 2,
               items: [{
@@ -45,9 +38,23 @@ Ext.define('Esc.magmaweb.view.Viewport', {
                   disabled: true
               }, {
                   text: 'Information',
-                  tooltip: 'Information about analysis parameters',
+                  tooltip: 'Information about input parameters',
                   action: 'information'
               }]
+          }, {
+            xtype:'tbspacer',
+            flex:1 // aligns buttongroup right
+          }, {
+            xtype: 'component',
+            cls: 'x-title',
+            html: '<a href=".." data-qtip="<b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites">MAGMa</a>'
+          }, {
+            xtype:'tbspacer',
+            flex:1 // aligns buttongroup right
+          }, {
+            xtype: 'component',
+            cls: 'x-logo',
+            html: '<a href="http://www.esciencecenter.nl">&nbsp;</a>'              
           }]
       }, {
           // master side

@@ -81,9 +81,9 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
         { text: 'Metabolite', dataIndex: 'metid', hidden: true},
         { text: 'M/z', dataIndex: 'mz'},
         { text: 'Mass', dataIndex: 'mass'},
-        { text: 'Level', dataIndex: 'mslevel'},
+        { text: 'MS Level', dataIndex: 'mslevel'},
         { text: 'Fragment atoms', dataIndex: 'atoms', hidden: true},
-        { text: 'H Delta', dataIndex: 'deltah'}
+        { text: '&Delta;H', dataIndex: 'deltah'}
       ],
       plugins: [fmolcol]
     });
