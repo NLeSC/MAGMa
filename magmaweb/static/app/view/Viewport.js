@@ -54,7 +54,7 @@ Ext.define('Esc.magmaweb.view.Viewport', {
           }, {
             xtype: 'component',
             cls: 'x-logo',
-            html: '<a href="http://www.esciencecenter.nl">&nbsp;</a>'              
+            html: '<a href="http://www.esciencecenter.nl"></a>'              
           }]
       }, {
           // master side
