@@ -17,23 +17,44 @@ describe('MSpectras controller', function() {
     expect(mspectra).toEqual(5);
   });
 
-  it('loadMSpectra', function() {
-    var mslevel = 1, scanid = 1133, markers = [];
-    var mspectra = Ext.create('Esc.d3.MSpectra');
-    spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
-    spyOn(mspectra, 'setLoading');
-    spyOn(ctrl, 'clearMSpectraFrom');
-    spyOn(d3, 'json');
+  describe('loadMSpectra', function() {
+    it('clearHigherSpectra==true', function() {
+      var mslevel = 1, scanid = 1133, markers = [];
+      var mspectra = Ext.create('Esc.d3.MSpectra');
+      spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
+      spyOn(mspectra, 'setLoading');
+      spyOn(ctrl, 'clearMSpectraFrom');
+      spyOn(d3, 'json');
 
-    ctrl.loadMSpectra(mslevel, scanid, markers);
+      ctrl.loadMSpectra(mslevel, scanid, markers, true);
 
-    expect(mspectra.setLoading).toHaveBeenCalledWith(true);
-    expect(d3.json).toHaveBeenCalledWith(
-      'data/mspectra.'+scanid+'.json?mslevel='+mslevel,
-      jasmine.any(Function)
-    );
-    expect(ctrl.clearMSpectraFrom).toHaveBeenCalledWith(2);
-    mspectra.destroy();
+      expect(mspectra.setLoading).toHaveBeenCalledWith(true);
+      expect(d3.json).toHaveBeenCalledWith(
+        'data/mspectra.'+scanid+'.json?mslevel='+mslevel,
+        jasmine.any(Function)
+      );
+      expect(ctrl.clearMSpectraFrom).toHaveBeenCalledWith(2);
+      mspectra.destroy();
+    });
+
+    it('clearHigherSpectra==false', function() {
+      var mslevel = 1, scanid = 1133, markers = [];
+      var mspectra = Ext.create('Esc.d3.MSpectra');
+      spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
+      spyOn(mspectra, 'setLoading');
+      spyOn(ctrl, 'clearMSpectraFrom');
+      spyOn(d3, 'json');
+
+      ctrl.loadMSpectra(mslevel, scanid, markers);
+
+      expect(mspectra.setLoading).toHaveBeenCalledWith(true);
+      expect(d3.json).toHaveBeenCalledWith(
+        'data/mspectra.'+scanid+'.json?mslevel='+mslevel,
+        jasmine.any(Function)
+      );
+      expect(ctrl.clearMSpectraFrom).not.toHaveBeenCalledWith(2);
+      mspectra.destroy();
+    });
   });
 
   describe('onLoadMSpectra', function() {
@@ -102,14 +123,14 @@ describe('MSpectras controller', function() {
     var scanid = 1134, markers = [1,2];
     spyOn(ctrl, 'loadMSpectra');
     ctrl.loadMSpectra2(scanid, markers);
-    expect(ctrl.loadMSpectra).toHaveBeenCalledWith(2, scanid, markers);
+    expect(ctrl.loadMSpectra).toHaveBeenCalledWith(2, scanid, markers, true);
   });
 
   it('loadMSpectra1', function() {
     var scanid = 1134;
     spyOn(ctrl, 'loadMSpectra');
     ctrl.loadMSpectra1(scanid);
-    expect(ctrl.loadMSpectra).toHaveBeenCalledWith(1, scanid, []);
+    expect(ctrl.loadMSpectra).toHaveBeenCalledWith(1, scanid, [], true);
   });
 
   describe('loadMSpectraFromFragment', function() {
@@ -136,7 +157,7 @@ describe('MSpectras controller', function() {
       ctrl.loadMSpectraFromFragment(frag);
 
       expect(ctrl.getMSpectra).toHaveBeenCalledWith(mslevel);
-      expect(ctrl.loadMSpectra).toHaveBeenCalledWith(mslevel, scanid, [{mz:123}]);
+      expect(ctrl.loadMSpectra).toHaveBeenCalledWith(mslevel, scanid, [{mz:123}], true);
     });
   });
 
