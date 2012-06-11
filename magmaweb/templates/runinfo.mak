@@ -41,19 +41,19 @@ Negative
 % endif
 </td></tr>
 <tr><td>
-Maximum number of bonds broken in substructures generated from metabolites:</td><td> ${run.max_broken_bonds}
+Maximum number bond breaks to generate substructures:</td><td> ${run.max_broken_bonds}
+</td></tr>
+<tr><td>
+Mass precision for matching calculated masses with peaks:</td><td> ${run.mz_precision}
 </td></tr>
 <tr><td>
 Mass precision for matching peaks and precursor ions:</td><td> ${run.precursor_mz_precision}
 </td></tr>
 <tr><td>
-Minimum intensity of level1 peaks to be annotated:</td><td> ${run.ms_intensity_cutoff}
+Minimum intensity of level 1 peaks to be annotated:</td><td> ${run.ms_intensity_cutoff}
 </td></tr>
 <tr><td>
 Minimum intensity of fragment peaks to be annotated, as fraction of basepeak:</td><td> ${run.msms_intensity_cutoff}
-</td></tr>
-<tr><td>
-M/z offset which is allowed for matching a metabolite mass to m/z of a peak:</td><td> ${run.mz_precision}
 </td></tr>
 <tr><td>
 Annotate all level 1 peaks, including those not fragmented:</td><td>

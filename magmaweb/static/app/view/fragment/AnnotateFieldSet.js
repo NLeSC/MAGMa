@@ -17,7 +17,7 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
     items : [{
         fieldLabel : 'Ionisation mode',
         xtype : 'radiogroup',
-	width: 500,
+    width: 500,
         columns : 2,
         items : [{
                     boxLabel : 'Negative',
@@ -66,7 +66,7 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         name : 'use_all_peaks'
     },  {
         xtype : 'checkbox',
-        fieldLabel : 'Skip fragmentation',
+        fieldLabel : 'Skip substructure annotation of fragment peaks',
         name : 'skip_fragmentation'
     }]
 });
