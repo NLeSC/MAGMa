@@ -59,7 +59,8 @@ class FunctionalTests(unittest.TestCase):
                 'probability': 1.0,
                 'reactionsequence': u'PARENT',
                 'smiles': u'Oc1ccccc1O',
-                'mim': 110.03677, 'logp':1.231
+                'mim': 110.03677, 'logp':1.231,
+                'assigned': False
             },{
                 'isquery': True, 'level': 0, 'metid': 352, 'mol': "Molfile of dihydroxyphenyl-valerolactone",
                 'molformula': "C11H12O4",
@@ -68,6 +69,7 @@ class FunctionalTests(unittest.TestCase):
                 'origin': "dihydroxyphenyl-valerolactone",
                 'probability': 1, 'reactionsequence': "PARENT",
                 'smiles': "O=C1OC(Cc2ccc(O)c(O)c2)CC1",
-                'mim': 208.07355, 'logp':2.763
+                'mim': 208.07355, 'logp':2.763,
+                'assigned': False
             }]
         })

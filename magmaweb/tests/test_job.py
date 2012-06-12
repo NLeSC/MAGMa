@@ -55,7 +55,7 @@ def populateTestingDB(session):
         fragid=948,
         metid=72,
         scanid=641,
-        mz=109.0296783,
+        mz=109.0295639038086,
         mass=110.0367794368,
         score=200,
         parentfragid=0,
@@ -92,7 +92,7 @@ def populateTestingDB(session):
     ])
     session.add_all([Fragment(
         fragid=1707, metid=352, scanid=870, mass=208.0735588736,
-        mz=207.0663147, score=100, parentfragid=0,
+        mz=207.066284179688, score=100, parentfragid=0,
         atoms="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14", deltah=-1
     ),Fragment(
         fragid=1708, metid=352, scanid=871, mass=123.0446044689,
@@ -642,7 +642,8 @@ class JobMetabolitesTestCase(unittest.TestCase):
                     'probability': 1.0,
                     'reactionsequence': u'PARENT',
                     'smiles': u'Oc1ccccc1O',
-                    'mim': 110.03677, 'logp':1.231
+                    'mim': 110.03677, 'logp':1.231,
+                    'assigned': False
                 },{
                     'isquery': True, 'level': 0, 'metid': 352, 'mol': u"Molfile of dihydroxyphenyl-valerolactone",
                     'molformula': u"C11H12O4",
@@ -651,7 +652,8 @@ class JobMetabolitesTestCase(unittest.TestCase):
                     'origin': u"dihydroxyphenyl-valerolactone",
                     'probability': 1, 'reactionsequence': u"PARENT",
                     'smiles': u"O=C1OC(Cc2ccc(O)c(O)c2)CC1",
-                    'mim': 208.07355, 'logp':2.763
+                    'mim': 208.07355, 'logp':2.763,
+                    'assigned': False
                 }]
             }
         )
@@ -694,12 +696,24 @@ class JobMetabolitesTestCase(unittest.TestCase):
         with self.assertRaises(ScanRequiredError):
             self.job.metabolites(filters=[{"type":"numeric","comparison":"eq","value":200,"field":"score"}])
 
+    def test_filteredon_not_assigned(self):
+        response = self.job.metabolites(filters=[{"type":"boolean","value": False,"field":"assigned"}])
+        self.assertEqual(response['total'], 2)
+
+    def test_filteredon_assigned(self):
+        response = self.job.metabolites(filters=[{"type":"boolean","value": True,"field":"assigned"}])
+        self.assertEqual(response['total'], 0)
+
     def test_sort_probmet(self):
         response = self.job.metabolites(sorts=[{"property":"probability","direction":"DESC"},{"property":"metid","direction":"ASC"}])
         self.assertEqual(response['total'], 2)
 
     def test_sort_nrscans(self):
         response = self.job.metabolites(sorts=[{"property":"nr_scans","direction":"DESC"}])
+        self.assertEqual(response['total'], 2)
+
+    def test_sort_assigned(self):
+        response = self.job.metabolites(sorts=[{"property":"assigned","direction":"DESC"}])
         self.assertEqual(response['total'], 2)
 
     def test_sort_score(self):
@@ -710,7 +724,6 @@ class JobMetabolitesTestCase(unittest.TestCase):
         from magmaweb.job import ScanRequiredError
         with self.assertRaises(ScanRequiredError):
             self.job.metabolites(sorts=[{"property":"score","direction":"DESC"}])
-
 
 class JobMetabolites2csvTestCase(unittest.TestCase):
     def setUp(self):
@@ -802,6 +815,17 @@ class JobScansWithMetabolitesTestCase(unittest.TestCase):
             {'id': 641, 'rt': 933.317}
         ])
 
+    def test_filteredon_not_assigned(self):
+        response = self.job.scansWithMetabolites(filters=[{"type":"boolean","value": False,"field":"assigned"}])
+        self.assertEqual(response, [
+            {'id': 641, 'rt': 933.317},
+            {'id': 870, 'rt': 1254.15}
+        ])
+
+    def test_filteredon_assigned(self):
+        response = self.job.scansWithMetabolites(filters=[{"type":"boolean","value": True,"field":"assigned"}])
+        self.assertEqual(response, [])
+
 class JobMSpectraTestCase(unittest.TestCase):
     def setUp(self):
         import uuid
@@ -887,7 +911,7 @@ class JobFragmentsTestCase(unittest.TestCase):
                 'metid': 72,
                 'mol': u'Molfile',
                 'mslevel': 1,
-                'mz': 109.0296783,
+                'mz': 109.0295639038086,
                 'scanid': 641,
                 'score': 200.0,
                 'isAssigned': False,
@@ -935,7 +959,7 @@ class JobFragmentsTestCase(unittest.TestCase):
                 'metid': 352,
                 'mol': u'Molfile of dihydroxyphenyl-valerolactone',
                 'mslevel': 1,
-                'mz': 207.0663147,
+                'mz': 207.066284179688,
                 'scanid': 870,
                 'score': 100,
                 'isAssigned': False
@@ -974,7 +998,7 @@ class JobFragmentsTestCase(unittest.TestCase):
                 'metid': 72,
                 'mol': u'Molfile',
                 'mslevel': 1,
-                'mz': 109.0296783,
+                'mz': 109.0295639038086,
                 'scanid': 641,
                 'score': 200.0,
                 'isAssigned': True,
@@ -1010,7 +1034,8 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                     'probability': 0.119004,
                     'reactionsequence': u'sulfation_(aromatic_hydroxyl)',
                     'smiles': u'Oc1ccc(CC2OC(=O)CC2)cc1OS(O)(=O)=O',
-                    'mim': 288.0303734299, 'logp':1.9027
+                    'mim': 288.0303734299, 'logp':1.9027,
+                    'assigned': False
                 }]
             }
         )

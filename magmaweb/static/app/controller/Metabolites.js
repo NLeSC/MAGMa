@@ -121,6 +121,11 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
             handler: this.clearFilters.bind(this)
         }]
     });
+
+    this.application.on('assignmentchanged', function(isAssigned, params) {
+        me.reselectAfterLoad();
+        me.getMetabolitesStore().load();
+    });
   },
   /**
    * Loads metabolite store

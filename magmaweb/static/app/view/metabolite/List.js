@@ -80,8 +80,9 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         {text: 'Smile', dataIndex: 'smiles', hidden:true},
         {text: 'Formula', dataIndex: 'molformula', filter: { type: 'string' }},
         {text: 'Monoisotopic mass', dataIndex: 'mim', filter: { type: 'numeric' }, hidden: true},
-        {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
+        {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', hidden: true, trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
         {text: 'Fragment score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }},
+        {text: 'Assigned', dataIndex: 'assigned', hidden: false, xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
         {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true},
         {xtype: 'actioncolumn', width:30, text:'Commands',
             items: [{
