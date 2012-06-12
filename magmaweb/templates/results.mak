@@ -83,16 +83,26 @@ line.mspeak {
 
 .x-logo a {
   font-size: 40px;
-  font-weight: bold;
-  color: #333;
-  text-decoration:none;
   padding-left: 520px;
   padding-top: 3px; /* aligns app title with text in logo  */
   background: url(${request.static_url('magmaweb:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}) no-repeat 5px 4px;
 }
 
+.x-title a {
+  font-size: 40px;
+  font-weight: bold;
+  color: #333;
+  text-decoration:none;
+  padding-left: 520px;
+  padding-top: 3px; /* aligns app title with text in logo  */
+}
+
 #resultsinfo {
   padding: 5px;
+}
+
+.infotable td {
+  padding-right: 30px;
 }
 
 svg {
@@ -134,6 +144,9 @@ svg {
 <script type="text/javascript" src="${request.static_url('magmaweb:static/d3/d3.v2.min.js')}"></script>
 <script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
 <script type="text/javascript">
+if (!window.console) window.console = {};
+if (!window.console.log) window.console.log = function() {};
+
 Ext.Loader.setConfig({
   enabled: true,
   //disableCaching: false, // uncomment to use firebug breakpoints

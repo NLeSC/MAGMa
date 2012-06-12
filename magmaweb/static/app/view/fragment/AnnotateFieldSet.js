@@ -15,16 +15,9 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         labelWidth : 300
     },
     items : [{
-        fieldLabel : 'Maximum number of bonds broken in substructures generated from metabolites',
-        name : 'max_broken_bonds',
-        xtype : 'numberfield',
-        allowBlank : false,
-        maxValue : 10,
-        minValue : 0,
-        decimalPrecision : 0
-    }, {
         fieldLabel : 'Ionisation mode',
         xtype : 'radiogroup',
+    width: 500,
         columns : 2,
         items : [{
                     boxLabel : 'Negative',
@@ -35,37 +28,45 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
                     name : 'ionisation_mode',
                     inputValue : 1
                 }]
+    },{
+        fieldLabel : 'Maximum number of bond breaks to generate substructures',
+        name : 'max_broken_bonds',
+        xtype : 'numberfield',
+        allowBlank : false,
+        maxValue : 10,
+        minValue : 0,
+        decimalPrecision : 0
     }, {
-        xtype : 'checkbox',
-        fieldLabel : 'Skip fragmentation',
-        name : 'skip_fragmentation'
-    }, {
-        xtype : 'checkbox',
-        fieldLabel : 'Annotate all lvl1 peaks, including those without fragmentation data',
-        name : 'use_all_peaks'
+        xtype : 'numberfield',
+        name : 'mz_precision',
+        fieldLabel : 'Mass precision for matching calculated masses with peaks',
+        allowBlank : false,
+        decimalPrecision : 5
     },{
         xtype: 'numberfield',
         name: 'precursor_mz_precision',
-        fieldLabel: 'Precision for matching precursor mz with peak mz in parent scan',
+        fieldLabel: 'Mass precision for matching peaks and precursor ions',
         allowBlank: false,
         decimalPrecision: 5
     }, {
         xtype : 'numberfield',
         name : 'ms_intensity_cutoff',
-        fieldLabel : 'Absolute intensity minimum of lvl1 scan peaks which are matched with metabolites',
+        fieldLabel : 'Minimum intensity of level 1 peaks to be annotated',
         allowBlank : false,
         decimalPrecision : 5
     }, {
         xtype : 'numberfield',
         name : 'msms_intensity_cutoff',
-        fieldLabel : 'Ratio of basepeak intensity',
+        fieldLabel : 'Minimum intensity of fragment peaks to be annotated, as fraction of basepeak',
         allowBlank : false,
         decimalPrecision : 5
     }, {
-        xtype : 'numberfield',
-        name : 'mz_precision',
-        fieldLabel : 'M/z offset which is allowed for matching a metabolite mass to m/z of a peak',
-        allowBlank : false,
-        decimalPrecision : 5
+        xtype : 'checkbox',
+        fieldLabel : 'Annotate all level 1 peaks, including those not fragmented',
+        name : 'use_all_peaks'
+    },  {
+        xtype : 'checkbox',
+        fieldLabel : 'Skip substructure annotation of fragment peaks',
+        name : 'skip_fragmentation'
     }]
 });

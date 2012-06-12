@@ -14,7 +14,7 @@ Ext.define('Esc.magmaweb.view.scan.Panel', {
   ],
   tools:[{
     type:'search',
-    tooltip: 'Select lvl1 scan by identifier',
+    tooltip: 'Select level 1 scan by identifier',
     action: 'search'
   }, {
     type:'refresh',

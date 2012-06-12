@@ -29,13 +29,13 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
       xtype: 'combo',
       width: 170,
       store: [
-        [10, '10 metabolites per page'],
-        [25, '25 metabolites per page'],
-        [50, '50 metabolites per page'],
-        [100, '100 metabolites per page'],
-        [250, '250 metabolites per page'],
-        [500, '500 metabolites per page'],
-        [1000, '1000 metabolites per page']
+        [10, '10 molecules per page'],
+        [25, '25 molecules per page'],
+        [50, '50 molecules per page'],
+        [100, '100 molecules per page'],
+        [250, '250 molecules per page'],
+        [500, '500 molecules per page'],
+        [1000, '1000 molecules per page']
       ],
       forceSelection: true,
       triggerAction: 'all',
@@ -71,17 +71,17 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: ['0','1','2','3'] }, hidden:true},
         {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }},
         {text: 'Name', dataIndex: 'origin', flex:1, filter: { type: 'string' }},
-        {text: 'Reaction seq.', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }, renderer: function(v) {
+        {text: 'Reaction sequence', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }, renderer: function(v) {
           return '<ol><li>'+v.replace("\n","</li><li>")+'</li></ol>';
         }},
         {text: 'Scans', dataIndex: 'nr_scans', filter: {
             type: 'numeric', value:{gt:0}, active: true
         }},
-        {text: 'Smile', dataIndex: 'smiles', hidden:true},
+        {text: 'Smiles', dataIndex: 'smiles', hidden:true},
         {text: 'Formula', dataIndex: 'molformula', filter: { type: 'string' }},
-        {text: 'Monoisotopic mass', dataIndex: 'mim', filter: { type: 'numeric' }, hidden: true},
+        {text: 'Monoisotopic mass', dataIndex: 'mim', filter: { type: 'numeric' }, hidden: false},
         {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', hidden: true, trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
-        {text: 'Fragment score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }},
+        {text: 'Candidate score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }},
         {text: 'Assigned', dataIndex: 'assigned', hidden: false, xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
         {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true},
         {xtype: 'actioncolumn', width:30, text:'Commands',

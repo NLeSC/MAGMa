@@ -14,7 +14,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
     ],
     items: [{
         xtype: 'combo',
-        store: ['mzxml'],
+        store: [['mzxml','mzXML']],
         allowBlank: false,
         name: 'ms_data_format',
         value: 'mzxml'
@@ -42,12 +42,6 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
             xtype: 'numberfield',
             name: 'abs_peak_cutoff',
             fieldLabel: 'Absolute intensity threshold for storing peaks in database',
-            allowBlank: false,
-            decimalPrecision: 5
-        },{
-            xtype: 'numberfield',
-            name: 'rel_peak_cutoff',
-            fieldLabel: 'Fraction of basepeak intensity threshold threshold for storing peaks in database',
             allowBlank: false,
             decimalPrecision: 5
         }]

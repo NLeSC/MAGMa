@@ -41,7 +41,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                     xtype : 'textarea',
                     name : 'structures',
                     id : 'structures_area',
-                    emptyText : 'Enter smile string followed by space and name on each line',
+                    emptyText : 'Enter smiles strings followed by space and name on each line',
                     height : 200,
                     width : 500,
                     /**
@@ -70,7 +70,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                     xtype : 'filefield',
                     name : 'structures_file',
                     id : 'structures_filefield',
-                    emptyText : 'Upload structures in file',
+                    emptyText : 'Upload structures from file',
                     width : 300
                 }]
     }, {
