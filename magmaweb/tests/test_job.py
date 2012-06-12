@@ -518,8 +518,23 @@ class JobTestCase(unittest.TestCase):
     def test_chromatogram(self):
         expected_chromatogram = {
                                  'scans':[
-                                          { 'id': 641, 'rt': 933.317, 'intensity': 807577.0 },
-                                          { 'id': 870, 'rt': 1254.15, 'intensity': 1972180.0 }
+                                          { 'id': 641, 'rt': 933.317, 'intensity': 807577.0, 'ap': 0 },
+                                          { 'id': 870, 'rt': 1254.15, 'intensity': 1972180.0, 'ap': 0 }
+                                          ],
+                                 'cutoff': 200000.0
+                                 }
+        self.assertEqual(self.job.chromatogram(), expected_chromatogram)
+
+    def test_chromatogram_with_assigned_peaks(self):
+        metid = 72
+        scanid = 641
+        mz = 109.0295639038086
+        self.job.assign_metabolite2peak(scanid, mz, metid)
+
+        expected_chromatogram = {
+                                 'scans':[
+                                          { 'id': 641, 'rt': 933.317, 'intensity': 807577.0, 'ap': 1 },
+                                          { 'id': 870, 'rt': 1254.15, 'intensity': 1972180.0, 'ap': 0 }
                                           ],
                                  'cutoff': 200000.0
                                  }

@@ -777,12 +777,15 @@ class Job(object):
         and cutoff key with ms_intensity_cutoff
         """
         scans = []
-        # TODO add left join to find if scan has metabolite hit
-        for scan in self.session.query(Scan).filter_by(mslevel=1):
+
+        ap = self.session.query(Peak.scanid, func.count('*').label('assigned_peaks')).filter(Peak.assigned_metid!=None).group_by(Peak.scanid).subquery()
+
+        for scan, assigned_peaks in self.session.query(Scan, ap.c.assigned_peaks ).filter_by(mslevel=1).outerjoin(ap, Scan.scanid==ap.c.scanid):
             scans.append({
                 'id': scan.scanid,
                 'rt': scan.rt,
-                'intensity': scan.basepeakintensity
+                'intensity': scan.basepeakintensity,
+                'ap': assigned_peaks or 0
             })
 
         runInfo = self.runInfo()

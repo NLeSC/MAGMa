@@ -183,6 +183,7 @@ Ext.define('Esc.d3.Chromatogram', {
     .data(this.data)
     .enter().append("svg:line")
     .attr("class", "peak")
+    .classed('assigned', function(d) { return d.ap>0;})
     .attr("x1", function(d) { return me.scales.x(d.rt); })
     .attr("y2", function(d) { return me.scales.y(d.intensity); })
     .attr("y1", this.chartHeight)
