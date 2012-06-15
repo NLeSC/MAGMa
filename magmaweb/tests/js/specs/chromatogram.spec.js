@@ -83,7 +83,7 @@ describe('Esc.d3.Chromatogram', function() {
       expect(chart.onMarkersReady).not.toHaveBeenCalled();
       expect(chart.svg.attr).toHaveBeenCalledWith('class', chart.cutoffCls);
       expect(chart.svg.attr).toHaveBeenCalledWith('class', 'x axis');
-      expect(chart.svg.text).toHaveBeenCalledWith('Retention time (s)');
+      expect(chart.svg.text).toHaveBeenCalledWith('Retention time (min)');
       expect(chart.svg.attr).toHaveBeenCalledWith('class', 'y axis');
       expect(chart.svg.text).toHaveBeenCalledWith('Intensity');
       expect(chart.svg.attr).toHaveBeenCalledWith('class', 'peak');
