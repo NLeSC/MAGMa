@@ -34,7 +34,7 @@ typew={Chem.rdchem.BondType.AROMATIC:3.0,\
 ringw={False:1,True:1}
 heterow={False:2,True:1}
 missingfragmentpenalty=10
-n_neutral_losses=0
+n_neutral_losses=1
 
 mims={1:1.0078250321,\
         6:12.0000000,\
@@ -303,6 +303,8 @@ class MsDataEngine(object):
             if child.tag == namespace+'precursorMz':
                 scan.precursormz=float(child.text)
                 scan.precursorintensity=float(child.attrib['precursorIntensity'])
+                if child.attrib.get('precursorScanNum') != None:
+                    scan.precursorscanid=float(child.attrib['precursorScanNum'])
             if child.tag == namespace+'peaks':
                 self.store_mzxml_peaks(scan,child.text)
             if child.tag == namespace+'scan' and int(child.attrib['msLevel'])<=self.max_ms_level:
@@ -434,7 +436,7 @@ class AnnotateEngine(object):
             def massmatch_rel(self,mim,low,high):
                 for x in range(low,high+1):
                     # if self.mz/me.precision < mim+x*Hmass < self.mz*me.precision:
-                    if self.mz/1.00001 < mim+x*Hmass < self.mz*1.00001:
+                    if self.mz/1.000005 < mim+x*Hmass < self.mz*1.000005:
                     # if mim/precision < self.mz-x*Hmass < mim*precision:
                         return x
                 else:
@@ -467,7 +469,17 @@ class AnnotateEngine(object):
                         db_candidates[id]=[molblock,chebi_name]
                     print str(mass)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
-                    
+
+    def get_pubchem_candidates(self):
+        print "C[Element] AND H[Element] AND (0[MonoisotopicMass]",
+        for scan in self.scans:
+            for peak in scan.peaks:
+                mass=peak.mz-self.ionisation_mode*Hmass
+                if not ((not self.use_all_peaks) and peak.childscan==None):
+#                    print "OR(%.3f:%.3f[MonoisotopicMass])" % (mass-self.mz_precision-0.001,mass+self.mz_precision+0.001),
+                    print "OR(%.4f:%.4f[MonoisotopicMass])" % (mass/1.000005-0.001,mass*1.000005+0.001),
+        print ")"
+
     def search_all_structures(self):
         logging.warn('Searching all structures')
         for structure in self.db_session.query(Metabolite).all():
@@ -683,8 +695,8 @@ class AnnotateEngine(object):
                 # besthit=None
                 besthit=hittype(peak,0,None,0,0,0)
                 # print peak.missingfragmentscore
-                result=np.where(np.where(self.fragment_masses < (peak.mz+me.mz_precision),self.fragment_masses,0) > (peak.mz-me.mz_precision))
-                # result=np.where(np.where(self.fragment_masses < (peak.mz*1.00001),self.fragment_masses,0) > (peak.mz/1.00001))
+                # result=np.where(np.where(self.fragment_masses < (peak.mz+me.mz_precision),self.fragment_masses,0) > (peak.mz-me.mz_precision))
+                result=np.where(np.where(self.fragment_masses < (peak.mz*1.000005),self.fragment_masses,0) > (peak.mz/1.000005))
                 for i in range(len(result[0])):
                     fid=result[0][i]
                     if self.fragments[fid] & parent == self.fragments[fid]:
@@ -715,6 +727,7 @@ class AnnotateEngine(object):
             def __init__(self,peak,fragment,score,bondbreaks,mass,deltaH):
                 self.mz = peak.mz
                 self.intensity = peak.intensity
+                self.intensity_weight = peak.missingfragmentscore / missingfragmentpenalty
                 self.scan = peak.scan
                 self.fragment = fragment
                 self.score = score
@@ -757,15 +770,21 @@ class AnnotateEngine(object):
                 global fragid
                 fragid+=1
                 currentFragid=fragid
+                score=self.score
+                deltappm=None
+                if score != None:
+                    score=score/self.intensity_weight
+                    deltappm=(self.mz+self.deltaH*Hmass-self.mass)/self.mz*1e6
                 me.db_session.add(Fragment(
                     metid=metid,
                     scanid=self.scan,
                     mz=self.mz,
                     mass=self.mass,
-                    score=self.score,
+                    score=score,
                     parentfragid=parentfragid,
                     atoms=self.get_fragment(),
-                    deltah=self.deltaH
+                    deltah=self.deltaH,
+                    deltappm=deltappm
                     ))
                 if len(self.besthits)>0:
                     for hit in self.besthits:
@@ -778,7 +797,7 @@ class AnnotateEngine(object):
             for peak in scan.peaks:
                 if not ((not self.use_all_peaks) and peak.childscan==None):
                     protonation=self.ionisation_mode-(structure.molformula.find('+')>=0)*1
-                    deltaH=peak.massmatch(structure.mim,protonation,protonation)
+                    deltaH=peak.massmatch_rel(structure.mim,protonation,protonation)
                     if type(deltaH)==int:
                         if not Fragmented:
                             sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+str(structure.reactionsequence)+'\n')
