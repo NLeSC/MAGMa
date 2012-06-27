@@ -723,6 +723,156 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
                             })
         self.assertMultiLineEqual(csvfile.getvalue(), expected_csvfile.getvalue())
 
+class JobMetabolites2sdfTestCase(unittest.TestCase):
+    def setUp(self):
+        import uuid
+        self.job = Job(uuid.uuid1(), initTestingDB(), '/tmp')
+
+    def test_it(self):
+        sdffile = self.job.metabolites2sdf(self.job.metabolites()['rows'])
+
+        expected_sdf = """Molfile
+> <name>
+
+pyrocatechol
+
+
+> <smiles>
+
+Oc1ccccc1O
+
+
+> <probability>
+
+1.0
+
+
+> <reactionsequence>
+
+PARENT
+
+
+> <nr_scans>
+
+1
+
+
+> <molformula>
+
+C6H6O2
+
+
+> <mim>
+
+110.03677
+
+
+> <logp>
+
+1.231
+
+
+$$$$
+Molfile of dihydroxyphenyl-valerolactone
+> <name>
+
+dihydroxyphenyl-valerolactone
+
+
+> <smiles>
+
+O=C1OC(Cc2ccc(O)c(O)c2)CC1
+
+
+> <probability>
+
+1.0
+
+
+> <reactionsequence>
+
+PARENT
+
+
+> <nr_scans>
+
+1
+
+
+> <molformula>
+
+C11H12O4
+
+
+> <mim>
+
+208.07355
+
+
+> <logp>
+
+2.763
+
+
+$$$$
+"""
+
+        self.assertMultiLineEqual(sdffile, expected_sdf)
+
+    def test_with_scan(self):
+        """Include score prop"""
+        sdffile = self.job.metabolites2sdf(self.job.metabolites(scanid=641)['rows'])
+
+        expected_sdf = """Molfile
+> <name>
+
+pyrocatechol
+
+
+> <smiles>
+
+Oc1ccccc1O
+
+
+> <probability>
+
+1.0
+
+
+> <reactionsequence>
+
+PARENT
+
+
+> <nr_scans>
+
+1
+
+
+> <molformula>
+
+C6H6O2
+
+
+> <mim>
+
+110.03677
+
+
+> <logp>
+
+1.231
+
+
+> <score>
+
+200.0
+
+
+$$$$
+"""
+
+        self.assertMultiLineEqual(sdffile, expected_sdf)
 
 class JobScansWithMetabolitesTestCase(unittest.TestCase):
     def setUp(self):

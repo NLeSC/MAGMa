@@ -242,6 +242,24 @@ class ViewsTestCase(unittest.TestCase):
         self.assertEqual(response.content_type, 'text/csv')
         self.assertEqual(response.body, 'bla')
 
+    def test_metabolitessdf(self):
+        job = Mock(Job)
+        job.metabolites2sdf.return_value = 'bla'
+        request = testing.DummyRequest(params={
+                                               'start':0,
+                                               'limit':10
+                                               })
+        views = Views(request)
+        views.job = Mock(return_value=job)
+        views.metabolitesjson = Mock(return_value={
+                                                   'rows':[]
+                                                   })
+        response = views.metabolitessdf()
+
+        self.assertEqual(response.content_type, 'chemical/x-mdl-sdfile')
+        self.assertEqual(response.body, 'bla')
+
+
     def test_chromatogramjson(self):
         request = testing.DummyRequest()
         views = Views(request)

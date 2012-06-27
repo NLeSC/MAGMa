@@ -170,6 +170,14 @@ class Views(object):
         # response.app_iter = csv
         return response
 
+    @view_config(route_name='metabolites.sdf')
+    def metabolitessdf(self):
+        """ Same as metabolitesjson(), but returns sdf file instead of a json document """
+        mets = self.metabolitesjson()
+        sdf = self.job().metabolites2sdf(mets['rows'])
+        response = Response(content_type='chemical/x-mdl-sdfile', charset='utf-8', body=sdf)
+        return response
+
     @view_config(route_name='chromatogram.json', renderer='json')
     def chromatogramjson(self):
         """Returns json object with the id, rt and basepeakintensity for each lvl1 scan

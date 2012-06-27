@@ -27,7 +27,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     // configure store
     var store = this.getMetabolitesStore();
     store.pageSize = this.application.getPageSize();
-    store.setUrl(this.application.getUrls().metabolites);
+    store.setUrl(this.application.metabolitesUrl('json'));
     store.on('load', this.onLoad, this);
 
     this.control({
@@ -41,7 +41,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
         select: this.onPageSizeChange
       },
       'metabolitepanel component[action=download]': {
-        click: this.download
+        click: this.showDownloadMenu
       },
       'metabolitepanel component[action=actions]': {
         click: this.showActionsMenu
@@ -119,6 +119,18 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
         }, {
             text: 'Clear filters',
             handler: this.clearFilters.bind(this)
+        }]
+    });
+
+    this.downloadMenu = Ext.create('Ext.menu.Menu', {
+        items: [{
+            text: 'CSV',
+            tooltip: 'Save metabolites as comma seperated file',
+            handler: this.download_csv.bind(this)
+        }, {
+            text: 'SDF',
+            tooltip: 'Save metabolites as sdf',
+            handler: this.download_sdf.bind(this)
         }]
     });
   },
@@ -244,11 +256,12 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       this.getMetabolitesStore().setPageSize(combo.getValue());
   },
   /**
-   * Open a new window with metabolites as comma seperated file.
-   * Uses application.urls.metabolitescsv as url.
+   * Open a new window with metabolites as comma seperated file or sdf.
    * Uses store/proxy/gridfilter state to construct queryString so what you see in grid is what in csv file.
+   *
+   * @params {String} format Can be csv or sdf.
    */
-  download: function() {
+  download: function(format) {
     // download needs to make an url with has the same query parameters as the store.load()
     // for load() the store builds an operation object, we need to build this aswell
     var store = this.getMetabolitesStore();
@@ -270,10 +283,22 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     Ext.apply(params, filter.buildQuery(filter.getFilterData()));
 
     var url = Ext.urlAppend(
-        this.application.getUrls().metabolitescsv,
+        this.application.metabolitesUrl(format),
         Ext.Object.toQueryString(params)
     );
-    window.open(url, 'metabolites.csv');
+    window.open(url, 'metabolites.'+format);
+  },
+  /**
+   * Shortcut do download csv file
+   */
+  download_csv: function() {
+    this.download('csv');
+  },
+  /**
+   * Shortcut do download sdf file
+   */
+  download_sdf: function() {
+    this.download('sdf');
   },
   /**
    * Loads defaults of add structures form and
@@ -404,8 +429,21 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
   metabolizable: function(enabled) {
      Ext.getCmp('metabolizeaction').setDisabled(!enabled);
   },
+  /**
+   * Show actions menu at event xy
+   * @param {Ext.Element} tool
+   * @param {Ext.EventObject} event
+   */
   showActionsMenu: function(tool, event) {
      this.actionsMenu.showAt(event.getXY());
+  },
+  /**
+   * Show download menu at event xy
+   * @param {Ext.Element} tool
+   * @param {Ext.EventObject} event
+   */
+  showDownloadMenu: function(tool, event) {
+    this.downloadMenu.showAt(event.getXY());
   }
 });
 

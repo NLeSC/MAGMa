@@ -159,8 +159,6 @@ Ext.onReady(function() {
         fragments: '${request.application_url}/results/${jobid}/fragments/{0}/{1}.json',
         mspectra: '${request.application_url}/results/${jobid}/mspectra/{0}.json?mslevel={1}',
         extractedionchromatogram: '${request.application_url}/results/${jobid}/extractedionchromatogram/{0}.json',
-        metabolites: '${request.route_url('metabolites.json',jobid=jobid)}',
-        metabolitescsv: '${request.route_url('metabolites.csv',jobid=jobid)}',
         chromatogram: '${request.route_url('chromatogram.json',jobid=jobid)}',
         stderr: '${request.route_url('stderr.txt',jobid=jobid)}'
       }

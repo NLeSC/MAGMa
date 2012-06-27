@@ -20,8 +20,6 @@ Ext.onReady(function() {
         fragments: 'data/fragments.s{0}.m{1}.json',
         mspectra: 'data/mspectra.{0}.json?mslevel={1}',
         extractedionchromatogram: 'data/extractedionchromatogram.{0}.json',
-        metabolites: 'data/metabolites.json',
-        metabolitescsv: 'data/metabolites.csv',
         chromatogram: 'data/chromatogram.json',
         stderr: 'data/stderr.txt'
       },
@@ -32,6 +30,10 @@ Ext.onReady(function() {
       },
       // mock runinfo url to a static file
       runInfoUrl: function() { return 'data/runinfo.json' },
+      // use test files for metabolites in data/
+      metabolitesUrl: function(format) {
+          return 'data/metabolites.'+format;
+      },
       // do not create views, all tests mock views
       autoCreateViewport: false
   });

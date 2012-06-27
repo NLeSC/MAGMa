@@ -21,6 +21,7 @@ def main(global_config, **settings):
     config.add_route('status','/status/{jobid}')
     config.add_route('metabolites.json', '/results/{jobid}/metabolites.json')
     config.add_route('metabolites.csv', '/results/{jobid}/metabolites.csv')
+    config.add_route('metabolites.sdf', '/results/{jobid}/metabolites.sdf')
     config.add_route('fragments.json', '/results/{jobid}/fragments/{scanid}/{metid}.json')
     config.add_route('chromatogram.json', '/results/{jobid}/chromatogram.json')
     config.add_route('mspectra.json', '/results/{jobid}/mspectra/{scanid}.json')

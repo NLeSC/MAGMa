@@ -76,11 +76,6 @@ Ext.define('Esc.magmaweb.resultsApp', {
          */
         extractedionchromatogram: null,
         /**
-         * Metabolites endpoint.
-         * @cfg {String} urls.metabolites
-         */
-        metabolites: null,
-        /**
          * Chromatogram endpoint.
          * @cfg {String} urls.chromatogram
          */
@@ -128,6 +123,15 @@ Ext.define('Esc.magmaweb.resultsApp', {
    */
   runInfoUrl: function() {
     return this.urls.home+'results/'+this.jobid+'/runinfo.json';
+  },
+  /**
+   * Get metabolites url based on format.
+   *
+   * @param {String} format Can be json, csv or sdf.
+   * @return {Url}
+   */
+  metabolitesUrl: function(format) {
+    return this.urls.home+'results/'+this.jobid+'/metabolites.'+format;
   },
   /**
    * Creates mspectraspanels and viewport and fires/listens for mspectra events

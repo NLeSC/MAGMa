@@ -726,6 +726,31 @@ class Job(object):
 
         return csvstr
 
+    def metabolites2sdf(self, metabolites):
+        """Converts array of metabolites to a sdf string
+
+        Params:
+        metabolites array like metabolites()['rows']
+
+        Return
+        String
+        """
+        str = ''
+        props = ['name', 'smiles', 'probability', 'reactionsequence',
+                   'nr_scans', 'molformula', 'mim' , 'logp']
+        if ('score' in metabolites[0].keys()):
+            props.append('score')
+
+        for m in metabolites:
+            m['name'] = m['origin']
+            str+= m['mol']
+            str+="\n"
+            for p in props:
+                str+='> <{}>\n\n{}\n\n\n'.format(p, m[p])
+            str+= '$$$$'+"\n"
+
+        return str
+
     def scansWithMetabolites(self, filters=None, metid=None):
         """Returns id and rt of lvl1 scans which have a fragment in it and for which the filters in params pass
 

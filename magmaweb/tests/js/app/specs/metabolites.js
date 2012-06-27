@@ -390,7 +390,7 @@ describe('Metabolites', function() {
        Ext.util.Observable.releaseCapture(ctrl.application);
     });
 
-    describe('download metabolites', function() {
+    describe('download metabolites in csv', function() {
       it('default', function() {
           spyOn(window, 'open');
 
@@ -410,7 +410,7 @@ describe('Metabolites', function() {
               }
           })
 
-          ctrl.download();
+          ctrl.download_csv();
           var url = Ext.urlAppend('data/metabolites.csv', Ext.Object.toQueryString({
               page: 1,
               start: 0,
@@ -453,7 +453,7 @@ describe('Metabolites', function() {
           })
 
           spyOn(window, 'open');
-          ctrl.download();
+          ctrl.download_csv();
           var url = Ext.urlAppend('data/metabolites.csv', Ext.Object.toQueryString({
               scanid: 50,
               page: 1,
@@ -616,6 +616,15 @@ describe('Metabolites', function() {
         ctrl.showActionsMenu('tool', event);
 
         expect(ctrl.actionsMenu.showAt).toHaveBeenCalledWith([5,10]);
+    });
+
+    it('showDownloadMenu', function() {
+        var event = { getXY: function() { return [5,10]; }};
+        spyOn(ctrl.downloadMenu, 'showAt');
+
+        ctrl.showDownloadMenu('tool', event);
+
+        expect(ctrl.downloadMenu.showAt).toHaveBeenCalledWith([5,10]);
     });
   });
 });
