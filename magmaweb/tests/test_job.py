@@ -55,7 +55,7 @@ def populateTestingDB(session):
         fragid=948,
         metid=72,
         scanid=641,
-        mz=109.0296783,
+        mz=109.0295639038086,
         mass=110.0367794368,
         score=200,
         parentfragid=0,
@@ -92,7 +92,7 @@ def populateTestingDB(session):
     ])
     session.add_all([Fragment(
         fragid=1707, metid=352, scanid=870, mass=208.0735588736,
-        mz=207.0663147, score=100, parentfragid=0,
+        mz=207.066284179688, score=100, parentfragid=0,
         atoms="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14", deltah=-1
     ),Fragment(
         fragid=1708, metid=352, scanid=871, mass=123.0446044689,
@@ -518,8 +518,23 @@ class JobTestCase(unittest.TestCase):
     def test_chromatogram(self):
         expected_chromatogram = {
                                  'scans':[
-                                          { 'id': 641, 'rt': 933.317, 'intensity': 807577.0 },
-                                          { 'id': 870, 'rt': 1254.15, 'intensity': 1972180.0 }
+                                          { 'id': 641, 'rt': 933.317, 'intensity': 807577.0, 'ap': 0 },
+                                          { 'id': 870, 'rt': 1254.15, 'intensity': 1972180.0, 'ap': 0 }
+                                          ],
+                                 'cutoff': 200000.0
+                                 }
+        self.assertEqual(self.job.chromatogram(), expected_chromatogram)
+
+    def test_chromatogram_with_assigned_peaks(self):
+        metid = 72
+        scanid = 641
+        mz = 109.0295639038086
+        self.job.assign_metabolite2peak(scanid, mz, metid)
+
+        expected_chromatogram = {
+                                 'scans':[
+                                          { 'id': 641, 'rt': 933.317, 'intensity': 807577.0, 'ap': 1 },
+                                          { 'id': 870, 'rt': 1254.15, 'intensity': 1972180.0, 'ap': 0 }
                                           ],
                                  'cutoff': 200000.0
                                  }
@@ -543,6 +558,30 @@ class JobTestCase(unittest.TestCase):
     def test_set_description(self):
         self.job.description('My second description')
         self.assertEqual(self.job.runInfo().description, 'My second description')
+
+    def test_assign_metabolite2peak(self):
+        metid = 72
+        scanid = 641
+        mz = 109.0295639038086
+        self.job.assign_metabolite2peak(scanid, mz, metid)
+
+        self.assertEqual(
+                         self.session.query(Peak.assigned_metid).filter(Peak.scanid==scanid).filter(Peak.mz==mz).scalar()
+                         , metid
+                         )
+
+    def test_unassign_metabolite2peak(self):
+        metid = 72
+        scanid = 641
+        mz = 109.0295639038086
+        self.job.assign_metabolite2peak(scanid, mz, metid)
+
+        self.job.unassign_metabolite2peak(scanid, mz)
+
+        self.assertEqual(
+                         self.session.query(Peak.assigned_metid).filter(Peak.scanid==scanid).filter(Peak.mz==mz).scalar()
+                         , None
+                         )
 
 class JobEmptyDatasetTestCase(unittest.TestCase):
     def setUp(self):
@@ -603,7 +642,8 @@ class JobMetabolitesTestCase(unittest.TestCase):
                     'probability': 1.0,
                     'reactionsequence': u'PARENT',
                     'smiles': u'Oc1ccccc1O',
-                    'mim': 110.03677, 'logp':1.231
+                    'mim': 110.03677, 'logp':1.231,
+                    'assigned': False
                 },{
                     'isquery': True, 'level': 0, 'metid': 352, 'mol': u"Molfile of dihydroxyphenyl-valerolactone",
                     'molformula': u"C11H12O4",
@@ -612,7 +652,8 @@ class JobMetabolitesTestCase(unittest.TestCase):
                     'origin': u"dihydroxyphenyl-valerolactone",
                     'probability': 1, 'reactionsequence': u"PARENT",
                     'smiles': u"O=C1OC(Cc2ccc(O)c(O)c2)CC1",
-                    'mim': 208.07355, 'logp':2.763
+                    'mim': 208.07355, 'logp':2.763,
+                    'assigned': False
                 }]
             }
         )
@@ -655,12 +696,24 @@ class JobMetabolitesTestCase(unittest.TestCase):
         with self.assertRaises(ScanRequiredError):
             self.job.metabolites(filters=[{"type":"numeric","comparison":"eq","value":200,"field":"score"}])
 
+    def test_filteredon_not_assigned(self):
+        response = self.job.metabolites(filters=[{"type":"boolean","value": False,"field":"assigned"}])
+        self.assertEqual(response['total'], 2)
+
+    def test_filteredon_assigned(self):
+        response = self.job.metabolites(filters=[{"type":"boolean","value": True,"field":"assigned"}])
+        self.assertEqual(response['total'], 0)
+
     def test_sort_probmet(self):
         response = self.job.metabolites(sorts=[{"property":"probability","direction":"DESC"},{"property":"metid","direction":"ASC"}])
         self.assertEqual(response['total'], 2)
 
     def test_sort_nrscans(self):
         response = self.job.metabolites(sorts=[{"property":"nr_scans","direction":"DESC"}])
+        self.assertEqual(response['total'], 2)
+
+    def test_sort_assigned(self):
+        response = self.job.metabolites(sorts=[{"property":"assigned","direction":"DESC"}])
         self.assertEqual(response['total'], 2)
 
     def test_sort_score(self):
@@ -671,7 +724,6 @@ class JobMetabolitesTestCase(unittest.TestCase):
         from magmaweb.job import ScanRequiredError
         with self.assertRaises(ScanRequiredError):
             self.job.metabolites(sorts=[{"property":"score","direction":"DESC"}])
-
 
 class JobMetabolites2csvTestCase(unittest.TestCase):
     def setUp(self):
@@ -913,6 +965,17 @@ class JobScansWithMetabolitesTestCase(unittest.TestCase):
             {'id': 641, 'rt': 933.317}
         ])
 
+    def test_filteredon_not_assigned(self):
+        response = self.job.scansWithMetabolites(filters=[{"type":"boolean","value": False,"field":"assigned"}])
+        self.assertEqual(response, [
+            {'id': 641, 'rt': 933.317},
+            {'id': 870, 'rt': 1254.15}
+        ])
+
+    def test_filteredon_assigned(self):
+        response = self.job.scansWithMetabolites(filters=[{"type":"boolean","value": True,"field":"assigned"}])
+        self.assertEqual(response, [])
+
 class JobMSpectraTestCase(unittest.TestCase):
     def setUp(self):
         import uuid
@@ -923,8 +986,8 @@ class JobMSpectraTestCase(unittest.TestCase):
             self.job.mspectra(641),
             {
                 'peaks': [
-                    {'intensity': 345608.65625, 'mz': 109.0295639038086},
-                    {'intensity': 807576.625, 'mz': 305.033508300781}
+                    {'intensity': 345608.65625, 'mz': 109.0295639038086, 'assigned_metid': None},
+                    {'intensity': 807576.625, 'mz': 305.033508300781, 'assigned_metid': None}
                 ],
                 'cutoff': 200000.0,
                 'mslevel': 1,
@@ -937,8 +1000,8 @@ class JobMSpectraTestCase(unittest.TestCase):
             self.job.mspectra(641, 1),
             {
                 'peaks': [
-                    {'intensity': 345608.65625, 'mz': 109.0295639038086},
-                    {'intensity': 807576.625, 'mz': 305.033508300781}
+                    {'intensity': 345608.65625, 'mz': 109.0295639038086, 'assigned_metid': None},
+                    {'intensity': 807576.625, 'mz': 305.033508300781, 'assigned_metid': None}
                 ],
                 'cutoff': 200000.0,
                 'mslevel': 1,
@@ -955,13 +1018,28 @@ class JobMSpectraTestCase(unittest.TestCase):
         response = self.job.mspectra(871, 2)
         self.assertEqual(response, {
             'peaks': [
-                {'intensity': 211603.046875, 'mz': 123.04508972168},
-                {'intensity': 279010.28125, 'mz': 163.076232910156}
+                {'intensity': 211603.046875, 'mz': 123.04508972168, 'assigned_metid': None},
+                {'intensity': 279010.28125, 'mz': 163.076232910156, 'assigned_metid': None}
             ],
             'cutoff': 139505.0,
             'mslevel': 2,
             'precursor': { 'id': 870, 'mz': 207.0663147 }
         })
+
+    def test_withassigned_met2peak(self):
+        self.job.assign_metabolite2peak(641, 109.0295639038086, 72)
+        self.assertEqual(
+            self.job.mspectra(641),
+            {
+                'peaks': [
+                    {'intensity': 345608.65625, 'mz': 109.0295639038086, 'assigned_metid': 72},
+                    {'intensity': 807576.625, 'mz': 305.033508300781, 'assigned_metid': None}
+                ],
+                'cutoff': 200000.0,
+                'mslevel': 1,
+                'precursor': { 'id': None, 'mz': None }
+            }
+        )
 
 class JobFragmentsTestCase(unittest.TestCase):
     def setUp(self):
@@ -969,6 +1047,7 @@ class JobFragmentsTestCase(unittest.TestCase):
         self.job = Job(uuid.uuid1(), initTestingDB(), '/tmp')
 
     def test_metabolitewithoutfragments(self):
+        self.maxDiff = None
         response = self.job.fragments(metid=72, scanid=641)
         self.assertEqual(response, {
             'children': [{
@@ -982,13 +1061,15 @@ class JobFragmentsTestCase(unittest.TestCase):
                 'metid': 72,
                 'mol': u'Molfile',
                 'mslevel': 1,
-                'mz': 109.0296783,
+                'mz': 109.0295639038086,
                 'scanid': 641,
-                'score': 200.0
+                'score': 200.0,
+                'isAssigned': False,
             }], 'expanded': True
         })
 
     def test_metabolitewithfragments(self):
+        self.maxDiff = None
         response = self.job.fragments(metid=352, scanid=870)
         self.assertEqual(response, {
             'children': [{
@@ -1028,9 +1109,10 @@ class JobFragmentsTestCase(unittest.TestCase):
                 'metid': 352,
                 'mol': u'Molfile of dihydroxyphenyl-valerolactone',
                 'mslevel': 1,
-                'mz': 207.0663147,
+                'mz': 207.066284179688,
                 'scanid': 870,
-                'score': 100
+                'score': 100,
+                'isAssigned': False
             }], 'expanded': True
         })
 
@@ -1050,6 +1132,28 @@ class JobFragmentsTestCase(unittest.TestCase):
             'scanid': 872,
             'score': 4
         }])
+
+    def test_metabolitewithassignedpeak(self):
+        self.job.assign_metabolite2peak(641, 109.0295639038086, 72)
+        response = self.job.fragments(metid=72, scanid=641)
+        self.assertEqual(response, {
+            'children': [{
+                'atoms': u'0,1,2,3,4,5,6,7',
+                'children': [],
+                'deltah': -1.0,
+                'expanded': True,
+                'fragid': 948,
+                'leaf': True,
+                'mass': 110.0367794368,
+                'metid': 72,
+                'mol': u'Molfile',
+                'mslevel': 1,
+                'mz': 109.0295639038086,
+                'scanid': 641,
+                'score': 200.0,
+                'isAssigned': True,
+            }], 'expanded': True
+        })
 
     def test_badfragment(self):
         from magmaweb.job import FragmentNotFound
@@ -1080,7 +1184,8 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                     'probability': 0.119004,
                     'reactionsequence': u'sulfation_(aromatic_hydroxyl)',
                     'smiles': u'Oc1ccc(CC2OC(=O)CC2)cc1OS(O)(=O)=O',
-                    'mim': 288.0303734299, 'logp':1.9027
+                    'mim': 288.0303734299, 'logp':1.9027,
+                    'assigned': False
                 }]
             }
         )
@@ -1101,7 +1206,8 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                 'mslevel': 1,
                 'mz': 287.015686035156,
                 'scanid': 1,
-                'score': 0.0
+                'score': 0.0,
+                'isAssigned': False
             }, {
                 'atoms': u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
                 'deltah': -1.0,
@@ -1115,6 +1221,7 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                 'mass': 288.0303734299,
                 'scanid': 1,
                 'score': 0.5,
+                'isAssigned': False,
                 'children': [{
                     'fragid':  19,
                     'metid':  12,

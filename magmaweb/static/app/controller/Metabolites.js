@@ -133,6 +133,11 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
             handler: this.download_sdf.bind(this)
         }]
     });
+
+    this.application.on('assignmentchanged', function(isAssigned, params) {
+        me.reselectAfterLoad();
+        me.getMetabolitesStore().load();
+    });
   },
   /**
    * Loads metabolite store

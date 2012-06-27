@@ -38,6 +38,8 @@ def main(global_config, **settings):
     config.add_route('rpc.annotate', '/rpc/{jobid}/annotate')
     config.add_route('rpc.allinone', '/rpc/{jobid}/allinone')
     config.add_route('rpc.set_description', '/rpc/{jobid}/set_description')
+    config.add_route('rpc.assign', '/rpc/{jobid}/assign')
+    config.add_route('rpc.unassign', '/rpc/{jobid}/unassign')
 
     config.scan('magmaweb')
     return config.make_wsgi_app()

@@ -12,6 +12,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 
 from sqlalchemy.orm import relationship, backref
+from sqlalchemy.schema import ForeignKeyConstraint
 
 Base = declarative_base()
 
@@ -57,14 +58,15 @@ class Peak(Base):
     scanid = Column(Integer, ForeignKey('scans.scanid'), primary_key=True) #: Scan identifier to which peaks belongs
     mz = Column(Float, primary_key=True) #: m/z of peak (x-coordinate)
     intensity = Column(Float) #: Intensity of peak (y-coordinate)
+    assigned_metid = Column(Integer, ForeignKey('metabolites.metid')) # which metabolite is assigned to this peak
 
 class Fragment(Base):
     """Fragment model for fragments table"""
     __tablename__ = 'fragments'
     fragid = Column(Integer, primary_key=True, autoincrement=True) #: Fragment identifier
     metid = Column(Integer, ForeignKey('metabolites.metid')) #: Metabolite identifier
-    scanid = Column(Integer, ForeignKey('scans.scanid'), ForeignKey('peaks.scanid')) #: Scan identifier
-    mz = Column(Float, ForeignKey('peaks.scanid')) #: m/z of peak in scan
+    scanid = Column(Integer, ForeignKey('scans.scanid')) #: Scan identifier
+    mz = Column(Float) #: m/z of peak in scan
     mass = Column(Float) #: Mass of fragment in Dalton, corrected with h delta
     score = Column(Float) #: Score of how good the metabolite fragment matches the mass spectras
     parentfragid = Column(Integer, ForeignKey('fragments.fragid'))
@@ -72,6 +74,11 @@ class Fragment(Base):
     deltah = Column(Float)
     #: A fragment can have child fragments
     children = relationship('Fragment', backref=backref('parent', remote_side=[fragid]), lazy='joined', join_depth=1)
+    __table_args__ = (ForeignKeyConstraint(['scanid', 'mz'],
+                                           ['peaks.scanid', 'peaks.mz']
+                                           ),
+                      {}
+                      )
 
 class Run(Base):
     """Run model for run table"""

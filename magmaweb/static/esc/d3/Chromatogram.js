@@ -48,7 +48,7 @@ Ext.define('Esc.d3.Chromatogram', {
         /**
          * @cfg {String} selectedScanCls The CSS class applied to markers of a selected scan.
          */
-        selectedScanCls: 'selectedscan',
+        selectedScanCls: 'selected',
         // array of {rt:,intensity:, id:}
         markers: [],
         chartWidth: 0,
@@ -97,9 +97,9 @@ Ext.define('Esc.d3.Chromatogram', {
     this.svg.select("path.metaboliteline").attr('d', this.line(this.metabolitedata));
     if (this.markers.length) {
       this.svg.selectAll("path.lowermarker")
-        .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(0) + ")"; });
+        .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + (me.scales.y(0)+4) + ")"; });
       this.svg.selectAll("path.uppermarker")
-       .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(me.ranges.y.max) + ")"; });
+       .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + (me.scales.y(me.ranges.y.max)-4) + ")"; });
     }
     this.svg.selectAll("line.peak")
       .attr("x1", function(d) { return me.scales.x(d.rt); })
@@ -183,6 +183,7 @@ Ext.define('Esc.d3.Chromatogram', {
     .data(this.data)
     .enter().append("svg:line")
     .attr("class", "peak")
+    .classed('assigned', function(d) { return d.ap>0;})
     .attr("x1", function(d) { return me.scales.x(d.rt); })
     .attr("y2", function(d) { return me.scales.y(d.intensity); })
     .attr("y1", this.chartHeight)
@@ -313,9 +314,9 @@ Ext.define('Esc.d3.Chromatogram', {
     this.svg.selectAll("path.lowermarker")
     .data(function() {return me.markers;})
     .enter().append("svg:path")
-      .attr('class', 'marker lowermarker')
-      .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(0) + ")"; })
-      .attr("d", d3.svg.symbol().type('triangle-up').size(36) )
+      .attr('class', 'marker lowermarker annotated')
+      .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + (me.scales.y(0)+4) + ")"; })
+      .attr("d", d3.svg.symbol().type('triangle-up').size(32) )
       .on('click', markerClick)
       .append("svg:title")
         .text(markerTitle)
@@ -325,9 +326,9 @@ Ext.define('Esc.d3.Chromatogram', {
     this.svg.selectAll("path.uppermarker")
     .data(function() {return me.markers;})
     .enter().append("svg:path")
-      .attr('class', 'marker uppermarker')
-      .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + me.scales.y(me.ranges.y.max) + ")"; })
-      .attr("d", d3.svg.symbol().type('triangle-down').size(36) )
+      .attr('class', 'marker uppermarker annotated')
+      .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + (me.scales.y(me.ranges.y.max)-4) + ")"; })
+      .attr("d", d3.svg.symbol().type('triangle-down').size(32) )
       .on('click', markerClick)
       .append("svg:title")
         .text(markerTitle)

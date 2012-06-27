@@ -46,7 +46,7 @@ Ext.define('Esc.d3.MSpectra', {
         /**
          * @cfg {String} selectedPeakCls The CSS class applied to markers of a selected peak.
          */
-        selectedPeakCls: 'selectedpeak',
+        selectedPeakCls: 'selected',
         markers: [],
         chartWidth: 0,
         chartHeight: 0
@@ -89,9 +89,9 @@ Ext.define('Esc.d3.MSpectra', {
 
     if (this.markers.length) {
       this.svg.selectAll("path.lowermarker")
-        .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + me.scales.y(0) + ")"; });
+        .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + (me.scales.y(0)+4) + ")"; });
       this.svg.selectAll("path.uppermarker")
-        .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + me.scales.y(me.ranges.y.max) + ")"; });
+        .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + (me.scales.y(me.ranges.y.max)-4) + ")"; });
     }
 
     this.svg.selectAll("line.mspeak")
@@ -163,6 +163,7 @@ Ext.define('Esc.d3.MSpectra', {
 
     peaks.enter().append("svg:line")
         .attr("class", "mspeak")
+        .classed('assigned', function(d) { return d.assigned_metid !== null;})
         .attr("x1", function(d) { return me.scales.x(d.mz); })
         .attr("y2", function(d) { return me.scales.y(d.intensity); })
         .attr("y1", this.chartHeight)
@@ -258,9 +259,9 @@ Ext.define('Esc.d3.MSpectra', {
     this.svg.selectAll("path.lowermarker")
     .data(function() {return me.markers;})
     .enter().append("svg:path")
-      .attr('class', 'marker lowermarker')
-      .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + me.scales.y(0) + ")"; })
-      .attr("d", d3.svg.symbol().type('triangle-up').size(36) )
+      .attr('class', 'marker lowermarker annotated')
+      .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + (me.scales.y(0)+4) + ")"; })
+      .attr("d", d3.svg.symbol().type('triangle-up').size(32) )
       .on('click', markerClick)
       .append("svg:title")
         .text(markerTitle)
@@ -270,9 +271,9 @@ Ext.define('Esc.d3.MSpectra', {
     this.svg.selectAll("path.uppermarker")
     .data(function() {return me.markers;})
     .enter().append("svg:path")
-      .attr('class', 'marker uppermarker')
-      .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + me.scales.y(me.ranges.y.max) + ")"; })
-      .attr("d", d3.svg.symbol().type('triangle-down').size(36) )
+      .attr('class', 'marker uppermarker annotated')
+      .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + (me.scales.y(me.ranges.y.max)-4) + ")"; })
+      .attr("d", d3.svg.symbol().type('triangle-down').size(32) )
       .on('click', markerClick)
       .append("svg:title")
         .text(markerTitle)

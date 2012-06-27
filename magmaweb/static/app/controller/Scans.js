@@ -81,6 +81,15 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     this.application.on('rpcsubmitsuccess', function() {
         Ext.ComponentQuery.query('scanpanel tool[action=upload]')[0].disable();
     });
+    this.application.on('assignmentchanged', function(isAssigned, params) {
+        me.loadChromatogram(function(data) {
+            var chromatogram = this.getChromatogram();
+            var selectedScan = chromatogram.selectedScan;
+            chromatogram.setLoading(false);
+            chromatogram.setData(data.scans);
+            chromatogram.selectScan(selectedScan);
+        });
+    });
 
     /**
      * @property {Boolean} hasStructures
@@ -113,15 +122,18 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * Loads the chromatogram from server.
    */
   onLaunch: function() {
-    var me = this;
-    // config chromatogram,
-    // must be done after viewport so canvas is avaliable
-    var chromatogram = this.getChromatogram();
-    chromatogram.setLoading(true);
-    d3.json(
-        me.application.getUrls().chromatogram,
-        me.loadChromatogramCallback.bind(me)
-    );
+      this.loadChromatogram(this.loadChromatogramCallback);
+  },
+  loadChromatogram: function(callback) {
+      var me = this;
+      // config chromatogram,
+      // must be done after viewport so canvas is avaliable
+      var chromatogram = this.getChromatogram();
+      chromatogram.setLoading(true);
+      d3.json(
+          me.application.getUrls().chromatogram,
+          callback.bind(me)
+      );
   },
   /**
    * Callback for loading chromatogram

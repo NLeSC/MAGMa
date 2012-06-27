@@ -37,5 +37,7 @@ Ext.define('Esc.magmaweb.model.Metabolite', {
     name: 'mim', type:'number'
   }, {
     name: 'logp', type:'number'
+  }, {
+    name: 'assigned', type:'bool'
   }]
 });

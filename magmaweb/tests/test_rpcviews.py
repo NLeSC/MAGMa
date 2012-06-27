@@ -186,3 +186,21 @@ class RpcViewsTestCase(unittest.TestCase):
                                                }
                                     })
 
+    def test_assign_metabolite2peak(self):
+        self.rpc.request.POST = { 'scanid': 641, 'mz': 109.029563903808, 'metid': 72}
+        self.rpc.job = Mock(return_value=self.job)
+
+        response = self.rpc.assign_metabolite2peak()
+
+        self.job.assign_metabolite2peak.assert_called_with(641, 109.029563903808, 72)
+        self.assertEquals(response, { 'success': True, 'jobid': self.jobid })
+
+    def test_unassign_metabolite2peak(self):
+        self.rpc.request.POST = { 'scanid': 641, 'mz': 109.029563903808}
+        self.rpc.job = Mock(return_value=self.job)
+
+        response = self.rpc.unassign_metabolite2peak()
+
+        self.job.unassign_metabolite2peak.assert_called_with(641, 109.029563903808)
+        self.assertEquals(response, { 'success': True, 'jobid': self.jobid })
+

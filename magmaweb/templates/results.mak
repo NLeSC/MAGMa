@@ -49,15 +49,26 @@ line.peak {
   stroke: #eee;
 }
 
-path.marker {
-  stroke: lightgreen;
+.marker {
+  stroke: lightgray;
   fill: none;
   stroke-width: 1.5px;
   cursor: pointer;
 }
 
-.selectedscan, .selectedpeak {
-  stroke: darkgreen !important;
+.annotated {
+  stroke: lightgreen;
+}
+
+line.assigned {
+  stroke: orange !important;  /* #afdddd; */
+}
+
+.annotatedandassigned {
+  stroke: #F4A460;
+}
+
+.selected {
   fill: darkgreen !important;
 }
 
@@ -119,6 +130,10 @@ svg {
 .icon-loading {
     background-image: url(${request.extjsroot}/resources/themes/images/default/grid/loading.gif);
     cursor: wait;
+}
+
+.icon-connect {
+    background-image:url(${request.extjsroot}/examples/shared/icons/fam/connect.gif) !important;
 }
 
 </style>

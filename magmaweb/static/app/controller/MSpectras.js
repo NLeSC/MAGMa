@@ -32,6 +32,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     return this;
   },
   init: function() {
+    var me = this;
     this.setUrl(this.application.getUrls().mspectra);
     this.setMaxmslevel(this.application.getMaxmslevel());
 
@@ -51,6 +52,10 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     });
     this.application.on('peakmouseover', function(peak, mslevel, scanid) {
         Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' scan '+scanid+' (m/z='+peak.mz+', intensity='+peak.intensity+')');
+    });
+    this.application.on('assignmentchanged', function(isAssigned, params) {
+        // reload mspectra to show (un)assigned peak update
+        me.loadMSpectra(1, params.scanid, me.getMSpectra(1).markers);
     });
 
     this.addEvents(
@@ -166,12 +171,15 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
    * @param {Number} mslevel MS level
    * @param {Number} scanid Scan identifier.
    * @param {Array} markers Array of markers to add after Mspectra is loaded.
+   * @param {Boolean} clearHigherSpectra True to clear all higher level mspectra.
    */
-  loadMSpectra: function(mslevel, scanid, markers) {
+  loadMSpectra: function(mslevel, scanid, markers, clearHigherSpectra) {
     var me = this;
     console.log('Loading msspectra level '+mslevel+' with id '+scanid);
     this.getMSpectra(mslevel).setLoading(true);
-    this.clearMSpectraFrom(mslevel+1);
+    if (clearHigherSpectra) {
+        this.clearMSpectraFrom(mslevel+1); // TODO stop this when (un)assinging a structure to a peak
+    }
     d3.json(
       Ext.String.format(this.getUrl(), scanid, mslevel),
       function(data) {
@@ -211,7 +219,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
    * @param {Number} scanid Scan identifier.
    */
   loadMSpectra1: function(scanid) {
-    this.loadMSpectra(1, scanid, []);
+    this.loadMSpectra(1, scanid, [], true);
   },
   /**
    * Load a lvl2 MSpectra
@@ -220,7 +228,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
    * @param {Array} markers Array of markers to add after Mspectra is loaded.
    */
   loadMSpectra2: function(scanid, markers) {
-    this.loadMSpectra(2, scanid, markers);
+    this.loadMSpectra(2, scanid, markers, true);
   },
   /**
    * Loads a MSpectra of a fragment.
@@ -235,7 +243,8 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     if (mspectra.scanid != scanid) {
       this.loadMSpectra(
         mslevel, scanid,
-        fragment.childNodes.map(function(r) { return {mz: r.data.mz}; })
+        fragment.childNodes.map(function(r) { return {mz: r.data.mz}; }),
+        true
       );
     }
   },

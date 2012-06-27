@@ -8,7 +8,7 @@ from cgi import FieldStorage
 import colander
 from sqlalchemy import create_engine, and_
 from sqlalchemy.exc import OperationalError
-from sqlalchemy.orm import sessionmaker, aliased
+from sqlalchemy.orm import sessionmaker, aliased, scoped_session
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import desc, asc, distinct
 from sqlalchemy.orm.exc import NoResultFound
@@ -432,7 +432,7 @@ class JobFactory(object):
             engine.connect()
         except OperationalError:
             raise JobNotFound(jobid)
-        return sessionmaker(bind=engine)
+        return scoped_session(sessionmaker(bind=engine))
 
     def _makeJobDir(self):
         """ Create job dir and returns the job id"""
@@ -611,6 +611,11 @@ class Job(object):
             return q.filter(column.in_(filter['value']))
         elif (filter['type'] == 'boolean'):
             return q.filter(column == filter['value'])
+        elif (filter['type'] == 'null'):
+            if not filter['value']:
+                return q.filter(column == None) # IS NULL
+            else:
+                return q.filter(column != None) # IS NOT NULL
 
     def metabolites(self, start=0, limit=10, sorts=None, scanid=None, filters=None):
         """Returns dict with total and rows attribute
@@ -636,7 +641,7 @@ class Job(object):
         mets = []
         q = self.session.query(Metabolite)
 
-            # custom filters
+        # custom filters
         fragal = aliased(Fragment)
         if (scanid != None):
             # TODO add score column + order by score
@@ -648,10 +653,17 @@ class Job(object):
             Fragment.parentfragid == 0).group_by(Fragment.metid).subquery()
         q = q.add_column(stmt.c.nr_scans).outerjoin(stmt, Metabolite.metid == stmt.c.metid)
 
+        # add assigned column
+        stmt2 = self.session.query(Peak.assigned_metid, func.count('*').label('assigned')).filter(Peak.assigned_metid!=None).group_by(Peak.assigned_metid).subquery()
+        q = q.add_column(stmt2.c.assigned).outerjoin(stmt2, Metabolite.metid == stmt2.c.assigned_metid)
+
         for filter in filters:
             # generic filters
             if (filter['field'] == 'nr_scans'):
                 col = stmt.c.nr_scans
+            elif filter['field']=='assigned':
+                col = stmt2.c.assigned
+                filter['type'] = 'null'
             elif (filter['field'] == 'score'):
                 if (scanid != None):
                     col = fragal.score
@@ -666,6 +678,8 @@ class Job(object):
         for col in sorts:
             if (col['property'] == 'nr_scans'):
                 col2 = stmt.c.nr_scans
+            elif col['property']=='assigned':
+                col2 = stmt2.c.assigned
             elif (col['property'] == 'score'):
                 if (scanid != None):
                     col2 = fragal.score
@@ -693,7 +707,8 @@ class Job(object):
                 'nhits': met.nhits,
                 'nr_scans': r.nr_scans,
                 'mim': met.mim,
-                'logp': met.logp
+                'logp': met.logp,
+                'assigned': r.assigned>0
             }
             if ('score' in r.keys()):
                 row['score'] = r.score
@@ -765,11 +780,16 @@ class Job(object):
         fq = self.session.query(Fragment.scanid).filter(Fragment.parentfragid == 0)
         if (metid != None):
             fq = fq.filter(Fragment.metid == metid)
-        fq = fq.join(Metabolite)
+
         for filter in filters:
             if (filter['field'] == 'score'):
                 fq = self.extjsgridfilter(fq, Fragment.score, filter)
+            elif (filter['field'] == 'assigned'):
+                filter['type'] = 'null'
+                fq = fq.join(Peak, and_(Fragment.scanid==Peak.scanid, Fragment.mz==Peak.mz))
+                fq = self.extjsgridfilter(fq, Peak.assigned_metid, filter)
             elif (filter['field'] != 'nr_scans'):
+                fq = fq.join(Metabolite)
                 fq = self.extjsgridfilter(
                                           fq,
                                           Metabolite.__dict__[filter['field']], #@UndefinedVariable
@@ -802,12 +822,15 @@ class Job(object):
         and cutoff key with ms_intensity_cutoff
         """
         scans = []
-        # TODO add left join to find if scan has metabolite hit
-        for scan in self.session.query(Scan).filter_by(mslevel=1):
+
+        ap = self.session.query(Peak.scanid, func.count('*').label('assigned_peaks')).filter(Peak.assigned_metid!=None).group_by(Peak.scanid).subquery()
+
+        for scan, assigned_peaks in self.session.query(Scan, ap.c.assigned_peaks ).filter_by(mslevel=1).outerjoin(ap, Scan.scanid==ap.c.scanid):
             scans.append({
                 'id': scan.scanid,
                 'rt': scan.rt,
-                'intensity': scan.basepeakintensity
+                'intensity': scan.basepeakintensity,
+                'ap': assigned_peaks or 0
             })
 
         runInfo = self.runInfo()
@@ -855,7 +878,8 @@ class Job(object):
         for peak in self.session.query(Peak).filter_by(scanid=scanid):
             peaks.append({
                 'mz': peak.mz,
-                'intensity': peak.intensity
+                'intensity': peak.intensity,
+                'assigned_metid': peak.assigned_metid
             })
 
         return { 'peaks': peaks, 'cutoff': cutoff, 'mslevel': scan.mslevel, 'precursor': { 'id': scan.precursorscanid, 'mz': scan.precursormz } }
@@ -892,7 +916,7 @@ class Job(object):
                 'mz': frag.mz,
                 'mass': frag.mass,
                 'deltah': frag.deltah,
-                'mslevel': mslevel,
+                'mslevel': mslevel
             }
             if (len(frag.children) > 0):
                 f['expanded'] = False
@@ -913,6 +937,13 @@ class Job(object):
                                   Fragment.parentfragid == 0
                          ):
                 structure = fragment2json(row)
+
+                structure['isAssigned'] = self.session.query(
+                                                         func.count('*')).filter(
+                                                         Peak.scanid == scanid).filter(
+                                                         Peak.assigned_metid == metid).scalar() > 0
+
+                # load children
                 structure['children'] = []
                 for frow in q().filter(Fragment.parentfragid == structure['fragid']):
                     structure['expanded'] = True
@@ -935,3 +966,19 @@ class Job(object):
             return open(os.path.join(self.dir, 'stderr.txt'), 'rb')
         except IOError:
             return StringIO.StringIO()
+
+    def _peak(self, scanid, mz):
+        return self.session.query(Peak).filter(Peak.scanid==scanid).filter(Peak.mz == mz).one()
+
+    def assign_metabolite2peak(self, scanid, mz, metid):
+        peak = self._peak(scanid, mz)
+        peak.assigned_metid = metid
+        self.session.add(peak)
+        self.session.commit()
+
+    def unassign_metabolite2peak(self, scanid, mz):
+        peak = self._peak(scanid, mz)
+        peak.assigned_metid = None
+        self.session.add(peak)
+        self.session.commit()
+
