@@ -1,4 +1,6 @@
+===============
 MAGMaWeb README
+===============
 
 Requirements
 ------------
@@ -24,7 +26,7 @@ from sqlalchemy.sql import exists, func
 initialize_sql(create_engine('sqlite:///tea_metabolites2_scans_fragments.db'))
 
 Production deployment
-----------
+---------------------
 
 1. Minimize js, see chapter below
 2. Create logs subdir in MAGMaWeb dir for wsgi server logs
@@ -33,6 +35,7 @@ Production deployment
 4. Configure reverse proxy webserver like nginx or lighttpd:
 
 Example lighttpd example:
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # add expire module before compress module in server.modules
 
@@ -53,11 +56,77 @@ $HTTP["url"] =~ "/magma" {
   }
 }
 
-For https add setenv module and add 
+For https add setenv module and add
 setenv.add-request-header = (
       "X-FORWARDED-PROTOCOL" => "ssl"
     )
 Above proxy.serve = ...
+
+Example nginx (http proxy):
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+sudo apt-get install nginx-full
+
+Edit /etc/nginx/sites-enabled/default to:
+server {
+    #listen   80; ## listen for ipv4; this line is default and implied
+    #listen   [::]:80 default ipv6only=on; ## listen for ipv6
+
+    server_name $hostname;
+
+    location /magma {
+        proxy_set_header        Host $host;
+            proxy_set_header        X-Real-IP $remote_addr;
+            proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header        X-Forwarded-Proto $scheme;
+
+            client_max_body_size    10m;
+            client_body_buffer_size 128k;
+            proxy_connect_timeout   60s;
+            proxy_send_timeout      90s;
+            proxy_read_timeout      90s;
+            proxy_buffering         off;
+            proxy_temp_file_write_size 64k;
+            proxy_pass http://127.0.0.1:6543;
+            proxy_redirect          off;
+    }
+
+    location /magma/static/ {
+        alias       /home/stefanv/workspace/MAGMaWeb/magmaweb/static/;
+        expires     30d;
+        add_header  Cache-Control public;
+        access_log  off;
+    }
+}
+
+
+Example nginx+uwsgi:
+~~~~~~~~~~~~~~~~~~~~
+
+Add to ini file:
+[uwsgi]
+socket = /tmp/magma.uwsgi.sock
+virtualenv = /home/stefanv/workspace/MAGMaWeb/env64
+master = true
+processes = 40
+chmod = 666
+
+Change /magma sectio in /etc/nginx/sites-enabled/default to:
+    location /magma {
+        proxy_set_header        Host $host;
+            proxy_set_header        X-Real-IP $remote_addr;
+            proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header        X-Forwarded-Proto $scheme;
+
+            client_max_body_size    10m;
+            client_body_buffer_size 128k;
+            include uwsgi_params;
+            uwsgi_pass unix:/tmp/magma.uwsgi.sock;
+            uwsgi_param SCRIPT_NAME /;
+    }
+
+pip install uwsgi
+uwsgi --ini-paste-logged development.ini
 
 Documentation
 -------------
