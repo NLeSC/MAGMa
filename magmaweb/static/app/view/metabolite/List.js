@@ -82,6 +82,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         {text: 'Monoisotopic mass', dataIndex: 'mim', filter: { type: 'numeric' }, hidden: false},
         {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', hidden: true, trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
         {text: 'Candidate score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }},
+        {text: '&Delta;Mass (ppm)', dataIndex: 'deltappm', hidden: true, filter: { type: 'numeric' }},
         {text: 'Assigned', dataIndex: 'assigned', hidden: false, xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
         {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true},
         {xtype: 'actioncolumn', width:30, text:'Commands',
@@ -116,6 +117,16 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
       return this.columns.filter(function(c) { return (c.dataIndex == "score");})[0];
   },
   /**
+   * Get column with deltappm.
+   *
+   * Column should only be shown when a scan has been selected.
+   *
+   * @return {Ext.grid.column.Column}
+   */
+  getFragmentDeltaPpmColumn: function() {
+      return this.columns.filter(function(c) { return (c.dataIndex == "deltappm");})[0];
+  },
+  /**
    * Get column with commands.
    *
    * @return {Ext.grid.column.Action}
@@ -128,11 +139,13 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
    */
   hideFragmentScoreColumn: function() {
     this.getFragmentScoreColumn().hide();
+    this.getFragmentDeltaPpmColumn().hide();
   },
   /**
    * Shows column with scores.
    */
   showFragmentScoreColumn: function() {
     this.getFragmentScoreColumn().show();
+    this.getFragmentDeltaPpmColumn().show();
   }
 });

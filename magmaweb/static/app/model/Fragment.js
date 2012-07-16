@@ -26,6 +26,8 @@ Ext.define('Esc.magmaweb.model.Fragment', {
   },{
     name: 'deltah'
   },{
+    name: 'deltappm'
+  },{
     name: 'mslevel'
   }, {
     name: 'isAssigned'
