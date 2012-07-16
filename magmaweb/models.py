@@ -72,6 +72,8 @@ class Fragment(Base):
     parentfragid = Column(Integer, ForeignKey('fragments.fragid'))
     atoms = Column(Unicode) #: Atom indices of metabolite which are the fragment is a comma seperated list, starting with 0
     deltah = Column(Float)
+    # (mz+deltah*1.007825032-mass)/(mz*1e6)  as deltappm
+    deltappm = Column(Float)
     #: A fragment can have child fragments
     children = relationship('Fragment', backref=backref('parent', remote_side=[fragid]), lazy='joined', join_depth=1)
     __table_args__ = (ForeignKeyConstraint(['scanid', 'mz'],

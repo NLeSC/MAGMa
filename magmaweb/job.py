@@ -645,17 +645,17 @@ class Job(object):
         fragal = aliased(Fragment)
         if (scanid != None):
             # TODO add score column + order by score
-            q = q.add_column(fragal.score).join(fragal.metabolite).filter(
+            q = q.add_columns(fragal.score, fragal.deltappm).join(fragal.metabolite).filter(
                 fragal.parentfragid == 0).filter(fragal.scanid == scanid)
 
         # add nr_scans column
         stmt = self.session.query(Fragment.metid, func.count(distinct(Fragment.scanid)).label('nr_scans')).filter(
             Fragment.parentfragid == 0).group_by(Fragment.metid).subquery()
-        q = q.add_column(stmt.c.nr_scans).outerjoin(stmt, Metabolite.metid == stmt.c.metid)
+        q = q.add_columns(stmt.c.nr_scans).outerjoin(stmt, Metabolite.metid == stmt.c.metid)
 
         # add assigned column
         stmt2 = self.session.query(Peak.assigned_metid, func.count('*').label('assigned')).filter(Peak.assigned_metid!=None).group_by(Peak.assigned_metid).subquery()
-        q = q.add_column(stmt2.c.assigned).outerjoin(stmt2, Metabolite.metid == stmt2.c.assigned_metid)
+        q = q.add_columns(stmt2.c.assigned).outerjoin(stmt2, Metabolite.metid == stmt2.c.assigned_metid)
 
         for filter in filters:
             # generic filters
@@ -712,6 +712,7 @@ class Job(object):
             }
             if ('score' in r.keys()):
                 row['score'] = r.score
+                row['deltappm'] = r.deltappm
             mets.append(row)
 
         return { 'total': total, 'rows': mets }
@@ -916,7 +917,8 @@ class Job(object):
                 'mz': frag.mz,
                 'mass': frag.mass,
                 'deltah': frag.deltah,
-                'mslevel': mslevel
+                'mslevel': mslevel,
+                'deltappm': frag.deltappm
             }
             if (len(frag.children) > 0):
                 f['expanded'] = False
