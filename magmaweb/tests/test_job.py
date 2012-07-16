@@ -706,6 +706,15 @@ class JobMetabolitesTestCase(unittest.TestCase):
         with self.assertRaises(ScanRequiredError):
             self.job.metabolites(filters=[{"type":"numeric","comparison":"eq","value":200,"field":"score"}])
 
+    def test_filteredon_deltappm(self):
+        response = self.job.metabolites(scanid=641, filters=[{"type":"numeric","comparison":"eq","value":-1.84815979523607e-08,"field":"deltappm"}])
+        self.assertEqual(response['total'], 1)
+
+    def test_filteredon_deltappm_without_scan(self):
+        from magmaweb.job import ScanRequiredError
+        with self.assertRaises(ScanRequiredError):
+            self.job.metabolites(filters=[{"type":"numeric","comparison":"eq","value":-1.84815979523607e-08,"field":"deltappm"}])
+
     def test_filteredon_not_assigned(self):
         response = self.job.metabolites(filters=[{"type":"boolean","value": False,"field":"assigned"}])
         self.assertEqual(response['total'], 2)
@@ -734,6 +743,15 @@ class JobMetabolitesTestCase(unittest.TestCase):
         from magmaweb.job import ScanRequiredError
         with self.assertRaises(ScanRequiredError):
             self.job.metabolites(sorts=[{"property":"score","direction":"DESC"}])
+
+    def test_sort_deltappm(self):
+        response = self.job.metabolites(scanid=641, sorts=[{"property":"deltappm","direction":"DESC"}])
+        self.assertEqual(response['total'], 1)
+
+    def test_sort_deltappm_without_scan(self):
+        from magmaweb.job import ScanRequiredError
+        with self.assertRaises(ScanRequiredError):
+            self.job.metabolites(sorts=[{"property":"deltappm","direction":"DESC"}])
 
 class JobMetabolites2csvTestCase(unittest.TestCase):
     def setUp(self):

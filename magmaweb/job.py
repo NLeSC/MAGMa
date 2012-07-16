@@ -669,6 +669,11 @@ class Job(object):
                     col = fragal.score
                 else:
                     raise ScanRequiredError()
+            elif (filter['field'] == 'deltappm'):
+                if (scanid != None):
+                    col = fragal.deltappm
+                else:
+                    raise ScanRequiredError()
             else:
                 col = Metabolite.__dict__[filter['field']] #@UndefinedVariable
             q = self.extjsgridfilter(q, col, filter)
@@ -683,6 +688,11 @@ class Job(object):
             elif (col['property'] == 'score'):
                 if (scanid != None):
                     col2 = fragal.score
+                else:
+                    raise ScanRequiredError()
+            elif (col['property'] == 'deltappm'):
+                if (scanid != None):
+                    col2 = fragal.deltappm
                 else:
                     raise ScanRequiredError()
             else:
