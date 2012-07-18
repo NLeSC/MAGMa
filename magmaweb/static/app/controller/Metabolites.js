@@ -240,18 +240,20 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
   },
   /**
    * Removes scan filter from metabolite store.
-   * And hides fragment score column.
-   * And deactivates filters on fragment score column if any
-   * And resets sort if store is sorted on fragment score.
+   * And hides fragment score/deltappm column.
+   * And deactivates filters on fragment score/deltappm column if any
+   * And resets sort if store is sorted on fragment score/deltappm.
    * Tries to keep selection.
    */
   clearScanFilter: function() {
       var store = this.getMetabolitesStore();
       if ('filters' in store) {
           store.filters.removeAtKey('score');
+          store.filters.removeAtKey('deltappm');
       }
       if ('sorters' in store) {
           store.sorters.removeAtKey('score');
+          store.sorters.removeAtKey('deltappm');
       }
       this.reselectAfterLoad();
       store.removeScanFilter();
