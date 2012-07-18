@@ -135,14 +135,22 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
       return this.columns.filter(function(c) { return (c.text == "Commands");})[0];
   },
   /**
-   * Hides column with scores.
+   * Hides column with scores/deltappm and removes sort in header column.
    */
   hideFragmentScoreColumn: function() {
-    this.getFragmentScoreColumn().hide();
-    this.getFragmentDeltaPpmColumn().hide();
+    var sortCls = [
+        Ext.baseCSSPrefix + 'column-header-sort-ASC',
+        Ext.baseCSSPrefix + 'column-header-sort-DESC'
+    ];
+    var score = this.getFragmentScoreColumn();
+    score.hide();
+    score.removeCls(sortCls);
+    var deltappm = this.getFragmentDeltaPpmColumn()
+    deltappm.hide();
+    deltappm.removeCls(sortCls);
   },
   /**
-   * Shows column with scores.
+   * Shows column with scores/deltappm.
    */
   showFragmentScoreColumn: function() {
     this.getFragmentScoreColumn().show();
