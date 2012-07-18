@@ -105,7 +105,10 @@ describe('Metabolites', function() {
 
         if (!store) {
             store = ctrl.getStore('Metabolites');
-            store.load(); // mock onLaunch of controller
+            // disable reselecting selected row, tested in describe('reselect'
+            store.removeListener('beforeLoad', ctrl.onBeforeLoad);
+            // mock onLaunch of controller
+            store.load();
         }
 
         expect(store).toBeTruthy();
@@ -205,14 +208,11 @@ describe('Metabolites', function() {
 
      it('apply scan filter', function() {
        // mock list
-       var sm = { hasSelection: function() {} };
        var list = {
-         getSelectionModel: function() { return sm; },
          showFragmentScoreColumn: function() {}
        };
        spyOn(ctrl, 'getMetaboliteList').andReturn(list);
        spyOn(list, 'showFragmentScoreColumn');
-       spyOn(sm, 'hasSelection').andReturn(false);
 
        // mock store
        var mockedstore = { setScanFilter: function() {} };
@@ -224,16 +224,13 @@ describe('Metabolites', function() {
 
        expect(list.showFragmentScoreColumn).toHaveBeenCalled();
        expect(mockedstore.setScanFilter).toHaveBeenCalledWith(scanid);
-       expect(sm.hasSelection).toHaveBeenCalled();
      });
 
      describe('clear scan filter', function() {
        var mockedstore, list, sm;
        beforeEach(function() {
            // mock list
-           sm = { hasSelection: function() {}, deselectAll: function() {} };
            list = {
-               getSelectionModel: function() { return sm; },
                getFragmentScoreColumn: function() { return scorecol; },
                hideFragmentScoreColumn: function() { },
                showFragmentScoreColumn: function() { }
@@ -241,7 +238,6 @@ describe('Metabolites', function() {
 
            spyOn(list, 'hideFragmentScoreColumn');
            spyOn(ctrl, 'getMetaboliteList').andReturn(list);
-           spyOn(sm, 'hasSelection').andReturn(false);
 
            // mock store
            mockedstore = {
@@ -344,8 +340,7 @@ describe('Metabolites', function() {
      it('load metabolites, one metabolite', function() {
        // mock list
        var sm = { hasSelection: function() {}, select: function() {} };
-       var list = { getSelectionModel: function() { return sm; } };
-       spyOn(ctrl, 'getMetaboliteList').andReturn(list);
+       spyOn(ctrl, 'getSelectionModel').andReturn(sm);
        spyOn(sm, 'hasSelection').andReturn(false);
        spyOn(sm, 'select');
 
@@ -625,6 +620,51 @@ describe('Metabolites', function() {
         ctrl.showDownloadMenu('tool', event);
 
         expect(ctrl.downloadMenu.showAt).toHaveBeenCalledWith([5,10]);
+    });
+
+    it('has selection model', function() {
+        var list = { getSelectionModel: function() {} };
+        spyOn(ctrl, 'getMetaboliteList').andReturn(list);
+        spyOn(list, 'getSelectionModel');
+
+        ctrl.getSelectionModel();
+
+        expect(ctrl.getMetaboliteList).toHaveBeenCalled();
+        expect(list.getSelectionModel).toHaveBeenCalled();
+    });
+
+    describe('reselect', function() {
+        var sm = null;
+        var f = null;
+
+        beforeEach(function() {
+            sm = {
+                hasSelection: function() {},
+                getSelection: function() {
+                    return [{getId: function() {}}];
+                },
+                select: function() {}
+            };
+            spyOn(ctrl, 'getSelectionModel').andReturn(sm);
+        });
+
+        it('has no selection and reselects nothing', function() {
+            spyOn(sm, 'hasSelection').andReturn(false);
+            spyOn(store, 'on');
+
+            ctrl.onBeforeLoad(store);
+
+            expect(store.on).not.toHaveBeenCalled();
+        });
+
+        it('has selection and reselects', function() {
+            spyOn(sm, 'hasSelection').andReturn(true);
+            spyOn(store, 'on');
+
+            ctrl.onBeforeLoad(store);
+
+            expect(store.on).toHaveBeenCalled();
+        });
     });
   });
 });
