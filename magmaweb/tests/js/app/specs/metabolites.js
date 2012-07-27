@@ -106,7 +106,7 @@ describe('Metabolites', function() {
         if (!store) {
             store = ctrl.getStore('Metabolites');
             // disable reselecting selected row, tested in describe('reselect'
-            store.removeListener('beforeLoad', ctrl.onBeforeLoad);
+            store.removeListener('beforeLoad', ctrl.onBeforeLoad, ctrl);
             // mock onLaunch of controller
             store.load();
         }

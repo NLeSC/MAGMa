@@ -895,7 +895,7 @@ class Job(object):
 
         return { 'peaks': peaks, 'cutoff': cutoff, 'mslevel': scan.mslevel, 'precursor': { 'id': scan.precursorscanid, 'mz': scan.precursormz } }
 
-    def fragments(self, scanid, metid, node=''):
+    def fragments(self, scanid, metid, node):
         """Returns dict with metabolites and its lvl2 fragments when node is not set
         When node is set then returns the children fragments as list which have node as parent fragment
 
@@ -908,7 +908,7 @@ class Job(object):
             Fragments of metabolite with this identifier
 
         ``node``
-            The fragment identifier to fetch children fragments for. Optional.
+            The fragment identifier to fetch children fragments for. 'root' for root node.
 
         Raises FragmentNotFound when no fragment is found with scanid/metid combination
         """
@@ -939,7 +939,7 @@ class Job(object):
             return f
 
         # parent metabolite
-        if (node == ''):
+        if (node=='root'):
             structures = []
             for row in q().filter(
                                   Fragment.scanid == scanid

@@ -1076,7 +1076,7 @@ class JobFragmentsTestCase(unittest.TestCase):
 
     def test_metabolitewithoutfragments(self):
         self.maxDiff = None
-        response = self.job.fragments(metid=72, scanid=641)
+        response = self.job.fragments(metid=72, scanid=641, node='root')
         self.assertEqual(response, {
             'children': [{
                 'atoms': u'0,1,2,3,4,5,6,7',
@@ -1099,7 +1099,7 @@ class JobFragmentsTestCase(unittest.TestCase):
 
     def test_metabolitewithfragments(self):
         self.maxDiff = None
-        response = self.job.fragments(metid=352, scanid=870)
+        response = self.job.fragments(metid=352, scanid=870, node='root')
         self.assertEqual(response, {
             'children': [{
                 'atoms': u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14',
@@ -1168,7 +1168,7 @@ class JobFragmentsTestCase(unittest.TestCase):
 
     def test_metabolitewithassignedpeak(self):
         self.job.assign_metabolite2peak(641, 109.0295639038086, 72)
-        response = self.job.fragments(metid=72, scanid=641)
+        response = self.job.fragments(metid=72, scanid=641, node='root')
         self.assertEqual(response, {
             'children': [{
                 'atoms': u'0,1,2,3,4,5,6,7',
@@ -1192,7 +1192,7 @@ class JobFragmentsTestCase(unittest.TestCase):
     def test_badfragment(self):
         from magmaweb.job import FragmentNotFound
         with self.assertRaises(FragmentNotFound):
-            self.job.fragments(metid=70002, scanid=641)
+            self.job.fragments(metid=70002, scanid=641, node='root')
 
 class JobWithAllPeaksTestCase(unittest.TestCase):
 
@@ -1226,7 +1226,7 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
 
     def test_lvl1fragments(self):
         self.maxDiff=None
-        response = self.job.fragments(metid=12, scanid=1)
+        response = self.job.fragments(metid=12, scanid=1, node='root')
         self.assertEqual(response, {
             'children': [{
                 'atoms': u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',

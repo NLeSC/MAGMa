@@ -9,7 +9,7 @@ Ext.define('Esc.magmaweb.store.Fragments', {
   model: 'Esc.magmaweb.model.Fragment',
   autoLoad: false,
   clearOnLoad: false,
-  root: { expanded: true, children : [] }, // prevent tree from autoloading
+  root: { expanded: false, children : [] }, // prevent tree from autoloading
   /**
    * TreeStore and Store have different function to fetch record by id, add getById to TreeStore
    *
