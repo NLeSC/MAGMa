@@ -579,6 +579,18 @@ class JobTestCase(unittest.TestCase):
                          , metid
                          )
 
+    def test_assign_metabolite2peak_withoffset(self):
+        metid = 72
+        scanid = 641
+        offset = 0.008
+        mz = 109.0295639038086
+        self.job.assign_metabolite2peak(scanid, mz+offset, metid)
+
+        self.assertEqual(
+                         self.session.query(Peak.assigned_metid).filter(Peak.scanid==scanid).filter(Peak.mz==mz).scalar()
+                         , metid
+                         )
+
     def test_unassign_metabolite2peak(self):
         metid = 72
         scanid = 641
@@ -591,6 +603,21 @@ class JobTestCase(unittest.TestCase):
                          self.session.query(Peak.assigned_metid).filter(Peak.scanid==scanid).filter(Peak.mz==mz).scalar()
                          , None
                          )
+
+    def test_unassign_metabolite2peak_withoffset(self):
+        metid = 72
+        scanid = 641
+        offset = 0.008
+        mz = 109.0295639038086
+        self.job.assign_metabolite2peak(scanid, mz, metid)
+
+        self.job.unassign_metabolite2peak(scanid, mz+offset)
+
+        self.assertEqual(
+                         self.session.query(Peak.assigned_metid).filter(Peak.scanid==scanid).filter(Peak.mz==mz).scalar()
+                         , None
+                         )
+
 
 class JobEmptyDatasetTestCase(unittest.TestCase):
     def setUp(self):

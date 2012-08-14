@@ -980,7 +980,9 @@ class Job(object):
             return StringIO.StringIO()
 
     def _peak(self, scanid, mz):
-        return self.session.query(Peak).filter(Peak.scanid==scanid).filter(Peak.mz == mz).one()
+        mzoffset = self.session.query(Run.mz_precision).scalar()
+        # fetch max intensity of peaks with mz = mzq+-mzoffset
+        return self.session.query(Peak).filter(Peak.scanid==scanid).filter(Peak.mz.between(float(mz) - mzoffset, float(mz) + mzoffset)).one()
 
     def assign_metabolite2peak(self, scanid, mz, metid):
         peak = self._peak(scanid, mz)
