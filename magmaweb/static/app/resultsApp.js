@@ -222,6 +222,9 @@ Ext.define('Esc.magmaweb.resultsApp', {
                             },
                             success: function(response) {
                                 Ext.get('description').setHTML(description);
+                            },
+                            failure: function(r,o) {
+                               Ext.Error.raise('Failed to set description');
                             }
                         });
                     }

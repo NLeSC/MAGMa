@@ -158,7 +158,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     console.log('Clearing fragments and mspectra >lvl1');
     this.getFragmentsStore().getRootNode().removeAll();
 
-	// (un)assignment not possible when no fragment is selected
+    // (un)assignment not possible when no fragment is selected
     var abut = this.getAssignStruct2PeakButton();
     abut.disable();
     abut.toggle(false);
@@ -348,6 +348,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
       failure: function() {
         Ext.TaskManager.stop(me.pollTask);
         delete me.pollTask;
+        Ext.Error.raise('Failed to poll job status');
       },
       scope: me
     });
@@ -371,12 +372,8 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
           success: function(o) {
               me.application.fireEvent('assignmentchanged', button.pressed, button.params);
           },
-          failure: function() {
-              if (action.failureType === "server") {
-                Ext.Error.raise(Ext.JSON.decode(action.response.responseText));
-              } else {
-                Ext.Error.raise(action.response.responseText);
-              }
+          failure: function(r,o) {
+              Ext.Error.raise('Failed to (un)assign molecule to peak');
           }
      });
   },

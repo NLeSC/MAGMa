@@ -429,18 +429,155 @@ describe('Fragments', function() {
       });
     });
 
-    it('pollJobStatus', function() {
-        ctrl.newjobid = '3ad25048-26f6-11e1-851e-00012e260791';
-        spyOn(Ext.Ajax, 'request');
+    describe('pollJobStatus', function() {
+        var annotateActionButton;
 
-        ctrl.pollJobStatus();
-
-        expect(Ext.Ajax.request).toHaveBeenCalledWith({
-            url: '/status/3ad25048-26f6-11e1-851e-00012e260791.json',
-            scope: ctrl,
-            success: jasmine.any(Function),
-            failure: jasmine.any(Function)
+        beforeEach(function() {
+            annotateActionButton = {
+                setTooltip: function() {},
+                setIconCls: function() {},
+                setText: function() {},
+                setHandler: function() {},
+                enable: function() {}
+            };
         });
-    });
+
+        it('request', function() {
+            ctrl.newjobid = '3ad25048-26f6-11e1-851e-00012e260791';
+            spyOn(Ext.Ajax, 'request');
+
+            ctrl.pollJobStatus();
+
+            expect(Ext.Ajax.request).toHaveBeenCalledWith({
+                url: '/status/3ad25048-26f6-11e1-851e-00012e260791.json',
+                scope: ctrl,
+                success: jasmine.any(Function),
+                failure: jasmine.any(Function)
+            });
+        });
+
+        it('callback_jobrunning', function() {
+            spyOn(Ext.Ajax, 'request').andCallFake(function(options) {
+                 Ext.callback(options.success, ctrl, [{responseText:"{\"status\":\"RUNNING\"}"}]);
+            });
+            spyOn(annotateActionButton, 'setTooltip');
+            spyOn(ctrl, 'getAnnotateActionButton').andReturn(annotateActionButton);
+
+            ctrl.pollJobStatus();
+
+            expect(annotateActionButton.setTooltip).toHaveBeenCalledWith('Job RUNNING, waiting for completion');
+        });
+
+        it('callback_jobstopped', function() {
+            spyOn(Ext.Ajax, 'request').andCallFake(function(options) {
+                 Ext.callback(options.success, ctrl, [{responseText:"{\"status\":\"STOPPED\"}"}]);
+            });
+            ctrl.pollTask = 1234;
+            spyOn(Ext.TaskManager, 'stop');
+            spyOn(annotateActionButton, 'setTooltip');
+            spyOn(annotateActionButton, 'setIconCls');
+            spyOn(annotateActionButton, 'setText');
+            spyOn(annotateActionButton, 'setHandler');
+            spyOn(annotateActionButton, 'enable');
+            spyOn(ctrl, 'getAnnotateActionButton').andReturn(annotateActionButton);
+
+            ctrl.pollJobStatus();
+
+            expect(Ext.TaskManager.stop).toHaveBeenCalledWith(1234);
+            expect(ctrl.pollTask).toBeUndefined();
+            expect(annotateActionButton.setTooltip).toHaveBeenCalledWith('Job completed, fetch results');
+            expect(annotateActionButton.setIconCls).toHaveBeenCalledWith('');
+            expect(annotateActionButton.setText).toHaveBeenCalledWith('Fetch result');
+            expect(annotateActionButton.setHandler).toHaveBeenCalledWith(jasmine.any(Function));
+            expect(annotateActionButton.enable).toHaveBeenCalledWith();
+        });
+
+        it('callback_failure', function() {
+            spyOn(Ext.Ajax, 'request').andCallFake(function(options) {
+                 Ext.callback(options.failure, ctrl);
+            });
+            ctrl.pollTask = 1234;
+            spyOn(Ext.TaskManager, 'stop');
+            spyOn(Ext.Error, 'raise');
+
+            ctrl.pollJobStatus();
+
+            expect(ctrl.pollTask).toBeUndefined();
+            expect(Ext.TaskManager.stop).toHaveBeenCalledWith(1234);
+            expect(Ext.Error.raise).toHaveBeenCalledWith('Failed to poll job status');
+        });
+     });
+
+    describe('assign_struct2peakAction', function() {
+        var button;
+
+        beforeEach(function() {
+            var params = {
+                scanid: 1089,
+                metid: 92,
+                mz: 463.08856201171875
+            };
+            button = { pressed: true, params: params};
+        });
+
+        it('assign', function() {
+            spyOn(Ext.Ajax, 'request');
+
+            ctrl.assign_struct2peakAction(button);
+
+            expect(Ext.Ajax.request).toHaveBeenCalledWith({
+                url: '/rpc/3ad25048-26f6-11e1-851e-00012e260790/assign',
+                params: button.params,
+                success: jasmine.any(Function),
+                failure: jasmine.any(Function)
+            });
+        });
+
+        it('unassign', function() {
+            spyOn(Ext.Ajax, 'request');
+            button.pressed = false;
+
+            ctrl.assign_struct2peakAction(button);
+
+            expect(Ext.Ajax.request).toHaveBeenCalledWith({
+                url: '/rpc/3ad25048-26f6-11e1-851e-00012e260790/unassign',
+                params: button.params,
+                success: jasmine.any(Function),
+                failure: jasmine.any(Function)
+            });
+        });
+
+        it('callback_success', function() {
+            var f = { callback: function() {} };
+            spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+            Ext.util.Observable.capture(ctrl.application, f.callback);
+
+            spyOn(Ext.Ajax, 'request').andCallFake(function(options) {
+                 Ext.callback(options.success);
+            });
+
+            ctrl.assign_struct2peakAction(button);
+
+            expect(f.callback).toHaveBeenCalledWith('assignmentchanged', button.pressed, button.params);
+            Ext.util.Observable.releaseCapture(ctrl.application);
+        });
+
+        it('callback_failure', function() {
+            var f = { callback: function() {}};
+            spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+            Ext.util.Observable.capture(ctrl.application, f.callback);
+            spyOn(Ext.Ajax, 'request').andCallFake(function(options) {
+                 Ext.callback(options.failure);
+            });
+            spyOn(Ext.Error, 'raise');
+
+            ctrl.assign_struct2peakAction(button);
+
+            expect(Ext.Error.raise).toHaveBeenCalledWith('Failed to (un)assign molecule to peak');
+            expect(f.callback).not.toHaveBeenCalledWith('assignmentchanged', button.pressed, button.params);
+
+            Ext.util.Observable.releaseCapture(ctrl.application);
+        });
+     });
   });
 });
