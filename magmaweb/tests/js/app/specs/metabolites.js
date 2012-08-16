@@ -61,11 +61,7 @@ describe('Metabolites', function() {
     });
 
     it('proxy exception', function() {
-        var oldhandle = Ext.Error.handle;
-        Ext.Error.handle = function(err) {
-            return true;
-        };
-        spyOn(Ext.Error, 'handle').andCallThrough();
+        spyOn(Ext.Error, 'handle').andReturn(true);
 
         var proxy = store.getProxy();
         proxy.fireEvent('exception', proxy, 'bla', 'foo');
@@ -75,7 +71,6 @@ describe('Metabolites', function() {
             response: 'bla',
             operation: 'foo'
         });
-        Ext.Error.handle = oldhandle;
     });
 
     describe('totalUnfilteredCount' , function() {

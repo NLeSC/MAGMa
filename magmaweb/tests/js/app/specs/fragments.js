@@ -344,11 +344,7 @@ describe('Fragments', function() {
     });
 
     it('proxy exception', function() {
-        var oldhandle = Ext.Error.handle;
-        Ext.Error.handle = function(err) {
-            return true;
-        };
-        spyOn(Ext.Error, 'handle').andCallThrough();
+        spyOn(Ext.Error, 'handle').andReturn(true);
 
         var proxy = ctrl.fragmentProxyFactory(2,3);
         proxy.fireEvent('exception', proxy, 'bla', 'foo');
@@ -358,7 +354,6 @@ describe('Fragments', function() {
             response: 'bla',
             operation: 'foo'
         });
-        Ext.Error.handle = oldhandle;
     });
 
     it('showAnnotateForm', function() {

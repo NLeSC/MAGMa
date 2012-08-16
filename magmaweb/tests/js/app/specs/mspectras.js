@@ -61,11 +61,7 @@ describe('MSpectras controller', function() {
     it('notfound', function() {
       var mslevel = 1, scanid = 1133, markers = [];
       var mspectra = ctrl.getMSpectra(mslevel);
-      var oldhandle = Ext.Error.handle;
-      Ext.Error.handle = function(err) {
-          return true;
-      };
-      spyOn(Ext.Error, 'handle').andCallThrough();
+      spyOn(Ext.Error, 'handle').andReturn(true);
 
       ctrl.onLoadMSpectra(mslevel, scanid, markers, null);
 
@@ -73,7 +69,6 @@ describe('MSpectras controller', function() {
           msg: 'Unable to find mspectra scan on level '+mslevel+' with id '+scanid,
           sourceMethod : 'onLoadMSpectra', sourceClass : 'Esc.magmaweb.controller.MSpectras'
       });
-      Ext.Error.handle = oldhandle;
     });
 
     it('found', function() {

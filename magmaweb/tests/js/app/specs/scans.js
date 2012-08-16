@@ -30,112 +30,107 @@ describe('Scans controller', function() {
     expect(d3.json).toHaveBeenCalledWith('data/chromatogram.json', jasmine.any(Function));
   });
 
-  it('loadChromatogramCallback', function() {
-    spyOn(mocked_chromatogram, 'setLoading');
-    spyOn(mocked_chromatogram, 'setData');
-    spyOn(ctrl, 'resetScans');
-    var f = { callback: function() {} };
-    spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
-    Ext.util.Observable.capture(ctrl.application, f.callback);
+  describe('loadChromatogramCallback', function() {
+      it('with cutoff', function() {
+        spyOn(mocked_chromatogram, 'setLoading');
+        spyOn(mocked_chromatogram, 'setData');
+        spyOn(ctrl, 'resetScans');
+        var f = { callback: function() {} };
+        spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+        Ext.util.Observable.capture(ctrl.application, f.callback);
 
-    var data = { scans:[1,2,3,4], cutoff:1000 };
-    ctrl.loadChromatogramCallback(data);
+        var data = { scans:[1,2,3,4], cutoff:1000 };
+        ctrl.loadChromatogramCallback(data);
 
-    expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(false);
-    expect(mocked_chromatogram.cutoff).toEqual(1000);
-    expect(mocked_chromatogram.setData).toHaveBeenCalledWith([1,2,3,4]);
-    expect(ctrl.resetScans).toHaveBeenCalled();
+        expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(false);
+        expect(mocked_chromatogram.cutoff).toEqual(1000);
+        expect(mocked_chromatogram.setData).toHaveBeenCalledWith([1,2,3,4]);
+        expect(ctrl.resetScans).toHaveBeenCalled();
 
-    expect(f.callback).toHaveBeenCalledWith('chromatogramload', jasmine.any(Object));
-    Ext.util.Observable.releaseCapture(ctrl.application);
-  });
-
-  it('loadChromatogramCallback no cutoff', function() {
-      mocked_chromatogram.cutoff = 1000;
-      spyOn(mocked_chromatogram, 'setLoading');
-      spyOn(mocked_chromatogram, 'setData');
-      spyOn(ctrl, 'resetScans');
-      var f = { callback: function() {} };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
-      Ext.util.Observable.capture(ctrl.application, f.callback);
-
-      var data = { scans:[1,2,3,4], cutoff:null };
-      ctrl.loadChromatogramCallback(data);
-
-      expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(false);
-      expect(mocked_chromatogram.cutoff).toEqual(1000);
-      expect(mocked_chromatogram.setData).toHaveBeenCalledWith([1,2,3,4]);
-      expect(ctrl.resetScans).toHaveBeenCalled();
-
-      expect(f.callback).toHaveBeenCalledWith('chromatogramload', jasmine.any(Object));
-      Ext.util.Observable.releaseCapture(ctrl.application);
-  });
-
-  it('loadChromatogramCallback error', function() {
-    var oldhandle = Ext.Error.handle;
-    Ext.Error.handle = function(err) {
-        return true;
-    };
-    spyOn(Ext.Error, 'handle').andCallThrough();
-
-    ctrl.loadChromatogramCallback(null);
-
-    expect(Ext.Error.handle).toHaveBeenCalledWith({
-        msg: 'Failed to load chromatogram from server',
-        sourceMethod : 'loadChromatogramCallback', sourceClass : 'Esc.magmaweb.controller.Scans'
-    });
-    Ext.Error.handle = oldhandle;
-  });
-
-  it('clearExtractedIonChromatogram', function() {
-    spyOn(mocked_chromatogram, 'setExtractedIonChromatogram');
-    ctrl.clearExtractedIonChromatogram();
-    expect(mocked_chromatogram.setExtractedIonChromatogram).toHaveBeenCalledWith([]);
-  });
-
-  it('loadExtractedIonChromatogram', function() {
-    spyOn(d3, 'json');
-    spyOn(mocked_chromatogram, 'setLoading');
-
-    ctrl.loadExtractedIonChromatogram(352);
-
-    expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(true);
-    expect(d3.json).toHaveBeenCalledWith(
-      'data/extractedionchromatogram.352.json',
-      jasmine.any(Function)
-    );
-  });
-
-  it('loadExtractedIonChromatogramCallback', function() {
-    spyOn(mocked_chromatogram, 'setLoading');
-    spyOn(mocked_chromatogram, 'setExtractedIonChromatogram');
-    spyOn(ctrl, 'setScans');
-
-    var data = {
-        scans: [ 1,2,3 ],
-        chromatogram: [ 4, 5, 6 ]
-    };
-    ctrl.loadExtractedIonChromatogramCallback(data);
-
-    expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(false);
-    expect(mocked_chromatogram.setExtractedIonChromatogram).toHaveBeenCalledWith(data.chromatogram);
-    expect(ctrl.setScans).toHaveBeenCalledWith(data.scans);
-  });
-
-  it('loadExtractedIonChromatogramCallback error', function() {
-      var oldhandle = Ext.Error.handle;
-      Ext.Error.handle = function(err) {
-          return true;
-      };
-      spyOn(Ext.Error, 'handle').andCallThrough();
-
-      ctrl.loadExtractedIonChromatogramCallback(null);
-
-      expect(Ext.Error.handle).toHaveBeenCalledWith({
-          msg: 'Failed to load extracted ion chromatogram from server',
-          sourceMethod : 'loadExtractedIonChromatogramCallback', sourceClass : 'Esc.magmaweb.controller.Scans'
+        expect(f.callback).toHaveBeenCalledWith('chromatogramload', jasmine.any(Object));
+        Ext.util.Observable.releaseCapture(ctrl.application);
       });
-      Ext.Error.handle = oldhandle;
+
+      it('with default cutoff', function() {
+          mocked_chromatogram.cutoff = 1000;
+          spyOn(mocked_chromatogram, 'setLoading');
+          spyOn(mocked_chromatogram, 'setData');
+          spyOn(ctrl, 'resetScans');
+          var f = { callback: function() {} };
+          spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+          Ext.util.Observable.capture(ctrl.application, f.callback);
+
+          var data = { scans:[1,2,3,4], cutoff:null };
+          ctrl.loadChromatogramCallback(data);
+
+          expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(false);
+          expect(mocked_chromatogram.cutoff).toEqual(1000);
+          expect(mocked_chromatogram.setData).toHaveBeenCalledWith([1,2,3,4]);
+          expect(ctrl.resetScans).toHaveBeenCalled();
+
+          expect(f.callback).toHaveBeenCalledWith('chromatogramload', jasmine.any(Object));
+          Ext.util.Observable.releaseCapture(ctrl.application);
+      });
+
+      it('server error', function() {
+        spyOn(Ext.Error, 'handle').andReturn(true);
+
+        ctrl.loadChromatogramCallback(null);
+
+        expect(Ext.Error.handle).toHaveBeenCalledWith({
+            msg: 'Failed to load chromatogram from server',
+            sourceMethod : 'loadChromatogramCallback', sourceClass : 'Esc.magmaweb.controller.Scans'
+        });
+      });
+  });
+
+  describe('ExtractedIonChromatogram', function() {
+      it('clear', function() {
+        spyOn(mocked_chromatogram, 'setExtractedIonChromatogram');
+        ctrl.clearExtractedIonChromatogram();
+        expect(mocked_chromatogram.setExtractedIonChromatogram).toHaveBeenCalledWith([]);
+      });
+
+      it('load', function() {
+        spyOn(d3, 'json');
+        spyOn(mocked_chromatogram, 'setLoading');
+
+        ctrl.loadExtractedIonChromatogram(352);
+
+        expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(true);
+        expect(d3.json).toHaveBeenCalledWith(
+          'data/extractedionchromatogram.352.json',
+          jasmine.any(Function)
+        );
+      });
+
+      it('load callback success', function() {
+        spyOn(mocked_chromatogram, 'setLoading');
+        spyOn(mocked_chromatogram, 'setExtractedIonChromatogram');
+        spyOn(ctrl, 'setScans');
+
+        var data = {
+            scans: [ 1,2,3 ],
+            chromatogram: [ 4, 5, 6 ]
+        };
+        ctrl.loadExtractedIonChromatogramCallback(data);
+
+        expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(false);
+        expect(mocked_chromatogram.setExtractedIonChromatogram).toHaveBeenCalledWith(data.chromatogram);
+        expect(ctrl.setScans).toHaveBeenCalledWith(data.scans);
+      });
+
+      it('load callback failure', function() {
+          spyOn(Ext.Error, 'handle').andReturn(true);
+
+          ctrl.loadExtractedIonChromatogramCallback(null);
+
+          expect(Ext.Error.handle).toHaveBeenCalledWith({
+              msg: 'Failed to load extracted ion chromatogram from server',
+              sourceMethod : 'loadExtractedIonChromatogramCallback', sourceClass : 'Esc.magmaweb.controller.Scans'
+          });
+      });
+
   });
 
   it('searchScan', function() {
