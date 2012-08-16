@@ -418,7 +418,7 @@ describe('Metabolites', function() {
                 direction: 'ASC'
               }])
           }));
-          expect(window.open).toHaveBeenCalledWith(url ,'metabolites.csv');
+          expect(window.open).toHaveBeenCalledWith(url ,'metabolitescsv');
       });
 
       it('filtered', function() {
@@ -463,7 +463,7 @@ describe('Metabolites', function() {
               }]),
               filter: filter
           }));
-          expect(window.open).toHaveBeenCalledWith(url ,'metabolites.csv');
+          expect(window.open).toHaveBeenCalledWith(url ,'metabolitescsv');
       });
     });
 

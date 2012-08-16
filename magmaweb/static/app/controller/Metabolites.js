@@ -294,7 +294,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
         this.application.metabolitesUrl(format),
         Ext.Object.toQueryString(params)
     );
-    window.open(url, 'metabolites.'+format);
+    window.open(url, 'metabolites'+format);
   },
   /**
    * Shortcut do download csv file
