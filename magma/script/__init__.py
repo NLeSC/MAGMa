@@ -86,7 +86,7 @@ class MagmaCommand(object):
         sc.add_argument('--precursor_mz_precision', help="Mass precision for matching peaks and precursor ions (default: %(default)s)", default=0.005,type=float)
         sc.add_argument('-u', '--use_all_peaks', help="Annotate all level 1 peaks, including those not fragmented (default: %(default)s)", action="store_true")
         sc.add_argument('-f', '--skip_fragmentation', help="Skip substructure annotation of fragment peaks", action="store_true")
-        sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["chebi"])
+        sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["chebi","pubchem"])
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
 
@@ -195,6 +195,13 @@ class MagmaCommand(object):
             metids=set([])
             for id in candidates:
                 metids.add(struct_engine.add_structure(str(candidates[id][0]),str(candidates[id][1]),1.0,1,"",1))
+            annotate_engine.search_some_structures(metids)
+        if args.structure_database == 'pubchem':
+            struct_engine = magma_session.get_structure_engine()
+            candidates=annotate_engine.get_pubchem_candidates()
+            metids=set([])
+            for id in candidates:
+                metids.add(struct_engine.add_structure(str(candidates[id][1]),str(candidates[id][5]),1.0,1,"",1))
             annotate_engine.search_some_structures(metids)
 
     def sd2smiles(self, args):
