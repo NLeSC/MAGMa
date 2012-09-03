@@ -58,6 +58,9 @@ class CDKengine(object):
         reader2mol = cdk.io.MDLReader(stringio2mol)
         molecule=cdk.Molecule()
         reader2mol.read(molecule)
+        cdk.tools.manipulator.AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(molecule)
+        ha=cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
+        ha.addImplicitHydrogens(molecule)
         return molecule
     def generateCoordinates(self,molecule):
         sdg = cdk.layout.StructureDiagramGenerator(molecule)
@@ -79,8 +82,6 @@ class CDKengine(object):
             hc=0
         return mass+self.Hmass*hc
     def GetFormulaProps(self,mol):
-        ha=cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
-        ha.addImplicitHydrogens(mol)
         formula=cdk.tools.manipulator.MolecularFormulaManipulator.getMolecularFormula(mol)
         formula_string = cdk.tools.manipulator.MolecularFormulaManipulator.getString(formula)
         mim = cdk.tools.manipulator.MolecularFormulaManipulator.getMajorIsotopeMass(formula)
@@ -694,8 +695,8 @@ class AnnotateEngine(object):
 #                    bondscore = typew[x.GetBondType()]*ringw[x.IsInRing()]*\
 #                                          heterow[x.GetBeginAtom().GetAtomicNum() != 6 or \
 #                                                     x.GetEndAtom().GetAtomicNum() != 6]
-#                    self.bonds.add(bond)
-#                    self.bondscore[bond]=bondscore
+                    self.bonds.add(bond)
+                    self.bondscore[bond]=bondscore
 
                 self.all_fragments=set([frag])
                 self.total_fragments=set([frag])
@@ -768,6 +769,8 @@ class AnnotateEngine(object):
                     if 0 < (fragment & bond) < bond:
                         score+=self.bondscore[bond]
                         bondbreaks+=1
+                if score==0:
+                    print "score=0: ",fragment,bondbreaks
                 return bondbreaks,score
 
             def score_fragment_rel2parent(self,fragment,parent):
