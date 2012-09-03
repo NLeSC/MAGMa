@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import sys,base64,subprocess
-import sqlite3,struct,zlib
+import sys,base64,subprocess,StringIO
+import sqlite3,struct,zlib,gzip
 import pkg_resources
 import numpy as np
 import logging
@@ -24,7 +24,7 @@ generate smiles
 """
 
 jars= glob.glob('/home/ridderl/cdk/Marijn_jars/*jar')
-jars= glob.glob('/home/ridderl/cdk/cdk-1.4.11.jar')
+jars= glob.glob('/home/ridderl/cdk/cdk-1.4.13.jar')
 classpath = ":".join([ os.path.abspath(jar) for jar in jars])
 os.environ['JAVA_HOME'] = '/usr/lib/jvm/java-6-openjdk'
 jpype.startJVM(jpype.getDefaultJVMPath(),"-ea", "-Djava.class.path="+classpath)
@@ -79,6 +79,8 @@ class CDKengine(object):
             hc=0
         return mass+self.Hmass*hc
     def GetFormulaProps(self,mol):
+        ha=cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
+        ha.addImplicitHydrogens(mol)
         formula=cdk.tools.manipulator.MolecularFormulaManipulator.getMolecularFormula(mol)
         formula_string = cdk.tools.manipulator.MolecularFormulaManipulator.getString(formula)
         mim = cdk.tools.manipulator.MolecularFormulaManipulator.getMajorIsotopeMass(formula)
@@ -530,15 +532,17 @@ class AnnotateEngine(object):
             for peak in scan.peaks:
                 mass=peak.mz-self.ionisation_mode*Hmass
                 if not ((not self.use_all_peaks) and peak.childscan==None):
-                    result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass-self.mz_precision,mass+self.mz_precision))
+                    result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass/self.precision,mass*self.precision))
                     for (id,mim,molblock,chebi_name) in result:
                         db_candidates[id]=[molblock,chebi_name]
                     print str(mass)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
 
     def get_pubchem_candidates(self):
-        dbfilename = '/media/PubChem/test_out.db'
+        dbfilename = '/media/PubChem/Pubchem_MAGMa.db'
+        dbfilename = '/home/ridderl/PRI/test_out.db'
         conn = sqlite3.connect(dbfilename)
+        conn.text_factory=str
         c = conn.cursor()
         db_candidates={}
         # First a dictionary is created with candidate molecules based on all level1 peaks
@@ -553,7 +557,7 @@ class AnnotateEngine(object):
                                                  (mass/self.precision,mass*self.precision))
                     for (id,mim,molblock,smiles,molform,conn_id,cid,name) in result:
                         db_candidates[id]=[mim,zlib.decompress(molblock),smiles,molform,cid,name]
-                    print str(mass)+' --> '+str(len(db_candidates))+' candidates'
+                    print str(peak.mz)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
 
     def get_pubchem_query(self):
@@ -577,7 +581,7 @@ class AnnotateEngine(object):
             self.search_structure(structure)
 
     def search_structure(self,structure):
-        # logging.warn('Structure: '+str(structure.metid))
+        # logging.warn('Structure: '+str(structure.metid)+"\tmim: "+str(structure.mim))
         Fragmented=False
         mol=Chem.MolFromMolBlock(str(structure.mol))
         me=self
@@ -659,7 +663,6 @@ class AnnotateEngine(object):
                 self.avg_score=None
                 frag=(1<<self.natoms)-1
 
-                print Chem.MolToSmiles(mol)
                 for x in range(self.natoms):
                     self.bonded_atoms.append([])
                     self.atom_masses.append(Chem.GetExtendedAtomMass(mol.getAtom(x)))
@@ -911,7 +914,7 @@ class AnnotateEngine(object):
                     if type(deltaH)==int:
                         if not Fragmented:
                             sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+' '+str(structure.reactionsequence)+'\n')
-                            sys.stderr.write('Mim: '+str(structure.mim+Hmass)+'\n')
+                            sys.stderr.write('Mim: '+str(structure.mim)+'\n')
                             fragment_engine=FragmentationEngine(mol)
                             #fragment_engine=GrowingEngine(mol)
                             fragment_engine.generate_fragments()
