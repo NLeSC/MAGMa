@@ -194,7 +194,10 @@ class MagmaCommand(object):
             candidates=annotate_engine.get_chebi_candidates()
             metids=set([])
             for id in candidates:
-                metids.add(struct_engine.add_structure(str(candidates[id][0]),str(candidates[id][1]),1.0,1,"",1))
+                try:
+                    metids.add(struct_engine.add_structure(str(candidates[id][0]),str(candidates[id][1]),1.0,1,"",1))
+                except:
+                    pass
             annotate_engine.search_some_structures(metids)
         if args.structure_database == 'pubchem':
             struct_engine = magma_session.get_structure_engine()
