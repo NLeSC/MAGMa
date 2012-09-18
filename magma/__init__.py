@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import sys,base64,subprocess,StringIO
-import sqlite3,struct,zlib,gzip
+import sys,base64,subprocess,StringIO,time
+import sqlite3,struct,zlib,gzip,copy
 import pkg_resources
 import numpy as np
 import logging
@@ -23,8 +23,8 @@ generate 2D conformation for those
 generate smiles
 """
 
-jars= glob.glob('/home/ridderl/cdk/Marijn_jars/*jar')
-jars= glob.glob('/home/ridderl/cdk/cdk-1.4.13.jar')
+#jars= glob.glob('/home/ridderl/cdk/Marijn_jars/*jar')
+jars= ('/home/ridderl/cdk/cdk-1.4.13.jar',)
 classpath = ":".join([ os.path.abspath(jar) for jar in jars])
 os.environ['JAVA_HOME'] = '/usr/lib/jvm/java-6-openjdk'
 jpype.startJVM(jpype.getDefaultJVMPath(),"-ea", "-Djava.class.path="+classpath)
@@ -35,8 +35,6 @@ java = jpype.java
 
 class CDKengine(object):
     def __init__(self):
-        self.mol2stringio = java.io.StringWriter()
-        self.mol2writer = cdk.io.MDLV2000Writer(self.mol2stringio)
         self.builder = cdk.DefaultChemObjectBuilder.getInstance()
         self.sp = cdk.smiles.SmilesParser(self.builder)
         self.sp.setPreservingAromaticity(True)
@@ -44,21 +42,25 @@ class CDKengine(object):
         self.sg.setUseAromaticityFlag(True)
         self.isof=cdk.config.IsotopeFactory.getInstance(self.builder)
         self.Hmass=self.isof.getMajorIsotope('H').getExactMass().floatValue()
+        self.acm = cdk.tools.manipulator.AtomContainerManipulator
     def MolToMolBlock(self,molecule):
-        d = cdk.smiles.DeduceBondSystemTool()
+        mol2stringio = java.io.StringWriter()
+        mol2writer = cdk.io.MDLV2000Writer(mol2stringio)
         try:
-            molecule = d.fixAromaticBondOrders(molecule)
+            dbst = cdk.smiles.DeduceBondSystemTool()
+            molecule = dbst.fixAromaticBondOrders(molecule)
         except:
             pass
-        self.mol2writer.write(molecule)
+        mol2writer.write(molecule)
         # mol2writer.close()
-        return self.mol2stringio.toString()
+        return mol2stringio.toString()
     def MolFromMolBlock(self,mol_block):
         stringio2mol = java.io.StringReader(mol_block)
         reader2mol = cdk.io.MDLReader(stringio2mol)
         molecule=cdk.Molecule()
         reader2mol.read(molecule)
         cdk.tools.manipulator.AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(molecule)
+        #cdk.aromaticity.CDKHueckelAromaticityDetector.detectAromaticity(molecule) #
         ha=cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
         ha.addImplicitHydrogens(molecule)
         return molecule
@@ -70,10 +72,17 @@ class CDKengine(object):
         molecule = self.sp.parseSmiles(smiles)
         cdk.tools.manipulator.AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(molecule) #
         cdk.aromaticity.CDKHueckelAromaticityDetector.detectAromaticity(molecule)
+        ha=cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
+        ha.addImplicitHydrogens(molecule)
         molecule = self.generateCoordinates(molecule)
         return molecule
     def MolToSmiles(self,molecule):
         return self.sg.createSMILES(molecule) #sg.createSMILES(molecule,True)
+    def MolToInchiKey(self,molecule):
+        igf = cdk.inchi.InChIGeneratorFactory.getInstance()
+        ig = igf.getInChIGenerator(molecule)
+        # print ig
+        return ig.getInchiKey()
     def GetExtendedAtomMass(self,atom):
         mass=self.isof.getMajorIsotope(atom.getSymbol()).getExactMass().floatValue()
         try:
@@ -86,7 +95,14 @@ class CDKengine(object):
         formula_string = cdk.tools.manipulator.MolecularFormulaManipulator.getString(formula)
         mim = cdk.tools.manipulator.MolecularFormulaManipulator.getMajorIsotopeMass(formula)
         return mim,formula_string
-    
+    def FragmentToSmiles(self,mol,atomlist):
+        return self.sg.createSMILES(self.acm.extractSubstructure(mol,atomlist))
+    def FragmentToInchiKey(self,mol,atomlist):
+        ac=self.acm.extractSubstructure(mol,atomlist)
+        igf = cdk.inchi.InChIGeneratorFactory.getInstance()
+        ig = igf.getInChIGenerator(ac)
+        return ig.getInchiKey()
+
 Chem = CDKengine()
 
 typew={"AROMATIC":3.0,\
@@ -174,7 +190,6 @@ class MagmaSession(object):
     def close(self):
         self.db_session.close()
 
-
 class StructureEngine(object):
     def __init__(self,db_session,metabolism_types,n_reaction_steps):
         self.db_session = db_session
@@ -198,34 +213,45 @@ class StructureEngine(object):
               (atom.GetNumImplicitHs()+atom.GetNumExplicitHs()))
         return mim
 
-    def add_structure(self,molblock,name,prob,level,sequence,isquery):
+    def add_structure(self,molblock,name,prob,level,sequence,isquery,mim=None,inchikey=None,molform=None,reference=None):
         mol=Chem.MolFromMolBlock(molblock)
-        smiles=Chem.MolToSmiles(mol)
-        mim,molform=Chem.GetFormulaProps(mol)
+        if inchikey == None:
+            inchikey=Chem.MolToInchiKey(mol)[:14]
+            # inchikey=Chem.MolToSmiles(mol)
+        if mim == None or molform == None:
+            mim,molform=Chem.GetFormulaProps(mol)
         # mim=self.calc_mim(mol)
         metab=Metabolite(
-            mol=unicode(molblock, 'utf-8', 'xmlcharrefreplace'), level=level, probability=prob,
-            reactionsequence=sequence, smiles=smiles,
-            molformula=molform, isquery=isquery, origin=unicode(name, 'utf-8', 'xmlcharrefreplace'),
+            mol=unicode(molblock, 'utf-8', 'xmlcharrefreplace'),
+            level=level,
+            probability=prob,
+            reactionsequence=sequence,
+            smiles=inchikey,
+            molformula=molform,
+            isquery=isquery,
+            origin=unicode(name, 'utf-8', 'xmlcharrefreplace'),
             mim=mim,
+            reference=reference
             #logp=Chem.Crippen.MolLogP(m)
             )
         try:
-            dupid = self.db_session.query(Metabolite).filter_by(smiles=smiles).one()
+            dupid = self.db_session.query(Metabolite).filter_by(smiles=inchikey).one()
             if dupid.probability < prob:
                 self.db_session.delete(dupid)
                 self.db_session.commit()
                 self.db_session.add(metab)
                 self.db_session.commit()
-                sys.stderr.write('Duplicate structure: '+sequence+' '+smiles+' - old one removed\n')
+                sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - old one removed\n')
+                # TODO remove any fragments related to this structure as well
             else:
-                sys.stderr.write('Duplicate structure: '+sequence+' '+smiles+' - kept old one\n')
+                sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - kept old one\n')
                 metab = dupid
         except NoResultFound:
             self.db_session.add(metab)
-            self.db_session.commit()
-        finally:
-            return metab.metid
+            self.db_session.flush()
+            sys.stderr.write('Added: '+name+'\n')
+        print metab.metid
+        return metab.metid
             # print 'Added structure:',sequence
 
     def add_structure_tmp(self,mol,name,prob,level,sequence,isquery):
@@ -462,7 +488,7 @@ class AnnotateEngine(object):
         self.scans=[]
         self.weigh_scores=False
 
-    def build_spectra(self):
+    def build_spectra(self,scans='all'):
         logging.warn('Build spectra')
         me=self
         class ScanType(object):
@@ -518,8 +544,13 @@ class AnnotateEngine(object):
                 else:
                     return False
 
-        for dbscan in self.db_session.query(Scan).filter(Scan.mslevel==1).all():
-            self.scans.append(ScanType(dbscan))
+        if scans=='all':
+            for dbscan in self.db_session.query(Scan).filter(Scan.mslevel==1).all():
+                self.scans.append(ScanType(dbscan))
+        else:
+            for dbscan in self.db_session.query(Scan).filter(Scan.mslevel==1 and Scan.scanid.in_(scans)).all():
+                self.scans.append(ScanType(dbscan))
+            
 
     def get_chebi_candidates(self):
         dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
@@ -540,8 +571,8 @@ class AnnotateEngine(object):
         return db_candidates
 
     def get_pubchem_candidates(self):
-        dbfilename = '/media/PubChem/Pubchem_MAGMa.db'
-        dbfilename = '/home/ridderl/PRI/test_out.db'
+        dbfilename = '/media/PubChem/Pubchem_MAGMa_inchi.db'
+        # dbfilename = '/home/ridderl/PRI/test_out.db'
         conn = sqlite3.connect(dbfilename)
         conn.text_factory=str
         c = conn.cursor()
@@ -553,23 +584,18 @@ class AnnotateEngine(object):
             for peak in scan.peaks:
                 mass=peak.mz-self.ionisation_mode*Hmass
                 if not ((not self.use_all_peaks) and peak.childscan==None):
-                    # result = c.execute('SELECT * FROM connectivities WHERE mim BETWEEN ? AND ?' , (mass-self.mz_precision,mass+self.mz_precision))
-                    result = c.execute('SELECT * FROM connectivities JOIN isomers ON isomers.cid = (SELECT cid FROM isomers WHERE isomers.conn_id = connectivities.id LIMIT 1) WHERE connectivities.mim BETWEEN ? AND ?', 
-                                                 (mass/self.precision,mass*self.precision))
-                    for (id,mim,molblock,smiles,molform,conn_id,cid,name) in result:
-                        db_candidates[id]=[mim,zlib.decompress(molblock),smiles,molform,cid,name]
+                    result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass/self.precision,mass*self.precision))
+                    # result = c.execute('SELECT * FROM connectivities JOIN isomers ON isomers.cid = (SELECT cid FROM isomers WHERE isomers.conn_id = connectivities.id LIMIT 1) WHERE connectivities.mim BETWEEN ? AND ?', 
+                    #                             (mass/self.precision,mass*self.precision))
+                    for (id,cid,mim,molblock,inchikey,molform,name) in result:
+                        db_candidates[id]={'mim':mim,
+                                           'mol':zlib.decompress(molblock),
+                                           'inchikey':inchikey,
+                                           'molform':molform,
+                                           'cid':cid,
+                                           'name':name}
                     print str(peak.mz)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
-
-    def get_pubchem_query(self):
-        print "C[Element] AND H[Element] AND (0[MonoisotopicMass]",
-        for scan in self.scans:
-            for peak in scan.peaks:
-                mass=peak.mz-self.ionisation_mode*Hmass
-                if not ((not self.use_all_peaks) and peak.childscan==None):
-#                    print "OR(%.3f:%.3f[MonoisotopicMass])" % (mass-self.mz_precision-0.001,mass+self.mz_precision+0.001),
-                    print "OR(%.4f:%.4f[MonoisotopicMass])" % (mass/1.000005-0.001,mass*1.000005+0.001),
-        print ")"
 
     def search_all_structures(self):
         logging.warn('Searching all structures')
@@ -697,7 +723,7 @@ class AnnotateEngine(object):
 #                                                     x.GetEndAtom().GetAtomicNum() != 6]
                     self.bonds.add(bond)
                     self.bondscore[bond]=bondscore
-
+                    
                 self.all_fragments=set([frag])
                 self.total_fragments=set([frag])
                 self.current_fragments=set([frag])
@@ -878,19 +904,25 @@ class AnnotateEngine(object):
                 return total_score #/total_count
             def get_fragment(self):
                 atomstring=''
+                atomlist=[]
                 for atom in range(mol.getAtomCount()):
                     if ((1<<atom) & self.fragment):
                         atomstring+=','+str(atom)
-                return(atomstring[1:])
+                        atomlist.append(atom)
+                return(atomstring[1:],atomlist)
             def store_fragments(self,metid,parentfragid):
                 global fragid
                 fragid+=1
                 currentFragid=fragid
                 score=self.score
                 deltappm=None
+                inchikey=None
+                atoms,atomlist=self.get_fragment()
                 if score != None:
                     score=score/self.intensity_weight
                     deltappm=(self.mz+self.deltaH*Hmass-self.mass)/self.mz*1e6
+                    inchikey=Chem.FragmentToInchiKey(mol,atomlist)[:14]
+                # print atomlist, Chem.FragmentSmiles(mol,atomlist)
                 me.db_session.add(Fragment(
                     metid=metid,
                     scanid=self.scan,
@@ -898,7 +930,8 @@ class AnnotateEngine(object):
                     mass=self.mass,
                     score=score,
                     parentfragid=parentfragid,
-                    atoms=self.get_fragment(),
+                    atoms=atoms,
+                    inchikey=inchikey,
                     deltah=self.deltaH,
                     deltappm=deltappm
                     ))
