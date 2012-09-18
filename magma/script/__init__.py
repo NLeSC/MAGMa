@@ -1,5 +1,5 @@
 import argparse
-import sys
+import sys,logging
 from rdkit import Chem
 from rdkit.Chem import AllChem
 import magma
@@ -87,6 +87,7 @@ class MagmaCommand(object):
         sc.add_argument('-u', '--use_all_peaks', help="Annotate all level 1 peaks, including those not fragmented (default: %(default)s)", action="store_true")
         sc.add_argument('-f', '--skip_fragmentation', help="Skip substructure annotation of fragment peaks", action="store_true")
         sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["chebi","pubchem"])
+        sc.add_argument('--scans', help="Search in specified scans (default: %(default)s)", default="all",type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
 
@@ -152,6 +153,7 @@ class MagmaCommand(object):
                     metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 'PARENT', 1))
                 except:
                     print sys.exc_info()
+        magma_session.commit()
         return metids
 
     def _metabolize(self, args, magma_session):
@@ -184,7 +186,13 @@ class MagmaCommand(object):
             mz_precision=args.mz_precision,
             precursor_mz_precision=args.precursor_mz_precision,
             use_all_peaks=args.use_all_peaks)
-        annotate_engine.build_spectra()
+        if args.scans == 'all':
+            scans='all'
+        else:
+            scans=set([])
+            for s in args.scans.split(','):
+               scans.add(int(s))
+        annotate_engine.build_spectra(scans)
         if args.metids == None:
             annotate_engine.search_all_structures()
         else:
@@ -204,8 +212,25 @@ class MagmaCommand(object):
             candidates=annotate_engine.get_pubchem_candidates()
             metids=set([])
             for id in candidates:
-                metids.add(struct_engine.add_structure(str(candidates[id][1]),str(candidates[id][5]),1.0,1,"",1))
-            annotate_engine.search_some_structures(metids)
+                try:
+                    cid=str(candidates[id]['cid'])
+                    metid=struct_engine.add_structure(molblock=candidates[id]['mol'],
+                                       name=candidates[id]['name']+' ('+cid+')',
+                                       mim=candidates[id]['mim'],
+                                       molform=candidates[id]['molform'],
+                                       inchikey=candidates[id]['inchikey'],
+                                       prob=1.0,
+                                       level=1,
+                                       sequence="",
+                                       isquery=1,
+                                       reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
+                                                 cid+'">'+cid+' (PubChem)</a>'
+                                       )
+                    annotate_engine.search_some_structures(set([metid]))
+                except:
+                    logging.warn('Could not parse compound: ' + str(candidates[id]['cid']))
+        magma_session.commit()
+            # annotate_engine.search_some_structures(metids)
 
     def sd2smiles(self, args):
         """ Convert sd file to smiles """
