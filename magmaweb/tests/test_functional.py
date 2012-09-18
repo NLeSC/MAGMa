@@ -1,16 +1,18 @@
+import tempfile
 import unittest
+from webtest import TestApp
+from magmaweb import main
 
 class FunctionalTests(unittest.TestCase):
     def setUp(self):
-        import tempfile
-        from magmaweb import main
         self.root_dir = tempfile.mkdtemp()
         self.settings = {
                     'jobfactory.root_dir': self.root_dir,
-                    'mako.directories': 'magmaweb:templates', 'extjsroot': 'ext'
+                    'mako.directories': 'magmaweb:templates', 'extjsroot': 'ext',
+                    'sqlalchemy.url': 'sqlite:///:memory:'
                     }
         app = main({}, **self.settings)
-        from webtest import TestApp
+
         self.testapp = TestApp(app)
 
     def tearDown(self):
@@ -19,7 +21,7 @@ class FunctionalTests(unittest.TestCase):
         del self.testapp
 
     def test_home(self):
-        res = self.testapp.get('/', status=200)
+        res = self.testapp.get('/', status=200, extra_environ=dict(REMOTE_USER='bob'))
         self.assertTrue('Homepage' in res.body)
 
     def fake_jobid(self):
@@ -30,12 +32,19 @@ class FunctionalTests(unittest.TestCase):
         from test_job import populateTestingDB
         populateTestingDB(job.session)
         job.session.commit()
+
+        from magmaweb.user import DBSession, User, Job, JobUser
+        usession = DBSession()
+        usession.add(User('bob', 'Bob', 'bob@example.com'))
+        usession.add(Job(str(job.id), 'My job'))
+        usession.add(JobUser('bob', str(job.id), 'owner'))
+
         return job.id
 
     def test_metabolites(self):
         jobid = self.fake_jobid()
 
-        res = self.testapp.get('/results/'+str(jobid)+'/metabolites.json?limit=10&start=0', status=200)
+        res = self.testapp.get('/results/'+str(jobid)+'/metabolites.json?limit=10&start=0', status=200, extra_environ=dict(REMOTE_USER='bob'))
         import json
         self.assertEqual(json.loads(res.body),{
             'totalUnfiltered': 2,

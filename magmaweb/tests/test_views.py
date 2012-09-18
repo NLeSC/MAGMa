@@ -1,8 +1,9 @@
 import unittest
 from pyramid import testing
 from mock import Mock
-from magmaweb.views import Views
+from magmaweb.views import Views, JobViews, home, defaults
 from magmaweb.job import JobFactory, JobNotFound, Job
+from magmaweb.user import JobIdFactory
 
 class ViewsTestCase(unittest.TestCase):
     def setUp(self):
@@ -27,55 +28,11 @@ class ViewsTestCase(unittest.TestCase):
         job.fragments.return_value = [1, 2, 3]
         return job
 
-    def test_jobid(self):
-        jobid = '11111111-1111-1111-1111-111111111111'
-        request = testing.DummyRequest()
-        request.matchdict['jobid'] = jobid
-        views = Views(request)
-
-        actual_jobid = views.jobid()
-        self.assertEqual(actual_jobid, jobid)
-
-    def test_jobid_withOutJobidInRequest_redirects2Homepage(self):
-        self.config.add_route('home', '/homepage')
-        request = testing.DummyRequest()
-        views = Views(request)
-
-        from pyramid.httpexceptions import HTTPFound
-        with self.assertRaises(HTTPFound) as e:
-            views.jobid()
-            self.assertEqual(e.location, '/homepage')
-
-    def test_job(self):
-        jobid = '11111111-1111-1111-1111-111111111111'
-        request = testing.DummyRequest()
-        views = Views(request)
-        views.jobid = Mock(return_value=jobid)
-        views.job_factory.fromId = Mock(return_value=Mock(Job))
-
-        job = views.job()
-
-        self.assertIsInstance(job, Job)
-
-    def test_job_withWrongJobid_notFound(self):
-        jobid = '11111111-1111-1111-1111-111111111111'
-        request = testing.DummyRequest()
-        request.matchdict['jobid'] = jobid
-        views = Views(request)
-        views.job_factory = Mock(JobFactory)
-        views.job_factory.fromId.side_effect = JobNotFound(jobid)
-
-        from pyramid.httpexceptions import HTTPNotFound
-        with self.assertRaises(HTTPNotFound):
-            views.job()
-
     def test_home(self):
         request = testing.DummyRequest()
-        views = Views(request)
+        response = home(request)
 
-        response = views.home()
-
-        self.assertEqual(response, {})
+        self.assertEqual(response, {'userid':None})
 
     def test_uploaddb_get(self):
         request = testing.DummyRequest()
@@ -112,8 +69,7 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_results(self):
         request = testing.DummyRequest()
-        views = Views(request)
-        views.job = Mock(return_value=self.fake_job())
+        views = JobViews(self.fake_job(),request)
 
         response = views.results()
 
@@ -138,9 +94,8 @@ class ViewsTestCase(unittest.TestCase):
                                                'start':0,
                                                'limit':10
                                                })
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         response = views.metabolitesjson()
 
@@ -151,9 +106,8 @@ class ViewsTestCase(unittest.TestCase):
                                                'start':0,
                                                'limit':10
                                                })
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.metabolitesjson()
 
@@ -166,9 +120,8 @@ class ViewsTestCase(unittest.TestCase):
                                                'limit':10,
                                                'scanid': 641
                                                })
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.metabolitesjson()
 
@@ -182,9 +135,8 @@ class ViewsTestCase(unittest.TestCase):
                                                'limit':10,
                                                'filter': filter_in
                                                })
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.metabolitesjson()
 
@@ -199,9 +151,8 @@ class ViewsTestCase(unittest.TestCase):
                                                'limit':10,
                                                'sort': sort_in
                                                })
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.metabolitesjson()
 
@@ -212,10 +163,9 @@ class ViewsTestCase(unittest.TestCase):
                                                'start':0,
                                                'limit':10
                                                })
-        views = Views(request)
         job = self.fake_job()
         job.metabolitesTotalCount.return_value = 0
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         response = views.metabolitesjson()
 
@@ -231,8 +181,7 @@ class ViewsTestCase(unittest.TestCase):
                                                'start':0,
                                                'limit':10
                                                })
-        views = Views(request)
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
         views.metabolitesjson = Mock(return_value={
                                                    'rows':[]
                                                    })
@@ -249,8 +198,7 @@ class ViewsTestCase(unittest.TestCase):
                                                'start':0,
                                                'limit':10
                                                })
-        views = Views(request)
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
         views.metabolitesjson = Mock(return_value={
                                                    'rows':[]
                                                    })
@@ -262,8 +210,7 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_chromatogramjson(self):
         request = testing.DummyRequest()
-        views = Views(request)
-        views.job = Mock(return_value=self.fake_job())
+        views = JobViews(self.fake_job(), request)
 
         response  = views.chromatogramjson()
 
@@ -271,9 +218,8 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_mspectrajson(self):
         request = testing.DummyRequest(matchdict={'scanid':641})
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.mspectrajson()
 
@@ -284,21 +230,20 @@ class ViewsTestCase(unittest.TestCase):
                                        matchdict={'scanid':641},
                                        params={'mslevel':3}
                                        )
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.mspectrajson()
 
         job.mspectra.assert_called_with(641, 3)
 
     def test_mspectra_withoutscanid_notfound(self):
-        request = testing.DummyRequest(matchdict={'scanid':641})
-        views = Views(request)
-        job = self.fake_job()
         from magmaweb.job import ScanNotFound
+
+        request = testing.DummyRequest(matchdict={'scanid':641})
+        job = self.fake_job()
         job.mspectra.side_effect = ScanNotFound()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         from pyramid.httpexceptions import HTTPNotFound
         with self.assertRaises(HTTPNotFound):
@@ -306,9 +251,8 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_extractedionchromatogram(self):
         request = testing.DummyRequest(matchdict={'metid':72})
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         response = views.extractedionchromatogram()
 
@@ -325,9 +269,8 @@ class ViewsTestCase(unittest.TestCase):
                                                   'scanid':641
                                                   },
                                        params={'node':''})
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.fragments()
 
@@ -339,25 +282,24 @@ class ViewsTestCase(unittest.TestCase):
                                                   'scanid':641
                                                   },
                                        params={'node':1709})
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.fragments()
 
         job.fragments.assert_called_with(metid=72, scanid=641, node=1709)
 
     def test_fragments_badmetabolite_notfound(self):
+        from magmaweb.job import FragmentNotFound
         request = testing.DummyRequest(matchdict={
                                                   'metid':72,
                                                   'scanid':641
                                                   },
                                        params={'node':''})
-        views = Views(request)
+
         job = self.fake_job()
-        from magmaweb.job import FragmentNotFound
         job.fragments.side_effect = FragmentNotFound
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         from pyramid.httpexceptions import HTTPNotFound
         with self.assertRaises(HTTPNotFound):
@@ -365,14 +307,13 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_stderr(self):
         request = testing.DummyRequest()
-        views = Views(request)
         job = self.fake_job()
         import StringIO
         log = StringIO.StringIO()
         log.write('bla')
         log.seek(0)
         job.stderr.return_value = log
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         response = views.stderr()
 
@@ -381,7 +322,6 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_runinfojson(self):
         request = testing.DummyRequest()
-        views = Views(request)
         job = self.fake_job()
         from magmaweb.models import Run
         job.runInfo.return_value = Run(
@@ -393,7 +333,7 @@ class ViewsTestCase(unittest.TestCase):
             rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=0.01,
             max_broken_bonds=4, description='My first description'
         )
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         response = views.runinfojson()
 
@@ -419,14 +359,13 @@ class ViewsTestCase(unittest.TestCase):
     def test_runinfojson_onlymsdatadone(self):
         self.maxDiff =200000
         request = testing.DummyRequest()
-        views = Views(request)
         job = self.fake_job()
         from magmaweb.models import Run
         job.runInfo.return_value = Run(
             abs_peak_cutoff=1100,
             rel_peak_cutoff=0.012
         )
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         response = views.runinfojson()
 
@@ -452,10 +391,9 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_runinfojson_norundone(self):
         request = testing.DummyRequest()
-        views = Views(request)
         job = self.fake_job()
         job.runInfo.return_value = None
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         response = views.runinfojson()
 
@@ -481,8 +419,7 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_defaultsjson(self):
         request = testing.DummyRequest()
-        views = Views(request)
-        response = views.defaults()
+        response = defaults(request)
 
         self.assertEqual(response, {
                                     'success': True,

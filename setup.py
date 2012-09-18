@@ -10,6 +10,7 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 requires = [
     'pyramid',
     'SQLAlchemy',
+    'zope.sqlalchemy',
     'pyramid_debugtoolbar',
     'gunicorn',
     'colander'
