@@ -2,14 +2,13 @@ from sqlalchemy import Column
 from sqlalchemy import Unicode
 from sqlalchemy import ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm import (
     scoped_session,
     sessionmaker,
     )
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.security import Allow, Deny, Everyone, ALL_PERMISSIONS, Authenticated
-from pyramid.security import unauthenticated_userid
 from zope.sqlalchemy import ZopeTransactionExtension #@UnresolvedImport
 from magmaweb.job import make_job_factory, JobNotFound
 
@@ -36,11 +35,15 @@ class Job(Base):
     __tablename__ = 'job'
     jobid = Column(Unicode, primary_key=True) # Use uuid.int
     description = Column(Unicode) # Kept in sync with Run.description
+    parentjobid = Column(Unicode, ForeignKey('job.jobid'))
+    state = Column(Unicode) # queued/running/ready etc.
+    children = relationship('Job', backref=backref('parent', remote_side=[jobid]))
 
-    def __init__(self, jobid, description):
+    def __init__(self, jobid, description='', parentjobid=None, state=None):
         self.jobid = jobid
         self.description = description
-
+        self.parentjobid = parentjobid
+        self.state = state
 
 class JobUser(Base):
     """Which user has which roles on a job"""
@@ -110,3 +113,20 @@ def grant(role, jobid, userid):
     ju = JobUser(userid, jobid, role)
     DBSession().add(ju)
 
+def set_job_parent(jobid, parentjobid):
+    """ Set Job.parentjobid with jobid==jobid"""
+    session = DBSession()
+    job = session.query(Job).get(jobid)
+    job.parentjobid = parentjobid
+    session.add(job)
+
+def set_job_description(jobid, description):
+    """ Set Job.description in user db"""
+    session = DBSession()
+    job = session.query(Job).get(jobid)
+    job.description = description
+    session.add(job)
+
+def add_job(jobid):
+    job = Job(jobid)
+    DBSession().add(job)

@@ -441,6 +441,10 @@ class JobFactory(object):
 
         # create job dir
         os.makedirs(self.id2jobdir(jobid))
+
+        #register job in user db
+        magmaweb.user.add_job(str(jobid))
+
         return jobid
 
     def fromDb(self, dbfile):
@@ -464,6 +468,8 @@ class JobFactory(object):
             jobdb.write(data)
         jobdb.close()
 
+        # TODO: set jobs description in user db when db is uploaded or job is cloned
+
         return self.fromId(jobid)
 
     def fromScratch(self):
@@ -475,7 +481,11 @@ class JobFactory(object):
 
     def cloneJob(self, job):
         """ Returns new :class:`Job` which has copy of 'job' db. """
-        return self.fromDb(open(self.id2db(job.id)))
+        newjob = self.fromDb(open(self.id2db(job.id)))
+        # set parent of job in user db
+        newjob.parent(job)
+
+        return newjob
 
     def submitJob2Manager(self, body):
         """Submits job query to jobmanager daemon
@@ -592,6 +602,7 @@ class Job(object):
         runInfo.description = description
         self.session.add(runInfo)
         self.session.commit()
+        magmaweb.user.set_job_description(self.id, description)
 
     def metabolitesTotalCount(self):
         """Returns unfiltered and not paged count of metabolites"""
@@ -1000,3 +1011,6 @@ class Job(object):
     def owner(self, userid):
         """ Set owner of this job in the user db"""
         magmaweb.user.set_job_owner(str(self.id), userid)
+
+    def parent(self, parentjob):
+        magmaweb.user.set_job_parent(str(self.id), str(parentjob.id))

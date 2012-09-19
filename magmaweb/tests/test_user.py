@@ -97,7 +97,7 @@ class TestGrant(unittest.TestCase):
         r = self.session.query(user.JobUser).filter(user.JobUser.userid=='me').filter(user.JobUser.jobid=='12345').one()
         self.assertEqual(r.role, 'owner')
 
-    def set_job_owner(self):
+    def test_set_job_owner(self):
         j = user.Job('67890', 'My job')
         self.session.add(j)
 
@@ -105,6 +105,21 @@ class TestGrant(unittest.TestCase):
 
         r = self.session.query(user.JobUser).filter(user.JobUser.userid=='me').filter(user.JobUser.jobid=='67890').one()
         self.assertEqual(r.role, 'owner')
+
+    def test_set_job_parent(self):
+        j = user.Job('67890', 'My second job')
+        self.session.add(j)
+
+        user.set_job_parent('67890', '12345')
+
+        r = self.session.query(user.Job).get('67890')
+        self.assertEqual(r.parentjobid, '12345')
+
+    def test_set_job_description(self):
+        user.set_job_description('12345', 'My desc')
+
+        r = self.session.query(user.Job).get('12345')
+        self.assertEqual(r.description, 'My desc')
 
 class TestGroupFinder(unittest.TestCase):
     def setUp(self):

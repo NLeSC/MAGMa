@@ -39,14 +39,15 @@ class RpcViewsTestCase(unittest.TestCase):
 
     def test_new_job(self):
         request = testing.DummyRequest()
-        rpc = RpcViews(12345, request)
+        parent_job = Mock(Job)
+        rpc = RpcViews(parent_job, request)
         rpc.job_factory.cloneJob = Mock(return_value=self.job)
 
         job = rpc.new_job()
 
         self.assertEqual(job, self.job)
         job.owner.assert_called_with(None)
-        rpc.job_factory.cloneJob.assert_called_with(12345)
+        rpc.job_factory.cloneJob.assert_called_with(parent_job)
 
     def test_addstructure(self):
         self.jobquery.add_structures.return_value = self.jq
