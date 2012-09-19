@@ -51,6 +51,16 @@ def main(global_config, **settings):
     add_job_route('rpc.assign', '/rpc/{jobid}/assign') # my job + assigner
     add_job_route('rpc.unassign', '/rpc/{jobid}/unassign') # my job + assigner
 
+    # list of jobs and their history
+    #TODO: create jobs view
+    config.add_route('jobs', '/jobs') # my jobs
+    # user preferences (email, displayName)
+    #TODO: create user view
+    config.add_route('user', '/user')
+    # share job, make viewable|editable
+    #TODO: create view to change permissions of job
+    add_job_route('share', '/share/{jobid}')
+
     engine = engine_from_config(settings, 'sqlalchemy.')
     DBSession.configure(bind=engine)
     Base.metadata.create_all(engine)
