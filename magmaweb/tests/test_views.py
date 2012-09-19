@@ -2,8 +2,7 @@ import unittest
 from pyramid import testing
 from mock import Mock
 from magmaweb.views import Views, JobViews, home, defaults
-from magmaweb.job import JobFactory, JobNotFound, Job
-from magmaweb.user import JobIdFactory
+from magmaweb.job import JobFactory, Job
 
 class ViewsTestCase(unittest.TestCase):
     def setUp(self):
@@ -50,22 +49,26 @@ class ViewsTestCase(unittest.TestCase):
         request = testing.DummyRequest(post={'db_file': dbfile})
         views = Views(request)
         views.job_factory = Mock(JobFactory)
-        views.job_factory.fromDb.return_value = self.fake_job()
+        job = self.fake_job()
+        views.job_factory.fromDb.return_value = job
 
         response = views.uploaddb()
 
         views.job_factory.fromDb.assert_called_with(dbfile.file)
+        job.owner.assert_called_with(None) # TODO: set authenticated user
         self.assertEqual(response.location, 'http://example.com/results/foo')
 
     def test_jobfromscratch(self):
         self.config.add_route('results', '/results/{jobid}')
         request = testing.DummyRequest()
+        job = self.fake_job()
         views = Views(request)
-        views.job_factory.fromScratch = Mock(return_value=self.fake_job())
+        views.job_factory.fromScratch = Mock(return_value=job)
 
         response = views.jobfromscratch()
 
         self.assertEqual(response.location, 'http://example.com/results/foo')
+        job.owner.assert_called_with(None)
 
     def test_results(self):
         request = testing.DummyRequest()
@@ -81,8 +84,8 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_jobstatus(self):
         request = testing.DummyRequest()
+        request.matchdict['jobid'] = 'bla'
         views = Views(request)
-        views.jobid = Mock(return_value='bla')
         views.job_factory.state = Mock(return_value='RUNNING')
 
         response = views.job_status()

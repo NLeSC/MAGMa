@@ -2,6 +2,7 @@ import urllib2
 import json
 from pyramid.view import view_config, view_defaults
 from pyramid.httpexceptions import HTTPInternalServerError
+from pyramid.security import unauthenticated_userid
 import colander
 from magmaweb.job import make_job_factory
 
@@ -16,7 +17,10 @@ class RpcViews(object):
 
     def new_job(self):
         """Returns clone of job of current request"""
-        return self.job_factory.cloneJob(self.job)
+        job = self.job_factory.cloneJob(self.job)
+        job.owner(unauthenticated_userid(self.request))
+        # TODO: not only copy owner but also acl
+        return job
 
     def submit_query(self, query):
         """ Submit query to job factory

@@ -80,14 +80,31 @@ class TestJobIdFactory(unittest.TestCase):
         with self.assertRaises(HTTPNotFound):
             jif['67890']
 
-    def make_authenticateduser_job_owner(self):
-        jif = user.JobIdFactory(self.request)
+class TestGrant(unittest.TestCase):
+    def setUp(self):
+        init_user_db()
+        self.session = user.DBSession()
+        u = user.User('me', 'My', 'myself')
+        j = user.Job('12345', 'My job')
+        self.session.add_all([u, j])
 
-        jif.make_authenticateduser_job_owner('2468')
+    def tearDown(self):
+        destroy_user_db()
 
-        # look in db if owner set
-        ju = self.session.query(user.JobUser).filter(user.JobUser.jobid=='2468').filter(user.JobUser.userid=='me').one()
-        self.assertEqual(ju.role, 'owner')
+    def test_grant(self):
+        user.grant('owner', '12345', 'me')
+
+        r = self.session.query(user.JobUser).filter(user.JobUser.userid=='me').filter(user.JobUser.jobid=='12345').one()
+        self.assertEqual(r.role, 'owner')
+
+    def set_job_owner(self):
+        j = user.Job('67890', 'My job')
+        self.session.add(j)
+
+        user.set_job_owner('67890', 'me')
+
+        r = self.session.query(user.JobUser).filter(user.JobUser.userid=='me').filter(user.JobUser.jobid=='67890').one()
+        self.assertEqual(r.role, 'owner')
 
 class TestGroupFinder(unittest.TestCase):
     def setUp(self):

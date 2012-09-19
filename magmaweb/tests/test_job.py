@@ -618,6 +618,11 @@ class JobTestCase(unittest.TestCase):
                          , None
                          )
 
+    @patch('magmaweb.user.set_job_owner')
+    def test_owner(self, sjo):
+        self.job.owner('someone')
+
+        sjo.assert_has_been_called_with(self.job.id, 'someone')
 
 class JobEmptyDatasetTestCase(unittest.TestCase):
     def setUp(self):

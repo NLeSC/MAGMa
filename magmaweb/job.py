@@ -13,6 +13,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import desc, asc, distinct
 from sqlalchemy.orm.exc import NoResultFound
 from magmaweb.models import Base, Metabolite, Scan, Peak, Fragment, Run
+import magmaweb.user
 
 class ScanRequiredError(Exception):
     """Raised when a scan identifier is required, but non is supplied"""
@@ -996,3 +997,6 @@ class Job(object):
         self.session.add(peak)
         self.session.commit()
 
+    def owner(self, userid):
+        """ Set owner of this job in the user db"""
+        magmaweb.user.set_job_owner(str(self.id), userid)

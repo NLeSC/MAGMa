@@ -43,6 +43,7 @@ class Views(object):
         """Upload a sqlitedb as ``db_file`` param in POST request and redirects to job results page"""
         if (self.request.method == 'POST'):
             job = self.job_factory.fromDb(self.request.POST['db_file'].file)
+            job.owner(unauthenticated_userid(self.request))
             return HTTPFound(location=self.request.route_url('results', jobid=job.id))
         else:
             return {}
@@ -51,6 +52,7 @@ class Views(object):
     def jobfromscratch(self):
         """ Initializes a new job and redirects to its results page"""
         job = self.job_factory.fromScratch()
+        job.owner(unauthenticated_userid(self.request))
         return HTTPFound(location=self.request.route_url('results', jobid=job.id))
 
     def jobid(self):

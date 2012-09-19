@@ -100,10 +100,13 @@ class JobIdFactory(RootFactory):
         #TODO: add users/groups with other permission on job to acl
         return job
 
-    def make_authenticateduser_job_owner(self, jobid):
-        self.grant(jobid, unauthenticated_userid(self.request), 'owner')
+def set_job_owner(jobid, userid):
+    """ userid=unauthenticated_userid(self.request)"""
+    # TODO: Only one user should be owner, revoke others ownership
+    grant('owner', jobid, userid)
 
-    def grant(self,jobid, userid, role):
-        ju = JobUser(jobid, userid, role)
-        DBSession.add(ju)
+def grant(role, jobid, userid):
+    """ GRANT role ON job TO who"""
+    ju = JobUser(userid, jobid, role)
+    DBSession().add(ju)
 
