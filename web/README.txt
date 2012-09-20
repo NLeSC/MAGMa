@@ -99,7 +99,6 @@ server {
     }
 }
 
-
 Example nginx+uwsgi:
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -127,6 +126,14 @@ Change /magma sectio in /etc/nginx/sites-enabled/default to:
 
 pip install uwsgi
 uwsgi --ini-paste-logged development.ini
+
+To protect /magma behind basic authentication use:
+        auth_basic "Magma login";
+        auth_basic_user_file magma.users;
+        uwsgi_param REMOTE_USER $remote_user;
+        uwsgi_param AUTH_TYPE Basic;
+
+Password file can be managed with 'htpasswd'.
 
 Documentation
 -------------
