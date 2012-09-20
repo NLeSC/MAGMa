@@ -167,6 +167,7 @@ sketcher.toolbarManager.buttonOpen.disable();
 </div>
 <div id="welcome" class="x-hidden">
 <h1>Welcome to the <b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites application</h1>
+${userid}
 </div>
 </body>
 </html>

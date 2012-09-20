@@ -289,7 +289,8 @@ class JobFactoryTestCase(unittest.TestCase):
         jobdbfn = os.path.join(self.root_dir, str(jobid), 'results.db')
         self.assertEqual(self.factory.id2db(jobid), jobdbfn)
 
-    def test_fromdb(self):
+    @patch('magmaweb.user.add_job')
+    def test_fromdb(self, add_job):
         import os, uuid
         dbfile = os.tmpfile()
         dbfile.write('bla')
@@ -308,6 +309,7 @@ class JobFactoryTestCase(unittest.TestCase):
             'bla',
             'query db file content has been copied to job dir'
         )
+        add_job.assert_called_with(str(job.id))
 
     def test_fromid(self):
         import uuid, os
@@ -426,18 +428,24 @@ class JobFactoryTestCase(unittest.TestCase):
 
         self.assertEquals(state, 'UNKNOWN')
 
-    def test_fromScratch(self):
+    @patch('magmaweb.user.add_job')
+    def test_fromScratch(self, add_job):
         import uuid
 
         job = self.factory.fromScratch()
 
         self.assertIsInstance(job.id, uuid.UUID)
         self.assertEqual(job.maxMSLevel(), 0)
+        add_job.assert_called_with(str(job.id))
 
-    def test_cloneJob(self):
+    @patch('magmaweb.user.set_job_parent')
+    def test_cloneJob(self, sjp):
         job = self.factory.fromScratch()
+
         newjob = self.factory.cloneJob(job)
+
         self.assertNotEqual(job.id, newjob.id)
+        sjp.assert_called_with(str(newjob.id), str(job.id))
 
 class JobNotFound(unittest.TestCase):
     def test_it(self):
@@ -564,9 +572,11 @@ class JobTestCase(unittest.TestCase):
         self.assertEqual(jobquery.id, self.job.id)
         self.assertEqual(jobquery.dir, self.job.dir)
 
-    def test_set_description(self):
+    @patch('magmaweb.user.set_job_description')
+    def test_set_description(self, sjd):
         self.job.description('My second description')
         self.assertEqual(self.job.runInfo().description, 'My second description')
+        sjd.assert_called_with(self.job.id, 'My second description')
 
     def test_assign_metabolite2peak(self):
         metid = 72
@@ -618,6 +628,19 @@ class JobTestCase(unittest.TestCase):
                          , None
                          )
 
+    @patch('magmaweb.user.set_job_owner')
+    def test_owner(self, sjo):
+        self.job.owner('someone')
+
+        sjo.assert_has_been_called_with(self.job.id, 'someone')
+
+    @patch('magmaweb.user.set_job_parent')
+    def test_parent(self, sjp):
+        parent_job = Mock(Job)
+        parent_job.id = 'somejob'
+        self.job.parent(parent_job)
+
+        sjp.assert_has_been_called_with(self.job.id, 'somejob')
 
 class JobEmptyDatasetTestCase(unittest.TestCase):
     def setUp(self):
@@ -651,9 +674,11 @@ class JobEmptyDatasetTestCase(unittest.TestCase):
     def test_metabolitesTotalCount(self):
         self.assertEqual(self.job.metabolitesTotalCount(), 0)
 
-    def test_set_description(self):
+    @patch('magmaweb.user.set_job_description')
+    def test_set_description(self, sjd):
         self.job.description('My second description')
         self.assertEqual(self.job.runInfo().description, 'My second description')
+        sjd.assert_called_with(self.job.id, 'My second description')
 
 class JobMetabolitesTestCase(unittest.TestCase):
     def setUp(self):

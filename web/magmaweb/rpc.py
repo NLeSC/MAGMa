@@ -1,32 +1,26 @@
 import urllib2
 import json
-from pyramid.view import view_config
+from pyramid.view import view_config, view_defaults
 from pyramid.httpexceptions import HTTPInternalServerError
+from pyramid.security import unauthenticated_userid
 import colander
 from magmaweb.job import make_job_factory
 
+@view_defaults(permission='run')
 class RpcViews(object):
     """Rpc endpoints"""
-    def __init__(self, context, request=None):
+    def __init__(self, job, request):
         """ View callable with request as argument or context, request as arguments"""
-        if request == None:
-            request = context
-            context = None
-        self.context = context
+        self.job = job
         self.request = request
         self.job_factory = make_job_factory(request.registry.settings)
 
-    def job(self):
-        """ Job of current request """
-        return self.job_factory.fromId(self.request.matchdict['jobid'])
-
     def new_job(self):
-        """ Returns clone of job of current request
-         or empty job if current request has no job"""
-        try:
-            return self.job_factory.cloneJob(self.job())
-        except KeyError:
-            return self.job_factory.fromScratch()
+        """Returns clone of job of current request"""
+        job = self.job_factory.cloneJob(self.job)
+        job.owner(unauthenticated_userid(self.request))
+        # TODO: not only copy owner but also acl
+        return job
 
     def submit_query(self, query):
         """ Submit query to job factory
@@ -112,7 +106,7 @@ class RpcViews(object):
 
         ``description`` of post parameter.
         """
-        job = self.job()
+        job = self.job
         desc = self.request.POST['description']
         job.description(desc)
         return { 'success': True, 'jobid': str(job.id) }
@@ -120,12 +114,12 @@ class RpcViews(object):
     @view_config(context=colander.Invalid)
     def failed_validation(self):
         """ Catches colander.Invalid exceptions and returns a ExtJS form submission response"""
-        body = {'success': False, 'errors': self.context.asdict()}
+        body = {'success': False, 'errors': self.job.asdict()}
         return HTTPInternalServerError(body=json.dumps(body))
 
     @view_config(route_name='rpc.assign', renderer='json')
     def assign_metabolite2peak(self):
-        job = self.job()
+        job = self.job
         scanid = self.request.POST['scanid']
         mz = self.request.POST['mz']
         metid = self.request.POST['metid']
@@ -134,7 +128,7 @@ class RpcViews(object):
 
     @view_config(route_name='rpc.unassign', renderer='json')
     def unassign_metabolite2peak(self):
-        job = self.job()
+        job = self.job
         scanid = self.request.POST['scanid']
         mz = self.request.POST['mz']
         job.unassign_metabolite2peak(scanid, mz)
