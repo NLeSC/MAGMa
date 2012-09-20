@@ -6,5 +6,6 @@ The eMetabolomics project is funded by the Netherlands eScience Center and is ca
 Homepage: http://www.emetabolomics.org
 
 Subprojects:
-Job - Run annotations
-Web - Webapplication
+
+- Job - Run annotations
+- Web - Webapplication
