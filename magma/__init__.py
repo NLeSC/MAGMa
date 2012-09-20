@@ -1,18 +1,19 @@
 #!/usr/bin/env python
 
-import sys,base64,subprocess
-import sqlite3,struct,zlib
+import sys,base64,subprocess,StringIO,time
+import sqlite3,struct,zlib,gzip,copy
 import pkg_resources
 import numpy as np
 import logging
-from rdkit import Chem, Geometry
-from rdkit.Chem import AllChem, Descriptors
+# from rdkit import Chem, Geometry
+# from rdkit.Chem import AllChem, Descriptors
 from lxml import etree
 from sqlalchemy import create_engine,and_,desc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from models import Base, Metabolite, Scan, Peak, Fragment, Run
+import jpype,glob,os
 
 """
 RDkit dependencies:
@@ -22,25 +23,106 @@ generate 2D conformation for those
 generate smiles
 """
 
-typew={Chem.rdchem.BondType.AROMATIC:3.0,\
-         Chem.rdchem.BondType.DOUBLE:2.0,\
-         Chem.rdchem.BondType.TRIPLE:3.0,\
-         Chem.rdchem.BondType.SINGLE:1.0}
-# typew={Chem.rdchem.BondType.AROMATIC:6.0,\
-#          Chem.rdchem.BondType.DOUBLE:2.0,\
-#          Chem.rdchem.BondType.TRIPLE:2.0,\
-#          Chem.rdchem.BondType.SINGLE:1.0}
-# ringw={False:1.0,True:2.0}
+#jars= glob.glob('/home/ridderl/cdk/Marijn_jars/*jar')
+jars= ('/home/ridderl/cdk/cdk-1.4.13.jar',)
+classpath = ":".join([ os.path.abspath(jar) for jar in jars])
+os.environ['JAVA_HOME'] = '/usr/lib/jvm/java-6-openjdk'
+jpype.startJVM(jpype.getDefaultJVMPath(),"-ea", "-Djava.class.path="+classpath)
+
+cdk = jpype.JPackage("org").openscience.cdk
+java = jpype.java
+
+
+class CDKengine(object):
+    def __init__(self):
+        self.builder = cdk.DefaultChemObjectBuilder.getInstance()
+        self.sp = cdk.smiles.SmilesParser(self.builder)
+        self.sp.setPreservingAromaticity(True)
+        self.sg = cdk.smiles.SmilesGenerator()
+        self.sg.setUseAromaticityFlag(True)
+        self.isof=cdk.config.IsotopeFactory.getInstance(self.builder)
+        self.Hmass=self.isof.getMajorIsotope('H').getExactMass().floatValue()
+        self.acm = cdk.tools.manipulator.AtomContainerManipulator
+    def MolToMolBlock(self,molecule):
+        mol2stringio = java.io.StringWriter()
+        mol2writer = cdk.io.MDLV2000Writer(mol2stringio)
+        try:
+            dbst = cdk.smiles.DeduceBondSystemTool()
+            molecule = dbst.fixAromaticBondOrders(molecule)
+        except:
+            pass
+        mol2writer.write(molecule)
+        # mol2writer.close()
+        return mol2stringio.toString()
+    def MolFromMolBlock(self,mol_block):
+        stringio2mol = java.io.StringReader(mol_block)
+        reader2mol = cdk.io.MDLReader(stringio2mol)
+        molecule=cdk.Molecule()
+        reader2mol.read(molecule)
+        cdk.tools.manipulator.AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(molecule)
+        #cdk.aromaticity.CDKHueckelAromaticityDetector.detectAromaticity(molecule) #
+        ha=cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
+        ha.addImplicitHydrogens(molecule)
+        return molecule
+    def generateCoordinates(self,molecule):
+        sdg = cdk.layout.StructureDiagramGenerator(molecule)
+        sdg.generateCoordinates()
+        return sdg.getMolecule()
+    def MolFromSmiles(self,smiles):
+        molecule = self.sp.parseSmiles(smiles)
+        cdk.tools.manipulator.AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(molecule) #
+        cdk.aromaticity.CDKHueckelAromaticityDetector.detectAromaticity(molecule)
+        ha=cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
+        ha.addImplicitHydrogens(molecule)
+        molecule = self.generateCoordinates(molecule)
+        return molecule
+    def MolToSmiles(self,molecule):
+        return self.sg.createSMILES(molecule) #sg.createSMILES(molecule,True)
+    def MolToInchiKey(self,molecule):
+        igf = cdk.inchi.InChIGeneratorFactory.getInstance()
+        ig = igf.getInChIGenerator(molecule)
+        # print ig
+        return ig.getInchiKey()
+    def GetExtendedAtomMass(self,atom):
+        mass=self.isof.getMajorIsotope(atom.getSymbol()).getExactMass().floatValue()
+        try:
+            hc=atom.getImplicitHydrogenCount().intValue()
+        except:
+            hc=0
+        return mass+self.Hmass*hc
+    def GetFormulaProps(self,mol):
+        formula=cdk.tools.manipulator.MolecularFormulaManipulator.getMolecularFormula(mol)
+        formula_string = cdk.tools.manipulator.MolecularFormulaManipulator.getString(formula)
+        mim = cdk.tools.manipulator.MolecularFormulaManipulator.getMajorIsotopeMass(formula)
+        return mim,formula_string
+    def FragmentToSmiles(self,mol,atomlist):
+        return self.sg.createSMILES(self.acm.extractSubstructure(mol,atomlist))
+    def FragmentToInchiKey(self,mol,atomlist):
+        ac=self.acm.extractSubstructure(mol,atomlist)
+        igf = cdk.inchi.InChIGeneratorFactory.getInstance()
+        ig = igf.getInChIGenerator(ac)
+        return ig.getInchiKey()
+
+Chem = CDKengine()
+
+typew={"AROMATIC":3.0,\
+       "DOUBLE":2.0,\
+       "TRIPLE":3.0,\
+       "SINGLE":1.0}
+#typew={Chem.rdchem.BondType.AROMATIC:3.0,\
+#         Chem.rdchem.BondType.DOUBLE:2.0,\
+#         Chem.rdchem.BondType.TRIPLE:3.0,\
+#         Chem.rdchem.BondType.SINGLE:1.0}
 ringw={False:1,True:1}
 heterow={False:2,True:1}
 missingfragmentpenalty=10
 n_neutral_losses=1
 
 mims={1:1.0078250321,\
-        6:12.0000000,\
-        7:14.0030740052,\
-        8:15.9949146221,\
-        9:18.99840320,\
+      6:12.0000000,\
+      7:14.0030740052,\
+      8:15.9949146221,\
+      9:18.99840320,\
       15:30.97376151,\
       16:31.97207069,\
       17:34.96885271,\
@@ -108,7 +190,6 @@ class MagmaSession(object):
     def close(self):
         self.db_session.close()
 
-
 class StructureEngine(object):
     def __init__(self,db_session,metabolism_types,n_reaction_steps):
         self.db_session = db_session
@@ -127,40 +208,50 @@ class StructureEngine(object):
 
     def calc_mim(self,mol):
         mim=0
-        for atom in mol.GetAtoms():
+        for atom in range(mol.getAtomCount()):
             mim+=(mims[atom.GetAtomicNum()]+Hmass*\
               (atom.GetNumImplicitHs()+atom.GetNumExplicitHs()))
         return mim
 
-    def add_structure(self,mol,name,prob,level,sequence,isquery):
-        m=Chem.MolFromMolBlock(mol)
-        smiles=Chem.MolToSmiles(m)
-        can_smiles=Chem.MolToSmiles(Chem.MolFromSmiles(smiles))
-        molform=Chem.Descriptors.MolecularFormula(m)
-        mim=self.calc_mim(m)
+    def add_structure(self,molblock,name,prob,level,sequence,isquery,mim=None,inchikey=None,molform=None,reference=None):
+        mol=Chem.MolFromMolBlock(molblock)
+        if inchikey == None:
+            inchikey=Chem.MolToInchiKey(mol)[:14]
+            # inchikey=Chem.MolToSmiles(mol)
+        if mim == None or molform == None:
+            mim,molform=Chem.GetFormulaProps(mol)
+        # mim=self.calc_mim(mol)
         metab=Metabolite(
-            mol=unicode(mol, 'utf-8', 'xmlcharrefreplace'), level=level, probability=prob,
-            reactionsequence=sequence, smiles=can_smiles,
-            molformula=molform, isquery=isquery, origin=unicode(name, 'utf-8', 'xmlcharrefreplace'),
+            mol=unicode(molblock, 'utf-8', 'xmlcharrefreplace'),
+            level=level,
+            probability=prob,
+            reactionsequence=sequence,
+            smiles=inchikey,
+            molformula=molform,
+            isquery=isquery,
+            origin=unicode(name, 'utf-8', 'xmlcharrefreplace'),
             mim=mim,
-            logp=Chem.Crippen.MolLogP(m)
+            reference=reference
+            #logp=Chem.Crippen.MolLogP(m)
             )
         try:
-            dupid = self.db_session.query(Metabolite).filter_by(smiles=can_smiles).one()
+            dupid = self.db_session.query(Metabolite).filter_by(smiles=inchikey).one()
             if dupid.probability < prob:
                 self.db_session.delete(dupid)
                 self.db_session.commit()
                 self.db_session.add(metab)
                 self.db_session.commit()
-                sys.stderr.write('Duplicate structure: '+sequence+' '+can_smiles+' - old one removed\n')
+                sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - old one removed\n')
+                # TODO remove any fragments related to this structure as well
             else:
-                sys.stderr.write('Duplicate structure: '+sequence+' '+can_smiles+' - kept old one\n')
+                sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - kept old one\n')
                 metab = dupid
         except NoResultFound:
             self.db_session.add(metab)
-            self.db_session.commit()
-        finally:
-            return metab.metid
+            self.db_session.flush()
+            sys.stderr.write('Added: '+name+'\n')
+        print metab.metid
+        return metab.metid
             # print 'Added structure:',sequence
 
     def add_structure_tmp(self,mol,name,prob,level,sequence,isquery):
@@ -193,7 +284,9 @@ class StructureEngine(object):
             "phase1": pkg_resources.resource_filename( #@UndefinedVariable
                                                        'magma', "data/sygma_rules.phase1.smirks"),
             "phase2": pkg_resources.resource_filename( #@UndefinedVariable
-                                                       'magma', "data/sygma_rules.phase2.smirks")
+                                                       'magma', "data/sygma_rules.phase2.smirks"),
+            "gut": pkg_resources.resource_filename( #@UndefinedVariable
+                                                       'magma', "data/gut.smirks")
             }
         for m in metabolism.split(','):
             if m in metabolism_files:
@@ -388,13 +481,14 @@ class AnnotateEngine(object):
         self.ms_intensity_cutoff=rundata.ms_intensity_cutoff
         self.msms_intensity_cutoff=rundata.msms_intensity_cutoff
         self.mz_precision=rundata.mz_precision
+        self.precision=1+rundata.mz_precision/1e6
         self.precursor_mz_precision=rundata.precursor_mz_precision
         self.use_all_peaks=rundata.use_all_peaks
 
         self.scans=[]
         self.weigh_scores=False
 
-    def build_spectra(self):
+    def build_spectra(self,scans='all'):
         logging.warn('Build spectra')
         me=self
         class ScanType(object):
@@ -433,24 +527,30 @@ class AnnotateEngine(object):
                 for peak in self.childscan.peaks:
                     self.missingfragmentscore+=peak.missingfragmentscore
 
-            def massmatch_rel(self,mim,low,high):
-                for x in range(low,high+1):
-                    # if self.mz/me.precision < mim+x*Hmass < self.mz*me.precision:
-                    if self.mz/1.000005 < mim+x*Hmass < self.mz*1.000005:
-                    # if mim/precision < self.mz-x*Hmass < mim*precision:
-                        return x
-                else:
-                    return False
+#            def massmatch_rel(self,mim,low,high):
+#                for x in range(low,high+1):
+#                    # if self.mz/me.precision < mim+x*Hmass < self.mz*me.precision:
+#                    if self.mz/1.000005 < mim+x*Hmass < self.mz*1.000005:
+#                    # if mim/precision < self.mz-x*Hmass < mim*precision:
+#                        return x
+#                else:
+#                    return False
 
             def massmatch(self,mim,low,high):
                 for x in range(low,high+1):
-                    if self.mz-me.mz_precision < mim+x*Hmass < self.mz+me.mz_precision:
+                    #if self.mz-me.mz_precision < mim+x*Hmass < self.mz+me.mz_precision:
+                    if self.mz/me.precision < mim+x*Hmass < self.mz*me.precision:
                         return x
                 else:
                     return False
 
-        for dbscan in self.db_session.query(Scan).filter(Scan.mslevel==1).all():
-            self.scans.append(ScanType(dbscan))
+        if scans=='all':
+            for dbscan in self.db_session.query(Scan).filter(Scan.mslevel==1).all():
+                self.scans.append(ScanType(dbscan))
+        else:
+            for dbscan in self.db_session.query(Scan).filter(Scan.mslevel==1 and Scan.scanid.in_(scans)).all():
+                self.scans.append(ScanType(dbscan))
+            
 
     def get_chebi_candidates(self):
         dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
@@ -464,21 +564,38 @@ class AnnotateEngine(object):
             for peak in scan.peaks:
                 mass=peak.mz-self.ionisation_mode*Hmass
                 if not ((not self.use_all_peaks) and peak.childscan==None):
-                    result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass-self.mz_precision,mass+self.mz_precision))
+                    result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass/self.precision,mass*self.precision))
                     for (id,mim,molblock,chebi_name) in result:
                         db_candidates[id]=[molblock,chebi_name]
                     print str(mass)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
 
     def get_pubchem_candidates(self):
-        print "C[Element] AND H[Element] AND (0[MonoisotopicMass]",
+        dbfilename = '/media/PubChem/Pubchem_MAGMa_inchi.db'
+        # dbfilename = '/home/ridderl/PRI/test_out.db'
+        conn = sqlite3.connect(dbfilename)
+        conn.text_factory=str
+        c = conn.cursor()
+        db_candidates={}
+        # First a dictionary is created with candidate molecules based on all level1 peaks
+        # In this way duplicates originating from repeated detection of the same component
+        # are removed before attempting to add the candidates to the database
         for scan in self.scans:
             for peak in scan.peaks:
                 mass=peak.mz-self.ionisation_mode*Hmass
                 if not ((not self.use_all_peaks) and peak.childscan==None):
-#                    print "OR(%.3f:%.3f[MonoisotopicMass])" % (mass-self.mz_precision-0.001,mass+self.mz_precision+0.001),
-                    print "OR(%.4f:%.4f[MonoisotopicMass])" % (mass/1.000005-0.001,mass*1.000005+0.001),
-        print ")"
+                    result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass/self.precision,mass*self.precision))
+                    # result = c.execute('SELECT * FROM connectivities JOIN isomers ON isomers.cid = (SELECT cid FROM isomers WHERE isomers.conn_id = connectivities.id LIMIT 1) WHERE connectivities.mim BETWEEN ? AND ?', 
+                    #                             (mass/self.precision,mass*self.precision))
+                    for (id,cid,mim,molblock,inchikey,molform,name) in result:
+                        db_candidates[id]={'mim':mim,
+                                           'mol':zlib.decompress(molblock),
+                                           'inchikey':inchikey,
+                                           'molform':molform,
+                                           'cid':cid,
+                                           'name':name}
+                    print str(peak.mz)+' --> '+str(len(db_candidates))+' candidates'
+        return db_candidates
 
     def search_all_structures(self):
         logging.warn('Searching all structures')
@@ -491,15 +608,15 @@ class AnnotateEngine(object):
             self.search_structure(structure)
 
     def search_structure(self,structure):
-        # logging.warn('Structure: '+str(structure.metid))
+        # logging.warn('Structure: '+str(structure.metid)+"\tmim: "+str(structure.mim))
         Fragmented=False
-        hits=[]                # [hits]
         mol=Chem.MolFromMolBlock(str(structure.mol))
         me=self
 
         class GrowingEngine(object):
             def __init__(self,mol):
-                self.natoms=mol.GetNumAtoms()
+#                self.natoms=mol.GetNumAtoms() # RDKit
+                self.natoms=mol.getAtomCount()
                 self.FragmentBreaks={}
                 self.FragmentMass={}
                 self.atombits=[]          # [1,2,4,8,16,....]
@@ -509,16 +626,21 @@ class AnnotateEngine(object):
 
                 for x in range(self.natoms):
                     self.atombits.append(2**x)
-                    an=mol.GetAtomWithIdx(x).GetAtomicNum()
-                    self.atommass[2**x]=mims[an]+\
-                                        (mol.GetAtomWithIdx(x).GetNumImplicitHs()+\
-                                        mol.GetAtomWithIdx(x).GetNumExplicitHs())*Hmass
-                for x in mol.GetBonds():
-                    self.bondbits.append(self.atombits[x.GetBeginAtomIdx()]|\
-                                         self.atombits[x.GetEndAtomIdx()])
-                    self.bondscore.append(typew[x.GetBondType()]*ringw[x.IsInRing()]*\
-                                          heterow[x.GetBeginAtom().GetAtomicNum() != 6 or \
-                                                     x.GetEndAtom().GetAtomicNum() != 6])
+#                    an=mol.GetAtomWithIdx(x).GetAtomicNum() #RDKit
+                    an=mol.getAtom(x).getAtomicNumber()
+                    self.atommass[2**x]=Chem.GetExtendedAtomMass(mol.getAtom(x))
+#                for x in mol.GetBonds():
+                for x in range(mol.getBondCount()):
+                    bondbit=0
+                    for a in mol.getBond(x).atoms().iterator():
+                        bondbit=bondbit | mol.getAtomNumber(a)
+                    self.bondbits.append(bondbit)
+                    
+#                    self.bondbits.append(self.atombits[x.GetBeginAtomIdx()]|\
+#                                         self.atombits[x.GetEndAtomIdx()])
+#                    self.bondscore.append(typew[x.GetBondType()]*ringw[x.IsInRing()]*\
+#                                          heterow[x.GetBeginAtom().GetAtomicNum() != 6 or \
+#                                                     x.GetEndAtom().GetAtomicNum() != 6])
 
             def grow(self,fragment):
                 NewFragments=[]
@@ -553,7 +675,7 @@ class AnnotateEngine(object):
 
         class FragmentationEngine(object):
             def __init__(self,mol):
-                self.natoms=mol.GetNumAtoms()  # number of atoms in the molecule
+                self.natoms=mol.getAtomCount()  # number of atoms in the molecule
                 self.atom_masses=[]
                 self.neutral_loss_atoms=[]
                 self.bonded_atoms=[]           # [[list of atom numbers]]
@@ -570,20 +692,38 @@ class AnnotateEngine(object):
 
                 for x in range(self.natoms):
                     self.bonded_atoms.append([])
-                    for bond in mol.GetAtomWithIdx(x).GetBonds():
-                        self.bonded_atoms[-1].append(bond.GetBeginAtomIdx()+bond.GetEndAtomIdx()-x)
-                    atom = mol.GetAtomWithIdx(x)
-                    self.atom_masses.append(mims[atom.GetAtomicNum()]+Hmass*(atom.GetNumImplicitHs()+atom.GetNumExplicitHs()))
-                    if atom.GetAtomicNum()==8 and (atom.GetNumImplicitHs()+atom.GetNumExplicitHs())==1:
+                    self.atom_masses.append(Chem.GetExtendedAtomMass(mol.getAtom(x)))
+                    if mol.getAtom(x).getSymbol() == 'O' and mol.getAtom(x).getImplicitHydrogenCount() == 1:
                         self.neutral_loss_atoms.append(x)
-                for x in mol.GetBonds():
-                    bond = (1<<x.GetBeginAtomIdx()) | (1<<x.GetEndAtomIdx())
-                    bondscore = typew[x.GetBondType()]*ringw[x.IsInRing()]*\
-                                          heterow[x.GetBeginAtom().GetAtomicNum() != 6 or \
-                                                     x.GetEndAtom().GetAtomicNum() != 6]
+                for x in range(mol.getBondCount()):
+                    bond=0
+                    heterobond=False
+                    for a in mol.getBond(x).atoms().iterator():
+                        self.bonded_atoms[mol.getAtomNumber(a)].append(mol.getAtomNumber(mol.getBond(x).getConnectedAtom(a)))
+                        bond = bond | 1<<mol.getAtomNumber(a)
+                        if a.getSymbol() != 'C':
+                            heterobond=True
+                    if mol.getBond(x).getFlag(4) == 1:
+                        bondscore = typew["AROMATIC"]
+                    else:
+                        bondscore = typew[mol.getBond(x).getOrder().toString()]
+                    bondscore*=heterow[heterobond]
+                        
+
+#                    for bond in mol.GetAtomWithIdx(x).GetBonds():
+#                        self.bonded_atoms[-1].append(bond.GetBeginAtomIdx()+bond.GetEndAtomIdx()-x)
+#                    atom = mol.GetAtomWithIdx(x)
+#                    self.atom_masses.append(mims[atom.GetAtomicNum()]+Hmass*(atom.GetNumImplicitHs()+atom.GetNumExplicitHs()))
+#                    if atom.GetAtomicNum()==8 and (atom.GetNumImplicitHs()+atom.GetNumExplicitHs())==1:
+#                        self.neutral_loss_atoms.append(x)
+#                for x in mol.GetBonds():
+#                    bond = (1<<x.GetBeginAtomIdx()) | (1<<x.GetEndAtomIdx())
+#                    bondscore = typew[x.GetBondType()]*ringw[x.IsInRing()]*\
+#                                          heterow[x.GetBeginAtom().GetAtomicNum() != 6 or \
+#                                                     x.GetEndAtom().GetAtomicNum() != 6]
                     self.bonds.add(bond)
                     self.bondscore[bond]=bondscore
-
+                    
                 self.all_fragments=set([frag])
                 self.total_fragments=set([frag])
                 self.current_fragments=set([frag])
@@ -655,6 +795,8 @@ class AnnotateEngine(object):
                     if 0 < (fragment & bond) < bond:
                         score+=self.bondscore[bond]
                         bondbreaks+=1
+                if score==0:
+                    print "score=0: ",fragment,bondbreaks
                 return bondbreaks,score
 
             def score_fragment_rel2parent(self,fragment,parent):
@@ -665,7 +807,7 @@ class AnnotateEngine(object):
                 return score
             
             def calc_fragment_mass(self,fragment):
-                fragment_mass=0
+                fragment_mass=0.0
                 for atom in range(self.natoms):
                     if fragment & (1<<atom):
                         fragment_mass+=self.atom_masses[atom]
@@ -696,7 +838,7 @@ class AnnotateEngine(object):
                 besthit=hittype(peak,0,None,0,0,0)
                 # print peak.missingfragmentscore
                 # result=np.where(np.where(self.fragment_masses < (peak.mz+me.mz_precision),self.fragment_masses,0) > (peak.mz-me.mz_precision))
-                result=np.where(np.where(self.fragment_masses < (peak.mz*1.000005),self.fragment_masses,0) > (peak.mz/1.000005))
+                result=np.where(np.where(self.fragment_masses < (peak.mz*me.precision),self.fragment_masses,0) > (peak.mz/me.precision))
                 for i in range(len(result[0])):
                     fid=result[0][i]
                     if self.fragments[fid] & parent == self.fragments[fid]:
@@ -762,19 +904,25 @@ class AnnotateEngine(object):
                 return total_score #/total_count
             def get_fragment(self):
                 atomstring=''
-                for atom in range(mol.GetNumAtoms()):
+                atomlist=[]
+                for atom in range(mol.getAtomCount()):
                     if ((1<<atom) & self.fragment):
                         atomstring+=','+str(atom)
-                return(atomstring[1:])
+                        atomlist.append(atom)
+                return(atomstring[1:],atomlist)
             def store_fragments(self,metid,parentfragid):
                 global fragid
                 fragid+=1
                 currentFragid=fragid
                 score=self.score
                 deltappm=None
+                inchikey=None
+                atoms,atomlist=self.get_fragment()
                 if score != None:
                     score=score/self.intensity_weight
                     deltappm=(self.mz+self.deltaH*Hmass-self.mass)/self.mz*1e6
+                    inchikey=Chem.FragmentToInchiKey(mol,atomlist)[:14]
+                # print atomlist, Chem.FragmentSmiles(mol,atomlist)
                 me.db_session.add(Fragment(
                     metid=metid,
                     scanid=self.scan,
@@ -782,7 +930,8 @@ class AnnotateEngine(object):
                     mass=self.mass,
                     score=score,
                     parentfragid=parentfragid,
-                    atoms=self.get_fragment(),
+                    atoms=atoms,
+                    inchikey=inchikey,
                     deltah=self.deltaH,
                     deltappm=deltappm
                     ))
@@ -797,11 +946,11 @@ class AnnotateEngine(object):
             for peak in scan.peaks:
                 if not ((not self.use_all_peaks) and peak.childscan==None):
                     protonation=self.ionisation_mode-(structure.molformula.find('+')>=0)*1
-                    deltaH=peak.massmatch_rel(structure.mim,protonation,protonation)
+                    deltaH=peak.massmatch(structure.mim,protonation,protonation)
                     if type(deltaH)==int:
                         if not Fragmented:
-                            sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+str(structure.reactionsequence)+'\n')
-                            sys.stderr.write('Mim: '+str(structure.mim+Hmass)+'\n')
+                            sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+' '+str(structure.reactionsequence)+'\n')
+                            sys.stderr.write('Mim: '+str(structure.mim)+'\n')
                             fragment_engine=FragmentationEngine(mol)
                             #fragment_engine=GrowingEngine(mol)
                             fragment_engine.generate_fragments()
@@ -814,7 +963,7 @@ class AnnotateEngine(object):
 
                         sys.stderr.write('Scan: '+str(scan.scanid)+' - Mz: '+str(peak.mz)+' - ')
                         # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
-                        hit=hittype(peak,(1<<mol.GetNumAtoms())-1,0,0,structure.mim,-deltaH)
+                        hit=hittype(peak,(1<<mol.getAtomCount())-1,0,0,structure.mim,-deltaH)
                         sys.stderr.write('Score: '+str(hit.score)+'\n')
                         # outfile.write("\t"+str(hit.score/fragment_store.get_avg_score()))
                         hit.store_fragments(structure.metid,0)
@@ -972,8 +1121,23 @@ class DataAnalysisEngine(object):
         self.db_session = db_session
 
     def get_scores(self,scanid):
-        return self.db_session.query(Fragment.score,Metabolite.reactionsequence).\
+        return self.db_session.query(Fragment.score,Metabolite.reactionsequence,Metabolite.molformula).\
             join((Metabolite,and_(Fragment.metid==Metabolite.metid))).\
             filter(Fragment.parentfragid==0).\
             filter(Fragment.scanid==scanid).\
             all()
+            
+    def get_num_peaks(self,scanid):
+        return self.db_session.query(Peak).filter(Peak.scanid==scanid).count()
+            
+    def export_assigned_molecules(self,name):
+        for metabolite,peak in self.db_session.query(Metabolite,Peak).filter(Metabolite.metid==Peak.assigned_metid):
+            print metabolite.origin.splitlines()[0]
+            print metabolite.mol[metabolite.mol.find("\n")+1:-1]
+            print "> <ScanID>\n"+str(peak.scanid)+"\n"
+            print "> <mz>\n"+str(peak.mz)+"\n"
+            print "> <rt>\n"+str(self.db_session.query(Scan.rt).filter(Scan.scanid==peak.scanid).all()[0][0])+"\n"
+            print "> <molecular formula>\n"+metabolite.molformula+"\n"
+            print "$$$$"
+
+
