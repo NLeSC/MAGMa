@@ -1,45 +1,69 @@
 import json
 from pyramid.config import Configurator
-from pyramid.events import subscriber, NewRequest
-
-@subscriber(NewRequest)
-def extjsurl(event):
-    """Adds extjsroot url to request using extjsroot setting"""
-    event.request.extjsroot = event.request.static_url('magmaweb:static/'+event.request.registry.settings['extjsroot'])
+from pyramid.authorization import ACLAuthorizationPolicy
+from pyramid.authentication import RemoteUserAuthenticationPolicy
+from sqlalchemy import engine_from_config
+from .user import DBSession, Base, RootFactory, JobIdFactory
 
 def main(global_config, **settings):
     """This function returns the Magma WSGI application.
     """
     config = Configurator(settings=settings)
+
+    config.set_authentication_policy(RemoteUserAuthenticationPolicy())
+    config.set_authorization_policy(ACLAuthorizationPolicy())
+    config.set_root_factory(RootFactory)
+
     config.add_renderer('jsonhtml', jsonhtml_renderer_factory)
 
     config.add_static_view('static', 'magmaweb:static', cache_max_age=3600)
-    config.add_route('home','/')
-    config.add_route('jobfromscratch', '/results/')
-    config.add_route('results','/results/{jobid}')
-    config.add_route('status.json','/status/{jobid}.json')
-    config.add_route('status','/status/{jobid}')
-    config.add_route('metabolites.json', '/results/{jobid}/metabolites.json')
-    config.add_route('metabolites.csv', '/results/{jobid}/metabolites.csv')
-    config.add_route('metabolites.sdf', '/results/{jobid}/metabolites.sdf')
-    config.add_route('fragments.json', '/results/{jobid}/fragments/{scanid}/{metid}.json')
-    config.add_route('chromatogram.json', '/results/{jobid}/chromatogram.json')
-    config.add_route('mspectra.json', '/results/{jobid}/mspectra/{scanid}.json')
-    config.add_route('extractedionchromatogram.json','/results/{jobid}/extractedionchromatogram/{metid}.json')
-    config.add_route('stderr.txt', '/results/{jobid}/stderr.txt')
-    config.add_route('uploaddb', '/uploaddb')
-    config.add_route('runinfo.json', '/results/{jobid}/runinfo.json')
-    config.add_route('defaults.json', '/defaults.json')
 
-    config.add_route('rpc.add_structures', '/rpc/{jobid}/add_structures')
-    config.add_route('rpc.add_ms_data', '/rpc/{jobid}/add_ms_data')
-    config.add_route('rpc.metabolize', '/rpc/{jobid}/metabolize')
-    config.add_route('rpc.metabolize_one', '/rpc/{jobid}/metabolize_one')
-    config.add_route('rpc.annotate', '/rpc/{jobid}/annotate')
-    config.add_route('rpc.allinone', '/rpc/{jobid}/allinone')
-    config.add_route('rpc.set_description', '/rpc/{jobid}/set_description')
-    config.add_route('rpc.assign', '/rpc/{jobid}/assign')
-    config.add_route('rpc.unassign', '/rpc/{jobid}/unassign')
+    config.add_route('home','/') # allow everyone
+    config.add_route('defaults.json', '/defaults.json') # allow everyone
+
+    config.add_route('jobfromscratch', '/results/') # calc
+    config.add_route('uploaddb', '/uploaddb') # calc
+
+    config.add_route('status.json','/status/{jobid}.json') # my job
+    config.add_route('status','/status/{jobid}') # my job
+
+    # JobFactory + traverse
+    def add_job_route(name, pattern):
+        config.add_route(name,pattern, traverse='/{jobid}', factory=JobIdFactory)
+
+    add_job_route('results','/results/{jobid}') # my job
+    add_job_route('metabolites.json', '/results/{jobid}/metabolites.json') # my job
+    add_job_route('metabolites.csv', '/results/{jobid}/metabolites.csv') # my job
+    add_job_route('metabolites.sdf', '/results/{jobid}/metabolites.sdf') # my job
+    add_job_route('fragments.json', '/results/{jobid}/fragments/{scanid}/{metid}.json') # my job
+    add_job_route('chromatogram.json', '/results/{jobid}/chromatogram.json') # my job
+    add_job_route('mspectra.json', '/results/{jobid}/mspectra/{scanid}.json') # my job
+    add_job_route('extractedionchromatogram.json','/results/{jobid}/extractedionchromatogram/{metid}.json') # my job
+    add_job_route('stderr.txt', '/results/{jobid}/stderr.txt') # my job
+    add_job_route('runinfo.json', '/results/{jobid}/runinfo.json') # my job
+    add_job_route('rpc.add_structures', '/rpc/{jobid}/add_structures') # my job + calc
+    add_job_route('rpc.add_ms_data', '/rpc/{jobid}/add_ms_data') # my job + calc
+    add_job_route('rpc.metabolize', '/rpc/{jobid}/metabolize') # my job + calc
+    add_job_route('rpc.metabolize_one', '/rpc/{jobid}/metabolize_one') # my job + calc
+    add_job_route('rpc.annotate', '/rpc/{jobid}/annotate') # my job + calc
+    add_job_route('rpc.allinone', '/rpc/{jobid}/allinone') # my job + calc
+    add_job_route('rpc.set_description', '/rpc/{jobid}/set_description') # my job + calc
+    add_job_route('rpc.assign', '/rpc/{jobid}/assign') # my job + assigner
+    add_job_route('rpc.unassign', '/rpc/{jobid}/unassign') # my job + assigner
+
+    # list of jobs and their history
+    #TODO: create jobs view
+    config.add_route('jobs', '/jobs') # my jobs
+    # user preferences (email, displayName)
+    #TODO: create user view
+    config.add_route('user', '/user')
+    # share job, make viewable|editable
+    #TODO: create view to change permissions of job
+    add_job_route('share', '/share/{jobid}')
+
+    engine = engine_from_config(settings, 'sqlalchemy.')
+    DBSession.configure(bind=engine)
+    Base.metadata.create_all(engine)
 
     config.scan('magmaweb')
     return config.make_wsgi_app()
