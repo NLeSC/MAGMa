@@ -1,0 +1,53 @@
+/home/stefanv/.JavaGAT_SANDBOX_0.06960952948964572/Magma-1.1/SQLAlchemy-0.7.5-py2.7-linux-x86_64.egg/sqlalchemy/engine/default.py:453: SAWarning: Unicode type received non-unicode bind param value.
+/home/stefanv/.JavaGAT_SANDBOX_0.06960952948964572/Magma-1.1/Magma-1.1-py2.7.egg/magma/script/reactor -as -f 0.15 -m 1 -q /home/stefanv/.JavaGAT_SANDBOX_0.06960952948964572/Magma-1.1/Magma-1.1-py2.7.egg/magma/data/sygma_rules.phase1.smirks -q /home/stefanv/.JavaGAT_SANDBOX_0.06960952948964572/Magma-1.1/Magma-1.1-py2.7.egg/magma/data/sygma_rules.phase2.smirks
+
+1 record read.
+
+
+2 records written.
+
+Duplicate structure: PARENT
+ C1CCCC1 - kept old one
+/home/stefanv/.JavaGAT_SANDBOX_0.06960952948964572/Magma-1.1/Magma-1.1-py2.7.egg/magma/script/reactor -as -f 0.15 -m 1 -q /home/stefanv/.JavaGAT_SANDBOX_0.06960952948964572/Magma-1.1/Magma-1.1-py2.7.egg/magma/data/sygma_rules.phase1.smirks -q /home/stefanv/.JavaGAT_SANDBOX_0.06960952948964572/Magma-1.1/Magma-1.1-py2.7.egg/magma/data/sygma_rules.phase2.smirks
+Duplicate structure: PARENT
+ OC(CC1CCC(C(O)=O)CC1)=O - kept old one
+
+1 record read.
+
+
+7 records written.
+
+/home/stefanv/.JavaGAT_SANDBOX_0.06960952948964572/Magma-1.1/Magma-1.1-py2.7.egg/magma/script/reactor -as -f 0.15 -m 1 -q /home/stefanv/.JavaGAT_SANDBOX_0.06960952948964572/Magma-1.1/Magma-1.1-py2.7.egg/magma/data/sygma_rules.phase1.smirks -q /home/stefanv/.JavaGAT_SANDBOX_0.06960952948964572/Magma-1.1/Magma-1.1-py2.7.egg/magma/data/sygma_rules.phase2.smirks
+Duplicate structure: PARENT
+ CC(O)c1ccccc1 - kept old one
+
+1 record read.
+
+
+9 records written.
+
+/home/stefanv/.JavaGAT_SANDBOX_0.06960952948964572/Magma-1.1/Magma-1.1-py2.7.egg/magma/script/reactor -as -f 0.15 -m 1 -q /home/stefanv/.JavaGAT_SANDBOX_0.06960952948964572/Magma-1.1/Magma-1.1-py2.7.egg/magma/data/sygma_rules.phase1.smirks -q /home/stefanv/.JavaGAT_SANDBOX_0.06960952948964572/Magma-1.1/Magma-1.1-py2.7.egg/magma/data/sygma_rules.phase2.smirks
+
+1 record read.
+
+
+3 records written.
+
+Duplicate structure: PARENT
+ c1ccncc1 - kept old one
+
+Metabolite 10: comp2
+glycination_(aliphatic_carboxyl)
+
+Mim: 244.118497693N fragments: 808
+N formulas: 192
+Scan: 1286 - Mz: 244.119155884 - Score: 5.5
+Scan: 1294 - Mz: 244.11907959 - Score: 5.5
+
+Metabolite 11: comp2
+glycination_(aliphatic_carboxyl)
+
+Mim: 244.118497693N fragments: 868
+N formulas: 189
+Scan: 1286 - Mz: 244.119155884 - Score: 5.5
+Scan: 1294 - Mz: 244.11907959 - Score: 5.5

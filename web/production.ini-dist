@@ -1,0 +1,90 @@
+[app:MAGMaWeb]
+use = egg:MAGMaWeb
+filter-with = gzip
+
+pyramid.reload_templates = false
+pyramid.debug_authorization = false
+pyramid.debug_notfound = false
+pyramid.debug_routematch = false
+pyramid.debug_templates = false
+pyramid.default_locale_name = en
+# pyramid.includes = pyramid_debugtoolbar
+
+mako.directories = magmaweb:templates
+
+extjsroot = extjs-4.1.0
+
+jobfactory.root_dir = %(here)s/data/jobs
+# url to which job request is submitted
+jobfactory.submit_url = http://localhost:9998/job
+
+# To submit job to grid a script and tarball is required
+# tarball contains frozen magma application and script untars tarball and puts magma in path
+# Example script:
+# tar -zxf Magma-1.1.tar.gz
+# Magma-1.1/magma "$@"
+jobfactory.init_script: tar -zxf Magma-1.1-rh57-x86_64.tar.gz
+  export PATH=Magma-1.1:$PATH
+jobfactory.tarball = /home/stefanv/workspace/magmajobmanager/Magma-1.1.tar.gz
+
+# To submit job to local installation of MAGMaJob
+jobfactory.init_script = . /home/stefanv/workspace/MAGMaJob/env2/bin/activate
+
+
+[server:main]
+use = egg:waitress#main
+host = 0.0.0.0
+port = 6543
+# toggle gunicorn as server
+#use = egg:gunicorn#main
+#host = 0.0.0.0
+#port = 6543
+#workers = 4
+#accesslog = logs/access.log
+#errorlog = logs/error.log
+
+[composite:main]
+use = egg:Paste#urlmap
+/magma = MAGMaWeb
+
+[filter:gzip]
+use = egg:Paste#gzip
+
+# Begin logging configuration
+
+[loggers]
+keys = root, magmaweb, sqlalchemy
+
+[handlers]
+keys = console
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = WARN
+handlers = console
+
+[logger_magmaweb]
+level = WARN
+handlers =
+qualname = magmaweb
+
+[logger_sqlalchemy]
+level = WARN
+handlers =
+qualname = sqlalchemy.engine
+# "level = INFO" logs SQL queries.
+# "level = DEBUG" logs SQL queries and results.
+# "level = WARN" logs neither.  (Recommended for production systems.)
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[formatter_generic]
+format = %(asctime)s %(levelname)-5.5s [%(name)s][%(threadName)s] %(message)s
+
+# End logging configuration
