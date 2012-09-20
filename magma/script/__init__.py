@@ -39,6 +39,7 @@ class MagmaCommand(object):
         sc.add_argument('--precursor_mz_precision', help="Mass precision for matching peaks and precursor ions (default: %(default)s)", default=0.005,type=float)
         sc.add_argument('-u', '--use_all_peaks', help="Annotate all level 1 peaks, including those not fragmented (default: %(default)s)", action="store_true")
         sc.add_argument('-f', '--skip_fragmentation', help="Skip substructure annotation of fragment peaks", action="store_true")
+        sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["chebi","pubchem"])
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.all_in_one)
 
@@ -120,28 +121,30 @@ class MagmaCommand(object):
         """Initialize database"""
         magma_session = self.get_magma_session(args.db,"")
 
-    def add_structures(self, args):
-        """Reads reactants file and existing result databass"""
-        magma_session = self.get_magma_session(args.db,args.description)
-        metids=self._add_structures(args, magma_session)
-        magma_session.close()
-        for metid in metids:
-            print metid
+#    def add_structures(self, args):
+#        """Reads reactants file and existing result databass"""
+#        magma_session = self.get_magma_session(args.db,args.description)
+#        metids=self._add_structures(args, magma_session)
+#        magma_session.close()
+#        for metid in metids:
+#            print metid
 
-    def metabolize(self, args):
-        """Generates metabolites from reactants"""
-        magma_session = self.get_magma_session(args.db,args.description)
-        self._metabolize(args, magma_session)
+#    def metabolize(self, args):
+#        """Generates metabolites from reactants"""
+#        magma_session = self.get_magma_session(args.db,args.description)
+#        self._metabolize(args, magma_session)
 
-    def read_ms_data(self, args):
-        magma_session = self.get_magma_session(args.db,args.description)
-        self._read_ms_data(args, magma_session)
+#    def read_ms_data(self, args):
+#        magma_session = self.get_magma_session(args.db,args.description)
+#        self._read_ms_data(args, magma_session)
 
-    def annotate(self, args):
-        magma_session = self.get_magma_session(args.db,args.description)
-        self._annotate(args, magma_session)
+#    def annotate(self, args):
+#        magma_session = self.get_magma_session(args.db,args.description)
+#        self._annotate(args, magma_session)
 
-    def _add_structures(self, args, magma_session):
+    def add_structures(self, args, magma_session=None):
+        if magma_session == None:
+            magma_session = self.get_magma_session(args.db,args.description)
         struct_engine = magma_session.get_structure_engine() # TODO remove arguments
         metids=set([])
         if args.structure_format == 'smiles':
@@ -154,9 +157,12 @@ class MagmaCommand(object):
                 except:
                     print sys.exc_info()
         magma_session.commit()
-        return metids
+        for metid in metids:
+            print metid
 
-    def _metabolize(self, args, magma_session):
+    def metabolize(self, args, magma_session=None):
+        if magma_session == None:
+            magma_session = self.get_magma_session(args.db,args.description)
         struct_engine = magma_session.get_structure_engine(args.metabolism_types, args.n_reaction_steps) # TODO remove arguments
         if args.metids == None:
             metids=struct_engine.metabolize_all(args.metabolism_types, args.n_reaction_steps)
@@ -169,7 +175,9 @@ class MagmaCommand(object):
             for metid in set(metids):
                 print metid
 
-    def _read_ms_data(self, args, magma_session):
+    def read_ms_data(self, args, magma_session=None):
+        if magma_session == None:
+            magma_session = self.get_magma_session(args.db,args.description)
         ms_data_engine = magma_session.get_ms_data_engine(abs_peak_cutoff=args.abs_peak_cutoff,
             max_ms_level=args.max_ms_level)
         if args.ms_data_format == "mzxml":
@@ -177,7 +185,9 @@ class MagmaCommand(object):
         elif args.ms_data_format == "peak_list":
             pass
 
-    def _annotate(self, args, magma_session):
+    def annotate(self, args, magma_session=None):
+        if magma_session == None:
+            magma_session = self.get_magma_session(args.db,args.description)
         annotate_engine = magma_session.get_annotate_engine(ionisation_mode=args.ionisation_mode,
             skip_fragmentation=args.skip_fragmentation,
             max_broken_bonds=args.max_broken_bonds,
