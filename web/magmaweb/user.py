@@ -86,6 +86,7 @@ class RootFactory(object):
         self.request.extjsroot = self.request.static_url('magmaweb:static/'+self.request.registry.settings['extjsroot'])
 
 class JobIdFactory(RootFactory):
+    """Context factory which creates Job as context of request"""
     def __init__(self, request):
         super(JobIdFactory, self).__init__(request)
         self.job_factory = make_job_factory(request.registry.settings)
