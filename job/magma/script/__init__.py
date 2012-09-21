@@ -229,7 +229,7 @@ class MagmaCommand(object):
                                        mim=candidates[id]['mim'],
                                        molform=candidates[id]['molform'],
                                        inchikey=candidates[id]['inchikey'],
-                                       prob=1.0,
+                                       prob=candidates[id]['refscore'],
                                        level=1,
                                        sequence="",
                                        isquery=1,

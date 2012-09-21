@@ -571,7 +571,7 @@ class AnnotateEngine(object):
         return db_candidates
 
     def get_pubchem_candidates(self):
-        dbfilename = '/media/PubChem/Pubchem_MAGMa_inchi.db'
+        dbfilename = '/media/PubChem/Pubchem_MAGMa.db'
         # dbfilename = '/home/ridderl/PRI/test_out.db'
         conn = sqlite3.connect(dbfilename)
         conn.text_factory=str
@@ -584,16 +584,18 @@ class AnnotateEngine(object):
             for peak in scan.peaks:
                 mass=peak.mz-self.ionisation_mode*Hmass
                 if not ((not self.use_all_peaks) and peak.childscan==None):
-                    result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass/self.precision,mass*self.precision))
+                    result = c.execute('SELECT * FROM molecules WHERE refscore > 2 AND mim BETWEEN ? AND ?' , (mass/self.precision,mass*self.precision))
                     # result = c.execute('SELECT * FROM connectivities JOIN isomers ON isomers.cid = (SELECT cid FROM isomers WHERE isomers.conn_id = connectivities.id LIMIT 1) WHERE connectivities.mim BETWEEN ? AND ?', 
                     #                             (mass/self.precision,mass*self.precision))
-                    for (id,cid,mim,molblock,inchikey,molform,name) in result:
+                    for (id,cid,mim,molblock,inchikey,molform,name,refscore) in result:
                         db_candidates[id]={'mim':mim,
                                            'mol':zlib.decompress(molblock),
                                            'inchikey':inchikey,
                                            'molform':molform,
                                            'cid':cid,
-                                           'name':name}
+                                           'name':name,
+                                           'refscore':refscore
+                                           }
                     print str(peak.mz)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
 
