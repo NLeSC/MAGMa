@@ -12,7 +12,7 @@ pyramid.default_locale_name = en
 
 mako.directories = magmaweb:templates
 
-extjsroot = extjs-4.1.0
+extjsroot = extjs-4.1.1
 
 jobfactory.root_dir = %(here)s/data/jobs
 # url to which job request is submitted
