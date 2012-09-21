@@ -78,7 +78,8 @@ class MagmaCommand(object):
         sc = subparsers.add_parser("annotate", help=self.annotate.__doc__, description=self.annotate.__doc__)
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # annotate arguments
-        sc.add_argument('-p', '--mz_precision', help="Mass precision for matching calculated masses with peaks (default: %(default)s)", default=0.001,type=float)
+        sc.add_argument('-p', '--mz_precision', help="Mass precision (ppm) for matching calculated masses with peaks (default: %(default)s)", default=5,type=float)
+        sc.add_argument('-q', '--mz_precision_abs', help="Mass precision (Da) for matching calculated masses with peaks (default: %(default)s)", default=0.001,type=float)
         sc.add_argument('-c', '--ms_intensity_cutoff', help="Minimum intensity of level 1 peaks to be annotated (default: %(default)s)", default=1e6,type=float)
         sc.add_argument('-d', '--msms_intensity_cutoff', help="Minimum intensity of of fragment peaks to be annotated, as fraction of basepeak (default: %(default)s)", default=0.1,type=float)
         sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
@@ -194,6 +195,7 @@ class MagmaCommand(object):
             ms_intensity_cutoff=args.ms_intensity_cutoff,
             msms_intensity_cutoff=args.msms_intensity_cutoff,
             mz_precision=args.mz_precision,
+            mz_precision_abs=args.mz_precision_abs,
             precursor_mz_precision=args.precursor_mz_precision,
             use_all_peaks=args.use_all_peaks)
         if args.scans == 'all':
