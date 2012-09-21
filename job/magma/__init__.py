@@ -840,7 +840,7 @@ class AnnotateEngine(object):
                 besthit=hittype(peak,0,None,0,0,0)
                 # print peak.missingfragmentscore
                 # result=np.where(np.where(self.fragment_masses < (peak.mz+me.mz_precision),self.fragment_masses,0) > (peak.mz-me.mz_precision))
-                result=np.where(np.where(self.fragment_masses < (peak.mz*me.precision),self.fragment_masses,0) > (peak.mz/me.precision))
+                result=np.where(np.where(self.fragment_masses < max(peak.mz*me.precision,peak.mz+0.001),self.fragment_masses,0) > min(peak.mz/me.precision,peak.mz-0.001))
                 for i in range(len(result[0])):
                     fid=result[0][i]
                     if self.fragments[fid] & parent == self.fragments[fid]:

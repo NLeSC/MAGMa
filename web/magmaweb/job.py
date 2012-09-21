@@ -770,9 +770,8 @@ class Job(object):
         for m in metabolites:
             m['name'] = m['origin']
             str+= m['mol']
-            str+="\n"
             for p in props:
-                str+='> <{}>\n\n{}\n\n\n'.format(p, m[p])
+                str+='> <{}>\n{}\n\n'.format(p, m[p])
             str+= '$$$$'+"\n"
 
         return str
