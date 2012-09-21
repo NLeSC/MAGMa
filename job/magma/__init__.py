@@ -177,12 +177,13 @@ class MagmaSession(object):
                  max_broken_bonds=4,
                  ms_intensity_cutoff=1e6,
                  msms_intensity_cutoff=0.1,
-                 mz_precision=0.001,
+                 mz_precision=5.0,
+                 mz_precision_abs=0.001,
                  precursor_mz_precision=0.005,
                  use_all_peaks=False
                  ):
         return AnnotateEngine(self.db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,
-                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,precursor_mz_precision,use_all_peaks)
+                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,use_all_peaks)
     def get_data_analysis_engine(self):
         return DataAnalysisEngine(self.db_session)
     def commit(self):
@@ -451,7 +452,8 @@ class MsDataEngine(object):
 
 class AnnotateEngine(object):
     def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,
-                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,precursor_mz_precision,use_all_peaks):
+                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,
+                 precursor_mz_precision,use_all_peaks):
         self.db_session = db_session
         try:
             rundata=self.db_session.query(Run).one()
@@ -469,6 +471,8 @@ class AnnotateEngine(object):
             rundata.msms_intensity_cutoff=msms_intensity_cutoff
         if rundata.mz_precision == None:
             rundata.mz_precision=mz_precision
+        if rundata.mz_precision_abs == None:
+            rundata.mz_precision_abs=mz_precision_abs
         if rundata.precursor_mz_precision == None:
             rundata.precursor_mz_precision=precursor_mz_precision
         if rundata.use_all_peaks == None:
@@ -482,6 +486,7 @@ class AnnotateEngine(object):
         self.msms_intensity_cutoff=rundata.msms_intensity_cutoff
         self.mz_precision=rundata.mz_precision
         self.precision=1+rundata.mz_precision/1e6
+        self.mz_precision_abs=rundata.mz_precision_abs
         self.precursor_mz_precision=rundata.precursor_mz_precision
         self.use_all_peaks=rundata.use_all_peaks
 
@@ -584,7 +589,7 @@ class AnnotateEngine(object):
             for peak in scan.peaks:
                 mass=peak.mz-self.ionisation_mode*Hmass
                 if not ((not self.use_all_peaks) and peak.childscan==None):
-                    result = c.execute('SELECT * FROM molecules WHERE refscore > 2 AND mim BETWEEN ? AND ?' , (mass/self.precision,mass*self.precision))
+                    result = c.execute('SELECT * FROM molecules WHERE refscore > 10 AND mim BETWEEN ? AND ?' , (mass/self.precision,mass*self.precision))
                     # result = c.execute('SELECT * FROM connectivities JOIN isomers ON isomers.cid = (SELECT cid FROM isomers WHERE isomers.conn_id = connectivities.id LIMIT 1) WHERE connectivities.mim BETWEEN ? AND ?', 
                     #                             (mass/self.precision,mass*self.precision))
                     for (id,cid,mim,molblock,inchikey,molform,name,refscore) in result:
@@ -840,7 +845,8 @@ class AnnotateEngine(object):
                 besthit=hittype(peak,0,None,0,0,0)
                 # print peak.missingfragmentscore
                 # result=np.where(np.where(self.fragment_masses < (peak.mz+me.mz_precision),self.fragment_masses,0) > (peak.mz-me.mz_precision))
-                result=np.where(np.where(self.fragment_masses < max(peak.mz*me.precision,peak.mz+0.001),self.fragment_masses,0) > min(peak.mz/me.precision,peak.mz-0.001))
+                result=np.where(np.where(self.fragment_masses < max(peak.mz*me.precision,peak.mz+me.mz_precision_abs),
+                                         self.fragment_masses,0) > min(peak.mz/me.precision,peak.mz-me.mz_precision_abs))
                 for i in range(len(result[0])):
                     fid=result[0][i]
                     if self.fragments[fid] & parent == self.fragments[fid]:

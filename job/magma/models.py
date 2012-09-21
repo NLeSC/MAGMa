@@ -105,5 +105,6 @@ class Run(Base):
     ms_intensity_cutoff = Column(Float) #: Absolute intensity minimum of lvl1 scan peaks which are matched with metabolites
     msms_intensity_cutoff = Column(Float) #: Ratio of basepeak intensity
     mz_precision = Column(Float) #: precision for matching a metabolite mim to m/z of a peak
+    mz_precision_abs = Column(Float) #: precision for matching a metabolite mim to m/z of a peak
     precursor_mz_precision = Column(Float) #: precision for matching precursor mz with peak mz in parent scan
     use_all_peaks = Column(Boolean)
