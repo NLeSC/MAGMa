@@ -514,7 +514,7 @@ class AnnotateEngine(object):
                     break
             else:
                 if dbchildscan.precursorintensity >= cutoff:
-                    scan.peaks.append(PeakType(dbchildscan.precursormz,dbchildscan.precursorintensity,scan.scanid))
+                    scan.peaks.append(PeakType(dbchildscan.precursormz,dbchildscan.precursorintensity,scan.scanid,missingfragmentpenalty*(dbchildscan.precursorintensity.intensity**0.5)))
                     scan.peaks[-1].childscan=self.build_spectrum(dbchildscan)
                     for childpeak in scan.peaks[-1].childscan.peaks:
                         scan.peaks[-1].missing_fragment_score+=childpeak.missing_fragment_score
@@ -980,10 +980,10 @@ def search_structure(structure,scans,max_broken_bonds,max_small_losses,precision
                 besthit=fragment_engine.find_hit(childpeak,fragment)
                 hit.besthits.append(besthit)
                 if besthit.score==None:
-                    total_score+=peak.missing_fragment_score
+                    total_score+=childpeak.missing_fragment_score
                     # total_score+=missingfragmentpenalty*weight
                 else:
-                    total_score+=min(besthit.score,peak.missing_fragment_score)
+                    total_score+=min(besthit.score,childpeak.missing_fragment_score)
                     # total_score+=min(besthit.score,missingfragmentpenalty)*weight
             hit.score = hit.score + total_score
         for atom in range(mol.getAtomCount()):
