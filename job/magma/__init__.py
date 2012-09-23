@@ -14,6 +14,9 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from models import Base, Metabolite, Scan, Peak, Fragment, Run
 import jpype,glob,os
+import pp
+import cPickle as pickle
+import types
 
 """
 RDkit dependencies:
@@ -28,26 +31,33 @@ jars= ('/home/ridderl/cdk/cdk-1.4.13.jar',)
 classpath = ":".join([ os.path.abspath(jar) for jar in jars])
 os.environ['JAVA_HOME'] = '/usr/lib/jvm/java-6-openjdk'
 jpype.startJVM(jpype.getDefaultJVMPath(),"-ea", "-Djava.class.path="+classpath)
-
-cdk = jpype.JPackage("org").openscience.cdk
-java = jpype.java
+#
+#cdk = jpype.JPackage("org").openscience.cdk
+#java = jpype.java
 
 
 class CDKengine(object):
     def __init__(self):
-        self.builder = cdk.DefaultChemObjectBuilder.getInstance()
-        self.sp = cdk.smiles.SmilesParser(self.builder)
+#        jars= ('/home/ridderl/cdk/cdk-1.4.13.jar',)
+#        classpath = ":".join([ os.path.abspath(jar) for jar in jars])
+#        os.environ['JAVA_HOME'] = '/usr/lib/jvm/java-6-openjdk'
+#        jpype.startJVM(jpype.getDefaultJVMPath(),"-ea", "-Djava.class.path="+classpath)
+        self.cdk = jpype.JPackage("org").openscience.cdk
+        self.java = jpype.java
+
+        self.builder = self.cdk.DefaultChemObjectBuilder.getInstance()
+        self.sp = self.cdk.smiles.SmilesParser(self.builder)
         self.sp.setPreservingAromaticity(True)
-        self.sg = cdk.smiles.SmilesGenerator()
+        self.sg = self.cdk.smiles.SmilesGenerator()
         self.sg.setUseAromaticityFlag(True)
-        self.isof=cdk.config.IsotopeFactory.getInstance(self.builder)
+        self.isof=self.cdk.config.IsotopeFactory.getInstance(self.builder)
         self.Hmass=self.isof.getMajorIsotope('H').getExactMass().floatValue()
-        self.acm = cdk.tools.manipulator.AtomContainerManipulator
+        self.acm = self.cdk.tools.manipulator.AtomContainerManipulator
     def MolToMolBlock(self,molecule):
-        mol2stringio = java.io.StringWriter()
-        mol2writer = cdk.io.MDLV2000Writer(mol2stringio)
+        mol2stringio = self.java.io.StringWriter()
+        mol2writer = self.cdk.io.MDLV2000Writer(mol2stringio)
         try:
-            dbst = cdk.smiles.DeduceBondSystemTool()
+            dbst = self.cdk.smiles.DeduceBondSystemTool()
             molecule = dbst.fixAromaticBondOrders(molecule)
         except:
             pass
@@ -55,31 +65,31 @@ class CDKengine(object):
         # mol2writer.close()
         return mol2stringio.toString()
     def MolFromMolBlock(self,mol_block):
-        stringio2mol = java.io.StringReader(mol_block)
-        reader2mol = cdk.io.MDLReader(stringio2mol)
-        molecule=cdk.Molecule()
+        stringio2mol = self.java.io.StringReader(mol_block)
+        reader2mol = self.cdk.io.MDLReader(stringio2mol)
+        molecule=self.cdk.Molecule()
         reader2mol.read(molecule)
-        cdk.tools.manipulator.AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(molecule)
-        #cdk.aromaticity.CDKHueckelAromaticityDetector.detectAromaticity(molecule) #
-        ha=cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
+        self.cdk.tools.manipulator.AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(molecule)
+        #self.cdk.aromaticity.CDKHueckelAromaticityDetector.detectAromaticity(molecule) #
+        ha=self.cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
         ha.addImplicitHydrogens(molecule)
         return molecule
     def generateCoordinates(self,molecule):
-        sdg = cdk.layout.StructureDiagramGenerator(molecule)
+        sdg = self.cdk.layout.StructureDiagramGenerator(molecule)
         sdg.generateCoordinates()
         return sdg.getMolecule()
     def MolFromSmiles(self,smiles):
         molecule = self.sp.parseSmiles(smiles)
-        cdk.tools.manipulator.AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(molecule) #
-        cdk.aromaticity.CDKHueckelAromaticityDetector.detectAromaticity(molecule)
-        ha=cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
+        self.cdk.tools.manipulator.AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(molecule) #
+        self.cdk.aromaticity.CDKHueckelAromaticityDetector.detectAromaticity(molecule)
+        ha=self.cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
         ha.addImplicitHydrogens(molecule)
         molecule = self.generateCoordinates(molecule)
         return molecule
     def MolToSmiles(self,molecule):
         return self.sg.createSMILES(molecule) #sg.createSMILES(molecule,True)
     def MolToInchiKey(self,molecule):
-        igf = cdk.inchi.InChIGeneratorFactory.getInstance()
+        igf = self.cdk.inchi.InChIGeneratorFactory.getInstance()
         ig = igf.getInChIGenerator(molecule)
         # print ig
         return ig.getInchiKey()
@@ -91,15 +101,15 @@ class CDKengine(object):
             hc=0
         return mass+self.Hmass*hc
     def GetFormulaProps(self,mol):
-        formula=cdk.tools.manipulator.MolecularFormulaManipulator.getMolecularFormula(mol)
-        formula_string = cdk.tools.manipulator.MolecularFormulaManipulator.getString(formula)
-        mim = cdk.tools.manipulator.MolecularFormulaManipulator.getMajorIsotopeMass(formula)
+        formula=self.cdk.tools.manipulator.MolecularFormulaManipulator.getMolecularFormula(mol)
+        formula_string = self.cdk.tools.manipulator.MolecularFormulaManipulator.getString(formula)
+        mim = self.cdk.tools.manipulator.MolecularFormulaManipulator.getMajorIsotopeMass(formula)
         return mim,formula_string
     def FragmentToSmiles(self,mol,atomlist):
         return self.sg.createSMILES(self.acm.extractSubstructure(mol,atomlist))
     def FragmentToInchiKey(self,mol,atomlist):
         ac=self.acm.extractSubstructure(mol,atomlist)
-        igf = cdk.inchi.InChIGeneratorFactory.getInstance()
+        igf = self.cdk.inchi.InChIGeneratorFactory.getInstance()
         ig = igf.getInChIGenerator(ac)
         return ig.getInchiKey()
 
@@ -453,6 +463,47 @@ class MsDataEngine(object):
             self.db_session.add(Peak(scanid=scanid+1,mz=peak[0],intensity=peak[1]))
         self.db_session.commit()
 
+#class ScanType(object):
+#    def __init__(self,scanid,mslevel):
+#        self.peaks=[]
+#        self.scanid=scanid
+#        self.mslevel=mslevel
+#    
+#class PeakType(object):
+#    def __init__(self,mz,intensity,scanid,missing_fragment_score):
+#        self.mz=mz
+#        self.intensity=intensity
+#        self.scan=scanid
+#        self.childscan=None
+#        self.missing_fragment_score=missing_fragment_score
+#
+##    def massmatch_rel(self,mim,low,high):
+##        for x in range(low,high+1):
+##            # if self.mz/me.precision < mim+x*Hmass < self.mz*me.precision:
+##            if self.mz/1.000005 < mim+x*Hmass < self.mz*1.000005:
+##            # if mim/precision < self.mz-x*Hmass < mim*precision:
+##                return x
+##        else:
+##            return False
+#
+#class HitType(object):
+#    def __init__(self,peak,fragment,score,bondbreaks,mass,deltaH):
+#        self.mz = peak.mz
+#        self.intensity = peak.intensity
+#        self.intensity_weight = peak.missing_fragment_score / missingfragmentpenalty
+#        self.scan = peak.scan
+#        self.fragment = fragment
+#        self.score = score
+#        self.breaks = bondbreaks
+#        self.mass = mass
+#        self.deltaH = deltaH
+#        self.bonds = []
+#        self.allbonds = 0
+#        self.besthits=[]
+#        self.atomstring=''
+#        self.atomlist=[]
+#        #print "childscan",peak.childscan
+
 class AnnotateEngine(object):
     def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,
                  ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,
@@ -496,14 +547,14 @@ class AnnotateEngine(object):
         self.scans=[]
 
     def build_spectrum(self,dbscan):
-        scan=ScanType(dbscan.scanid,dbscan.mslevel)
+        scan=types.ScanType(dbscan.scanid,dbscan.mslevel)
         if scan.mslevel==1:
             cutoff=self.ms_intensity_cutoff
         else:
             cutoff=dbscan.basepeakintensity*self.msms_intensity_cutoff
         dbpeaks=self.db_session.query(Peak).filter(Peak.scanid==scan.scanid).filter(Peak.intensity>=cutoff).all()
         for dbpeak in dbpeaks:
-            scan.peaks.append(PeakType(dbpeak.mz,dbpeak.intensity,scan.scanid,missingfragmentpenalty*(dbpeak.intensity**0.5)))
+            scan.peaks.append(types.PeakType(dbpeak.mz,dbpeak.intensity,scan.scanid,missingfragmentpenalty*(dbpeak.intensity**0.5)))
         dbchildscans=self.db_session.query(Scan).filter(Scan.precursorscanid==scan.scanid).all()
         for dbchildscan in dbchildscans:
             for peak in scan.peaks:
@@ -514,7 +565,7 @@ class AnnotateEngine(object):
                     break
             else:
                 if dbchildscan.precursorintensity >= cutoff:
-                    scan.peaks.append(PeakType(dbchildscan.precursormz,dbchildscan.precursorintensity,scan.scanid,missingfragmentpenalty*(dbchildscan.precursorintensity.intensity**0.5)))
+                    scan.peaks.append(types.PeakType(dbchildscan.precursormz,dbchildscan.precursorintensity,scan.scanid,missingfragmentpenalty*(dbchildscan.precursorintensity.intensity**0.5)))
                     scan.peaks[-1].childscan=self.build_spectrum(dbchildscan)
                     for childpeak in scan.peaks[-1].childscan.peaks:
                         scan.peaks[-1].missing_fragment_score+=childpeak.missing_fragment_score
@@ -584,16 +635,38 @@ class AnnotateEngine(object):
 
     def search_some_structures(self,metids):
         logging.warn('Searching some structures')
-        for structure in self.db_session.query(Metabolite).filter(Metabolite.metid.in_(metids)).all():
-            hits=search_structure(structure,
-                                  self.scans,
-                                  self.max_broken_bonds,
-                                  max_small_losses,
-                                  self.precision,
-                                  self.mz_precision_abs,
-                                  self.use_all_peaks,
-                                  self.ionisation_mode
-                                  )
+        ppservers = ()
+        ncpus=4
+        job_server = pp.Server(ncpus, ppservers=ppservers)
+#        peak=types.PeakType(0,0,0,0)
+#        print peak.__module__
+#        print type(peak.__module__)
+#        exit()
+        print metids
+
+        #for structure in self.db_session.query(Metabolite).filter(Metabolite.metid.in_(metids)).all():
+            #hits=job_server.submit(sum_primes,(input,), (isprime,), ("math",))
+        jobs=[(structure.origin,structure.metid,
+               job_server.submit(search_structure,(structure,
+                          self.scans,
+                          self.max_broken_bonds,
+                          max_small_losses,
+                          self.precision,
+                          self.mz_precision_abs,
+                          self.use_all_peaks,
+                          self.ionisation_mode
+                          ),(
+                          CDKengine,
+                          ),(
+                          "numpy",
+                          "jpype",
+                          "magma.types"
+                          )
+                       )) for structure in self.db_session.query(Metabolite).filter(Metabolite.metid.in_(metids)).all()]
+        for origin,metid,job in jobs:
+            raw_result=job(raw_result=True)
+            hits,sout = pickle.loads(raw_result)
+            sys.stderr.write('\nMetabolite '+str(metid)+': '+str(origin)+'\n')
             for hit in hits:
                 global fragid
                 fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
@@ -633,45 +706,6 @@ class AnnotateEngine(object):
                 if childhit != None: # still need to work out how to deal with missed fragments
                     self.store_hit(childhit,metid,currentFragid)
 
-class ScanType(object):
-    def __init__(self,scanid,mslevel):
-        self.peaks=[]
-        self.scanid=scanid
-        self.mslevel=mslevel
-    
-class PeakType(object):
-    def __init__(self,mz,intensity,scanid,missing_fragment_score):
-        self.mz=mz
-        self.intensity=intensity
-        self.scan=scanid
-        self.childscan=None
-        self.missing_fragment_score=missing_fragment_score
-#    def massmatch_rel(self,mim,low,high):
-#        for x in range(low,high+1):
-#            # if self.mz/me.precision < mim+x*Hmass < self.mz*me.precision:
-#            if self.mz/1.000005 < mim+x*Hmass < self.mz*1.000005:
-#            # if mim/precision < self.mz-x*Hmass < mim*precision:
-#                return x
-#        else:
-#            return False
-
-class hittype(object):
-    def __init__(self,peak,fragment,score,bondbreaks,mass,deltaH):
-        self.mz = peak.mz
-        self.intensity = peak.intensity
-        self.intensity_weight = peak.missing_fragment_score / missingfragmentpenalty
-        self.scan = peak.scan
-        self.fragment = fragment
-        self.score = score
-        self.breaks = bondbreaks
-        self.mass = mass
-        self.deltaH = deltaH
-        self.bonds = []
-        self.allbonds = 0
-        self.besthits=[]
-        self.atomstring=''
-        self.atomlist=[]
-        #print "childscan",peak.childscan
 
 class DataAnalysisEngine(object):
     def __init__(self,db_session):
@@ -698,9 +732,44 @@ class DataAnalysisEngine(object):
             print "$$$$"
 
 def search_structure(structure,scans,max_broken_bonds,max_small_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode):
-    # logging.warn('Structure: '+str(structure.metid)+"\tmim: "+str(structure.mim))
+    print "test3"
+    print 'Structure: '+str(structure.metid)+"\tmim: "+str(structure.mim)
+#    peak=types.PeakType(0,0,0,0)
+#    print peak.__module__
+#    print type(peak.__module__)
+#    exit()
     Fragmented=False
+    Chem=CDKengine()
     mol=Chem.MolFromMolBlock(str(structure.mol))
+
+    typew={"AROMATIC":3.0,\
+           "DOUBLE":2.0,\
+           "TRIPLE":3.0,\
+           "SINGLE":1.0}
+    #typew={Chem.rdchem.BondType.AROMATIC:3.0,\
+    #         Chem.rdchem.BondType.DOUBLE:2.0,\
+    #         Chem.rdchem.BondType.TRIPLE:3.0,\
+    #         Chem.rdchem.BondType.SINGLE:1.0}
+    global missingfragmentpenalty
+    ringw={False:1,True:1}
+    heterow={False:2,True:1}
+    missingfragmentpenalty=10
+    max_small_losses=1
+    weigh_scores=False
+    
+    
+    mims={1:1.0078250321,\
+          6:12.0000000,\
+          7:14.0030740052,\
+          8:15.9949146221,\
+          9:18.99840320,\
+          15:30.97376151,\
+          16:31.97207069,\
+          17:34.96885271,\
+          35:78.9183376,\
+          53:126.904468}
+    
+    Hmass=mims[1]     # Mass of hydrogen atom
 
     class GrowingEngine(object):
         def __init__(self,mol):
@@ -772,10 +841,10 @@ def search_structure(structure,scans,max_broken_bonds,max_small_losses,precision
             self.bondscore={}
             self.new_fragment=0
             self.template_fragment=0
-            self.fragment_masses=np.zeros((max_broken_bonds+max_small_losses)*2+3)
-            self.fragments=np.array([0])
-            self.bondbreaks=np.array([0])
-            self.scores=np.array([0.0])
+            self.fragment_masses=numpy.zeros((max_broken_bonds+max_small_losses)*2+3)
+            self.fragments=numpy.array([0])
+            self.bondbreaks=numpy.array([0])
+            self.scores=numpy.array([0.0])
             self.avg_score=None
             frag=(1<<self.natoms)-1
 
@@ -903,20 +972,20 @@ def search_structure(structure,scans,max_broken_bonds,max_small_losses,precision
             return fragment_mass
 
         def add_fragment(self,fragment,fragmentmass,score,bondbreaks):
-            self.fragment_masses = np.vstack((self.fragment_masses,
-                           np.hstack((np.zeros(max_broken_bonds+max_small_losses-bondbreaks),
-                                      np.arange(-bondbreaks-1,bondbreaks+2)*Hmass+fragmentmass,
-                                      np.zeros(max_broken_bonds+max_small_losses-bondbreaks)
+            self.fragment_masses = numpy.vstack((self.fragment_masses,
+                           numpy.hstack((numpy.zeros(max_broken_bonds+max_small_losses-bondbreaks),
+                                      numpy.arange(-bondbreaks-1,bondbreaks+2)*Hmass+fragmentmass,
+                                      numpy.zeros(max_broken_bonds+max_small_losses-bondbreaks)
                                       ))
                            ))
             # self.info.append([fragment,score,bondbreaks])
-            self.fragments = np.hstack((self.fragments,np.array([fragment])))
-            self.bondbreaks = np.hstack((self.bondbreaks,np.array([bondbreaks])))
-            self.scores = np.hstack((self.scores,np.array([score])))
+            self.fragments = numpy.hstack((self.fragments,numpy.array([fragment])))
+            self.bondbreaks = numpy.hstack((self.bondbreaks,numpy.array([bondbreaks])))
+            self.scores = numpy.hstack((self.scores,numpy.array([score])))
 
         def calc_avg_score(self):
             # self.avg_score = sum([i[1] for i in self.info])/len(self.info)
-            self.avg_score = np.average(self.scores)
+            self.avg_score = numpy.average(self.scores)
 
         def get_avg_score(self):
             return self.avg_score
@@ -926,8 +995,8 @@ def search_structure(structure,scans,max_broken_bonds,max_small_losses,precision
             # besthit=None
             besthit=gethit(peak,0,None,0,0,0)
             # print peak.missingfragmentscore
-            # result=np.where(np.where(self.fragment_masses < (peak.mz+mz_precision),self.fragment_masses,0) > (peak.mz-mz_precision))
-            result=np.where(np.where(self.fragment_masses < max(peak.mz*precision,peak.mz+mz_precision_abs),
+            # result=numpy.where(numpy.where(self.fragment_masses < (peak.mz+mz_precision),self.fragment_masses,0) > (peak.mz-mz_precision))
+            result=numpy.where(numpy.where(self.fragment_masses < max(peak.mz*precision,peak.mz+mz_precision_abs),
                                      self.fragment_masses,0) > min(peak.mz/precision,peak.mz-mz_precision_abs))
             for i in range(len(result[0])):
                 fid=result[0][i]
@@ -935,7 +1004,7 @@ def search_structure(structure,scans,max_broken_bonds,max_small_losses,precision
                 # if self.info[fid][0] & subfrag == self.info[fid][0]:
                     hitscore=self.scores[fid]*(peak.intensity**0.5) # *(peak.mz**3) # <--
                     # hitscore=self.score_fragment(self.fragments[fid],subfrag) # *(peak.intensity**0.5) # <--
-                    # losses=np.nonzero(self.fragments==subfrag^self.fragments[fid])
+                    # losses=numpy.nonzero(self.fragments==subfrag^self.fragments[fid])
                     # if len(losses[0])==1:
                     #     hitscore=self.scores[losses[0][0]]
                     hit=gethit(peak,self.fragments[fid],hitscore,self.bondbreaks[fid],
@@ -965,7 +1034,10 @@ def search_structure(structure,scans,max_broken_bonds,max_small_losses,precision
 
     #def findhit(self,childscan,parent):
     def gethit (peak,fragment,score,bondbreaks,mass,deltaH):
-        hit=hittype(peak,fragment,score,bondbreaks,mass,deltaH)
+        hit=magma.types.HitType(peak,fragment,score,bondbreaks,mass,deltaH)
+        #hit.__module__="magma"
+        #rint hit.__module__
+        #print os.path.splitext(os.path.basename(__file__))[0]
         if fragment>0 and peak.childscan!=None and len(peak.childscan.peaks) > 0: # fragment=0 means it is a missing fragment
             n_child_peaks=len(peak.childscan.peaks)
             # self.score = self.score/(n_child_peaks+1) + self.findhits(peak.childscan,self.fragment)*n_child_peaks/(n_child_peaks+1)
