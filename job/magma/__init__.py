@@ -647,7 +647,7 @@ class AnnotateEngine(object):
             structures = self.db_session.query(Metabolite).all()
         else:
             structures = self.db_session.query(Metabolite).filter(Metabolite.metid.in_(metids)).all()
-        jobs=[(structure.origin,structure.metid,
+        jobs=[(structure,
                job_server.submit(search_structure,(structure,
                           self.scans,
                           self.max_broken_bonds,
@@ -668,17 +668,19 @@ class AnnotateEngine(object):
         fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
         if fragid == None:
             fragid = 0
-        for origin,metid,job in jobs:
+        for structure,job in jobs:
             raw_result=job(raw_result=True)
             hits,sout = pickle.loads(raw_result)
             # print sout
-            sys.stderr.write('\nMetabolite '+str(metid)+': '+str(origin)+'\n')
+            sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
+            structure.nhits=len(hits)
+            self.db_session.add(structure)
             for hit in hits:
                 sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
                 # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
                 sys.stderr.write('Score: '+str(hit.score)+'\n')
                 # outfile.write("\t"+str(hit.score/fragment_store.get_avg_score()))
-                self.store_hit(hit,metid,0)
+                self.store_hit(hit,structure.metid,0)
         self.db_session.commit()
 
     def store_hit(self,hit,metid,parentfragid):
