@@ -1,6 +1,6 @@
 import unittest
 from pyramid import testing
-from mock import Mock
+from mock import Mock, patch
 from magmaweb.views import Views, JobViews, home, defaults
 from magmaweb.job import JobFactory, Job
 
@@ -91,6 +91,18 @@ class ViewsTestCase(unittest.TestCase):
         response = views.job_status()
 
         self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
+
+    @patch('magmaweb.views.get_jobs')
+    def test_jobs(self, get_jobs):
+        jobs = [{'id':12345, 'description': 'My job'}]
+        get_jobs.return_value = jobs
+        request = testing.DummyRequest()
+        views = Views(request)
+
+        response = views.jobs()
+
+        get_jobs.assert_called_with(None)
+        self.assertEqual(response, {'jobs':jobs})
 
     def test_metabolitesjson_return(self):
         request = testing.DummyRequest(params={

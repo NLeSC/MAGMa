@@ -131,3 +131,10 @@ def set_job_description(jobid, description):
 def add_job(jobid):
     job = Job(jobid)
     DBSession().add(job)
+
+def get_jobs(owner):
+    """Retrieve jobs belonging to owner"""
+    jobs = []
+    for id,desc in DBSession().query(Job.jobid, Job.description).join(JobUser).filter(JobUser.userid==owner).all():
+        jobs.append({'id':id, "description": desc})
+    return jobs
