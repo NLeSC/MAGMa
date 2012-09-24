@@ -565,7 +565,7 @@ class AnnotateEngine(object):
                     break
             else:
                 if dbchildscan.precursorintensity >= cutoff:
-                    scan.peaks.append(types.PeakType(dbchildscan.precursormz,dbchildscan.precursorintensity,scan.scanid,missingfragmentpenalty*(dbchildscan.precursorintensity.intensity**0.5)))
+                    scan.peaks.append(types.PeakType(dbchildscan.precursormz,dbchildscan.precursorintensity,scan.scanid,missingfragmentpenalty*(dbchildscan.precursorintensity**0.5)))
                     scan.peaks[-1].childscan=self.build_spectrum(dbchildscan)
                     for childpeak in scan.peaks[-1].childscan.peaks:
                         scan.peaks[-1].missing_fragment_score+=childpeak.missing_fragment_score
@@ -663,20 +663,21 @@ class AnnotateEngine(object):
                           "magma.types"
                           )
                        )) for structure in self.db_session.query(Metabolite).filter(Metabolite.metid.in_(metids)).all()]
+        global fragid
+        fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
+        if fragid == None:
+            fragid = 0
         for origin,metid,job in jobs:
             raw_result=job(raw_result=True)
             hits,sout = pickle.loads(raw_result)
+            print sout
             sys.stderr.write('\nMetabolite '+str(metid)+': '+str(origin)+'\n')
             for hit in hits:
-                global fragid
-                fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
-                if fragid == None:
-                    fragid = 0
                 sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
                 # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
                 sys.stderr.write('Score: '+str(hit.score)+'\n')
                 # outfile.write("\t"+str(hit.score/fragment_store.get_avg_score()))
-                self.store_hit(hit,structure.metid,0)
+                self.store_hit(hit,metid,0)
         self.db_session.commit()
 
     def store_hit(self,hit,metid,parentfragid):
@@ -1062,7 +1063,7 @@ def search_structure(structure,scans,max_broken_bonds,max_small_losses,precision
             if ((1<<atom) & hit.fragment):
                 hit.atomstring+=','+str(atom)
                 hit.atomlist.append(atom)
-        hit.inchikey='test' # Chem.FragmentToInchiKey(mol,hit.atomlist)[:14]
+        hit.inchikey=Chem.FragmentToInchiKey(mol,hit.atomlist)[:14]
         return hit
 
 # for peak in self.db_session.query(Peak).filter(Scan.mslevel)==1.filter(Peak.intensity>MSfilter)
