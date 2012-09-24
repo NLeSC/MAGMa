@@ -648,20 +648,12 @@ class Job(object):
             q = q.add_columns(fragal.score, fragal.deltappm).join(fragal.metabolite).filter(
                 fragal.parentfragid == 0).filter(fragal.scanid == scanid)
 
-        # add nr_scans column
-        stmt = self.session.query(Fragment.metid, func.count(distinct(Fragment.scanid)).label('nr_scans')).filter(
-            Fragment.parentfragid == 0).group_by(Fragment.metid).subquery()
-        q = q.add_columns(stmt.c.nr_scans).outerjoin(stmt, Metabolite.metid == stmt.c.metid)
-
         # add assigned column
         stmt2 = self.session.query(Peak.assigned_metid, func.count('*').label('assigned')).filter(Peak.assigned_metid!=None).group_by(Peak.assigned_metid).subquery()
         q = q.add_columns(stmt2.c.assigned).outerjoin(stmt2, Metabolite.metid == stmt2.c.assigned_metid)
 
         for filter in filters:
-            # generic filters
-            if (filter['field'] == 'nr_scans'):
-                col = stmt.c.nr_scans
-            elif filter['field']=='assigned':
+            if filter['field']=='assigned':
                 col = stmt2.c.assigned
                 filter['type'] = 'null'
             elif (filter['field'] == 'score'):
@@ -675,15 +667,14 @@ class Job(object):
                 else:
                     raise ScanRequiredError()
             else:
+                # generic filters
                 col = Metabolite.__dict__[filter['field']] #@UndefinedVariable
             q = self.extjsgridfilter(q, col, filter)
 
         total = q.count()
 
         for col in sorts:
-            if (col['property'] == 'nr_scans'):
-                col2 = stmt.c.nr_scans
-            elif col['property']=='assigned':
+            if col['property']=='assigned':
                 col2 = stmt2.c.assigned
             elif (col['property'] == 'score'):
                 if (scanid != None):
@@ -715,7 +706,6 @@ class Job(object):
                 'isquery': met.isquery,
                 'origin': met.origin,
                 'nhits': met.nhits,
-                'nr_scans': r.nr_scans,
                 'mim': met.mim,
                 'logp': met.logp,
                 'assigned': r.assigned>0,
@@ -740,7 +730,7 @@ class Job(object):
         csvstr = StringIO.StringIO()
         headers = [
                    'name', 'smiles', 'probability', 'reactionsequence',
-                   'nr_scans', 'molformula', 'mim' , 'isquery', 'logp',
+                   'nhits', 'molformula', 'mim' , 'isquery', 'logp',
                    'reference'
                    ]
         if ('score' in metabolites[0].keys()):
@@ -765,7 +755,7 @@ class Job(object):
         """
         str = ''
         props = ['name', 'smiles', 'probability', 'reactionsequence',
-                 'nr_scans', 'molformula', 'mim' , 'logp',
+                 'nhits', 'molformula', 'mim' , 'logp',
                  'reference']
         if ('score' in metabolites[0].keys()):
             props.append('score')
@@ -801,7 +791,7 @@ class Job(object):
                 filter['type'] = 'null'
                 fq = fq.join(Peak, and_(Fragment.scanid==Peak.scanid, Fragment.mz==Peak.mz))
                 fq = self.extjsgridfilter(fq, Peak.assigned_metid, filter)
-            elif (filter['field'] != 'nr_scans'):
+            else:
                 fq = fq.join(Metabolite)
                 fq = self.extjsgridfilter(
                                           fq,

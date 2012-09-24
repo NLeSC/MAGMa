@@ -175,14 +175,14 @@ describe('Metabolites', function() {
      it('before select metabolite with scans', function() {
        var record = store.getById(352);
        var rm = Ext.create('Ext.selection.RowModel');
-       expect(record.data.nr_scans).toBeGreaterThan(0);
+       expect(record.data.nhits).toBeGreaterThan(0);
        expect(ctrl.beforeSelect(rm, record)).toBeTruthy();
      });
 
      it('before select metabolite without scans', function() {
        var record = store.getById(78);
        var rm = Ext.create('Ext.selection.RowModel');
-       expect(record.data.nr_scans).toEqual(0);
+       expect(record.data.nhits).toEqual(0);
        expect(ctrl.beforeSelect(rm, record)).toBeFalsy();
      });
 
@@ -422,7 +422,7 @@ describe('Metabolites', function() {
 
           // create fake filter
           var filter = Ext.JSON.encode([{
-              field: 'nr_scans',
+              field: 'nhits',
               value: 1,
               type: 'numeric',
               comparison: 'gt'

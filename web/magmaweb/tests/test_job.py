@@ -40,7 +40,7 @@ def populateTestingDB(session):
     session.add(Metabolite(
         metid=72, mol='Molfile', level=0, probability=1.0,
         reactionsequence='PARENT', smiles='Oc1ccccc1O',
-        molformula='C6H6O2', isquery=True,
+        molformula='C6H6O2', isquery=True, nhits=1,
         origin='pyrocatechol', mim=110.03677, logp=1.231,
         reference='<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
     ))
@@ -72,7 +72,7 @@ def populateTestingDB(session):
         probability=1.0, reactionsequence="PARENT",
         smiles="O=C1OC(Cc2ccc(O)c(O)c2)CC1",
         reference='<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=152432">CID: 152432</a>',
-        mim=208.07355, logp=2.763
+        mim=208.07355, logp=2.763, nhits=1
     ))
     session.add_all([Scan(
         scanid=870, mslevel=1, rt=1254.15, lowmz=91.0302, highmz=1171.51,
@@ -140,7 +140,8 @@ def populateWithUseAllPeaks(session):
         mol = 'Molfile',
         reference='',
         mim = 288.0303734299,
-        logp = 1.9027
+        logp = 1.9027,
+        nhits = 1
     ))
     session.add_all([Scan(
         scanid = 1,
@@ -676,7 +677,7 @@ class JobMetabolitesTestCase(unittest.TestCase):
                     'mol': u'Molfile',
                     'molformula': u'C6H6O2',
                     'nhits': None,
-                    'nr_scans': 1,
+                    'nhits': 1,
                     'origin': u'pyrocatechol',
                     'probability': 1.0,
                     'reactionsequence': u'PARENT',
@@ -688,7 +689,7 @@ class JobMetabolitesTestCase(unittest.TestCase):
                     'isquery': True, 'level': 0, 'metid': 352, 'mol': u"Molfile of dihydroxyphenyl-valerolactone",
                     'molformula': u"C11H12O4",
                     'nhits': None,
-                    'nr_scans': 1,
+                    'nhits': 1,
                     'origin': u"dihydroxyphenyl-valerolactone",
                     'probability': 1, 'reactionsequence': u"PARENT",
                     'smiles': u"O=C1OC(Cc2ccc(O)c(O)c2)CC1",
@@ -706,15 +707,15 @@ class JobMetabolitesTestCase(unittest.TestCase):
         self.assertEqual(response['total'], 1)
 
     def test_filteredon_nrscanseq(self):
-        response = self.job.metabolites(filters=[{"type":"numeric","comparison":"eq","value":1,"field":"nr_scans"}])
+        response = self.job.metabolites(filters=[{"type":"numeric","comparison":"eq","value":1,"field":"nhits"}])
         self.assertEqual(response['total'], 2)
 
     def test_filteredon_nrscansgt(self):
-        response = self.job.metabolites(filters=[{"type":"numeric","comparison":"lt","value":2,"field":"nr_scans"}])
+        response = self.job.metabolites(filters=[{"type":"numeric","comparison":"lt","value":2,"field":"nhits"}])
         self.assertEqual(response['total'], 2)
 
     def test_filteredon_nrscanslt(self):
-        response = self.job.metabolites(filters=[{"type":"numeric","comparison":"gt","value":0,"field":"nr_scans"}])
+        response = self.job.metabolites(filters=[{"type":"numeric","comparison":"gt","value":0,"field":"nhits"}])
         self.assertEqual(response['total'], 2)
 
     def test_filteredon_isquery(self):
@@ -760,7 +761,7 @@ class JobMetabolitesTestCase(unittest.TestCase):
         self.assertEqual(response['total'], 2)
 
     def test_sort_nrscans(self):
-        response = self.job.metabolites(sorts=[{"property":"nr_scans","direction":"DESC"}])
+        response = self.job.metabolites(sorts=[{"property":"nhits","direction":"DESC"}])
         self.assertEqual(response['total'], 2)
 
     def test_sort_assigned(self):
@@ -797,14 +798,14 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
         csvwriter = csv.DictWriter(expected_csvfile, [
                                                   'name', 'smiles', 'probability',
                                                   'reactionsequence',
-                                                  'nr_scans', 'molformula', 'mim',
+                                                  'nhits', 'molformula', 'mim',
                                                   'isquery', 'logp', 'reference'
                                                   ])
         csvwriter.writeheader()
         csvwriter.writerow({
                             'name': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
                             'probability': 1.0, 'reactionsequence': 'PARENT',
-                            'nr_scans': 1, 'molformula': 'C6H6O2',
+                            'nhits': 1, 'molformula': 'C6H6O2',
                             'isquery': True, 'mim': 110.03677, 'logp':1.231,
                             'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
                             })
@@ -812,7 +813,7 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
                             'name': 'dihydroxyphenyl-valerolactone',
                             'smiles': 'O=C1OC(Cc2ccc(O)c(O)c2)CC1',
                             'probability': 1.0, 'reactionsequence': 'PARENT',
-                            'nr_scans': 1, 'molformula': 'C11H12O4',
+                            'nhits': 1, 'molformula': 'C11H12O4',
                             'isquery': True, 'mim': 208.07355, 'logp':2.763,
                             'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=152432">CID: 152432</a>',
                             })
@@ -825,14 +826,14 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
         csvwriter = csv.DictWriter(expected_csvfile, [
                                                   'name', 'smiles', 'probability',
                                                   'reactionsequence',
-                                                  'nr_scans', 'molformula', 'mim',
+                                                  'nhits', 'molformula', 'mim',
                                                   'isquery', 'logp', 'reference', 'score'
                                                   ])
         csvwriter.writeheader()
         csvwriter.writerow({
                             'name': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
                             'probability': 1.0, 'reactionsequence': 'PARENT',
-                            'nr_scans': 1, 'molformula': 'C6H6O2',
+                            'nhits': 1, 'molformula': 'C6H6O2',
                             'isquery': True, 'score': 200.0, 'mim': 110.03677, 'logp':1.231,
                             'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
                             })
@@ -859,7 +860,7 @@ Oc1ccccc1O
 > <reactionsequence>
 PARENT
 
-> <nr_scans>
+> <nhits>
 1
 
 > <molformula>
@@ -887,7 +888,7 @@ O=C1OC(Cc2ccc(O)c(O)c2)CC1
 > <reactionsequence>
 PARENT
 
-> <nr_scans>
+> <nhits>
 1
 
 > <molformula>
@@ -923,7 +924,7 @@ Oc1ccccc1O
 > <reactionsequence>
 PARENT
 
-> <nr_scans>
+> <nhits>
 1
 
 > <molformula>
@@ -973,7 +974,7 @@ class JobScansWithMetabolitesTestCase(unittest.TestCase):
         }])
 
     def test_nrscans(self):
-        response = self.job.scansWithMetabolites(filters=[{"type":"numeric","value":"1", "comparison":"eq","field":"nr_scans"}])
+        response = self.job.scansWithMetabolites(filters=[{"type":"numeric","value":"1", "comparison":"eq","field":"nhits"}])
         self.assertEqual(response, [
             {'id': 641, 'rt': 933.317},
             {'id': 870, 'rt': 1254.15}
@@ -1205,7 +1206,7 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                     'mol': u'Molfile',
                     'molformula': u'C11H12O7S',
                     'nhits': None,
-                    'nr_scans': 1,
+                    'nhits': 1,
                     'origin': u'5-(3,4)-dihydroxyphenyl-g-valerolactone (F)',
                     'probability': 0.119004,
                     'reactionsequence': u'sulfation_(aromatic_hydroxyl)',
