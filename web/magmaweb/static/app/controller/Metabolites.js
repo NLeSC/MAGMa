@@ -144,7 +144,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
    */
   onLaunch: function() {
       // store not loaded in init because metaboliteload event is fired before listeners of views are registerd
-      // the nr_scans column has an active filter
+      // the nhits column has an active filter
       // so do not use list.store.load() , but trigger a filter update to load
       this.getMetaboliteList().filters.createFilters();
       this.getMetabolitesStore().load();
@@ -212,7 +212,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
    * The extracted ion chromatogram of a metabolite without scans can not be shown because it can not be selected.
    */
   beforeSelect: function(rm, metabolite) {
-    return (metabolite.data.nr_scans > 0);
+    return (metabolite.data.nhits > 0);
   },
   onSelect: function(rm, metabolite) {
     var metid = metabolite.data.metid;

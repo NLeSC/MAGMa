@@ -175,8 +175,8 @@ class ViewsTestCase(unittest.TestCase):
         job.metabolites.assert_called_with(start=0, limit=10, sorts=[],scanid=641, filters=[])
 
     def test_metabolitesjson_nrscaneqfilter(self):
-        filter_in = '[{"type":"numeric","comparison":"eq","value":1,"field":"nr_scans"}]'
-        filter_expected = [{"type":"numeric","comparison":"eq","value":1,"field":"nr_scans"}]
+        filter_in = '[{"type":"numeric","comparison":"eq","value":1,"field":"nhits"}]'
+        filter_expected = [{"type":"numeric","comparison":"eq","value":1,"field":"nhits"}]
         request = testing.DummyRequest(params={
                                                'start':0,
                                                'limit':10,

@@ -112,7 +112,7 @@ class Views(object):
                "rows" : [
                   {
                      "mol" : "molblock ...",
-                     "nhits" : null,
+                     "nhits" : 2,
                      "metid" : 23,
                      "probability" : 0.248155,
                      "origin" : "5-(3,4)-dihydroxyphenyl-g-valerolactone (F)",
@@ -123,12 +123,11 @@ class Views(object):
                      "molformula" : "C17H22O9",
                      "logp" : -0.615300000000001,
                      "mim" : 370.1263823051,
-                     "nr_scans" : 2,
                      "reactionsequence" : "O-glucuronidation_(aromatic_hydroxyl)"
                   },
                   {
                      "mol" : " molblock ...",
-                     "nhits" : null,
+                     "nhits" : 2,
                      "metid" : 24,
                      "probability" : 0.248155,
                      "origin" : "5-(3,4)-dihydroxyphenyl-g-valerolactone (F)",
@@ -139,7 +138,6 @@ class Views(object):
                      "molformula" : "C17H22O9",
                      "logp" : -0.615300000000001,
                      "mim" : 370.1263823051,
-                     "nr_scans" : 2,
                      "reactionsequence" : "O-glucuronidation_(aromatic_hydroxyl)"
                   }
                ]
