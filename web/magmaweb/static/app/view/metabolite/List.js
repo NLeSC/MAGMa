@@ -74,7 +74,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         {text: 'Reaction sequence', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }, renderer: function(v) {
           return '<ol><li>'+v.replace("\n","</li><li>")+'</li></ol>';
         }},
-        {text: 'Scans', dataIndex: 'nr_scans', filter: {
+        {text: 'Scans', dataIndex: 'nhits', filter: {
             type: 'numeric', value:{gt:0}, active: true
         }},
         {text: 'Smiles', dataIndex: 'smiles', hidden:true},

@@ -1,4 +1,4 @@
-"name","smiles","probability","reactionsequence","nr_scans","molformula","mim","isquery"
+"name","smiles","probability","reactionsequence","nhits","molformula","mim","isquery"
 "(epi)catechin","Oc1cc(O)c2c(c1)OC(c1ccc(O)c(O)c1)C(O)C2",1,"PARENT",,"C15H14O6",290.07902,"True"
 "(epi)gallocatechin","Oc1cc(O)c2c(c1)OC(c1cc(O)c(O)c(O)c1)C(O)C2",1,"PARENT",,"C15H14O7",306.07394,"True"
 "(epi)catechin 3-gallate","O=C(OC1Cc2c(cc(O)cc2O)OC1c1ccc(O)c(O)c1)c1cc(O)c(O)c(O)c1",1,"PARENT",,"C22H18O10",442.08998,"True"
