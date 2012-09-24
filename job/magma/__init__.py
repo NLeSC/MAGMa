@@ -629,24 +629,24 @@ class AnnotateEngine(object):
                     print str(peak.mz)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
 
-    def search_all_structures(self):
-        logging.warn('Searching all structures')
-        for structure in self.db_session.query(Metabolite).all():
-            structure.nhits=search_structure(structure,self.scans)
+#    def search_all_structures(self):
+#        logging.warn('Searching all structures')
+#        for structure in self.db_session.query(Metabolite).all():
+#            structure.nhits=search_structure(structure,self.scans)
 
-    def search_some_structures(self,metids):
-        logging.warn('Searching some structures')
+    def search_structures(self,metids=None,ncpus=1):
+        logging.warn('Searching structures')
         ppservers = ()
-        ncpus=4
+        logging.warn('calculating on '+str(ncpus)+' cpus !!!')
         job_server = pp.Server(ncpus, ppservers=ppservers)
 #        peak=types.PeakType(0,0,0,0)
 #        print peak.__module__
 #        print type(peak.__module__)
 #        exit()
-        print metids
-
-        #for structure in self.db_session.query(Metabolite).filter(Metabolite.metid.in_(metids)).all():
-            #hits=job_server.submit(sum_primes,(input,), (isprime,), ("math",))
+        if metids==None:
+            structures = self.db_session.query(Metabolite).all()
+        else:
+            structures = self.db_session.query(Metabolite).filter(Metabolite.metid.in_(metids)).all()
         jobs=[(structure.origin,structure.metid,
                job_server.submit(search_structure,(structure,
                           self.scans,
@@ -663,7 +663,7 @@ class AnnotateEngine(object):
                           "jpype",
                           "magma.types"
                           )
-                       )) for structure in self.db_session.query(Metabolite).filter(Metabolite.metid.in_(metids)).all()]
+                       )) for structure in structures]
         global fragid
         fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
         if fragid == None:
