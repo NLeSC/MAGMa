@@ -836,90 +836,57 @@ class JobMetabolites2sdfTestCase(unittest.TestCase):
         self.job = Job(uuid.uuid1(), initTestingDB(), '/tmp')
 
     def test_it(self):
+        self.maxDiff= None
         sdffile = self.job.metabolites2sdf(self.job.metabolites()['rows'])
 
-        expected_sdf = """Molfile
-> <name>
-
+        expected_sdf = """Molfile> <name>
 pyrocatechol
 
-
 > <smiles>
-
 Oc1ccccc1O
 
-
 > <probability>
-
 1.0
 
-
 > <reactionsequence>
-
 PARENT
 
-
 > <nr_scans>
-
 1
 
-
 > <molformula>
-
 C6H6O2
 
-
 > <mim>
-
 110.03677
 
-
 > <logp>
-
 1.231
 
-
 $$$$
-Molfile of dihydroxyphenyl-valerolactone
-> <name>
-
+Molfile of dihydroxyphenyl-valerolactone> <name>
 dihydroxyphenyl-valerolactone
 
-
 > <smiles>
-
 O=C1OC(Cc2ccc(O)c(O)c2)CC1
 
-
 > <probability>
-
 1.0
 
-
 > <reactionsequence>
-
 PARENT
 
-
 > <nr_scans>
-
 1
 
-
 > <molformula>
-
 C11H12O4
 
-
 > <mim>
-
 208.07355
 
-
 > <logp>
-
 2.763
-
 
 $$$$
 """
@@ -930,51 +897,32 @@ $$$$
         """Include score prop"""
         sdffile = self.job.metabolites2sdf(self.job.metabolites(scanid=641)['rows'])
 
-        expected_sdf = """Molfile
-> <name>
-
+        expected_sdf = """Molfile> <name>
 pyrocatechol
 
-
 > <smiles>
-
 Oc1ccccc1O
 
-
 > <probability>
-
 1.0
 
-
 > <reactionsequence>
-
 PARENT
 
-
 > <nr_scans>
-
 1
 
-
 > <molformula>
-
 C6H6O2
 
-
 > <mim>
-
 110.03677
 
-
 > <logp>
-
 1.231
 
-
 > <score>
-
 200.0
-
 
 $$$$
 """
