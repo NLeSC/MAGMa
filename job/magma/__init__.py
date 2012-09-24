@@ -314,7 +314,7 @@ class StructureEngine(object):
         metids=[]
         line=reactor.stdout.readline()
         while line != "":
-            name=line
+            name=line[:-1]
             mol=line
             isquery=0
             while line != 'M  END\n':
@@ -334,8 +334,9 @@ class StructureEngine(object):
                         line=reactor.stdout.readline()
                     if sequence=='PARENT\n':
                         isquery=1
+                    reactionsequence=sequence[:-1]
                 line=reactor.stdout.readline()
-            metids.append(self.add_structure(mol,name,prob,level,sequence,isquery))
+            metids.append(self.add_structure(mol,name,prob,level,reactionsequence,isquery))
             line=reactor.stdout.readline()
         reactor.stdout.close()
         self.db_session.commit()
@@ -731,6 +732,21 @@ class DataAnalysisEngine(object):
             print "> <rt>\n"+str(self.db_session.query(Scan.rt).filter(Scan.scanid==peak.scanid).all()[0][0])+"\n"
             print "> <molecular formula>\n"+metabolite.molformula+"\n"
             print "$$$$"
+
+    def write_SDF(self,molecules=None,columns=None,sortcolumn=None,descend=False):
+        if molecules==None:
+            if descend:
+                molecules=self.db_session.query(Metabolite).order_by(desc(sortcolumn)).all()
+            else:
+                molecules=self.db_session.query(Metabolite).order_by(sortcolumn).all()
+        for molecule in molecules:
+            print molecule.mol[:-1]
+            if columns==None:
+                columns=dir(molecule)
+            for column in columns:
+                if column[:1] != '_' and column != 'mol' and column != 'metadata':
+                    print '> <'+column+'>\n'+str(molecule.__getattribute__(column))+'\n'
+            print '$$$$'
 
 def search_structure(structure,scans,max_broken_bonds,max_small_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode):
     print "test3"
