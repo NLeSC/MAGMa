@@ -718,7 +718,8 @@ class Job(object):
                 'nr_scans': r.nr_scans,
                 'mim': met.mim,
                 'logp': met.logp,
-                'assigned': r.assigned>0
+                'assigned': r.assigned>0,
+                'reference': met.reference
             }
             if ('score' in r.keys()):
                 row['score'] = r.score
@@ -739,7 +740,8 @@ class Job(object):
         csvstr = StringIO.StringIO()
         headers = [
                    'name', 'smiles', 'probability', 'reactionsequence',
-                   'nr_scans', 'molformula', 'mim' , 'isquery', 'logp'
+                   'nr_scans', 'molformula', 'mim' , 'isquery', 'logp',
+                   'reference'
                    ]
         if ('score' in metabolites[0].keys()):
             headers.append('score')
@@ -763,7 +765,8 @@ class Job(object):
         """
         str = ''
         props = ['name', 'smiles', 'probability', 'reactionsequence',
-                   'nr_scans', 'molformula', 'mim' , 'logp']
+                 'nr_scans', 'molformula', 'mim' , 'logp',
+                 'reference']
         if ('score' in metabolites[0].keys()):
             props.append('score')
 
