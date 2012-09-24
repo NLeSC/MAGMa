@@ -89,6 +89,7 @@ class MagmaCommand(object):
         sc.add_argument('-u', '--use_all_peaks', help="Annotate all level 1 peaks, including those not fragmented (default: %(default)s)", action="store_true")
         sc.add_argument('-f', '--skip_fragmentation', help="Skip substructure annotation of fragment peaks", action="store_true")
         sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["chebi","pubchem"])
+        sc.add_argument('--ncpus', help="Number of parallel cpus to use for annotation (default: %(default)s)", default=1,type=int)
         sc.add_argument('--scans', help="Search in specified scans (default: %(default)s)", default="all",type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
@@ -206,7 +207,7 @@ class MagmaCommand(object):
                scans.add(int(s))
         annotate_engine.build_spectra(scans)
         if args.metids == None:
-            annotate_engine.search_all_structures()
+            annotate_engine.search_structures()
         else:
             annotate_engine.search_some_structures(args.metids)
         if args.structure_database == 'chebi':
@@ -218,7 +219,7 @@ class MagmaCommand(object):
                     metids.add(struct_engine.add_structure(str(candidates[id][0]),str(candidates[id][1]),1.0,1,"",1))
                 except:
                     pass
-            annotate_engine.search_some_structures(metids)
+            annotate_engine.search_structures(metids=metids,ncpus=args.ncpus)
         if args.structure_database == 'pubchem':
             struct_engine = magma_session.get_structure_engine()
             candidates=annotate_engine.get_pubchem_candidates()
@@ -226,7 +227,7 @@ class MagmaCommand(object):
             for id in candidates:
                 try:
                     cid=str(candidates[id]['cid'])
-                    metid=struct_engine.add_structure(molblock=candidates[id]['mol'],
+                    metids.add(struct_engine.add_structure(molblock=candidates[id]['mol'],
                                        name=candidates[id]['name']+' ('+cid+')',
                                        mim=candidates[id]['mim'],
                                        molform=candidates[id]['molform'],
@@ -238,9 +239,14 @@ class MagmaCommand(object):
                                        reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
                                                  cid+'">'+cid+' (PubChem)</a>'
                                        )
-                    annotate_engine.search_some_structures(set([metid]))
+                               )
                 except:
                     logging.warn('Could not parse compound: ' + str(candidates[id]['cid']))
+                if len(metids)>499:
+                    annotate_engine.search_structures(metids=metids,ncpus=args.ncpus)
+                    magma_session.commit
+                    metids=set([])
+            annotate_engine.search_structures(metids=metids)
         magma_session.commit()
             # annotate_engine.search_some_structures(metids)
 
