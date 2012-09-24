@@ -4,6 +4,7 @@ from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPNotFound, HTTPFound
 from pyramid.security import unauthenticated_userid
 from magmaweb.job import make_job_factory
+from magmaweb.user import get_jobs
 
 @view_config(route_name='home', renderer='home.mak', request_method='GET', permission='view')
 def home(request):
@@ -76,6 +77,10 @@ class Views(object):
         jobid = self.jobid()
         jobstate = self.job_factory.state(jobid)
         return dict(status=jobstate, jobid=jobid)
+
+    @view_config(route_name='jobs', permission='view', renderer='jobs.mak')
+    def jobs(self):
+        return {'jobs': get_jobs(unauthenticated_userid(self.request)) }
 
 class JobViews(object):
     """Views for pyramid based web application with job"""

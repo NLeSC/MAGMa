@@ -121,6 +121,11 @@ class TestGrant(unittest.TestCase):
         r = self.session.query(user.Job).get('12345')
         self.assertEqual(r.description, 'My desc')
 
+    def test_get_my_jobs(self):
+        user.grant('owner', '12345', 'me')
+
+        self.assertListEqual([{'id':'12345', 'description':'My job'}], user.get_jobs('me'))
+
 class TestGroupFinder(unittest.TestCase):
     def setUp(self):
         init_user_db()
