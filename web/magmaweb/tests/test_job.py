@@ -41,7 +41,8 @@ def populateTestingDB(session):
         metid=72, mol='Molfile', level=0, probability=1.0,
         reactionsequence='PARENT', smiles='Oc1ccccc1O',
         molformula='C6H6O2', isquery=True,
-        origin='pyrocatechol', mim=110.03677, logp=1.231
+        origin='pyrocatechol', mim=110.03677, logp=1.231,
+        reference='<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
     ))
     session.add(Scan(
         scanid=641, mslevel=1, rt=933.317, lowmz=90.3916, highmz=1197.78,
@@ -70,6 +71,7 @@ def populateTestingDB(session):
         origin="dihydroxyphenyl-valerolactone",
         probability=1.0, reactionsequence="PARENT",
         smiles="O=C1OC(Cc2ccc(O)c(O)c2)CC1",
+        reference='<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=152432">CID: 152432</a>',
         mim=208.07355, logp=2.763
     ))
     session.add_all([Scan(
@@ -136,6 +138,7 @@ def populateWithUseAllPeaks(session):
         isquery = False,
         origin = '5-(3,4)-dihydroxyphenyl-g-valerolactone (F)',
         mol = 'Molfile',
+        reference='',
         mim = 288.0303734299,
         logp = 1.9027
     ))
@@ -679,7 +682,8 @@ class JobMetabolitesTestCase(unittest.TestCase):
                     'reactionsequence': u'PARENT',
                     'smiles': u'Oc1ccccc1O',
                     'mim': 110.03677, 'logp':1.231,
-                    'assigned': False
+                    'assigned': False,
+                    'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
                 },{
                     'isquery': True, 'level': 0, 'metid': 352, 'mol': u"Molfile of dihydroxyphenyl-valerolactone",
                     'molformula': u"C11H12O4",
@@ -689,7 +693,8 @@ class JobMetabolitesTestCase(unittest.TestCase):
                     'probability': 1, 'reactionsequence': u"PARENT",
                     'smiles': u"O=C1OC(Cc2ccc(O)c(O)c2)CC1",
                     'mim': 208.07355, 'logp':2.763,
-                    'assigned': False
+                    'assigned': False,
+                    'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=152432">CID: 152432</a>'
                 }]
             }
         )
@@ -793,21 +798,23 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
                                                   'name', 'smiles', 'probability',
                                                   'reactionsequence',
                                                   'nr_scans', 'molformula', 'mim',
-                                                  'isquery', 'logp'
+                                                  'isquery', 'logp', 'reference'
                                                   ])
         csvwriter.writeheader()
         csvwriter.writerow({
                             'name': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
                             'probability': 1.0, 'reactionsequence': 'PARENT',
                             'nr_scans': 1, 'molformula': 'C6H6O2',
-                            'isquery': True, 'mim': 110.03677, 'logp':1.231
+                            'isquery': True, 'mim': 110.03677, 'logp':1.231,
+                            'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
                             })
         csvwriter.writerow({
                             'name': 'dihydroxyphenyl-valerolactone',
                             'smiles': 'O=C1OC(Cc2ccc(O)c(O)c2)CC1',
                             'probability': 1.0, 'reactionsequence': 'PARENT',
                             'nr_scans': 1, 'molformula': 'C11H12O4',
-                            'isquery': True, 'mim': 208.07355, 'logp':2.763
+                            'isquery': True, 'mim': 208.07355, 'logp':2.763,
+                            'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=152432">CID: 152432</a>',
                             })
         self.assertMultiLineEqual(csvfile.getvalue(), expected_csvfile.getvalue())
 
@@ -819,14 +826,15 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
                                                   'name', 'smiles', 'probability',
                                                   'reactionsequence',
                                                   'nr_scans', 'molformula', 'mim',
-                                                  'isquery', 'logp', 'score'
+                                                  'isquery', 'logp', 'reference', 'score'
                                                   ])
         csvwriter.writeheader()
         csvwriter.writerow({
                             'name': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
                             'probability': 1.0, 'reactionsequence': 'PARENT',
                             'nr_scans': 1, 'molformula': 'C6H6O2',
-                            'isquery': True, 'score': 200.0, 'mim': 110.03677, 'logp':1.231
+                            'isquery': True, 'score': 200.0, 'mim': 110.03677, 'logp':1.231,
+                            'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
                             })
         self.assertMultiLineEqual(csvfile.getvalue(), expected_csvfile.getvalue())
 
@@ -863,6 +871,9 @@ C6H6O2
 > <logp>
 1.231
 
+> <reference>
+<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>
+
 $$$$
 Molfile of dihydroxyphenyl-valerolactone> <name>
 dihydroxyphenyl-valerolactone
@@ -887,6 +898,9 @@ C11H12O4
 
 > <logp>
 2.763
+
+> <reference>
+<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=152432">CID: 152432</a>
 
 $$$$
 """
@@ -920,6 +934,9 @@ C6H6O2
 
 > <logp>
 1.231
+
+> <reference>
+<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>
 
 > <score>
 200.0
@@ -1194,7 +1211,8 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                     'reactionsequence': u'sulfation_(aromatic_hydroxyl)',
                     'smiles': u'Oc1ccc(CC2OC(=O)CC2)cc1OS(O)(=O)=O',
                     'mim': 288.0303734299, 'logp':1.9027,
-                    'assigned': False
+                    'assigned': False,
+                    'reference': ''
                 }]
             }
         )

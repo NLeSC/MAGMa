@@ -31,6 +31,7 @@ class Metabolite(Base):
     nhits = Column(Integer)
     mim = Column(Float) #: Monoisotopic mass
     logp = Column(Float) #: Calculated logP
+    reference = Column(Unicode)
     fragments = relationship('Fragment', backref='metabolite') #: each metabolite is fragmented into fragments
 
 class Scan(Base):
@@ -74,6 +75,7 @@ class Fragment(Base):
     deltah = Column(Float)
     # (mz+deltah*1.007825032-mass)/(mz*1e6)  as deltappm
     deltappm = Column(Float)
+    inchikey = Column(Unicode)
     #: A fragment can have child fragments
     children = relationship('Fragment', backref=backref('parent', remote_side=[fragid]), lazy='joined', join_depth=1)
     __table_args__ = (ForeignKeyConstraint(['scanid', 'mz'],

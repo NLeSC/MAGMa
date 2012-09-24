@@ -85,6 +85,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         {text: '&Delta;Mass (ppm)', dataIndex: 'deltappm', hidden: true, filter: { type: 'numeric' }},
         {text: 'Assigned', dataIndex: 'assigned', hidden: false, xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
         {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true},
+        {text: 'Reference', dataIndex: 'reference', filter: { type: 'string' }, sortable: false },
         {xtype: 'actioncolumn', width:30, text:'Commands',
             items: [{
                 tooltip: 'Metabolize',
