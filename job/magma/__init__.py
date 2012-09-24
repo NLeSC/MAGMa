@@ -671,7 +671,7 @@ class AnnotateEngine(object):
         for origin,metid,job in jobs:
             raw_result=job(raw_result=True)
             hits,sout = pickle.loads(raw_result)
-            print sout
+            # print sout
             sys.stderr.write('\nMetabolite '+str(metid)+': '+str(origin)+'\n')
             for hit in hits:
                 sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
@@ -749,12 +749,6 @@ class DataAnalysisEngine(object):
             print '$$$$'
 
 def search_structure(structure,scans,max_broken_bonds,max_small_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode):
-    print "test3"
-    print 'Structure: '+str(structure.metid)+"\tmim: "+str(structure.mim)
-#    peak=types.PeakType(0,0,0,0)
-#    print peak.__module__
-#    print type(peak.__module__)
-#    exit()
     Fragmented=False
     Chem=CDKengine()
     mol=Chem.MolFromMolBlock(str(structure.mol))
@@ -1075,12 +1069,26 @@ def search_structure(structure,scans,max_broken_bonds,max_small_losses,precision
                     total_score+=min(besthit.score,childpeak.missing_fragment_score)
                     # total_score+=min(besthit.score,missingfragmentpenalty)*weight
             hit.score = hit.score + total_score
-        for atom in range(mol.getAtomCount()):
-            if ((1<<atom) & hit.fragment):
-                hit.atomstring+=','+str(atom)
-                hit.atomlist.append(atom)
-        hit.inchikey=Chem.FragmentToInchiKey(mol,hit.atomlist)[:14]
         return hit
+
+    def add_fragment_data_to_hit(hit):
+        atomlist=[]
+        atomstring=''
+        if hit.fragment != 0:
+            for atom in range(mol.getAtomCount()):
+                if ((1<<atom) & hit.fragment):
+                    atomstring+=','+str(atom)
+                    atomlist.append(atom)
+            hit.atomstring=atomstring
+            hit.atomlist=atomlist
+            try:
+                hit.inchikey=Chem.FragmentToInchiKey(mol,hit.atomlist)[:14]
+            except:
+                exit('failted inchi for: '+atomstring+'--'+str(hit.fragment))
+            if len(hit.besthits)>0:
+                for childhit in hit.besthits:
+                    if childhit != None: # still need to work out how to deal with missed fragments
+                        add_fragment_data_to_hit(childhit)
 
 # for peak in self.db_session.query(Peak).filter(Scan.mslevel)==1.filter(Peak.intensity>MSfilter)
     hits=[]
@@ -1091,14 +1099,16 @@ def search_structure(structure,scans,max_broken_bonds,max_small_losses,precision
                 deltaH=massmatch(peak,structure.mim,protonation,protonation)
                 if type(deltaH)==int:
                     if not Fragmented:
-                        sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+' '+str(structure.reactionsequence)+'\n')
-                        sys.stderr.write('Mim: '+str(structure.mim)+'\n')
+                        #sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+' '+str(structure.reactionsequence)+'\n')
+                        #sys.stderr.write('Mim: '+str(structure.mim)+'\n')
                         fragment_engine=FragmentationEngine(mol)
                         #fragment_engine=GrowingEngine(mol)
                         fragment_engine.generate_fragments()
-                        sys.stderr.write('N fragments kept: '+str(len(fragment_engine.fragments))+"\n")
+                        #sys.stderr.write('N fragments kept: '+str(len(fragment_engine.fragments))+"\n")
                         Fragmented=True
-                    hits.append(gethit(peak,(1<<mol.getAtomCount())-1,0,0,structure.mim,-deltaH))
+                    hit=gethit(peak,(1<<mol.getAtomCount())-1,0,0,structure.mim,-deltaH)
+                    add_fragment_data_to_hit(hit)
+                    hits.append(hit)
     return hits
 
 
