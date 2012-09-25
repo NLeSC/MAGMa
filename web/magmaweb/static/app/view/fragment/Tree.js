@@ -65,7 +65,7 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
       canvasClass: 'x-chemdoodle-cols2',
       width: 162,
       initCanvas: function(id, width, height, value,record) {
-        var c = new ChemDoodle.ViewerCanvas(id, width, height,true);
+        var c = new ChemDoodle.ViewerCanvas(id, width, height);
         c.specs.bonds_color = 'cyan';
         c.specs.atoms_color = 'cyan';
         var m = ChemDoodle.readMOL(value);
@@ -85,6 +85,18 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
           }
         });
         c.loadMolecule(m);
+        var tip = Ext.create('Ext.tip.ToolTip', {
+            target: id,
+            listeners: {
+                render: function(tip,e) {
+                    console.log('Drawing tooltip for '+id);
+                    var c = new ChemDoodle.ViewerCanvas(id+'-'+tip.id, 300, 300);
+                    c.loadMolecule(ChemDoodle.readMOL(value));
+                }
+            }
+         });
+        // if canvas doesn't have tip.id then tooltip is rendered twice, once with molecule, once halfheight blue
+        tip.update('<canvas id="'+id+'-'+tip.id+'"></canvas>');
       }
     });
 
