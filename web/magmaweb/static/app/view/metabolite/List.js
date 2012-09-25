@@ -47,7 +47,21 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
     var me = this;
     var molcol = Ext.create('Esc.chemdoodle.Column', {
       text: 'Molecule', dataIndex: 'mol',
-      width: 162
+      width: 162,
+      initCanvas: function(id, width, height, value, record) {
+        var c = new ChemDoodle.ViewerCanvas(id, width, height);
+        c.loadMolecule(ChemDoodle.readMOL(value));
+        var tip = Ext.create('Ext.tip.ToolTip', {
+          target: id,
+          html: '<canvas id="'+id+'-tp"></canvas>',
+          listeners: {
+            render: function(tip) {
+              var c = new ChemDoodle.ViewerCanvas(id+'-tp', 300, 300);
+              c.loadMolecule(ChemDoodle.readMOL(value));
+            }
+          }
+        });
+      }
     });
 
     var mfilters = Ext.create('Ext.ux.grid.FiltersFeature',{
