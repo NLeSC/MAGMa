@@ -997,6 +997,10 @@ class JobScansWithMetabolitesTestCase(unittest.TestCase):
         response = self.job.scansWithMetabolites(filters=[{"type":"boolean","value": True,"field":"assigned"}])
         self.assertEqual(response, [])
 
+    def test_filteredon_nrscansgt_and_molformula(self):
+        response = self.job.scansWithMetabolites(filters=[{"type":"numeric","comparison":"lt","value":2,"field":"nhits"}, {"type":"string","value":"C6","field":"molformula"}])
+        self.assertEqual(len(response), 1)
+
 class JobMSpectraTestCase(unittest.TestCase):
     def setUp(self):
         import uuid
