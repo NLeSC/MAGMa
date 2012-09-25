@@ -792,7 +792,7 @@ class Job(object):
                 fq = fq.join(Peak, and_(Fragment.scanid==Peak.scanid, Fragment.mz==Peak.mz))
                 fq = self.extjsgridfilter(fq, Peak.assigned_metid, filter)
             else:
-                fq = fq.join(Metabolite)
+                fq = fq.join(Metabolite, Fragment.metabolite)
                 fq = self.extjsgridfilter(
                                           fq,
                                           Metabolite.__dict__[filter['field']], #@UndefinedVariable
