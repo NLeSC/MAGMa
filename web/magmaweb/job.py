@@ -811,9 +811,9 @@ class Job(object):
         """Returns extracted ion chromatogram of metabolite with id metid """
         chromatogram = []
         mzq = self.session.query(func.avg(Fragment.mz)).filter(Fragment.metid == metid).filter(Fragment.parentfragid == 0).scalar()
-        mzoffset = self.session.query(Run.mz_precision).scalar()
+        precision = 1+self.session.query(Run.mz_precision).scalar()/1e6
         # fetch max intensity of peaks with mz = mzq+-mzoffset
-        for (rt, intens) in self.session.query(Scan.rt, func.max(Peak.intensity)).outerjoin(Peak, and_(Peak.scanid == Scan.scanid, Peak.mz.between(mzq - mzoffset, mzq + mzoffset))).filter(Scan.mslevel == 1).group_by(Scan.rt).order_by(asc(Scan.rt)):
+        for (rt, intens) in self.session.query(Scan.rt, func.max(Peak.intensity)).outerjoin(Peak, and_(Peak.scanid == Scan.scanid, Peak.mz.between(mzq/precision, mzq*precision))).filter(Scan.mslevel == 1).group_by(Scan.rt).order_by(asc(Scan.rt)):
             chromatogram.append({
                 'rt': rt,
                 'intensity': intens or 0
@@ -972,8 +972,8 @@ class Job(object):
             return StringIO.StringIO()
 
     def _peak(self, scanid, mz):
-        mzoffset = self.session.query(Run.mz_precision).scalar()
-        # fetch max intensity of peaks with mz = mzq+-mzoffset
+        mzoffset = 1e-6 # precision for comparing floating point values 
+        # fetch peak corresponding to given scanid and mz
         return self.session.query(Peak).filter(Peak.scanid==scanid).filter(Peak.mz.between(float(mz) - mzoffset, float(mz) + mzoffset)).one()
 
     def assign_metabolite2peak(self, scanid, mz, metid):

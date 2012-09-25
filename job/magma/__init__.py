@@ -264,7 +264,6 @@ class StructureEngine(object):
             self.db_session.add(metab)
             self.db_session.flush()
             sys.stderr.write('Added: '+name+'\n')
-        print metab.metid
         return metab.metid
             # print 'Added structure:',sequence
 
