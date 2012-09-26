@@ -785,7 +785,7 @@ class Job(object):
             fq = fq.filter(Fragment.metid == metid)
 
         for filter in filters:
-            if (filter['field'] == 'nhits'):
+            if (filter['field'] == 'nhits' and filter['comparison'] == 'gt' and filter['value'] == 0):
                 continue
             if (filter['field'] == 'score'):
                 fq = self.extjsgridfilter(fq, Fragment.score, filter)
