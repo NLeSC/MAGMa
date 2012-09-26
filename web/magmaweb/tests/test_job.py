@@ -32,9 +32,9 @@ def populateTestingDB(session):
         n_reaction_steps=2, metabolism_types='phase1,phase2' ,
         ionisation_mode=-1, skip_fragmentation=True,
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
-        mz_precision=0.01, use_all_peaks=True,
+        mz_precision=10, use_all_peaks=True,
         ms_filename = 'F123456.mzxml', abs_peak_cutoff=1000,
-        rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=0.01,
+        rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=10,
         max_broken_bonds=4, description='My first description'
     ))
     session.add(Metabolite(
@@ -123,9 +123,9 @@ def populateWithUseAllPeaks(session):
         n_reaction_steps=2, metabolism_types='phase1,phase2' ,
         ionisation_mode=-1, skip_fragmentation=True,
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
-        mz_precision=0.01, use_all_peaks=False,
+        mz_precision=10, use_all_peaks=False,
         ms_filename = 'F123456.mzxml', abs_peak_cutoff=1000,
-        rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=0.01,
+        rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=10,
         max_broken_bonds=4, description='My second description'
     ))
     session.add(Metabolite(
@@ -481,14 +481,14 @@ class JobTestCase(unittest.TestCase):
         self.assertEqual(runInfo.abs_peak_cutoff, 1000)
         self.assertEqual(runInfo.rel_peak_cutoff, 0.001)
         self.assertEqual(runInfo.max_ms_level, 3)
-        self.assertEqual(runInfo.precursor_mz_precision, 0.01)
+        self.assertEqual(runInfo.precursor_mz_precision, 10)
 
         self.assertEqual(runInfo.ionisation_mode, -1)
         self.assertEqual(runInfo.skip_fragmentation, True)
         self.assertEqual(runInfo.max_broken_bonds, 4)
         self.assertEqual(runInfo.ms_intensity_cutoff, 200000.0)
         self.assertEqual(runInfo.msms_intensity_cutoff, 0.5)
-        self.assertEqual(runInfo.mz_precision, 0.01)
+        self.assertEqual(runInfo.mz_precision, 10)
         self.assertEqual(runInfo.use_all_peaks, True)
         self.assertEqual(runInfo.description, 'My first description')
 
@@ -497,9 +497,9 @@ class JobTestCase(unittest.TestCase):
             n_reaction_steps=2, metabolism_types='phase1,phase2' ,
             ionisation_mode=-1, skip_fragmentation=True,
             ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
-            mz_precision=0.01, use_all_peaks=True,
+            mz_precision=10, use_all_peaks=True,
             ms_filename = 'F123456.mzxml', abs_peak_cutoff=1000,
-            rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=0.01,
+            rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=10,
             max_broken_bonds=4, description='My second description'
         ))
 
@@ -586,7 +586,7 @@ class JobTestCase(unittest.TestCase):
     def test_assign_metabolite2peak_withoffset(self):
         metid = 72
         scanid = 641
-        offset = 0.008
+        offset = 8e-7
         mz = 109.0295639038086
         self.job.assign_metabolite2peak(scanid, mz+offset, metid)
 
@@ -611,7 +611,7 @@ class JobTestCase(unittest.TestCase):
     def test_unassign_metabolite2peak_withoffset(self):
         metid = 72
         scanid = 641
-        offset = 0.008
+        offset = 8e-7
         mz = 109.0295639038086
         self.job.assign_metabolite2peak(scanid, mz, metid)
 
