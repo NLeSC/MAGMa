@@ -785,6 +785,8 @@ class Job(object):
             fq = fq.filter(Fragment.metid == metid)
 
         for filter in filters:
+            if (filter['field'] == 'nhits'):
+                continue
             if (filter['field'] == 'score'):
                 fq = self.extjsgridfilter(fq, Fragment.score, filter)
             elif (filter['field'] == 'assigned'):
