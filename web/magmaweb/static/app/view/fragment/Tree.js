@@ -91,7 +91,9 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
                 render: function(tip,e) {
                     console.log('Drawing tooltip for '+id);
                     var c = new ChemDoodle.ViewerCanvas(id+'-'+tip.id, 300, 300);
-                    c.loadMolecule(ChemDoodle.readMOL(value));
+                    c.specs.bonds_color = 'cyan';
+                    c.specs.atoms_color = 'cyan';
+                    c.loadMolecule(m);
                 }
             }
          });
