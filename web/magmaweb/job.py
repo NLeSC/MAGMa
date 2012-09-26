@@ -10,7 +10,7 @@ from sqlalchemy import create_engine, and_
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, aliased, scoped_session
 from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import desc, asc, distinct
+from sqlalchemy.sql.expression import desc, asc
 from sqlalchemy.orm.exc import NoResultFound
 from magmaweb.models import Base, Metabolite, Scan, Peak, Fragment, Run
 
@@ -28,7 +28,9 @@ class FragmentNotFound(Exception):
 
 class JobNotFound(Exception):
     """Raised when a job with a identifier is not found"""
+
     def __init__(self, jobid):
+        Exception.__init__(self)
         self.jobid = jobid
 
 def make_job_factory(params):
@@ -40,11 +42,13 @@ def make_job_factory(params):
     Can be used to create job factory from a config file
     """
     prefix = 'jobfactory.'
-    d = {k.replace(prefix, ''):v for k,v in params.iteritems() if k.startswith(prefix)}
+    d = {k.replace(prefix, ''):v for k, v in params.iteritems() if k.startswith(prefix)}
     return JobFactory(**d)
 
 class JobQuery(object):
-    """ Perform actions on a :class:`Job` by parsing post params, staging files and building magma cli commands"""
+    """Perform actions on a :class:`Job` by parsing post params,
+    staging files and building magma cli commands
+    """
 
     class File(object):
         """ Colander schema type for file upload field"""
@@ -264,13 +268,13 @@ class JobQuery(object):
                                metabolism_types=self.escape(','.join(params['metabolism_types']))
                                )
         if from_subset:
-            self.script+= " -j -"
+            self.script += " -j -"
 
         if (has_ms_data):
-            self.script+= " {db} |";
+            self.script += " {db} |"
             self.annotate(params, True)
         else:
-            self.script+= " {db}\n";
+            self.script += " {db}\n"
 
         return self
 
@@ -305,10 +309,10 @@ class JobQuery(object):
                                )
 
         if (has_ms_data):
-            self.script+=" |"
+            self.script += " |"
             self.annotate(params, True)
         else:
-            self.script+="\n"
+            self.script += "\n"
 
         return self
 
@@ -443,8 +447,7 @@ class JobFactory(object):
         return jobid
 
     def fromDb(self, dbfile):
-        """
-        A job directory is created and the dbfile is copied into it
+        """A job directory is created and the dbfile is copied into it
         Returns a Job instance
 
         ``dbfile``
@@ -644,12 +647,14 @@ class Job(object):
         # custom filters
         fragal = aliased(Fragment)
         if (scanid != None):
-            # TODO add score column + order by score
+            # TODO: add score column + order by score
             q = q.add_columns(fragal.score, fragal.deltappm).join(fragal.metabolite).filter(
                 fragal.parentfragid == 0).filter(fragal.scanid == scanid)
 
         # add assigned column
-        stmt2 = self.session.query(Peak.assigned_metid, func.count('*').label('assigned')).filter(Peak.assigned_metid!=None).group_by(Peak.assigned_metid).subquery()
+        stmt2 = self.session.query(Peak.assigned_metid, func.count('*').label('assigned'))
+        stmt2 = stmt2.filter(Peak.assigned_metid!=None)
+        stmt2 = stmt2.group_by(Peak.assigned_metid).subquery()
         q = q.add_columns(stmt2.c.assigned).outerjoin(stmt2, Metabolite.metid == stmt2.c.assigned_metid)
 
         for filter in filters:
@@ -753,7 +758,7 @@ class Job(object):
         Return
         String
         """
-        str = ''
+        s = ''
         props = ['name', 'smiles', 'probability', 'reactionsequence',
                  'nhits', 'molformula', 'mim' , 'logp',
                  'reference']
@@ -762,12 +767,12 @@ class Job(object):
 
         for m in metabolites:
             m['name'] = m['origin']
-            str+= m['mol']
+            s += m['mol']
             for p in props:
-                str+='> <{}>\n{}\n\n'.format(p, m[p])
-            str+= '$$$$'+"\n"
+                s += '> <{}>\n{}\n\n'.format(p, m[p])
+            s += '$$$$'+"\n"
 
-        return str
+        return s
 
     def scansWithMetabolites(self, filters=None, metid=None):
         """Returns id and rt of lvl1 scans which have a fragment in it and for which the filters in params pass
@@ -792,7 +797,10 @@ class Job(object):
                 fq = fq.join(Peak, and_(Fragment.scanid==Peak.scanid, Fragment.mz==Peak.mz))
                 fq = self.extjsgridfilter(fq, Peak.assigned_metid, filter)
             else:
-                fq = fq.join(Metabolite, Fragment.metabolite)
+                fq = fq.join(
+                             Metabolite,
+                             Fragment.metabolite #@UndefinedVariable
+                             )
                 fq = self.extjsgridfilter(
                                           fq,
                                           Metabolite.__dict__[filter['field']], #@UndefinedVariable
@@ -837,7 +845,7 @@ class Job(object):
             })
 
         runInfo = self.runInfo()
-        if (runInfo !=None):
+        if (runInfo != None):
             return {
                     'scans': scans,
                     'cutoff': runInfo.ms_intensity_cutoff
@@ -885,7 +893,11 @@ class Job(object):
                 'assigned_metid': peak.assigned_metid
             })
 
-        return { 'peaks': peaks, 'cutoff': cutoff, 'mslevel': scan.mslevel, 'precursor': { 'id': scan.precursorscanid, 'mz': scan.precursormz } }
+        return { 'peaks': peaks, 'cutoff': cutoff, 'mslevel': scan.mslevel,
+                 'precursor': {
+                   'id': scan.precursorscanid, 'mz': scan.precursormz
+                  }
+                }
 
     def fragments(self, scanid, metid, node):
         """Returns dict with metabolites and its lvl2 fragments when node is not set
@@ -972,17 +984,19 @@ class Job(object):
             return StringIO.StringIO()
 
     def _peak(self, scanid, mz):
-        mzoffset = 1e-6 # precision for comparing floating point values 
+        mzoffset = 1e-6 # precision for comparing floating point values
         # fetch peak corresponding to given scanid and mz
         return self.session.query(Peak).filter(Peak.scanid==scanid).filter(Peak.mz.between(float(mz) - mzoffset, float(mz) + mzoffset)).one()
 
     def assign_metabolite2peak(self, scanid, mz, metid):
+        """Assign metabolites to peak"""
         peak = self._peak(scanid, mz)
         peak.assigned_metid = metid
         self.session.add(peak)
         self.session.commit()
 
     def unassign_metabolite2peak(self, scanid, mz):
+        """Unassign metabolite from peak"""
         peak = self._peak(scanid, mz)
         peak.assigned_metid = None
         self.session.add(peak)
