@@ -246,7 +246,7 @@ class MagmaCommand(object):
                     annotate_engine.search_structures(metids=metids,ncpus=args.ncpus)
                     magma_session.commit
                     metids=set([])
-            annotate_engine.search_structures(metids=metids)
+            annotate_engine.search_structures(metids=metids,ncpus=args.ncpus)
         magma_session.commit()
             # annotate_engine.search_some_structures(metids)
 
