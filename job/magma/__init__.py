@@ -577,7 +577,8 @@ class AnnotateEngine(object):
             for dbscan in self.db_session.query(Scan).filter(Scan.mslevel==1).all():
                 self.scans.append(self.build_spectrum(dbscan))
         else:
-            for dbscan in self.db_session.query(Scan).filter(Scan.mslevel==1 and Scan.scanid.in_(scans)).all():
+            logging.warn('for scans: '+str(scans))
+            for dbscan in self.db_session.query(Scan).filter(Scan.mslevel==1).filter(Scan.scanid.in_(scans)).all():
                 self.scans.append(self.build_spectrum(dbscan))
             
 
@@ -625,7 +626,7 @@ class AnnotateEngine(object):
                                            'name':name,
                                            'refscore':refscore
                                            }
-                    print str(peak.mz)+' --> '+str(len(db_candidates))+' candidates'
+                    print str(scan.scanid)+','+str(peak.mz)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
 
 #    def search_all_structures(self):
