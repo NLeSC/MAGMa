@@ -5,10 +5,13 @@ from pyramid.httpexceptions import HTTPInternalServerError
 import colander
 from magmaweb.job import make_job_factory
 
+
 class RpcViews(object):
     """Rpc endpoints"""
     def __init__(self, context, request=None):
-        """ View callable with request as argument or context, request as arguments"""
+        """View callable with request as argument
+        or context, request as arguments
+        """
         if request == None:
             request = context
             context = None
@@ -17,11 +20,11 @@ class RpcViews(object):
         self.job_factory = make_job_factory(request.registry.settings)
 
     def job(self):
-        """ Job of current request """
+        """Job of current request """
         return self.job_factory.fromId(self.request.matchdict['jobid'])
 
     def new_job(self):
-        """ Returns clone of job of current request
+        """Returns clone of job of current request
          or empty job if current request has no job"""
         try:
             return self.job_factory.cloneJob(self.job())
@@ -29,37 +32,43 @@ class RpcViews(object):
             return self.job_factory.fromScratch()
 
     def submit_query(self, query):
-        """ Submit query to job factory
+        """Submit query to job factory
 
-        Raises a HTTPInternalServerError exception when job factory fails to communicate with job manager
+        Raises a HTTPInternalServerError exception when
+        job factory fails to communicate with job manager
         """
         try:
             self.job_factory.submitQuery(query)
         except urllib2.URLError:
-            body = { 'success': False, 'msg': 'Unable to submit query'}
+            body = {'success': False, 'msg': 'Unable to submit query'}
             raise HTTPInternalServerError(body=json.dumps(body))
 
     @view_config(route_name='rpc.add_structures', renderer='jsonhtml')
     def add_structures(self):
-        """Create a copy of current job or new job and submit an add structures job
+        """Create a copy of current job or new job
+        and submit an add structures job
 
         Annotation is performed if current job has ms data
         """
         job = self.new_job()
-        jobquery = job.jobquery().add_structures(self.request.POST, job.maxMSLevel() > 0)
+        jobquery = job.jobquery().add_structures(self.request.POST,
+                                                 job.maxMSLevel() > 0)
         self.submit_query(jobquery)
-        return { 'success': True, 'jobid': str(job.id) }
+        return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.add_ms_data', renderer='jsonhtml')
     def add_ms_data(self):
-        """Create a copy of current job or new job and submit an add ms data job
+        """Adds ms data to job
+
+        Create a copy of current job or new job and submit an add ms data job
 
         Annotation is performed if current job has structures
         """
         job = self.new_job()
-        jobquery = job.jobquery().add_ms_data(self.request.POST, job.metabolitesTotalCount() > 0)
+        jobquery = job.jobquery().add_ms_data(self.request.POST,
+                                              job.metabolitesTotalCount() > 0)
         self.submit_query(jobquery)
-        return { 'success': True, 'jobid': str(job.id) }
+        return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.metabolize', renderer='json')
     def metabolize(self):
@@ -68,21 +77,24 @@ class RpcViews(object):
         Annotation is performed if current job has ms data
         """
         job = self.new_job()
-        jobquery = job.jobquery().metabolize(self.request.POST, job.maxMSLevel() > 0)
+        jobquery = job.jobquery().metabolize(self.request.POST,
+                                             job.maxMSLevel() > 0)
         self.submit_query(jobquery)
-        return { 'success': True, 'jobid': str(job.id) }
+        return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.metabolize_one', renderer='json')
     def metabolize_one(self):
-        """Create a copy of current job or new job and submit a metabolize one job
-        Metabolizes one structure.
+        """Metabolizes one structure.
+
+        Create a copy of current job or new job and submit a metabolize one job
 
         Annotation is performed if current job has ms data
         """
         job = self.new_job()
-        jobquery = job.jobquery().metabolize_one(self.request.POST, job.maxMSLevel() > 0)
+        jobquery = job.jobquery().metabolize_one(self.request.POST,
+                                                 job.maxMSLevel() > 0)
         self.submit_query(jobquery)
-        return { 'success': True, 'jobid': str(job.id) }
+        return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.annotate', renderer='json')
     def annotate(self):
@@ -92,19 +104,20 @@ class RpcViews(object):
         job = self.new_job()
         jobquery = job.jobquery().annotate(self.request.POST)
         self.submit_query(jobquery)
-        return { 'success': True, 'jobid': str(job.id) }
+        return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.allinone', renderer='jsonhtml')
     @view_config(route_name='home', renderer='jsonhtml', request_method='POST')
     def allinone(self):
         """Create a copy of current job or new job and submit a allinone job
 
-        Adds structures and ms data, then metabolizes all structures and annotates structures/peaks
+        Adds structures and ms data, then metabolizes all structures
+        and annotates structures/peaks
         """
         job = self.new_job()
         jobquery = job.jobquery().allinone(self.request.POST)
         self.submit_query(jobquery)
-        return { 'success': True, 'jobid': str(job.id) }
+        return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.set_description', renderer='json')
     def set_description(self):
@@ -115,11 +128,13 @@ class RpcViews(object):
         job = self.job()
         desc = self.request.POST['description']
         job.description(desc)
-        return { 'success': True, 'jobid': str(job.id) }
+        return {'success': True, 'jobid': str(job.id)}
 
     @view_config(context=colander.Invalid)
     def failed_validation(self):
-        """ Catches colander.Invalid exceptions and returns a ExtJS form submission response"""
+        """Catches colander.Invalid exceptions
+        and returns a ExtJS form submission response
+        """
         body = {'success': False, 'errors': self.context.asdict()}
         return HTTPInternalServerError(body=json.dumps(body))
 
@@ -130,7 +145,7 @@ class RpcViews(object):
         mz = self.request.POST['mz']
         metid = self.request.POST['metid']
         job.assign_metabolite2peak(scanid, mz, metid)
-        return { 'success': True, 'jobid': str(job.id) }
+        return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.unassign', renderer='json')
     def unassign_metabolite2peak(self):
@@ -138,5 +153,4 @@ class RpcViews(object):
         scanid = self.request.POST['scanid']
         mz = self.request.POST['mz']
         job.unassign_metabolite2peak(scanid, mz)
-        return { 'success': True, 'jobid': str(job.id) }
-
+        return {'success': True, 'jobid': str(job.id)}

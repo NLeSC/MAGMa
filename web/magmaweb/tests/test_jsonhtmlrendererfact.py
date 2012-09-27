@@ -1,6 +1,7 @@
 import unittest
 from pyramid import testing
 
+
 class Test_jsonhtml_renderer_factory(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()

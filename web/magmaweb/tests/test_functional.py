@@ -1,14 +1,15 @@
 import unittest
 
+
 class FunctionalTests(unittest.TestCase):
     def setUp(self):
         import tempfile
         from magmaweb import main
         self.root_dir = tempfile.mkdtemp()
-        self.settings = {
-                    'jobfactory.root_dir': self.root_dir,
-                    'mako.directories': 'magmaweb:templates', 'extjsroot': 'ext'
-                    }
+        self.settings = {'jobfactory.root_dir': self.root_dir,
+                         'mako.directories': 'magmaweb:templates',
+                         'extjsroot': 'ext'
+                        }
         app = main({}, **self.settings)
         from webtest import TestApp
         self.testapp = TestApp(app)
@@ -35,15 +36,17 @@ class FunctionalTests(unittest.TestCase):
     def test_metabolites(self):
         jobid = self.fake_jobid()
 
-        res = self.testapp.get('/results/'+str(jobid)+'/metabolites.json?limit=10&start=0', status=200)
+        res_url = '/results/' + str(jobid)
+        res_url += '/metabolites.json?limit=10&start=0'
+        res = self.testapp.get(res_url, status=200)
         import json
-        self.assertEqual(json.loads(res.body),{
+        self.assertEqual(json.loads(res.body), {
             'totalUnfiltered': 2,
             'total': 2,
             'scans': [{
                 'rt': 933.317,
                 'id': 641
-            },{
+            }, {
                'rt': 1254.15,
                'id': 870
             }],
@@ -62,8 +65,9 @@ class FunctionalTests(unittest.TestCase):
                 'mim': 110.03677, 'logp':1.231,
                 'assigned': False,
                 'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
-            },{
-                'isquery': True, 'level': 0, 'metid': 352, 'mol': "Molfile of dihydroxyphenyl-valerolactone",
+            }, {
+                'isquery': True, 'level': 0, 'metid': 352,
+                'mol': "Molfile of dihydroxyphenyl-valerolactone",
                 'molformula': "C11H12O4",
                 'nhits': None,
                 'nhits': 1,
