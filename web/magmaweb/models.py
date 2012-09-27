@@ -16,95 +16,157 @@ from sqlalchemy.schema import ForeignKeyConstraint
 
 Base = declarative_base()
 
+
 class Metabolite(Base):
     """Metabolite model for metabolites table"""
     __tablename__ = 'metabolites'
-    metid = Column(Integer, primary_key=True, autoincrement=True) #: Id of a metabolite
-    mol = Column(Unicode) #: molfile as string
+    # Id of a metabolite
+    metid = Column(Integer, primary_key=True, autoincrement=True)
+    # molfile as string
+    mol = Column(Unicode)
     level = Column(Integer)
     probability = Column(Float)
-    reactionsequence = Column(Unicode) #: A newline seperated list of reactions
-    smiles = Column(Unicode, unique=True) #: Smile string
-    molformula = Column(Unicode) #: Molecular formula
-    isquery = Column(Boolean) #: Whether metabolite was given as query or is a result a of reaction
-    origin = Column(Unicode) #: Name of molecule
+    # A newline seperated list of reactions
+    reactionsequence = Column(Unicode)
+    # Smile string
+    smiles = Column(Unicode, unique=True)
+    # Molecular formula
+    molformula = Column(Unicode)
+    # Whether metabolite was given as query or is a result a of reaction
+    isquery = Column(Boolean)
+    # Name of molecule
+    origin = Column(Unicode)
+    # Number of lvl1 scans fragments are found for this metabolite
     nhits = Column(Integer)
-    mim = Column(Float) #: Monoisotopic mass
-    logp = Column(Float) #: Calculated logP
+    # Monoisotopic mass
+    mim = Column(Float)
+    # Calculated logP
+    logp = Column(Float)
     reference = Column(Unicode)
-    fragments = relationship('Fragment', backref='metabolite') #: each metabolite is fragmented into fragments
+    # each metabolite is fragmented into fragments
+    fragments = relationship('Fragment', backref='metabolite')
+
 
 class Scan(Base):
     """Scan model for scans table"""
     __tablename__ = 'scans'
-    scanid = Column(Integer, primary_key=True) #: Id of a scan
-    mslevel = Column(Integer) #: Level of ms, starts with 1
-    rt = Column(Float) #: Retention time on which scan was taken
-    lowmz = Column(Float) #: Lowest m/z
-    highmz = Column(Float) #: Highest m/z
-    basepeakmz = Column(Float) #: M/z with highest intensity
-    basepeakintensity = Column(Float) #: Highest intensity
+    # Id of a scan
+    scanid = Column(Integer, primary_key=True)
+    # Level of ms, starts with 1
+    mslevel = Column(Integer)
+    # Retention time on which scan was taken
+    rt = Column(Float)
+    #: Lowest m/z
+    lowmz = Column(Float)
+    #: Highest m/z
+    highmz = Column(Float)
+    #: M/z with highest intensity
+    basepeakmz = Column(Float)
+    #: Highest intensity
+    basepeakintensity = Column(Float)
     totioncurrent = Column(Float)
-    precursormz = Column(Float) #: m/z of precursor (which was fragmented resulting in this scan)
-    precursorintensity = Column(Float) #: intensity belonging to precursorintensity
-    precursorscanid = Column(Integer, ForeignKey('scans.scanid')) #: Parent scan identifier
-    peaks = relationship('Peak', backref='scan') #: Each scan has many peaks
+    # m/z of precursor (which was fragmented resulting in this scan)
+    precursormz = Column(Float)
+    #: intensity belonging to precursormz
+    precursorintensity = Column(Float)
+    # Parent scan identifier
+    precursorscanid = Column(Integer, ForeignKey('scans.scanid'))
+    # Each scan has many peaks
+    peaks = relationship('Peak', backref='scan')
     #: A scan can have child product scans and a parent precursor scan
-    products = relationship('Scan', backref=backref('precursor', remote_side=[scanid]))
-    fragments = relationship('Fragment', backref='scan') #: Fragments can be found on a scan
+    products = relationship('Scan', backref=backref('precursor',
+                                                    remote_side=[scanid]))
+    # Fragments can be found on a scan
+    fragments = relationship('Fragment', backref='scan')
+
 
 class Peak(Base):
     """Peak model for peaks table"""
     __tablename__ = 'peaks'
-    scanid = Column(Integer, ForeignKey('scans.scanid'), primary_key=True) #: Scan identifier to which peaks belongs
-    mz = Column(Float, primary_key=True) #: m/z of peak (x-coordinate)
-    intensity = Column(Float) #: Intensity of peak (y-coordinate)
-    assigned_metid = Column(Integer, ForeignKey('metabolites.metid')) # which metabolite is assigned to this peak
+    # Scan identifier to which peaks belongs
+    scanid = Column(Integer, ForeignKey('scans.scanid'), primary_key=True)
+    # m/z of peak (x-coordinate)
+    mz = Column(Float, primary_key=True)
+    # Intensity of peak (y-coordinate)
+    intensity = Column(Float)
+    # which metabolite is assigned to this peak
+    assigned_metid = Column(Integer, ForeignKey('metabolites.metid'))
+
 
 class Fragment(Base):
     """Fragment model for fragments table"""
     __tablename__ = 'fragments'
-    fragid = Column(Integer, primary_key=True, autoincrement=True) #: Fragment identifier
-    metid = Column(Integer, ForeignKey('metabolites.metid')) #: Metabolite identifier
-    scanid = Column(Integer, ForeignKey('scans.scanid')) #: Scan identifier
-    mz = Column(Float) #: m/z of peak in scan
-    mass = Column(Float) #: Mass of fragment in Dalton, corrected with h delta
-    score = Column(Float) #: Score of how good the metabolite fragment matches the mass spectras
+    # Fragment identifier
+    fragid = Column(Integer, primary_key=True, autoincrement=True)
+    # Metabolite identifier
+    metid = Column(Integer, ForeignKey('metabolites.metid'))
+    # Scan identifier
+    scanid = Column(Integer, ForeignKey('scans.scanid'))
+    # m/z of peak in scan
+    mz = Column(Float)
+    # Mass of fragment in Dalton, corrected with h delta
+    mass = Column(Float)
+    # Score of how good the metabolite fragment matches the mass spectras
+    score = Column(Float)
+    # From which fragment this fragment is a fragment of
     parentfragid = Column(Integer, ForeignKey('fragments.fragid'))
-    atoms = Column(Unicode) #: Atom indices of metabolite which are the fragment is a comma seperated list, starting with 0
+    # Atom indices of metabolite which are the fragment
+    # is a comma seperated list, starting with 0
+    atoms = Column(Unicode)
     deltah = Column(Float)
     # (mz+deltah*1.007825032-mass)/(mz*1e6)  as deltappm
     deltappm = Column(Float)
     inchikey = Column(Unicode)
     #: A fragment can have child fragments
-    children = relationship('Fragment', backref=backref('parent', remote_side=[fragid]), lazy='joined', join_depth=1)
+    children_backref = backref('parent', remote_side=[fragid])
+    children = relationship('Fragment', backref=children_backref,
+                            lazy='joined', join_depth=1)
     __table_args__ = (ForeignKeyConstraint(['scanid', 'mz'],
                                            ['peaks.scanid', 'peaks.mz']
                                            ),
                       {}
                       )
 
+
 class Run(Base):
     """Run model for run table"""
     __tablename__ = 'run'
-    runid = Column(Integer, primary_key=True, autoincrement=True) #: Run identifier
-    description = Column(Unicode) #: Description of the run
+    # Run identifier
+    runid = Column(Integer, primary_key=True, autoincrement=True)
+    # Description of the run
+    description = Column(Unicode)
 
-    # SyGMa parameters, TODO remove: metabolism type info will be part of reacton sequence of metabolites
-    n_reaction_steps = Column(Integer) #: Maximum number of reaction steps applied to reactants
-    metabolism_types = Column(Unicode) #: Comma separated list of metabolism types, like "phase1"
+    # metabolize parameters
+
+    # Maximum number of reaction steps applied to reactants
+    n_reaction_steps = Column(Integer)
+
+    # Comma separated list of metabolism types, like "phase1"
+    metabolism_types = Column(Unicode)
+    # TODO: remove metabolism type column
+    # will be part of reacton sequence of metabolites
+
     # ms data parsing parameters
     ms_filename = Column(Unicode)
-    abs_peak_cutoff = Column(Float) #: abs intensity threshold for storing peaks in database
-    rel_peak_cutoff = Column(Float) #: fraction of basepeak intensity threshold for storing peaks in database
-    max_ms_level = Column(Integer) #: maximum ms level to be included in the analysis
+    # abs intensity threshold for storing peaks in database
+    abs_peak_cutoff = Column(Float)
+    # fraction of basepeak intensity threshold for storing peaks in database
+    rel_peak_cutoff = Column(Float)
+    # maximum ms level to be included in the analysis
+    max_ms_level = Column(Integer)
 
     # parameters for matching metabolites and fragments with peaks
     ionisation_mode = Column(Integer)
     skip_fragmentation = Column(Boolean)
-    max_broken_bonds = Column(Integer) #: max number of bonds broken in substructures generated from metabolites
-    ms_intensity_cutoff = Column(Float) #: Absolute intensity minimum of lvl1 scan peaks which are matched with metabolites
-    msms_intensity_cutoff = Column(Float) #: Ratio of basepeak intensity
-    mz_precision = Column(Float) #: precision for matching a metabolite mim to m/z of a peak
-    precursor_mz_precision = Column(Float) #: precision for matching precursor mz with peak mz in parent scan
+    # max number of bonds broken in substructures generated from metabolites
+    max_broken_bonds = Column(Integer)
+    # Absolute intensity minimum of lvl1 scan peaks
+    # which are matched with metabolites
+    ms_intensity_cutoff = Column(Float)
+    # Ratio of basepeak intensity
+    msms_intensity_cutoff = Column(Float)
+    # precision for matching a metabolite mim to m/z of a peak
+    mz_precision = Column(Float)
+    # precision for matching precursor mz with peak mz in parent scan
+    precursor_mz_precision = Column(Float)
     use_all_peaks = Column(Boolean)
