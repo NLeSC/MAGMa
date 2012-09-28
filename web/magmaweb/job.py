@@ -1088,10 +1088,10 @@ class Job(object):
                          ):
                 structure = fragment2json(row)
 
-                q = self.session.query(func.count('*')).\
+                qa = self.session.query(func.count('*')).\
                     filter(Peak.scanid == scanid).\
                     filter(Peak.assigned_metid == metid)
-                structure['isAssigned'] = q.scalar() > 0
+                structure['isAssigned'] = qa.scalar() > 0
 
                 # load children
                 structure['children'] = []
