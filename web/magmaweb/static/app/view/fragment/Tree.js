@@ -18,7 +18,13 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
   multiSelect: false,
   rootVisible: false,
   singleExpand: true,
-  useArrows: true,
+  rowLines: true,
+  viewConfig: {
+	getRowClass: function(record) {
+		// Make transition between mslevel visible by giving even/odd mslevel different bg color
+    	return record.get("mslevel") % 2 === 0 ? this.altRowCls : "";
+	}
+  },
   tools: [{
      type: 'save',
      disabled: true,
