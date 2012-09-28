@@ -143,6 +143,7 @@ svg {
 <script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/ChemDoodleWeb-sketcher.js')}"></script>
 <script type="text/javascript" src="${request.static_url('magmaweb:static/d3/d3.v2.min.js')}"></script>
 <script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
+
 <script type="text/javascript">
 if (!window.console) window.console = {};
 if (!window.console.log) window.console.log = function() {};
