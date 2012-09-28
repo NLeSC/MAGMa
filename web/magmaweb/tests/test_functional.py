@@ -9,7 +9,7 @@ class FunctionalTests(unittest.TestCase):
         self.settings = {'jobfactory.root_dir': self.root_dir,
                          'mako.directories': 'magmaweb:templates',
                          'extjsroot': 'ext'
-                        }
+                         }
         app = main({}, **self.settings)
         from webtest import TestApp
         self.testapp = TestApp(app)

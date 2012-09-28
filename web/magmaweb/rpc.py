@@ -12,7 +12,7 @@ class RpcViews(object):
         """View callable with request as argument
         or context, request as arguments
         """
-        if request == None:
+        if request is None:
             request = context
             context = None
         self.context = context
