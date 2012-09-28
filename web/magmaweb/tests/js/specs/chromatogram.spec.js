@@ -212,6 +212,18 @@ describe('Esc.d3.Chromatogram', function() {
         expect(chart.selectedScan).toEqual(5);
     });
 
+    it('another scan already selected -> deselect silenced', function() {
+        chart.selectScan(data[0].id);
+
+        spyOn(chart,'markerSelect');
+        spyOn(chart,'fireEvent');
+
+        chart.selectScan(data[1].id, true);
+
+        expect(chart.fireEvent).not.toHaveBeenCalledWith('unselectscan', 4);
+        expect(chart.selectedScan).toEqual(5);
+    });
+
     it('same scan already selected -> no deselect', function() {
         chart.selectScan(data[0].id);
 
