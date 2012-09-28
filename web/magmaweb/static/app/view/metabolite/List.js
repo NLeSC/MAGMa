@@ -117,10 +117,17 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
     this.callParent(arguments);
   },
   /**
+   * @return {Ext.ux.grid.FiltersFeature}
+   * @private
+   */
+  getFilter: function() {
+	return this.getView().getFeature('mfilter');
+  },
+  /**
    * Clears all filters applied to metabolites
    */
   clearFilters: function() {
-    this.getView().getFeature('mfilter').clearFilters();
+    this.getFilter().clearFilters();
   },
   /**
    * Get column with scores.
@@ -171,5 +178,18 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
   showFragmentScoreColumn: function() {
     this.getFragmentScoreColumn().show();
     this.getFragmentDeltaPpmColumn().show();
+  },
+  /**
+   * @return {String} JSON encoded the filter data as query
+   */
+  getFilterQuery: function() {
+	  var filter = this.getFilter();
+	  return filter.buildQuery(filter.getFilterData());
+  },
+  /**
+   * @return {Array} Array of dataindexes currently visible. In order they appear.
+   */
+  getVisiblColumnIndices: function() {
+	  return this.getView().getHeaderCt().getVisibleGridColumns().map(function(v) {return v.dataIndex}).filter(function(v) { return v});
   }
 });
