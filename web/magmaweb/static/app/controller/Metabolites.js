@@ -287,8 +287,10 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     var params = request.params;
     // Ext.ux.grid.FiltersFeature adds filters to request.params in store.beforeLoad event handler
     // so we do the same to get the filter query string
-    var filter = this.getMetaboliteList().getView().getFeature('mfilter');
-    Ext.apply(params, filter.buildQuery(filter.getFilterData()));
+    Ext.apply(params, this.getMetaboliteList().getFilterQuery());
+
+    // visible ordered columns
+    params['cols'] = Ext.JSON.encode(this.getMetaboliteList().getVisiblColumnIndices());
 
     var url = Ext.urlAppend(
         this.application.metabolitesUrl(format),
