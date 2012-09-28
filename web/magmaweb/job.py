@@ -196,7 +196,7 @@ class JobQuery(object):
             # unflatten multidict
             params = params.mixed()
         if ('metabolism_types' in params and
-            isinstance(params['metabolism_types'], basestring)):
+                isinstance(params['metabolism_types'], basestring)):
             params['metabolism_types'] = [params['metabolism_types']]
         params = schema.deserialize(params)
 
@@ -317,7 +317,7 @@ class JobQuery(object):
             # unflatten multidict
             params = params.mixed()
         if ('metabolism_types' in params and
-            isinstance(params['metabolism_types'], basestring)):
+                isinstance(params['metabolism_types'], basestring)):
             params['metabolism_types'] = [params['metabolism_types']]
         params = schema.deserialize(params)
 
@@ -364,7 +364,7 @@ class JobQuery(object):
             # unflatten multidict
             params = params.mixed()
         if ('metabolism_types' in params and
-            isinstance(params['metabolism_types'], basestring)):
+                isinstance(params['metabolism_types'], basestring)):
             params['metabolism_types'] = [params['metabolism_types']]
         params = schema.deserialize(params)
 
@@ -675,7 +675,7 @@ class Job(object):
 
         """
         runInfo = self.runInfo()
-        if (runInfo == None):
+        if (runInfo is None):
             runInfo = Run()
 
         runInfo.description = description
@@ -706,14 +706,14 @@ class Job(object):
             return q.filter(column == filter['value'])
         elif (filter['type'] == 'null'):
             if not filter['value']:
-                return q.filter(column == None)  # IS NULL
+                return q.filter(column == null())  # IS NULL
             else:
-                return q.filter(column != None)  # IS NOT NULL
+                return q.filter(column != null())  # IS NOT NULL
 
     def metabolites(self,
-                     start=0, limit=10,
-                     sorts=None, scanid=None,
-                     filters=None):
+                    start=0, limit=10,
+                    sorts=None, scanid=None,
+                    filters=None):
         """Returns dict with total and rows attribute
 
         start
@@ -743,7 +743,7 @@ class Job(object):
 
         # custom filters
         fragal = aliased(Fragment)
-        if (scanid != None):
+        if (scanid is not None):
             # TODO: add score column + order by score
             q = q.add_columns(fragal.score, fragal.deltappm)
             q = q.join(fragal.metabolite).filter(
@@ -762,12 +762,12 @@ class Job(object):
                 col = stmt2.c.assigned
                 filter['type'] = 'null'
             elif (filter['field'] == 'score'):
-                if (scanid != None):
+                if (scanid is not None):
                     col = fragal.score
                 else:
                     raise ScanRequiredError()
             elif (filter['field'] == 'deltappm'):
-                if (scanid != None):
+                if (scanid is not None):
                     col = fragal.deltappm
                 else:
                     raise ScanRequiredError()
@@ -782,12 +782,12 @@ class Job(object):
             if col['property'] == 'assigned':
                 col2 = stmt2.c.assigned
             elif (col['property'] == 'score'):
-                if (scanid != None):
+                if (scanid is not None):
                     col2 = fragal.score
                 else:
                     raise ScanRequiredError()
             elif (col['property'] == 'deltappm'):
-                if (scanid != None):
+                if (scanid is not None):
                     col2 = fragal.deltappm
                 else:
                     raise ScanRequiredError()
@@ -888,8 +888,8 @@ class Job(object):
         """
         filters = filters or []
         fq = self.session.query(Fragment.scanid).\
-                filter(Fragment.parentfragid == 0)
-        if (metid != None):
+            filter(Fragment.parentfragid == 0)
+        if (metid is not None):
             fq = fq.filter(Fragment.metid == metid)
 
         for filter in filters:
@@ -971,7 +971,7 @@ class Job(object):
             })
 
         runInfo = self.runInfo()
-        if (runInfo != None):
+        if (runInfo is not None):
             return {
                     'scans': scans,
                     'cutoff': runInfo.ms_intensity_cutoff
@@ -997,7 +997,7 @@ class Job(object):
 
         """
         scanq = self.session.query(Scan).filter(Scan.scanid == scanid)
-        if (mslevel != None):
+        if (mslevel is not None):
             scanq = scanq.filter(Scan.mslevel == mslevel)
 
         try:
@@ -1022,9 +1022,9 @@ class Job(object):
             })
 
         return {'peaks': peaks, 'cutoff': cutoff, 'mslevel': scan.mslevel,
-                 'precursor': {
-                   'id': scan.precursorscanid, 'mz': scan.precursormz
-                  }
+                'precursor': {
+                    'id': scan.precursorscanid, 'mz': scan.precursormz
+                    }
                 }
 
     def fragments(self, scanid, metid, node):
@@ -1088,10 +1088,10 @@ class Job(object):
                          ):
                 structure = fragment2json(row)
 
-                structure['isAssigned'] = self.session.query(
-                     func.count('*')).filter(
-                     Peak.scanid == scanid).filter(
-                     Peak.assigned_metid == metid).scalar() > 0
+                q = self.session.query(func.count('*')).\
+                    filter(Peak.scanid == scanid).\
+                    filter(Peak.assigned_metid == metid)
+                structure['isAssigned'] = q.scalar() > 0
 
                 # load children
                 structure['children'] = []

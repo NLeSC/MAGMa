@@ -252,9 +252,8 @@ class JobFactoryFactoryTestCase(unittest.TestCase):
             make_job_factory({})
 
     def test_minimal(self):
-        factory = make_job_factory({
-                                   'jobfactory.root_dir': '/somedir'
-                                    })
+        factory = make_job_factory({'jobfactory.root_dir': '/somedir'})
+
         self.assertEqual(factory.root_dir, '/somedir')
         self.assertEqual(factory.init_script, '')
         self.assertEqual(factory.tarball, None)
@@ -696,8 +695,9 @@ class JobEmptyDatasetTestCase(unittest.TestCase):
         self.assertEqual(self.job.metabolitesTotalCount(), 0)
 
     def test_set_description(self):
-        self.job.description('My second description')
-        self.assertEqual(self.job.runInfo().description, 'My second description')
+        desc = 'My second description'
+        self.job.description(desc)
+        self.assertEqual(self.job.runInfo().description, desc)
 
 
 class JobMetabolitesTestCase(unittest.TestCase):
@@ -1022,7 +1022,8 @@ $$$$
 
     def test_with_scan(self):
         """Include score prop"""
-        sdffile = self.job.metabolites2sdf(self.job.metabolites(scanid=641)['rows'])
+        mets = self.job.metabolites(scanid=641)['rows']
+        sdffile = self.job.metabolites2sdf(mets)
 
         expected_sdf = """Molfile> <name>
 pyrocatechol
@@ -1413,28 +1414,28 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                 'score': 0.5,
                 'isAssigned': False,
                 'children': [{
-                    'fragid':  19,
-                    'metid':  12,
-                    'scanid':  2,
-                    'mz':  207.066223144531,
-                    'mass':  207.0657338415,
-                    'score':  0.5,
+                    'fragid': 19,
+                    'metid': 12,
+                    'scanid': 2,
+                    'mz': 207.066223144531,
+                    'mass': 207.0657338415,
+                    'score': 0.5,
                     'mol': u'Molfile',
-                    'atoms':  u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14',
+                    'atoms': u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14',
                     'expanded': True,
                     'leaf': True,
                     'mslevel': 2,
-                    'deltah':  0.0,
+                    'deltah': 0.0,
                     'deltappm': 2.3630267823129625e-12
                 }, {
-                    'fragid':  20,
-                    'metid':  12,
-                    'scanid':  2,
-                    'mz':  287.022827148438,
-                    'mass':  288.0303734299,
-                    'score':  0.0,
+                    'fragid': 20,
+                    'metid': 12,
+                    'scanid': 2,
+                    'mz': 287.022827148438,
+                    'mass': 288.0303734299,
+                    'score': 0.0,
                     'mol': u'Molfile',
-                    'atoms':  u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
+                    'atoms': u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
                     'expanded': True,
                     'leaf': True,
                     'mslevel': 2,
