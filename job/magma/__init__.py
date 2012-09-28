@@ -580,7 +580,14 @@ class AnnotateEngine(object):
             logging.warn('for scans: '+str(scans))
             for dbscan in self.db_session.query(Scan).filter(Scan.mslevel==1).filter(Scan.scanid.in_(scans)).all():
                 self.scans.append(self.build_spectrum(dbscan))
-            
+        self.indexed_peaks={}   # dictionary: sets of peaks for each integer m/z value
+        for scan in self.scans:
+            for peak in scan.peaks:
+                if not ((not self.use_all_peaks) and peak.childscan==None):
+                    int_mass=int(round(peak.mz))
+                    if int_mass not in self.indexed_peaks:
+                        self.indexed_peaks[int_mass]=set([])
+                    self.indexed_peaks[int_mass].add(peak)
 
     def get_chebi_candidates(self):
         dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
@@ -644,14 +651,29 @@ class AnnotateEngine(object):
         fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
         if fragid == None:
             fragid = 0
-        sys.stderr.write('Start ...')
-        if ncpus > 1:
-            ppservers = ()
-            logging.warn('calculating on '+str(ncpus)+' cpus !!!')
-            job_server = pp.Server(ncpus, ppservers=ppservers)
-            jobs=[(structure,
+        ppservers = ()
+        logging.warn('calculating on '+str(ncpus)+' cpus !!!')
+        job_server = pp.Server(ncpus, ppservers=ppservers)
+        jobs=[]
+        for structure in structures:
+            # collect all peaks with masses within 3 Da range
+            int_mass=int(round(structure.mim+self.ionisation_mode*Hmass))
+            try:
+                peaks=self.indexed_peaks[int_mass]
+            except:
+                peaks=set([])
+            try:
+                peaks=peaks.union(self.indexed_peaks[int_mass-1])
+            except:
+                pass
+            try:
+                peaks=peaks.union(self.indexed_peaks[int_mass+1])
+            except:
+                pass
+            if len(peaks)>0:
+                jobs.append((structure,
                    job_server.submit(search_structure,(structure,
-                              self.scans,
+                              peaks,
                               self.max_broken_bonds,
                               max_small_losses,
                               self.precision,
@@ -665,40 +687,20 @@ class AnnotateEngine(object):
                               "jpype",
                               "magma.types"
                               )
-                           )) for structure in structures]
-            for structure,job in jobs:
-                raw_result=job(raw_result=True)
-                hits,sout = pickle.loads(raw_result)
-                # print sout
-                sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
-                structure.nhits=len(hits)
-                self.db_session.add(structure)
-                for hit in hits:
-                    sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
-                    # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
-                    sys.stderr.write('Score: '+str(hit.score)+'\n')
-                    # outfile.write("\t"+str(hit.score/fragment_store.get_avg_score()))
-                    self.store_hit(hit,structure.metid,0)
-        else:
-            for structure in structures:
-                hits=search_structure(structure,
-                              self.scans,
-                              self.max_broken_bonds,
-                              max_small_losses,
-                              self.precision,
-                              self.mz_precision_abs,
-                              self.use_all_peaks,
-                              self.ionisation_mode
-                              )
-                sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
-                structure.nhits=len(hits)
-                self.db_session.add(structure)
-                for hit in hits:
-                    sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
-                    # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
-                    sys.stderr.write('Score: '+str(hit.score)+'\n')
-                    # outfile.write("\t"+str(hit.score/fragment_store.get_avg_score()))
-                    self.store_hit(hit,structure.metid,0)
+                           )))
+        for structure,job in jobs:
+            raw_result=job(raw_result=True)
+            hits,sout = pickle.loads(raw_result)
+            # print sout
+            sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
+            structure.nhits=len(hits)
+            self.db_session.add(structure)
+            for hit in hits:
+                sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
+                # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
+                sys.stderr.write('Score: '+str(hit.score)+'\n')
+                # outfile.write("\t"+str(hit.score/fragment_store.get_avg_score()))
+                self.store_hit(hit,structure.metid,0)
         self.db_session.commit()
 
     def store_hit(self,hit,metid,parentfragid):
@@ -768,7 +770,7 @@ class DataAnalysisEngine(object):
                     print '> <'+column+'>\n'+str(molecule.__getattribute__(column))+'\n'
             print '$$$$'
 
-def search_structure(structure,scans,max_broken_bonds,max_small_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode):
+def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode):
     Fragmented=False
     Chem=CDKengine()
     mol=Chem.MolFromMolBlock(str(structure.mol))
@@ -1115,23 +1117,22 @@ def search_structure(structure,scans,max_broken_bonds,max_small_losses,precision
 
 # for peak in self.db_session.query(Peak).filter(Scan.mslevel)==1.filter(Peak.intensity>MSfilter)
     hits=[]
-    for scan in scans:
-        for peak in scan.peaks:
-            if not ((not use_all_peaks) and peak.childscan==None):
-                protonation=ionisation_mode-(structure.molformula.find('+')>=0)*1
-                deltaH=massmatch(peak,structure.mim,protonation,protonation)
-                if type(deltaH)==int:
-                    if not Fragmented:
-                        #sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+' '+str(structure.reactionsequence)+'\n')
-                        #sys.stderr.write('Mim: '+str(structure.mim)+'\n')
-                        fragment_engine=FragmentationEngine(mol)
-                        #fragment_engine=GrowingEngine(mol)
-                        fragment_engine.generate_fragments()
-                        #sys.stderr.write('N fragments kept: '+str(len(fragment_engine.fragments))+"\n")
-                        Fragmented=True
-                    hit=gethit(peak,(1<<mol.getAtomCount())-1,0,0,structure.mim,-deltaH)
-                    add_fragment_data_to_hit(hit)
-                    hits.append(hit)
+    for peak in peaks:
+        if not ((not use_all_peaks) and peak.childscan==None):
+            protonation=ionisation_mode-(structure.molformula.find('+')>=0)*1
+            deltaH=massmatch(peak,structure.mim,protonation,protonation)
+            if type(deltaH)==int:
+                if not Fragmented:
+                    #sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+' '+str(structure.reactionsequence)+'\n')
+                    #sys.stderr.write('Mim: '+str(structure.mim)+'\n')
+                    fragment_engine=FragmentationEngine(mol)
+                    #fragment_engine=GrowingEngine(mol)
+                    fragment_engine.generate_fragments()
+                    #sys.stderr.write('N fragments kept: '+str(len(fragment_engine.fragments))+"\n")
+                    Fragmented=True
+                hit=gethit(peak,(1<<mol.getAtomCount())-1,0,0,structure.mim,-deltaH)
+                add_fragment_data_to_hit(hit)
+                hits.append(hit)
     return hits
 
 
