@@ -3,7 +3,7 @@
 import sys,base64,subprocess,StringIO,time
 import sqlite3,struct,zlib,gzip,copy
 import pkg_resources
-import numpy as np
+import numpy
 import logging
 # from rdkit import Chem, Geometry
 # from rdkit.Chem import AllChem, Descriptors
@@ -636,51 +636,69 @@ class AnnotateEngine(object):
 
     def search_structures(self,metids=None,ncpus=1):
         logging.warn('Searching structures')
-        ppservers = ()
-        logging.warn('calculating on '+str(ncpus)+' cpus !!!')
-        job_server = pp.Server(ncpus, ppservers=ppservers)
-#        peak=types.PeakType(0,0,0,0)
-#        print peak.__module__
-#        print type(peak.__module__)
-#        exit()
         if metids==None:
             structures = self.db_session.query(Metabolite).all()
         else:
             structures = self.db_session.query(Metabolite).filter(Metabolite.metid.in_(metids)).all()
-        jobs=[(structure,
-               job_server.submit(search_structure,(structure,
-                          self.scans,
-                          self.max_broken_bonds,
-                          max_small_losses,
-                          self.precision,
-                          self.mz_precision_abs,
-                          self.use_all_peaks,
-                          self.ionisation_mode
-                          ),(
-                          CDKengine,
-                          ),(
-                          "numpy",
-                          "jpype",
-                          "magma.types"
-                          )
-                       )) for structure in structures]
         global fragid
         fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
         if fragid == None:
             fragid = 0
-        for structure,job in jobs:
-            raw_result=job(raw_result=True)
-            hits,sout = pickle.loads(raw_result)
-            # print sout
-            sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
-            structure.nhits=len(hits)
-            self.db_session.add(structure)
-            for hit in hits:
-                sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
-                # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
-                sys.stderr.write('Score: '+str(hit.score)+'\n')
-                # outfile.write("\t"+str(hit.score/fragment_store.get_avg_score()))
-                self.store_hit(hit,structure.metid,0)
+        sys.stderr.write('Start ...')
+        if ncpus > 1:
+            ppservers = ()
+            logging.warn('calculating on '+str(ncpus)+' cpus !!!')
+            job_server = pp.Server(ncpus, ppservers=ppservers)
+            jobs=[(structure,
+                   job_server.submit(search_structure,(structure,
+                              self.scans,
+                              self.max_broken_bonds,
+                              max_small_losses,
+                              self.precision,
+                              self.mz_precision_abs,
+                              self.use_all_peaks,
+                              self.ionisation_mode
+                              ),(
+                              CDKengine,
+                              ),(
+                              "numpy",
+                              "jpype",
+                              "magma.types"
+                              )
+                           )) for structure in structures]
+            for structure,job in jobs:
+                raw_result=job(raw_result=True)
+                hits,sout = pickle.loads(raw_result)
+                # print sout
+                sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
+                structure.nhits=len(hits)
+                self.db_session.add(structure)
+                for hit in hits:
+                    sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
+                    # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
+                    sys.stderr.write('Score: '+str(hit.score)+'\n')
+                    # outfile.write("\t"+str(hit.score/fragment_store.get_avg_score()))
+                    self.store_hit(hit,structure.metid,0)
+        else:
+            for structure in structures:
+                hits=search_structure(structure,
+                              self.scans,
+                              self.max_broken_bonds,
+                              max_small_losses,
+                              self.precision,
+                              self.mz_precision_abs,
+                              self.use_all_peaks,
+                              self.ionisation_mode
+                              )
+                sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
+                structure.nhits=len(hits)
+                self.db_session.add(structure)
+                for hit in hits:
+                    sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
+                    # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
+                    sys.stderr.write('Score: '+str(hit.score)+'\n')
+                    # outfile.write("\t"+str(hit.score/fragment_store.get_avg_score()))
+                    self.store_hit(hit,structure.metid,0)
         self.db_session.commit()
 
     def store_hit(self,hit,metid,parentfragid):
@@ -1047,7 +1065,10 @@ def search_structure(structure,scans,max_broken_bonds,max_small_losses,precision
 
     #def findhit(self,childscan,parent):
     def gethit (peak,fragment,score,bondbreaks,mass,deltaH):
-        hit=magma.types.HitType(peak,fragment,score,bondbreaks,mass,deltaH)
+        try:
+            hit=types.HitType(peak,fragment,score,bondbreaks,mass,deltaH)
+        except:
+            hit=magma.types.HitType(peak,fragment,score,bondbreaks,mass,deltaH)
         #hit.__module__="magma"
         #rint hit.__module__
         #print os.path.splitext(os.path.basename(__file__))[0]
