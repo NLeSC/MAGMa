@@ -53,14 +53,15 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         c.loadMolecule(ChemDoodle.readMOL(value));
         var tip = Ext.create('Ext.tip.ToolTip', {
           target: id,
-          html: '<canvas id="'+id+'-tp"></canvas>',
+          html: null,
           listeners: {
             render: function(tip) {
-              var c = new ChemDoodle.ViewerCanvas(id+'-tp', 300, 300);
+              var c = new ChemDoodle.ViewerCanvas(id+'-'+tip.id, 300, 300);
               c.loadMolecule(ChemDoodle.readMOL(value));
             }
           }
         });
+        tip.update('<canvas id="'+id+'-'+tip.id+'"></canvas>');
       }
     });
 
