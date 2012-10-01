@@ -252,9 +252,8 @@ class StructureEngine(object):
             dupid = self.db_session.query(Metabolite).filter_by(smiles=inchikey).one()
             if dupid.probability < prob:
                 self.db_session.delete(dupid)
-                self.db_session.commit()
+                metab.metid=dupid.metid
                 self.db_session.add(metab)
-                self.db_session.commit()
                 sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - old one removed\n')
                 # TODO remove any fragments related to this structure as well
             else:
@@ -262,10 +261,9 @@ class StructureEngine(object):
                 metab = dupid
         except NoResultFound:
             self.db_session.add(metab)
-            self.db_session.flush()
             sys.stderr.write('Added: '+name+'\n')
+        self.db_session.flush()
         return metab.metid
-            # print 'Added structure:',sequence
 
     def add_structure_tmp(self,mol,name,prob,level,sequence,isquery):
         m=Chem.MolFromMolBlock(mol)
