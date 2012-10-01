@@ -1,1 +1,1 @@
-""" Place for tests """
+"""Place for tests """

@@ -203,7 +203,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       function(b,v) {
         if (b != 'cancel' && v) {
          v = v*1;
-         me.selectScan(v);
+         me.selectScan(v, true);
         }
       }
     );
@@ -215,9 +215,10 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   /**
    * Select a scan
    * @param {Number} scanid Scan identifier
+   * @param {Boolean} [silent=false] Passing true will supress the 'unselectscan' event from being fired.
    */
-  selectScan: function(scanid) {
-    this.getChromatogram().selectScan(scanid);
+  selectScan: function(scanid, silent) {
+    this.getChromatogram().selectScan(scanid, silent);
     this.application.fireEvent('selectscan', scanid);
   },
   /**
