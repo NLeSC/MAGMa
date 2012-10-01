@@ -898,7 +898,7 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
         import StringIO
         expected_csvfile = StringIO.StringIO()
         csvwriter = csv.DictWriter(expected_csvfile, [
-                                                  'name', 'smiles',
+                                                  'origin', 'smiles',
                                                   'probability',
                                                   'reactionsequence',
                                                   'nhits', 'molformula',
@@ -908,14 +908,14 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
                                                   ])
         csvwriter.writeheader()
         csvwriter.writerow({
-                            'name': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
+                            'origin': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
                             'probability': 1.0, 'reactionsequence': 'PARENT',
                             'nhits': 1, 'molformula': 'C6H6O2',
                             'isquery': True, 'mim': 110.03677, 'logp': 1.231,
                             'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
                             })
         csvwriter.writerow({
-                            'name': 'dihydroxyphenyl-valerolactone',
+                            'origin': 'dihydroxyphenyl-valerolactone',
                             'smiles': 'O=C1OC(Cc2ccc(O)c(O)c2)CC1',
                             'probability': 1.0, 'reactionsequence': 'PARENT',
                             'nhits': 1, 'molformula': 'C11H12O4',
@@ -932,7 +932,7 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
         import StringIO
         expected_csvfile = StringIO.StringIO()
         csvwriter = csv.DictWriter(expected_csvfile, [
-                                                  'name', 'smiles',
+                                                  'origin', 'smiles',
                                                   'probability',
                                                   'reactionsequence',
                                                   'nhits', 'molformula', 'mim',
@@ -941,7 +941,7 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
                                                   ])
         csvwriter.writeheader()
         csvwriter.writerow({
-                            'name': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
+                            'origin': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
                             'probability': 1.0, 'reactionsequence': 'PARENT',
                             'nhits': 1, 'molformula': 'C6H6O2',
                             'isquery': True, 'score': 200.0, 'mim': 110.03677,
@@ -950,6 +950,18 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
                             })
         self.assertMultiLineEqual(csvfile.getvalue(),
                                   expected_csvfile.getvalue())
+
+    def test_some_columns(self):
+        cols = ['origin', 'mim']
+        mets = self.job.metabolites(scanid=641)['rows']
+
+        response = self.job.metabolites2csv(mets, cols=cols)
+
+        self.assertEquals(
+            response.getvalue(),
+            'origin,mim\r\n' +
+            'pyrocatechol,110.03677\r\n'
+        )
 
 
 class JobMetabolites2sdfTestCase(unittest.TestCase):
@@ -960,7 +972,7 @@ class JobMetabolites2sdfTestCase(unittest.TestCase):
     def test_it(self):
         sdffile = self.job.metabolites2sdf(self.job.metabolites()['rows'])
 
-        expected_sdf = """Molfile> <name>
+        expected_sdf = """Molfile> <origin>
 pyrocatechol
 
 > <smiles>
@@ -988,7 +1000,7 @@ C6H6O2
 <a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>
 
 $$$$
-Molfile of dihydroxyphenyl-valerolactone> <name>
+Molfile of dihydroxyphenyl-valerolactone> <origin>
 dihydroxyphenyl-valerolactone
 
 > <smiles>
@@ -1025,7 +1037,7 @@ $$$$
         mets = self.job.metabolites(scanid=641)['rows']
         sdffile = self.job.metabolites2sdf(mets)
 
-        expected_sdf = """Molfile> <name>
+        expected_sdf = """Molfile> <origin>
 pyrocatechol
 
 > <smiles>
@@ -1054,6 +1066,23 @@ C6H6O2
 
 > <score>
 200.0
+
+$$$$
+"""
+
+        self.assertMultiLineEqual(sdffile, expected_sdf)
+
+    def test_some_columns(self):
+        cols = ['origin', 'mim']
+
+        mets = self.job.metabolites(scanid=641)['rows']
+        sdffile = self.job.metabolites2sdf(mets, cols=cols)
+
+        expected_sdf = """Molfile> <origin>
+pyrocatechol
+
+> <mim>
+110.03677
 
 $$$$
 """
