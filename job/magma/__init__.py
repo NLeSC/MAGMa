@@ -634,17 +634,17 @@ class AnnotateEngine(object):
                     print str(scan.scanid)+','+str(peak.mz)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
 
-#    def search_all_structures(self):
-#        logging.warn('Searching all structures')
-#        for structure in self.db_session.query(Metabolite).all():
-#            structure.nhits=search_structure(structure,self.scans)
-
     def search_structures(self,metids=None,ncpus=1):
         logging.warn('Searching structures')
         if metids==None:
             structures = self.db_session.query(Metabolite).all()
-        else:
-            structures = self.db_session.query(Metabolite).filter(Metabolite.metid.in_(metids)).all()
+        else:  # split metids in chunks of 500 to avoid error in db_session.query
+            structures = []
+            while len(metids)>0:
+                ids=set([])
+                while len(ids)<500 and len(metids)>0:
+                    ids.add(metids.pop())
+                structures = structures+self.db_session.query(Metabolite).filter(Metabolite.metid.in_(ids)).all()
         global fragid
         fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
         if fragid == None:
