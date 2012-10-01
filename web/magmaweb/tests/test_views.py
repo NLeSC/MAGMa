@@ -257,6 +257,27 @@ class ViewsTestCase(unittest.TestCase):
         self.assertEqual(response.content_type, 'text/csv')
         self.assertEqual(response.body, 'bla')
 
+    def test_metabolitescsv_somecols(self):
+        import StringIO
+        csv = StringIO.StringIO()
+        csv.write('bla')
+        request = testing.DummyRequest(params={
+                                               'start': 0,
+                                               'limit': 10,
+                                               'cols': '["name","score"]'
+                                               })
+
+        views = Views(request)
+        job = self.fake_job()
+        job.metabolites2csv.return_value = csv
+        views.job = Mock(return_value=job)
+        rows = [{'name':'foo', 'score': 'bar', 'id': 123}]
+        views.metabolitesjson = Mock(return_value={'rows': rows})
+
+        views.metabolitescsv()
+
+        job.metabolites2csv.assert_called_with(rows, cols=['name', 'score'])
+
     def test_metabolitessdf(self):
         job = Mock(Job)
         job.metabolites2sdf.return_value = 'bla'
@@ -271,8 +292,26 @@ class ViewsTestCase(unittest.TestCase):
                                                    })
         response = views.metabolitessdf()
 
+        job.metabolites2sdf.assert_called_with([], cols=[])
         self.assertEqual(response.content_type, 'chemical/x-mdl-sdfile')
         self.assertEqual(response.body, 'bla')
+
+    def test_metabolitessdf_somecols(self):
+        job = Mock(Job)
+        job.metabolites2sdf.return_value = 'bla'
+        request = testing.DummyRequest(params={
+                                               'start': 0,
+                                               'limit': 10,
+                                               'cols': '["name","score"]'
+                                               })
+        views = Views(request)
+        views.job = Mock(return_value=job)
+        views.metabolitesjson = Mock(return_value={
+                                                   'rows': []
+                                                   })
+        views.metabolitessdf()
+
+        job.metabolites2sdf.assert_called_with([], cols=['name', 'score'])
 
     def test_chromatogramjson(self):
         request = testing.DummyRequest()

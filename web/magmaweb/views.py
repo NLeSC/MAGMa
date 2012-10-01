@@ -182,9 +182,18 @@ class Views(object):
     @view_config(route_name='metabolites.csv')
     def metabolitescsv(self):
         """Same as metabolitesjson(), but returns csv file
+
+        Additional request.params:
+          `cols`
+            Which metabolite columns should be returned.
+            Order of output is same as `cols`.
+            A empty list selects all columns.
         """
         mets = self.metabolitesjson()
-        csv = self.job().metabolites2csv(mets['rows'])
+        cols = []
+        if ('cols' in self.request.params):
+            cols = json.loads(self.request.params['cols'])
+        csv = self.job().metabolites2csv(mets['rows'], cols=cols)
         response = Response(content_type='text/csv', body=csv.getvalue())
         # response.app_iter does not work on StringIO, so use response.body
         # response.app_iter = csv
@@ -193,9 +202,18 @@ class Views(object):
     @view_config(route_name='metabolites.sdf')
     def metabolitessdf(self):
         """Same as metabolitesjson(), but returns sdf file
+
+        Additional request.params:
+          `cols`
+            Which metabolite columns should be returned.
+            Order of output is same as `cols`.
+            A empty list selects all columns.
         """
         mets = self.metabolitesjson()
-        sdf = self.job().metabolites2sdf(mets['rows'])
+        cols = []
+        if ('cols' in self.request.params):
+            cols = json.loads(self.request.params['cols'])
+        sdf = self.job().metabolites2sdf(mets['rows'], cols=cols)
         response = Response(content_type='chemical/x-mdl-sdfile',
                             charset='utf-8', body=sdf)
         return response

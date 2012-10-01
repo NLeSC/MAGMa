@@ -823,50 +823,66 @@ class Job(object):
 
         return {'total': total, 'rows': mets}
 
-    def metabolites2csv(self, metabolites):
+    def metabolites2csv(self, metabolites, cols=None):
         """Converts array of metabolites to csv file handler
 
         Params:
-        metabolites array like metabolites()['rows']
+          `metabolites`
+            array like metabolites()['rows']
+          `cols`
+            Which metabolite columns should be returned.
+            A empty list selects all columns.
 
         Return
         :class:`StringIO.StringIO`
         """
+        cols = cols or []
         csvstr = StringIO.StringIO()
         headers = [
-                   'name', 'smiles', 'probability', 'reactionsequence',
+                   'origin', 'smiles', 'probability', 'reactionsequence',
                    'nhits', 'molformula', 'mim', 'isquery', 'logp',
                    'reference'
                    ]
         if ('score' in metabolites[0].keys()):
             headers.append('score')
 
+        if (len(cols) > 0):
+            crow = [key for key in cols if key in headers]
+            headers = crow
+
         csvwriter = csv.DictWriter(csvstr, headers, extrasaction='ignore')
         csvwriter.writeheader()
         for m in metabolites:
-            m['name'] = m['origin']
             csvwriter.writerow(m)
 
         return csvstr
 
-    def metabolites2sdf(self, metabolites):
+    def metabolites2sdf(self, metabolites, cols=None):
         """Converts array of metabolites to a sdf string
 
         Params:
-        metabolites array like metabolites()['rows']
+          `metabolites`
+            array like metabolites()['rows']
+          `cols`
+            Which metabolite columns should be returned.
+            A empty list selects all columns.
 
         Return
         String
         """
         s = ''
-        props = ['name', 'smiles', 'probability', 'reactionsequence',
+        cols = cols or []
+        props = ['origin', 'smiles', 'probability', 'reactionsequence',
                  'nhits', 'molformula', 'mim', 'logp',
                  'reference']
         if ('score' in metabolites[0].keys()):
             props.append('score')
 
+        if (len(cols) > 0):
+            crow = [key for key in cols if key in props]
+            props = crow
+
         for m in metabolites:
-            m['name'] = m['origin']
             s += m['mol']
             for p in props:
                 s += '> <{}>\n{}\n\n'.format(p, m[p])
