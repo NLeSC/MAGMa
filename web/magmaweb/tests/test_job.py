@@ -1166,6 +1166,19 @@ class JobScansWithMetabolitesTestCase(unittest.TestCase):
 
         self.assertEqual(len(response), 1)
 
+    def test_filteron_deltappm(self):
+        filters = [{"type": "numeric", "comparison": "gt",
+                    "value": 0, "field": "nhits"},
+                   {"type": "numeric", "value": "200",
+                    "comparison": "lt", "field": "deltappm"}]
+
+        response = self.job.scansWithMetabolites(filters=filters)
+
+        self.assertEqual(response, [
+            {'id': 641, 'rt': 933.317},
+            {'id': 870, 'rt': 1254.15}
+        ])
+
 
 class JobMSpectraTestCase(unittest.TestCase):
     def setUp(self):
