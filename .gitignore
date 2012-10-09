@@ -1,5 +1,9 @@
+# ignore eclipse project files
 .project
 .pydevproject
+.settings
+.classpath
+
 /job/Magma.egg-info
 /job/PKG-INFO
 *.pyc
