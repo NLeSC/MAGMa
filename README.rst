@@ -8,4 +8,6 @@ Homepage: http://www.emetabolomics.org
 Subprojects:
 
 - Job - Run annotations
+- JobManager - Webservice to execute jobs
 - Web - Webapplication
+- Www - The www.emetabolomics.org website
