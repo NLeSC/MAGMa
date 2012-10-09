@@ -7,9 +7,7 @@ Magma subproject which performs actual calculations.
 Requirements
 ------------
 
-MAGMa requires rdkit python package.
-To install see instructions at http://rdkit.sourceforge.net/ .
-rdkit requires boost libraries and numpy.
+MAGMa requires CDK java package via communicates with CDK using JPype python package.
 
 Running on cluster
 ------------------

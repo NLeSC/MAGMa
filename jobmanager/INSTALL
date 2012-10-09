@@ -4,6 +4,7 @@ Requirements
 Besides maven dependencies requires:
 
 - JavaGAT jars in local maven repository, see pom.xml for commands
+- JavaGAT adaptors in lib/adaptors directory
 - Magma program tarball for runnning jobs on grid.sara.nl
 
 

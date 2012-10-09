@@ -249,7 +249,7 @@
         </plugins>
     </build>
     <properties>
-        <jersey-version>1.12</jersey-version>
+        <jersey-version>1.14</jersey-version>
         <gat-adaptor-path>lib/adaptors</gat-adaptor-path>
     </properties>
     <repositories>
@@ -266,27 +266,27 @@
             <layout>default</layout>
         </repository>
         <repository>
-            <!-- Repo can be generated with: mvn install:install-file -Dfile=lib/castor-1.1.1-xml.jar
-                -DgroupId=javagat -DartifactId=castor-1.1.1-xml -Dversion=r2337 -Dpackaging=jar
-                -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file -Dfile=lib/commons-logging-1.1.jar
-                -DgroupId=javagat -DartifactId=commons-logging-1.1 -Dversion=r2337 -Dpackaging=jar
-                -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file -Dfile=lib/GAT-API.jar
-                -DgroupId=javagat -DartifactId=GAT-API -Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo
-                ;mvn install:install-file -Dfile=lib/GAT-engine.jar -DgroupId=javagat -DartifactId=GAT-engine
-                -Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file
-                -Dfile=lib/GAT-tests.jar -DgroupId=javagat -DartifactId=GAT-tests -Dversion=r2337
-                -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file
-                -Dfile=lib/ibis-util-2.3-pre.jar -DgroupId=javagat -DartifactId=ibis-util-2.3-pre
-                -Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file
-                -Dfile=lib/log4j-1.2.13.jar -DgroupId=javagat -DartifactId=log4j-1.2.13 -Dversion=r2337
-                -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file
-                -Dfile=lib/slf4j-api-1.5.3.jar -DgroupId=javagat -DartifactId=slf4j-api-1.5.3
-                -Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file
-                -Dfile=lib/slf4j-log4j12-1.5.3.jar -DgroupId=javagat -DartifactId=slf4j-log4j12-1.5.3
-                -Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file
-                -Dfile=lib/xercesImpl.jar -DgroupId=javagat -DartifactId=xercesImpl -Dversion=r2337
-                -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file
-                -Dfile=lib/xmlParserAPIs.jar -DgroupId=javagat -DartifactId=xmlParserAPIs
+            <!-- Repo can be generated with: mvn install:install-file -Dfile=lib/castor-1.1.1-xml.jar \
+                -DgroupId=javagat -DartifactId=castor-1.1.1-xml -Dversion=r2337 -Dpackaging=jar \
+                -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file -Dfile=lib/commons-logging-1.1.jar \
+                -DgroupId=javagat -DartifactId=commons-logging-1.1 -Dversion=r2337 -Dpackaging=jar \
+                -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file -Dfile=lib/GAT-API.jar \
+                -DgroupId=javagat -DartifactId=GAT-API -Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo \
+                ;mvn install:install-file -Dfile=lib/GAT-engine.jar -DgroupId=javagat -DartifactId=GAT-engine \
+                -Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file \
+                -Dfile=lib/GAT-tests.jar -DgroupId=javagat -DartifactId=GAT-tests -Dversion=r2337 \
+                -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file \
+                -Dfile=lib/ibis-util-2.3-pre.jar -DgroupId=javagat -DartifactId=ibis-util-2.3-pre \
+                -Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file \
+                -Dfile=lib/log4j-1.2.13.jar -DgroupId=javagat -DartifactId=log4j-1.2.13 -Dversion=r2337 \
+                -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file \
+                -Dfile=lib/slf4j-api-1.5.3.jar -DgroupId=javagat -DartifactId=slf4j-api-1.5.3 \
+                -Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file \
+                -Dfile=lib/slf4j-log4j12-1.5.3.jar -DgroupId=javagat -DartifactId=slf4j-log4j12-1.5.3 \
+                -Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file \
+                -Dfile=lib/xercesImpl.jar -DgroupId=javagat -DartifactId=xercesImpl -Dversion=r2337 \
+                -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mvn install:install-file \
+                -Dfile=lib/xmlParserAPIs.jar -DgroupId=javagat -DartifactId=xmlParserAPIs \
                 -Dversion=r2337 -Dpackaging=jar -DlocalRepositoryPath=/tmp/my-repo ;mv /tmp/my-repo
                 m2javagat -->
             <id>my-javagat-repo</id>
