@@ -699,6 +699,7 @@ class AnnotateEngine(object):
                 sys.stderr.write('Score: '+str(hit.score)+'\n')
                 # outfile.write("\t"+str(hit.score/fragment_store.get_avg_score()))
                 self.store_hit(hit,structure.metid,0)
+            self.db_session.flush()
         self.db_session.commit()
 
     def store_hit(self,hit,metid,parentfragid):
@@ -749,6 +750,7 @@ class DataAnalysisEngine(object):
             print metabolite.mol[metabolite.mol.find("\n")+1:-1]
             print "> <ScanID>\n"+str(peak.scanid)+"\n"
             print "> <mz>\n"+str(peak.mz)+"\n"
+            print "> <intensity>\n"+str(peak.intensity)+"\n"
             print "> <rt>\n"+str(self.db_session.query(Scan.rt).filter(Scan.scanid==peak.scanid).all()[0][0])+"\n"
             print "> <molecular formula>\n"+metabolite.molformula+"\n"
             print "$$$$"
