@@ -909,10 +909,14 @@ class Job(object):
             fq = fq.filter(Fragment.metid == metid)
 
         for filter in filters:
-            if (filter['field'] == 'nhits' and filter['comparison'] == 'gt' and filter['value'] == 0):
+            if (filter['field'] == 'nhits'
+              and filter['comparison'] == 'gt'
+              and filter['value'] == 0):
                 continue
             if (filter['field'] == 'score'):
                 fq = self.extjsgridfilter(fq, Fragment.score, filter)
+            elif (filter['field'] == 'deltappm'):
+                fq = self.extjsgridfilter(fq, Fragment.deltappm, filter)
             elif (filter['field'] == 'assigned'):
                 filter['type'] = 'null'
                 fq = fq.join(Peak, and_(Fragment.scanid == Peak.scanid,
