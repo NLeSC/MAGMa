@@ -46,7 +46,7 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
           enableToggle: true
       }]
   }],
-  requires: [ 'Esc.chemdoodle.Column', 'Ext.selection.CheckboxModel' ],
+  requires: [ 'Esc.chemdoodle.Column', 'Ext.selection.CheckboxModel', 'Ext.grid.column.Number' ],
   viewConfig: {
     // animate is default true causing refresh event to be blocked
     // we use refresh event to render molecules
@@ -110,17 +110,20 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
 
     Ext.apply(this, {
       columns: [
-        { text: 'Score', dataIndex: 'score', xtype: 'treecolumn', width: 120},
+        { text: 'Score', dataIndex: 'score', xtype: 'treecolumn', width: 120, renderer: function(value) {
+        	 // can't use numbercolumn or we will loose depth visualisation, so use renderer
+        	 return Ext.util.Format.number(value, '0.00000');
+        }},
         fmolcol,
         { text: 'ID', dataIndex: 'fragid', hidden: true},
         { text: 'Scan', dataIndex: 'scanid', hidden: false},
         { text: 'Metabolite', dataIndex: 'metid', hidden: true},
-        { text: 'M/z', dataIndex: 'mz'},
-        { text: 'Mass', dataIndex: 'mass'},
+        { text: 'M/z', dataIndex: 'mz', xtype: 'numbercolumn', format: '0.00000'},
+        { text: 'Mass', dataIndex: 'mass', xtype: 'numbercolumn', format: '0.00000'},
         { text: 'MS Level', dataIndex: 'mslevel'},
         { text: 'Fragment atoms', dataIndex: 'atoms', hidden: true},
-        { text: '&Delta;H', dataIndex: 'deltah'},
-        { text: '&Delta;Mass (ppm)', dataIndex: 'deltappm', hidden: true}
+        { text: '&Delta;H', dataIndex: 'deltah', xtype: 'numbercolumn', format: '0.00000'},
+        { text: '&Delta;Mass (ppm)', dataIndex: 'deltappm', hidden: true, xtype: 'numbercolumn', format: '0.00000'}
       ],
       plugins: [fmolcol]
     });

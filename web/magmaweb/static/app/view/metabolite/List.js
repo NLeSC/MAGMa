@@ -8,7 +8,8 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
   requires: [
     'Ext.ux.grid.FiltersFeature', 'Esc.chemdoodle.Column',
     'Ext.toolbar.Paging', 'Ext.grid.column.Boolean',
-    'Ext.grid.column.Action', 'Ext.selection.CheckboxModel'
+    'Ext.grid.column.Action', 'Ext.selection.CheckboxModel',
+    'Ext.grid.column.Number'
   ],
   store: 'Metabolites',
   viewConfig: {
@@ -84,7 +85,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         {text: 'ID', dataIndex: 'metid', hidden: true},
         molcol,
         {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: ['0','1','2','3'] }, hidden:true},
-        {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }},
+        {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Name', dataIndex: 'origin', flex:1, filter: { type: 'string' }},
         {text: 'Reaction sequence', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }, renderer: function(v) {
           return '<ol><li>'+v.replace("\n","</li><li>")+'</li></ol>';
@@ -94,12 +95,12 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         }},
         {text: 'Smiles', dataIndex: 'smiles', hidden:true},
         {text: 'Formula', dataIndex: 'molformula', filter: { type: 'string' }},
-        {text: 'Monoisotopic mass', dataIndex: 'mim', filter: { type: 'numeric' }, hidden: false},
+        {text: 'Monoisotopic mass', dataIndex: 'mim', filter: { type: 'numeric' }, hidden: false, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', hidden: true, trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
-        {text: 'Candidate score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }},
-        {text: '&Delta;Mass (ppm)', dataIndex: 'deltappm', hidden: true, filter: { type: 'numeric' }},
+        {text: 'Candidate score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
+        {text: '&Delta;Mass (ppm)', dataIndex: 'deltappm', hidden: true, filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Assigned', dataIndex: 'assigned', hidden: false, xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
-        {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true},
+        {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Reference', dataIndex: 'reference', filter: { type: 'string' }, sortable: false },
         {xtype: 'actioncolumn', width:30, text:'Commands',
             items: [{
