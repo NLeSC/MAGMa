@@ -17,8 +17,7 @@ setup(
     description='Ms Annotation based on in silico Generated Metabolites',
     long_description=README,
     packages=find_packages(),
-    install_requires=[ 'sqlalchemy', 'lxml','numpy','jpype'],
-    dependency_links=[ 'http://www.rdkit.org' ],
+    install_requires=[ 'sqlalchemy', 'lxml','numpy','jpype', 'pp'],
     package_data={
         'magma': ['data/*.smirks', 'script/reactor'],
         },
