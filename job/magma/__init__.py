@@ -331,7 +331,8 @@ class StructureEngine(object):
                         line=reactor.stdout.readline()
                     if sequence=='PARENT\n':
                         isquery=1
-                    reactionsequence=sequence[:-1]
+                        sequence=''
+                    reactionsequence=parent.reactionsequence+sequence
                 line=reactor.stdout.readline()
             metids.append(self.add_structure(mol,name,prob,level,reactionsequence,isquery))
             line=reactor.stdout.readline()
