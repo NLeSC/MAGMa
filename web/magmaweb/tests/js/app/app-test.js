@@ -4,7 +4,7 @@ Ext.Loader.setConfig({
   paths: {
     'Esc.magmaweb': '../../../static/app',
     'Esc': '../../../static/esc',
-    'Ext.ux': '../../../static/extjs-4.1.0/examples/ux'
+    'Ext.ux': '../../../static/ext-4.1.1a/examples/ux'
   }
 });
 
