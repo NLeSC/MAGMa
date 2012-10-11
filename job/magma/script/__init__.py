@@ -155,7 +155,10 @@ class MagmaCommand(object):
         elif args.structure_format == 'sdf':
             for mol in Chem.SDMolSupplier(args.structures.name):
                 try:
-                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 'PARENT', 1))
+                    rs=mol.GetProp('ReactionSequence')
+                    if rs!="":
+                        rs=rs+"\n"
+                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0,rs, 1))
                 except:
                     print sys.exc_info()
         magma_session.commit()
