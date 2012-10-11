@@ -76,7 +76,7 @@ def populateTestingDB(session):
         mol="Molfile of dihydroxyphenyl-valerolactone",
         molformula="C11H12O4",
         origin="dihydroxyphenyl-valerolactone",
-        probability=1.0, reactionsequence=["PARENT", "CHILD"],
+        probability=1.0, reactionsequence="PARENT\nCHILD\n",
         smiles="O=C1OC(Cc2ccc(O)c(O)c2)CC1",
         reference='<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=152432">CID: 152432</a>',
         mim=208.07355, logp=2.763, nhits=1
