@@ -43,7 +43,7 @@ def populateTestingDB(session):
     ))
     session.add(Metabolite(
         metid=72, mol='Molfile', level=0, probability=1.0,
-        reactionsequence='PARENT', smiles='Oc1ccccc1O',
+        reactionsequence=['PARENT'], smiles='Oc1ccccc1O',
         molformula='C6H6O2', isquery=True, nhits=1,
         origin='pyrocatechol', mim=110.03677, logp=1.231,
         reference='<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
@@ -76,7 +76,7 @@ def populateTestingDB(session):
         mol="Molfile of dihydroxyphenyl-valerolactone",
         molformula="C11H12O4",
         origin="dihydroxyphenyl-valerolactone",
-        probability=1.0, reactionsequence="PARENT",
+        probability=1.0, reactionsequence=["PARENT", "CHILD"],
         smiles="O=C1OC(Cc2ccc(O)c(O)c2)CC1",
         reference='<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=152432">CID: 152432</a>',
         mim=208.07355, logp=2.763, nhits=1
@@ -147,7 +147,7 @@ def populateWithUseAllPeaks(session):
         metid=12,
         level=1,
         probability=0.119004,
-        reactionsequence='sulfation_(aromatic_hydroxyl)',
+        reactionsequence=['sulfation_(aromatic_hydroxyl)'],
         smiles='Oc1ccc(CC2OC(=O)CC2)cc1OS(O)(=O)=O',
         molformula='C11H12O7S',
         isquery=False,
@@ -721,7 +721,7 @@ class JobMetabolitesTestCase(unittest.TestCase):
                     'nhits': 1,
                     'origin': u'pyrocatechol',
                     'probability': 1.0,
-                    'reactionsequence': u'PARENT',
+                    'reactionsequence': [u'PARENT'],
                     'smiles': u'Oc1ccccc1O',
                     'mim': 110.03677, 'logp':1.231,
                     'assigned': False,
@@ -733,7 +733,7 @@ class JobMetabolitesTestCase(unittest.TestCase):
                     'nhits': None,
                     'nhits': 1,
                     'origin': u"dihydroxyphenyl-valerolactone",
-                    'probability': 1, 'reactionsequence': u"PARENT",
+                    'probability': 1, 'reactionsequence': [u"PARENT", u"CHILD"],
                     'smiles': u"O=C1OC(Cc2ccc(O)c(O)c2)CC1",
                     'mim': 208.07355, 'logp':2.763,
                     'assigned': False,
@@ -917,7 +917,7 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
         csvwriter.writerow({
                             'origin': 'dihydroxyphenyl-valerolactone',
                             'smiles': 'O=C1OC(Cc2ccc(O)c(O)c2)CC1',
-                            'probability': 1.0, 'reactionsequence': 'PARENT',
+                            'probability': 1.0, 'reactionsequence': 'PARENT|CHILD',
                             'nhits': 1, 'molformula': 'C11H12O4',
                             'isquery': True, 'mim': 208.07355, 'logp': 2.763,
                             'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=152432">CID: 152432</a>',
@@ -1011,6 +1011,7 @@ O=C1OC(Cc2ccc(O)c(O)c2)CC1
 
 > <reactionsequence>
 PARENT
+CHILD
 
 > <nhits>
 1
@@ -1412,7 +1413,7 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                     'nhits': 1,
                     'origin': u'5-(3,4)-dihydroxyphenyl-g-valerolactone (F)',
                     'probability': 0.119004,
-                    'reactionsequence': u'sulfation_(aromatic_hydroxyl)',
+                    'reactionsequence': [u'sulfation_(aromatic_hydroxyl)'],
                     'smiles': u'Oc1ccc(CC2OC(=O)CC2)cc1OS(O)(=O)=O',
                     'mim': 288.0303734299, 'logp':1.9027,
                     'assigned': False,

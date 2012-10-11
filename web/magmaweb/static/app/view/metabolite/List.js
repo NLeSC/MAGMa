@@ -9,7 +9,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
     'Ext.ux.grid.FiltersFeature', 'Esc.chemdoodle.Column',
     'Ext.toolbar.Paging', 'Ext.grid.column.Boolean',
     'Ext.grid.column.Action', 'Ext.selection.CheckboxModel',
-    'Ext.grid.column.Number'
+    'Ext.grid.column.Number', 'Ext.grid.column.Template'
   ],
   store: 'Metabolites',
   viewConfig: {
@@ -87,9 +87,10 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: ['0','1','2','3'] }, hidden:true},
         {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Name', dataIndex: 'origin', flex:1, filter: { type: 'string' }},
-        {text: 'Reaction sequence', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }, renderer: function(v) {
-          return '<ol><li>'+v.replace("\n","</li><li>")+'</li></ol>';
-        }},
+        {
+        	text: 'Reaction sequence', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' },
+        	xtype: 'templatecolumn', tpl: '<ol><tpl for="reactionsequence"><li style="list-style:decimal;list-style-position:inside;">{.}</li></tpl></ol>'
+        },
         {text: 'Scans', dataIndex: 'nhits', filter: {
             type: 'numeric', value:{gt:0}, active: true
         }},
