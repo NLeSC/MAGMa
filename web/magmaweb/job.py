@@ -800,12 +800,15 @@ class Job(object):
 
         for r in q[start:(limit + start)]:
             met = r.Metabolite
+            reactionsequence=""
+            for line in met.reactionsequence.split('\n'):
+                reactionsequence+='<li>'+line+'</li>'
             row = {
                 'metid': met.metid,
                 'mol': met.mol,
                 'level': met.level,
                 'probability': met.probability,
-                'reactionsequence': met.reactionsequence,
+                'reactionsequence': reactionsequence,
                 'smiles': met.smiles,
                 'molformula': met.molformula,
                 'isquery': met.isquery,
