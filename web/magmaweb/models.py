@@ -26,7 +26,7 @@ class ReactionSequence(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         if value is not None and not isinstance(value, basestring):
-           value = '|'.join(value)
+           value = '\n'.join(value)
 
         return value
 
@@ -35,7 +35,7 @@ class ReactionSequence(TypeDecorator):
             return []
 
         if value is not None:
-            value = value.split('|')
+            value = value.rstrip('\n').split('\n')
 
         return value
 
