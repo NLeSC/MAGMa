@@ -1079,6 +1079,10 @@
                "path" : "static/ext-4.1.1a/src/grid/column/"
             },
             {
+               "name" : "Template.js",
+               "path" : "static/ext-4.1.1a/src/grid/column/"
+            },
+            {
                "name" : "Column.js",
                "path" : "static/ext-4.1.1a/src/tree/"
             },

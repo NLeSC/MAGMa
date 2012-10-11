@@ -800,15 +800,12 @@ class Job(object):
 
         for r in q[start:(limit + start)]:
             met = r.Metabolite
-            reactionsequence=""
-            for line in met.reactionsequence.split('\n'):
-                reactionsequence+='<li>'+line+'</li>'
             row = {
                 'metid': met.metid,
                 'mol': met.mol,
                 'level': met.level,
                 'probability': met.probability,
-                'reactionsequence': reactionsequence,
+                'reactionsequence': met.reactionsequence,
                 'smiles': met.smiles,
                 'molformula': met.molformula,
                 'isquery': met.isquery,
@@ -856,6 +853,7 @@ class Job(object):
         csvwriter = csv.DictWriter(csvstr, headers, extrasaction='ignore')
         csvwriter.writeheader()
         for m in metabolites:
+            m['reactionsequence'] = '|'.join(m['reactionsequence'])
             csvwriter.writerow(m)
 
         return csvstr
@@ -887,6 +885,7 @@ class Job(object):
 
         for m in metabolites:
             s += m['mol']
+            m['reactionsequence'] = '\n'.join(m['reactionsequence'])
             for p in props:
                 s += '> <{}>\n{}\n\n'.format(p, m[p])
             s += '$$$$' + "\n"
