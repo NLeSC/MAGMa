@@ -556,18 +556,23 @@ class AnnotateEngine(object):
             scan.peaks.append(types.PeakType(dbpeak.mz,dbpeak.intensity,scan.scanid,missingfragmentpenalty*(dbpeak.intensity**0.5)))
         dbchildscans=self.db_session.query(Scan).filter(Scan.precursorscanid==scan.scanid).all()
         for dbchildscan in dbchildscans:
+            # find the highest peak that qualifies as precursor peak for the child spectrum
+            prec_intensity=0.0
             for peak in scan.peaks:
-                if -self.precursor_mz_precision < dbchildscan.precursormz-peak.mz < self.precursor_mz_precision:
-                    peak.childscan=self.build_spectrum(dbchildscan)
-                    for childpeak in peak.childscan.peaks:
-                        peak.missing_fragment_score+=childpeak.missing_fragment_score
-                    break
-            else:
-                if dbchildscan.precursorintensity >= cutoff:
-                    scan.peaks.append(types.PeakType(dbchildscan.precursormz,dbchildscan.precursorintensity,scan.scanid,missingfragmentpenalty*(dbchildscan.precursorintensity**0.5)))
-                    scan.peaks[-1].childscan=self.build_spectrum(dbchildscan)
-                    for childpeak in scan.peaks[-1].childscan.peaks:
-                        scan.peaks[-1].missing_fragment_score+=childpeak.missing_fragment_score
+                if peak.intensity>prec_intensity and -self.precursor_mz_precision < dbchildscan.precursormz-peak.mz < self.precursor_mz_precision:
+                    prec_peak=peak
+                    prec_intensity=peak.intensity
+            # if present, process the childscan as its child spectrum
+            if prec_intensity>0.0:
+                prec_peak.childscan=self.build_spectrum(dbchildscan)
+                for childpeak in prec_peak.childscan.peaks:
+                    peak.missing_fragment_score+=childpeak.missing_fragment_score
+#            else:
+#                if dbchildscan.precursorintensity >= cutoff:
+#                    scan.peaks.append(types.PeakType(dbchildscan.precursormz,dbchildscan.precursorintensity,scan.scanid,missingfragmentpenalty*(dbchildscan.precursorintensity**0.5)))
+#                    scan.peaks[-1].childscan=self.build_spectrum(dbchildscan)
+#                    for childpeak in scan.peaks[-1].childscan.peaks:
+#                        scan.peaks[-1].missing_fragment_score+=childpeak.missing_fragment_score
         return scan
     
     def build_spectra(self,scans='all'):
