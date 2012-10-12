@@ -8,6 +8,7 @@ from sqlalchemy import Unicode
 from sqlalchemy import Float
 from sqlalchemy import Boolean
 from sqlalchemy import ForeignKey
+from sqlalchemy import TypeDecorator
 
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -15,6 +16,28 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy.schema import ForeignKeyConstraint
 
 Base = declarative_base()
+
+class ReactionSequence(TypeDecorator):
+    """List of reactions.
+
+    Stored in database as a newline seperated list.
+    """
+    impl = Unicode
+
+    def process_bind_param(self, value, dialect):
+        if value is not None and not isinstance(value, basestring):
+           value = '\n'.join(value)
+
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value=="":
+            return []
+
+        if value is not None:
+            value = value.rstrip('\n').split('\n')
+
+        return value
 
 
 class Metabolite(Base):
@@ -27,7 +50,7 @@ class Metabolite(Base):
     level = Column(Integer)
     probability = Column(Float)
     # A newline seperated list of reactions
-    reactionsequence = Column(Unicode)
+    reactionsequence = Column(ReactionSequence)
     # Smile string
     smiles = Column(Unicode, unique=True)
     # Molecular formula
