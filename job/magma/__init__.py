@@ -70,7 +70,7 @@ class CDKengine(object):
         molecule=self.cdk.Molecule()
         reader2mol.read(molecule)
         self.cdk.tools.manipulator.AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(molecule)
-        #self.cdk.aromaticity.CDKHueckelAromaticityDetector.detectAromaticity(molecule) #
+        self.cdk.aromaticity.CDKHueckelAromaticityDetector.detectAromaticity(molecule) #
         ha=self.cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
         ha.addImplicitHydrogens(molecule)
         return molecule
@@ -89,9 +89,13 @@ class CDKengine(object):
     def MolToSmiles(self,molecule):
         return self.sg.createSMILES(molecule) #sg.createSMILES(molecule,True)
     def MolToInchiKey(self,molecule):
+        # For some reason inchikey fails when bond flag 5 (ISCONJUGATED) is set
+        # Make a copy and set all flag 5 values to 0
+        mol=molecule.clone()
+        for x in range(mol.getBondCount()):
+            mol.getBond(x).setFlag(5,0)
         igf = self.cdk.inchi.InChIGeneratorFactory.getInstance()
-        ig = igf.getInChIGenerator(molecule)
-        # print ig
+        ig = igf.getInChIGenerator(mol)
         return ig.getInchiKey()
     def GetExtendedAtomMass(self,atom):
         mass=self.isof.getMajorIsotope(atom.getSymbol()).getExactMass().floatValue()
@@ -109,9 +113,7 @@ class CDKengine(object):
         return self.sg.createSMILES(self.acm.extractSubstructure(mol,atomlist))
     def FragmentToInchiKey(self,mol,atomlist):
         ac=self.acm.extractSubstructure(mol,atomlist)
-        igf = self.cdk.inchi.InChIGeneratorFactory.getInstance()
-        ig = igf.getInChIGenerator(ac)
-        return ig.getInchiKey()
+        return self.MolToInchiKey(ac)
 
 Chem = CDKengine()
 
@@ -1115,7 +1117,7 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
             try:
                 hit.inchikey=Chem.FragmentToInchiKey(mol,hit.atomlist)[:14]
             except:
-                exit('failted inchi for: '+atomstring+'--'+str(hit.fragment))
+                exit('failed inchi for: '+atomstring+'--'+str(hit.fragment))
             if len(hit.besthits)>0:
                 for childhit in hit.besthits:
                     if childhit != None: # still need to work out how to deal with missed fragments
