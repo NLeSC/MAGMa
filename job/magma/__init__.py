@@ -568,7 +568,7 @@ class AnnotateEngine(object):
             if prec_intensity>0.0:
                 prec_peak.childscan=self.build_spectrum(dbchildscan)
                 for childpeak in prec_peak.childscan.peaks:
-                    peak.missing_fragment_score+=childpeak.missing_fragment_score
+                    prec_peak.missing_fragment_score+=childpeak.missing_fragment_score
 #            else:
 #                if dbchildscan.precursorintensity >= cutoff:
 #                    scan.peaks.append(types.PeakType(dbchildscan.precursormz,dbchildscan.precursorintensity,scan.scanid,missingfragmentpenalty*(dbchildscan.precursorintensity**0.5)))
