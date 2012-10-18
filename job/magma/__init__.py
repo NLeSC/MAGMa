@@ -718,7 +718,7 @@ class AnnotateEngine(object):
         deltappm=None
         if score != None:
             score=score/hit.intensity_weight
-            deltappm=(hit.mz+hit.deltaH*Hmass-hit.mass)/hit.mz*1e6
+            deltappm=(hit.mz+hit.deltaH*Hmass-hit.mass+self.ionisation_mode*0.0005486)/hit.mz*1e6
         # print atomlist, Chem.FragmentSmiles(mol,atomlist)
         self.db_session.add(Fragment(
             metid=metid,
@@ -1035,10 +1035,9 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
             # subfrag=(1<<mol.GetNumAtoms())-1 # remove hierarchical constraint
             # besthit=None
             besthit=gethit(peak,0,None,0,0,0)
-            # print peak.missingfragmentscore
-            # result=numpy.where(numpy.where(self.fragment_masses < (peak.mz+mz_precision),self.fragment_masses,0) > (peak.mz-mz_precision))
-            result=numpy.where(numpy.where(self.fragment_masses < max(peak.mz*precision,peak.mz+mz_precision_abs),
-                                     self.fragment_masses,0) > min(peak.mz/precision,peak.mz-mz_precision_abs))
+            mz_neutral=peak.mz+ionisation_mode*0.0005486 # m/z value of the neutral form of the fragment (mass of electron added/removed)
+            result=numpy.where(numpy.where(self.fragment_masses < max(mz_neutral*precision,mz_neutral+mz_precision_abs),
+                                     self.fragment_masses,0) > min(mz_neutral/precision,mz_neutral-mz_precision_abs))
             for i in range(len(result[0])):
                 fid=result[0][i]
                 if self.fragments[fid] & parent == self.fragments[fid]:
@@ -1068,7 +1067,7 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
     def massmatch(peak,mim,low,high):
         for x in range(low,high+1):
             #if self.mz-me.mz_precision < mim+x*Hmass < self.mz+me.mz_precision:
-            if peak.mz/precision < mim+x*Hmass < peak.mz*precision:
+            if peak.mz/precision < mim+x*Hmass-ionisation_mode*0.0005486 < peak.mz*precision:
                 return x
         else:
             return False
