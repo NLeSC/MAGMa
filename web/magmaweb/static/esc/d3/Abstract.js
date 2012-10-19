@@ -171,6 +171,7 @@ Ext.define('Esc.d3.Abstract', {
    */
   onZoom: function() {
     this.svg.select(".x.axis").call(this.axes.x);
+    this.svg.select(".y.axis").call(this.axes.y);
   },
   /**
    * Prepare {@link #ranges}, {@link #scales} and {@link #axes} based on {@link #data} .
@@ -219,7 +220,7 @@ Ext.define('Esc.d3.Abstract', {
   initZoom: function() {
     // update zoomer
     this.svg.select('rect.zoomer').call(
-        d3.behavior.zoom().x(this.scales.x).on("zoom", this.onZoom.bind(this))
+        d3.behavior.zoom().x(this.scales.x).y(this.scales.y).on("zoom", this.onZoom.bind(this))
     );
   },
   /**
