@@ -102,8 +102,17 @@ Ext.define('Esc.d3.Chromatogram', {
        .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + (me.scales.y(me.ranges.y.max)-4) + ")"; });
     }
     this.svg.selectAll("line.peak")
-      .attr("x1", function(d) { return me.scales.x(d.rt); })
-      .attr("x2", function(d) { return me.scales.x(d.rt); })
+    	.attr("x1", function(d) { return me.scales.x(d.rt); })
+	    .attr("y2", function(d) { return me.scales.y(d.intensity); })
+    	.attr("y1", function(d) { return me.scales.y(0); })
+	    .attr("x2", function(d) { return me.scales.x(d.rt); })
+    ;
+
+    this.svg.selectAll("line."+this.cutoffCls)
+      .attr('x1',0)
+      .attr('x2',this.chartWidth)
+      .attr('y1',this.scales.y(this.cutoff))
+      .attr('y2',this.scales.y(this.cutoff))
     ;
   },
   initScales: function() {
@@ -186,7 +195,7 @@ Ext.define('Esc.d3.Chromatogram', {
     .classed('assigned', function(d) { return d.ap>0;})
     .attr("x1", function(d) { return me.scales.x(d.rt); })
     .attr("y2", function(d) { return me.scales.y(d.intensity); })
-    .attr("y1", this.chartHeight)
+    .attr("y1", function(d) { return me.scales.y(0); })
     .attr("x2", function(d) { return me.scales.x(d.rt); })
     .on('mouseover', function(scan) {
         // fetch intensity of metabolite if available
