@@ -423,6 +423,7 @@ class MsDataEngine(object):
 #                if float(child.attrib['basePeakIntensity'])>cutoff:
                 self.store_mzxml_scan(child,scan.scanid,namespace)
         self.db_session.add(scan)
+        self.db_session.flush()
 
     def store_mzxml_peaks(self,scan,line):
 #        dbpeak_cutoff=scan.basepeakintensity*self.rel_peak_cutoff
