@@ -152,4 +152,53 @@ describe('Esc.d3.Abstract', function() {
     expect(chart.initZoom).toHaveBeenCalled();
     expect(chart.onZoom).toHaveBeenCalled();
   });
+
+  describe('zoomBehavior', function() {
+    it('default: x true, y false', function() {
+      var chart = Ext.create('Esc.d3.Abstract', {
+    	width: 400, height: 500,
+    	scales: {
+    		x: d3.scale.linear(),
+    		y: d3.scale.linear()
+    	}
+      });
+
+      var zoom = chart.zoomBehavior();
+
+      expect(zoom.x()).toEqual(chart.scales.x);
+      expect(zoom.y()).toBeUndefined();
+    });
+
+    it('custom: x false, y true', function() {
+      var chart = Ext.create('Esc.d3.Abstract', {
+        width: 400, height: 500,
+        zoom: {
+        	x: false,
+        	y: true
+        },
+    	scales: {
+    		x: d3.scale.linear(),
+    		y: d3.scale.linear()
+    	}
+      });
+
+      var zoom = chart.zoomBehavior();
+
+      expect(zoom.x()).toBeUndefined();
+      expect(zoom.y()).toEqual(chart.scales.y);
+    });
+  });
+
+  it('enableZoom', function() {
+	var chart = Ext.create('Esc.d3.Abstract', {
+	  width: 400, height: 500,
+	  zoom: {x: true, y: false}
+	});
+	spyOn(chart, 'initZoom');
+
+	chart.setZoom('y', true);
+
+	expect(chart.zoom.y).toEqual(true);
+	expect(chart.initZoom).toHaveBeenCalledWith();
+  });
 });
