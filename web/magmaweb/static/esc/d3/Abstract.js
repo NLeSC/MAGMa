@@ -30,6 +30,15 @@ Ext.define('Esc.d3.Abstract', {
           y: null
         },
         /**
+         * @property {Object} zoom Zoom on axes
+         * @property {Boolean} zoom.x Enable zooming/panning on X axis. Default true.
+         * @property {Boolean} zoom.y Enable zooming/panning on Y axis. Default false.
+         */
+        zoom: {
+        	x: true,
+        	y: false
+        },
+        /**
          * @cfg {Array} data array of objects.
          */
         data: [],
@@ -174,13 +183,17 @@ Ext.define('Esc.d3.Abstract', {
     this.svg.select(".y.axis").call(this.axes.y);
   },
   /**
-   * Prepare {@link #ranges}, {@link #scales} and {@link #axes} based on {@link #data} .
+   * Prepare {@link #ranges}, {@link #scales} based on {@link #data} .
    * @template
    */
   initScales: function() {
     this.chartWidth = this.getWidth() - this.axesPadding[1] - this.axesPadding[3];
     this.chartHeight = this.getHeight() - this.axesPadding[0] - this.axesPadding[2];
   },
+  /**
+   * Prepare {@link #axes} based on {@link #data} .
+   */
+  initAxes: Ext.emptyFn,
   /**
    * Render axis and data to canvas.
    * @template
@@ -202,6 +215,7 @@ Ext.define('Esc.d3.Abstract', {
    */
   onDataReady: function() {
     this.initScales();
+    this.initAxes();
     this.undraw();
     this.draw();
   },
@@ -213,15 +227,32 @@ Ext.define('Esc.d3.Abstract', {
     this.data = data;
     this.onResize();
   },
+  zoomBehavior: function() {
+  	var zoom = d3.behavior.zoom().on("zoom", this.onZoom.bind(this));
+ 	if (this.zoom.x) {
+  		zoom = zoom.x(this.scales.x);
+  	}
+  	if (this.zoom.y) {
+  		zoom = zoom.y(this.scales.y);
+  	}
+  	return zoom;
+  },
   /**
    * @protected
    * Applies zoom behavior on x-axis to canvas
    */
   initZoom: function() {
     // update zoomer
-    this.svg.select('rect.zoomer').call(
-        d3.behavior.zoom().x(this.scales.x).y(this.scales.y).on("zoom", this.onZoom.bind(this))
-    );
+    this.svg.select('rect.zoomer').call(this.zoomBehavior());
+  },
+  /**
+   * Enable zooming/panning on an axis.
+   * @param {String} axis Name of an axis, can be 'x' or 'y'.
+   * @param {Boolean} enabled True to enable.
+   */
+  setZoom: function(axis, enabled) {
+  	this.zoom[axis] = enabled;
+  	this.initZoom();
   },
   /**
    * Resets scales back to their original ranges
