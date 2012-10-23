@@ -158,10 +158,10 @@ describe('Esc.d3.Chromatogram', function() {
           chart.svg = mockSvg();
           chart.initScales();
           chart.initAxes();
+          chart.initZoom();
 
           chart.onZoom();
 
-          expect(chart.svg.select).toHaveBeenCalledWith('.x.axis');
           expect(chart.svg.select).toHaveBeenCalledWith('path.line');
           expect(chart.svg.select).toHaveBeenCalledWith('path.metaboliteline');
           expect(chart.svg.attr).not.toHaveBeenCalledWith('transform', jasmine.any(Function));
@@ -180,6 +180,7 @@ describe('Esc.d3.Chromatogram', function() {
           chart.svg = mockSvg();
           chart.initScales();
           chart.initAxes();
+          chart.initZoom();
 
           chart.onZoom();
 

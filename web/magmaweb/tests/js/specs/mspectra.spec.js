@@ -301,10 +301,11 @@ describe('Esc.d3.MSpectra', function() {
           spyOn(chart, 'getHeight').andReturn(400);
           chart.svg = mockSvg();
           chart.initScales();
+          chart.initAxes();
+          chart.initZoom();
 
           chart.onZoom();
 
-          expect(chart.svg.select).toHaveBeenCalledWith('.x.axis');
           expect(chart.svg.attr).not.toHaveBeenCalledWith('transform', jasmine.any(Function));
           expect(chart.svg.attr).toHaveBeenCalledWith('x1', jasmine.any(Function));
           expect(chart.svg.attr).toHaveBeenCalledWith('x2', jasmine.any(Function));
@@ -320,6 +321,8 @@ describe('Esc.d3.MSpectra', function() {
           spyOn(chart, 'getHeight').andReturn(400);
           chart.svg = mockSvg();
           chart.initScales();
+          chart.initAxes();
+          chart.initZoom();
 
           chart.onZoom();
 
