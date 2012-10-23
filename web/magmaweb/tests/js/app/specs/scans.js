@@ -16,7 +16,8 @@ describe('Scans controller', function() {
       hasData: function() {},
       setMarkers: function() {},
       redraw: function() {},
-      resetScales: function() {}
+      resetScales: function() {},
+      setZoom: function() {}
     };
     spyOn(ctrl, 'getChromatogram').andReturn(mocked_chromatogram);
   });
@@ -400,5 +401,40 @@ describe('Scans controller', function() {
           success: jasmine.any(Function),
           failure: jasmine.any(Function)
       });
+  });
+
+  it('showActionsMenu', function() {
+      var event = { getXY: function() { return [5,10]; }};
+      spyOn(ctrl.actionsMenu, 'showAt');
+
+      ctrl.showActionsMenu('tool', event);
+
+      expect(ctrl.actionsMenu.showAt).toHaveBeenCalledWith([5,10]);
+  });
+
+  describe('onZoomDirectionChange', function() {
+	it('x', function() {
+	  spyOn(ctrl, 'onZoomDirectionChange');
+
+	  ctrl.onZoomDirectionXChange(null, false);
+
+	  expect(ctrl.onZoomDirectionChange).toHaveBeenCalledWith('x', false);
+	});
+
+	it('y', function() {
+	  spyOn(ctrl, 'onZoomDirectionChange');
+
+	  ctrl.onZoomDirectionYChange(null, false);
+
+	  expect(ctrl.onZoomDirectionChange).toHaveBeenCalledWith('y', false);
+	});
+
+	it('setZoom', function() {
+		spyOn(mocked_chromatogram, 'setZoom');
+
+		ctrl.onZoomDirectionChange('z', true);
+
+		expect(mocked_chromatogram.setZoom).toHaveBeenCalledWith('z', true);
+	})
   });
 });

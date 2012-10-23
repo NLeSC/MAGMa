@@ -96,7 +96,16 @@ Ext.define('Esc.d3.MSpectra', {
 
     this.svg.selectAll("line.mspeak")
         .attr("x1", function(d) { return me.scales.x(d.mz); })
+        .attr("y1", function(d) { return me.scales.y(0); })
         .attr("x2", function(d) { return me.scales.x(d.mz); })
+        .attr("y2", function(d) { return me.scales.y(d.intensity); })
+    ;
+
+    this.svg.selectAll("line."+this.cutoffCls)
+		.attr('x1',0)
+		.attr('x2',this.chartWidth)
+		.attr('y1',this.scales.y(this.cutoff))
+		.attr('y2',this.scales.y(this.cutoff))
     ;
   },
   initScales: function() {
@@ -107,7 +116,9 @@ Ext.define('Esc.d3.MSpectra', {
     this.ranges.y.max = d3.max(this.data, function(r) { return r.intensity; });
     this.scales.x = d3.scale.linear().domain([this.ranges.x.min, this.ranges.x.max]).range([0, this.chartWidth]);
     this.scales.y = d3.scale.linear().domain([this.ranges.y.min, this.ranges.y.max]).range([this.chartHeight, 0]);
-
+  },
+  initAxes: function() {
+	this.callParent(arguments);
     var nrxticks = this.ticks.x;
     if (this.chartWidth < 25*(6+2)) {
         nrxticks = 2;
@@ -165,9 +176,9 @@ Ext.define('Esc.d3.MSpectra', {
         .attr("class", "mspeak")
         .classed('assigned', function(d) { return d.assigned_metid !== null;})
         .attr("x1", function(d) { return me.scales.x(d.mz); })
-        .attr("y2", function(d) { return me.scales.y(d.intensity); })
-        .attr("y1", this.chartHeight)
+        .attr("y1", function(d) { return me.scales.y(0); })
         .attr("x2", function(d) { return me.scales.x(d.mz); })
+        .attr("y2", function(d) { return me.scales.y(d.intensity); })
         .on('mouseover', function(peak) {
             me.fireEvent('mouseoverpeak', peak);
         })
