@@ -30,6 +30,15 @@ Ext.define('Esc.d3.Abstract', {
           y: null
         },
         /**
+         * @property {Object} zoom Zoom on axes
+         * @property {Boolean} zoom.x Enable zooming/panning on X axis. Default true.
+         * @property {Boolean} zoom.y Enable zooming/panning on Y axis. Default false.
+         */
+        zoom: {
+          x: true,
+          y: false
+        },
+        /**
          * @cfg {Array} data array of objects.
          */
         data: [],
@@ -170,16 +179,44 @@ Ext.define('Esc.d3.Abstract', {
    * @template
    */
   onZoom: function() {
-    this.svg.select(".x.axis").call(this.axes.x);
+  	if (d3.event) {
+    	var translate = d3.event.translate;
+    	var scale = d3.event.scale;
+  	} else {
+  		var translate = [0,0];
+  		var scale = 1;
+  	}
+
+    if (this.zoom.x) {
+      var x1 = this.scales.x;
+      var x0 = this.scales0.x;
+      x1.domain(x0.range().map(function(x) { return (x - translate[0]) / scale; }).map(x0.invert));
+      this.svg.select(".x.axis").call(this.axes.x);
+    }
+
+    if (this.zoom.y) {
+      var y1 = this.scales.y;
+      var y0 = this.scales0.y;
+      // ignore translate, only scale
+      var r = y0.range().map(function(y) { return (y / scale ); });
+      // r[1] is fixed, we want r[0] fixed so swap them
+      r = [y0.range()[0], y0.range()[0]-r[0]];
+      y1.domain(r.map(y0.invert));
+      this.svg.select(".y.axis").call(this.axes.y);
+    }
   },
   /**
-   * Prepare {@link #ranges}, {@link #scales} and {@link #axes} based on {@link #data} .
+   * Prepare {@link #ranges}, {@link #scales} based on {@link #data} .
    * @template
    */
   initScales: function() {
     this.chartWidth = this.getWidth() - this.axesPadding[1] - this.axesPadding[3];
     this.chartHeight = this.getHeight() - this.axesPadding[0] - this.axesPadding[2];
   },
+  /**
+   * Prepare {@link #axes} based on {@link #data} .
+   */
+  initAxes: Ext.emptyFn,
   /**
    * Render axis and data to canvas.
    * @template
@@ -201,6 +238,7 @@ Ext.define('Esc.d3.Abstract', {
    */
   onDataReady: function() {
     this.initScales();
+    this.initAxes();
     this.undraw();
     this.draw();
   },
@@ -212,15 +250,32 @@ Ext.define('Esc.d3.Abstract', {
     this.data = data;
     this.onResize();
   },
+  zoomBehavior: function() {
+    var zoom = d3.behavior.zoom().on("zoom", this.onZoom.bind(this));
+
+    // store initial state of scales so zoom/translate can use it as reference
+    this.scales0 = {};
+    this.scales0.x = this.scales.x.copy();
+    this.scales0.y = this.scales.y.copy();
+
+    return zoom;
+  },
   /**
    * @protected
    * Applies zoom behavior on x-axis to canvas
    */
   initZoom: function() {
     // update zoomer
-    this.svg.select('rect.zoomer').call(
-        d3.behavior.zoom().x(this.scales.x).on("zoom", this.onZoom.bind(this))
-    );
+    this.svg.select('rect.zoomer').call(this.zoomBehavior());
+  },
+  /**
+   * Enable zooming/panning on an axis.
+   * @param {String} axis Name of an axis, can be 'x' or 'y'.
+   * @param {Boolean} enabled True to enable.
+   */
+  setZoom: function(axis, enabled) {
+    this.zoom[axis] = enabled;
+    this.initZoom();
   },
   /**
    * Resets scales back to their original ranges

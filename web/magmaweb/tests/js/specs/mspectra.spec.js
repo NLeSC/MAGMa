@@ -60,6 +60,20 @@ describe('Esc.d3.MSpectra', function() {
     expect(chart.scales.x.range()).toEqual([0,500]);
     expect(chart.scales.y.domain()).toEqual([0,4]);
     expect(chart.scales.y.range()).toEqual([400,0]);
+  });
+
+  it('initAxes', function() {
+    var chart = Ext.create('Esc.d3.MSpectra', {
+      width: 500, height: 400, data: data,
+      axesPadding: [0, 0, 0, 0]
+    });
+    // mock initSvg
+    spyOn(chart, 'getWidth').andReturn(500);
+    spyOn(chart, 'getHeight').andReturn(400);
+    chart.initScales();
+
+    chart.initAxes();
+
     expect(chart.axes.x.scale()).toEqual(chart.scales.x);
     expect(chart.axes.x.ticks()).toEqual({ 0:chart.ticks.x});
     expect(chart.axes.x.orient()).toEqual('bottom');
@@ -287,10 +301,11 @@ describe('Esc.d3.MSpectra', function() {
           spyOn(chart, 'getHeight').andReturn(400);
           chart.svg = mockSvg();
           chart.initScales();
+          chart.initAxes();
+          chart.initZoom();
 
           chart.onZoom();
 
-          expect(chart.svg.select).toHaveBeenCalledWith('.x.axis');
           expect(chart.svg.attr).not.toHaveBeenCalledWith('transform', jasmine.any(Function));
           expect(chart.svg.attr).toHaveBeenCalledWith('x1', jasmine.any(Function));
           expect(chart.svg.attr).toHaveBeenCalledWith('x2', jasmine.any(Function));
@@ -306,6 +321,8 @@ describe('Esc.d3.MSpectra', function() {
           spyOn(chart, 'getHeight').andReturn(400);
           chart.svg = mockSvg();
           chart.initScales();
+          chart.initAxes();
+          chart.initZoom();
 
           chart.onZoom();
 
