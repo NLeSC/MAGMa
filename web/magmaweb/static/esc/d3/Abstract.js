@@ -35,8 +35,8 @@ Ext.define('Esc.d3.Abstract', {
          * @property {Boolean} zoom.y Enable zooming/panning on Y axis. Default false.
          */
         zoom: {
-        	x: true,
-        	y: false
+          x: true,
+          y: false
         },
         /**
          * @cfg {Array} data array of objects.
@@ -179,8 +179,31 @@ Ext.define('Esc.d3.Abstract', {
    * @template
    */
   onZoom: function() {
-    this.svg.select(".x.axis").call(this.axes.x);
-    this.svg.select(".y.axis").call(this.axes.y);
+  	if (d3.event) {
+    	var translate = d3.event.translate;
+    	var scale = d3.event.scale;
+  	} else {
+  		var translate = [0,0];
+  		var scale = 1;
+  	}
+
+    if (this.zoom.x) {
+      var x1 = this.scales.x;
+      var x0 = this.scales0.x;
+      x1.domain(x0.range().map(function(x) { return (x - translate[0]) / scale; }).map(x0.invert));
+      this.svg.select(".x.axis").call(this.axes.x);
+    }
+
+    if (this.zoom.y) {
+      var y1 = this.scales.y;
+      var y0 = this.scales0.y;
+      // ignore translate, only scale
+      var r = y0.range().map(function(y) { return (y / scale ); });
+      // r[1] is fixed, we want r[0] fixed so swap them
+      r = [y0.range()[0], y0.range()[0]-r[0]];
+      y1.domain(r.map(y0.invert));
+      this.svg.select(".y.axis").call(this.axes.y);
+    }
   },
   /**
    * Prepare {@link #ranges}, {@link #scales} based on {@link #data} .
@@ -228,14 +251,14 @@ Ext.define('Esc.d3.Abstract', {
     this.onResize();
   },
   zoomBehavior: function() {
-  	var zoom = d3.behavior.zoom().on("zoom", this.onZoom.bind(this));
- 	if (this.zoom.x) {
-  		zoom = zoom.x(this.scales.x);
-  	}
-  	if (this.zoom.y) {
-  		zoom = zoom.y(this.scales.y);
-  	}
-  	return zoom;
+    var zoom = d3.behavior.zoom().on("zoom", this.onZoom.bind(this));
+
+    // store initial state of scales so zoom/translate can use it as reference
+    this.scales0 = {};
+    this.scales0.x = this.scales.x.copy();
+    this.scales0.y = this.scales.y.copy();
+
+    return zoom;
   },
   /**
    * @protected
@@ -251,8 +274,8 @@ Ext.define('Esc.d3.Abstract', {
    * @param {Boolean} enabled True to enable.
    */
   setZoom: function(axis, enabled) {
-  	this.zoom[axis] = enabled;
-  	this.initZoom();
+    this.zoom[axis] = enabled;
+    this.initZoom();
   },
   /**
    * Resets scales back to their original ranges
