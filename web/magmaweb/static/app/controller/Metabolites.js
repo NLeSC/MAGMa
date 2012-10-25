@@ -201,7 +201,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
   /**
    * Listens for chromatogram load event.
    * And toggles annotation fieldset in add structures form.
-   * @param {Esc.d3.Chromatagram} chromatogram
+   * @param {Esc.d3.Chromatogram} chromatogram
    */
   onChromatrogramLoad: function(chromatogram) {
     this.hasMSData = chromatogram.data.length > 0;
