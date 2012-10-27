@@ -114,6 +114,13 @@ class CDKengine(object):
     def FragmentToInchiKey(self,mol,atomlist):
         ac=self.acm.extractSubstructure(mol,atomlist)
         return self.MolToInchiKey(ac)
+    def XLogP(self,mol):
+        ha=self.cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
+        newmol=mol.clone()
+        ha.addImplicitHydrogens(newmol)
+        self.acm.convertImplicitToExplicitHydrogens(newmol)
+        xlpd=self.cdk.qsar.descriptors.molecular.XLogPDescriptor()
+        return xlpd.calculate(newmol).getValue().toString()
 
 Chem = CDKengine()
 
@@ -247,7 +254,8 @@ class StructureEngine(object):
             origin=unicode(name, 'utf-8', 'xmlcharrefreplace'),
             nhits=0,
             mim=mim,
-            reference=reference
+            reference=reference,
+            logp=Chem.XLogP(mol)
             #logp=Chem.Crippen.MolLogP(m)
             )
         try:
