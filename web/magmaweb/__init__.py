@@ -2,16 +2,8 @@ import json
 from pyramid.config import Configurator
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.authentication import RemoteUserAuthenticationPolicy
-from pyramid.events import subscriber, NewRequest
 from sqlalchemy import engine_from_config
-from magmweb.user import DBSession, Base, RootFactory, JobIdFactory
-
-@subscriber(NewRequest)
-def extjsurl(event):
-    """Adds extjsroot url to request using extjsroot setting"""
-    extjsroot = event.request.registry.settings['extjsroot']
-    base = 'magmaweb:static/'
-    event.request.extjsroot = event.request.static_url(base + extjsroot)
+from magmaweb.user import DBSession, Base, RootFactory, JobIdFactory
 
 def main(global_config, **settings):
     """This function returns the Magma WSGI application.

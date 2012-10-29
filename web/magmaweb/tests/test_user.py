@@ -51,9 +51,8 @@ class TestJobIdFactory(unittest.TestCase):
         init_user_db()
         self.session = user.DBSession()
         u = user.User('me', 'My', 'myself')
-        j = user.Job('12345', 'My job')
-        ju = user.JobUser('me', '12345', 'owner')
-        self.session.add_all([u, j, ju])
+        j = user.Job('12345', 'My job', owner='me')
+        self.session.add_all([u, j])
 
     def tearDown(self):
         destroy_user_db()
@@ -80,22 +79,16 @@ class TestJobIdFactory(unittest.TestCase):
         with self.assertRaises(HTTPNotFound):
             jif['67890']
 
-class TestGrant(unittest.TestCase):
+class TestUtils(unittest.TestCase):
     def setUp(self):
         init_user_db()
         self.session = user.DBSession()
         u = user.User('me', 'My', 'myself')
-        j = user.Job('12345', 'My job')
+        j = user.Job('12345', description='My job', owner='me')
         self.session.add_all([u, j])
 
     def tearDown(self):
         destroy_user_db()
-
-    def test_grant(self):
-        user.grant('owner', '12345', 'me')
-
-        r = self.session.query(user.JobUser).filter(user.JobUser.userid=='me').filter(user.JobUser.jobid=='12345').one()
-        self.assertEqual(r.role, 'owner')
 
     def test_set_job_owner(self):
         j = user.Job('67890', 'My job')
@@ -103,8 +96,8 @@ class TestGrant(unittest.TestCase):
 
         user.set_job_owner('67890', 'me')
 
-        r = self.session.query(user.JobUser).filter(user.JobUser.userid=='me').filter(user.JobUser.jobid=='67890').one()
-        self.assertEqual(r.role, 'owner')
+        r = self.session.query(user.Job).get('67890')
+        self.assertEqual(r.owner, 'me')
 
     def test_set_job_parent(self):
         j = user.Job('67890', 'My second job')
@@ -122,24 +115,9 @@ class TestGrant(unittest.TestCase):
         self.assertEqual(r.description, 'My desc')
 
     def test_get_my_jobs(self):
-        user.grant('owner', '12345', 'me')
-
         self.assertListEqual([{'id':'12345', 'description':'My job'}], user.get_jobs('me'))
 
-class TestGroupFinder(unittest.TestCase):
-    def setUp(self):
-        init_user_db()
-        self.session = user.DBSession()
-        u = user.User('me', 'My', 'myself')
-        ur = user.UserRole('me', 'admin')
-        self.session.add_all([u, ur])
-
-    def tearDown(self):
-        destroy_user_db()
-
-    def test_it(self):
-        request = testing.DummyRequest()
-
-        groups = user.groupfinder('me', request)
-
-        self.assertListEqual(groups, ['admin'])
+    def test_add_job(self):
+        user.add_job('11223344')
+        r = self.session.query(user.Job).get('67890')
+        self.assertEqual(r.jobid, '11223344')
