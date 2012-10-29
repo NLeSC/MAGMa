@@ -57,8 +57,8 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       'scanpanel tool[action=center]': {
         click: this.center
       },
-      'scanpanel tool[action=upload]': {
-        click: this.showUploadForm
+      'scanpanel tool[action=actions]': {
+        click: this.showActionsMenu
       },
       'scanuploadform component[action=uploadmsdata]': {
         click: this.uploadHandler
@@ -79,7 +79,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
         this.clearExtractedIonChromatogram();
     }, this);
     this.application.on('rpcsubmitsuccess', function() {
-        Ext.ComponentQuery.query('scanpanel tool[action=upload]')[0].disable();
+        Ext.getCmp('uploadmssaction').disable();
     });
     this.application.on('assignmentchanged', function(isAssigned, params) {
         me.loadChromatogram(function(data) {
@@ -89,6 +89,28 @@ Ext.define('Esc.magmaweb.controller.Scans', {
             chromatogram.setData(data.scans);
             chromatogram.selectScan(selectedScan);
         });
+    });
+
+    this.actionsMenu = Ext.create('Ext.menu.Menu', {
+        items: [{
+            iconCls: 'icon-add',
+            id: 'uploadmssaction',
+            text: 'Upload MS data',
+            handler: this.showUploadForm.bind(this)
+        }, {
+            text: 'Zoom direction',
+            menu: {
+            	items: [{
+            		text: 'X axis',
+            		checked: true,
+            		checkHandler: this.onZoomDirectionXChange.bind(this)
+            	}, {
+            		text: 'Y axis',
+            		checked: false,
+            		checkHandler: this.onZoomDirectionYChange.bind(this)
+            	}]
+            }
+        }]
     });
 
     /**
@@ -203,7 +225,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       function(b,v) {
         if (b != 'cancel' && v) {
          v = v*1;
-         me.selectScan(v);
+         me.selectScan(v, true);
         }
       }
     );
@@ -215,9 +237,10 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   /**
    * Select a scan
    * @param {Number} scanid Scan identifier
+   * @param {Boolean} [silent=false] Passing true will supress the 'unselectscan' event from being fired.
    */
-  selectScan: function(scanid) {
-    this.getChromatogram().selectScan(scanid);
+  selectScan: function(scanid, silent) {
+    this.getChromatogram().selectScan(scanid, silent);
     this.application.fireEvent('selectscan', scanid);
   },
   /**
@@ -301,5 +324,37 @@ Ext.define('Esc.magmaweb.controller.Scans', {
               }
           });
       }
+  },
+  /**
+   * Show actions menu at event xy
+   * @param {Ext.Element} tool
+   * @param {Ext.EventObject} event
+   */
+  showActionsMenu: function(tool, event) {
+     this.actionsMenu.showAt(event.getXY());
+  },
+  /**
+   * Enable/Disable zoom on X axis
+   * @param {Ext.Component} item
+   * @param {Boolean} checked
+   */
+  onZoomDirectionXChange: function(item, checked) {
+	  this.onZoomDirectionChange('x', checked);
+  },
+  /**
+   * Enable/Disable zoom on Y axis
+   * @param {Ext.Component} item
+   * @param {Boolean} checked
+   */
+  onZoomDirectionYChange: function(item, checked) {
+	  this.onZoomDirectionChange('y', checked);
+  },
+  /**
+   * Enable/Disable zoom on a axis
+   * @param {String} axes Name of axis. Can be 'x' or 'y'.
+   * @param {Boolean} checked
+   */
+  onZoomDirectionChange: function(axis, checked) {
+	  this.getChromatogram().setZoom(axis, checked);
   }
 });

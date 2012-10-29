@@ -112,14 +112,14 @@ Ext.define('Esc.magmaweb.resultsApp', {
   /**
    * Get url of rpc method
    * @param {String} method
-   * @return {Url}
+   * @return {String}
    */
   rpcUrl: function(method) {
     return this.urls.home+'rpc/'+this.jobid+'/'+method;
   },
   /**
    * Get url of runinfo json, used to set defaults in forms.
-   * @return {Url}
+   * @return {String}
    */
   runInfoUrl: function() {
     return this.urls.home+'results/'+this.jobid+'/runinfo.json';
@@ -128,7 +128,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
    * Get metabolites url based on format.
    *
    * @param {String} format Can be json, csv or sdf.
-   * @return {Url}
+   * @return {String}
    */
   metabolitesUrl: function(format) {
     return this.urls.home+'results/'+this.jobid+'/metabolites.'+format;

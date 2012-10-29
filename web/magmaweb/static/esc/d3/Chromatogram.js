@@ -102,8 +102,17 @@ Ext.define('Esc.d3.Chromatogram', {
        .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + (me.scales.y(me.ranges.y.max)-4) + ")"; });
     }
     this.svg.selectAll("line.peak")
-      .attr("x1", function(d) { return me.scales.x(d.rt); })
-      .attr("x2", function(d) { return me.scales.x(d.rt); })
+    	.attr("x1", function(d) { return me.scales.x(d.rt); })
+	    .attr("y2", function(d) { return me.scales.y(d.intensity); })
+    	.attr("y1", function(d) { return me.scales.y(0); })
+	    .attr("x2", function(d) { return me.scales.x(d.rt); })
+    ;
+
+    this.svg.selectAll("line."+this.cutoffCls)
+      .attr('x1',0)
+      .attr('x2',this.chartWidth)
+      .attr('y1',this.scales.y(this.cutoff))
+      .attr('y2',this.scales.y(this.cutoff))
     ;
   },
   initScales: function() {
@@ -114,14 +123,17 @@ Ext.define('Esc.d3.Chromatogram', {
     this.ranges.y.max = d3.max(this.data, function(r) { return r.intensity; });
     this.scales.x = d3.scale.linear().domain([this.ranges.x.min, this.ranges.x.max]).range([0, this.chartWidth]);
     this.scales.y = d3.scale.linear().domain([this.ranges.y.min, this.ranges.y.max]).range([this.chartHeight, 0]);
+  },
+  initAxes: function() {
+  	this.callParent(arguments);
     var me = this;
     /**
      * @property {d3.svg.line} line Line factory for basepeakintensity and extractedionchromatogram
      */
     this.line = d3.svg.line()
-    .interpolate('linear')
-    .x(function(d) { return me.scales.x(d.rt); })
-    .y(function(d) { return me.scales.y(d.intensity); });
+      .interpolate('linear')
+      .x(function(d) { return me.scales.x(d.rt); })
+      .y(function(d) { return me.scales.y(d.intensity); });
 
     var nrxticks = this.ticks.x;
     if (this.chartWidth < 25*(6+2)) {
@@ -140,7 +152,6 @@ Ext.define('Esc.d3.Chromatogram', {
         nryticks = 0;
     }
     this.axes.y = d3.svg.axis().scale(this.scales.y).ticks(nryticks).orient("left").tickFormat(d3.format('.2e'));
-
   },
   draw: function() {
     this.callParent(arguments);
@@ -186,7 +197,7 @@ Ext.define('Esc.d3.Chromatogram', {
     .classed('assigned', function(d) { return d.ap>0;})
     .attr("x1", function(d) { return me.scales.x(d.rt); })
     .attr("y2", function(d) { return me.scales.y(d.intensity); })
-    .attr("y1", this.chartHeight)
+    .attr("y1", function(d) { return me.scales.y(0); })
     .attr("x2", function(d) { return me.scales.x(d.rt); })
     .on('mouseover', function(scan) {
         // fetch intensity of metabolite if available
@@ -253,9 +264,10 @@ Ext.define('Esc.d3.Chromatogram', {
    * Select scan by their id
    * When there is another scan already selected the unselectscan event is fired.
    * @param {Number} scanid Scan identifier.
+   * @param {Boolean} [silent=false] Passing true will supress the 'unselectscan' event from being fired.
    */
-  selectScan: function(scanid) {
-    if (this.selectedScan != -1 && this.selectedScan != scanid) {
+  selectScan: function(scanid, silent) {
+    if (this.selectedScan != -1 && this.selectedScan != scanid && silent !== true) {
        this.fireEvent('unselectscan', this.selectedScan);
     }
     this.markerSelect(function(d) {

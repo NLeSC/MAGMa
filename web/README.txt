@@ -99,7 +99,6 @@ server {
     }
 }
 
-
 Example nginx+uwsgi:
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -128,6 +127,14 @@ Change /magma sectio in /etc/nginx/sites-enabled/default to:
 pip install uwsgi
 uwsgi --ini-paste-logged development.ini
 
+To protect /magma behind basic authentication use:
+        auth_basic "Magma login";
+        auth_basic_user_file magma.users;
+        uwsgi_param REMOTE_USER $remote_user;
+        uwsgi_param AUTH_TYPE Basic;
+
+Password file can be managed with 'htpasswd'.
+
 Documentation
 -------------
 
@@ -136,7 +143,7 @@ Python documentation generation with
   make html
 
 Javascript documentation generation with
-  jsduck magmaweb/static/extjs-4.1.0/src magmaweb/static/extjs-4.1.0/examples/ux magmaweb/static/d3/d3.v2.js magmaweb/static/esc magmaweb/static/app --builtin-classes --output jsdoc --images magmaweb/static/extjs-4.1.0/docs/images
+  jsduck magmaweb/static/ext-4.1.1a/src magmaweb/static/ext-4.1.1a/examples/ux magmaweb/static/d3/d3.v2.js magmaweb/static/esc magmaweb/static/app --builtin-classes --output jsdoc --images magmaweb/static/ext-4.1.1a/docs/images
 or minimal
   jsduck magmaweb/static/esc magmaweb/static/app --output jsdoc
 
@@ -151,19 +158,68 @@ Create magmaweb.results.jsb3 file
 
 This only needs to be done if magmaweb.results.jsb3 does not yet create.
 
-cd MAGMaWeb/magmaweb
-# in results.mak comment resultsApp-all.js, so all dependencies are dynamicly loaded
-sencha create jsb -v -p magmaweb.results.jsb3 -a 'http://localhost/magma/results/e6c54335-ad9c-4ca4-92ff-f350e3f5fec0'
-# create jsb exits with error, but output file is ok
+The `sencha create` command does not work for our pages. So we role our own jsb3 writer.
 
-Edit magmaweb.results.jsb3
-- Alter projectName and license
-- Remove app-all.js section
-- Rename all-classes.js to app/resultsApp-all.js
-- Add '"compress": true,' to 'All classes' build
+1. Load result page.
+2. Goto developers/firebug console
+3. Enter `copy(Ext.Loader.history)`
+4. Open file `myhistory` and paste clipboard (CTRL-p)
+5. Run `perl loader2jsb3.pl myhistory > magmaweb.results-4.1.1a.jsb3`
+
+loader2jsb3.pl looks like:
+<pre>
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use JSON;
+
+my %paths = (
+   'Ext' => 'static/ext-4.1.1a/src',
+   'Ux'  => 'static/ext-4.1.1a/examples/ux',
+   'Esc' => 'static/esc',
+   'App' => 'static/app'
+);
+my @files;
+
+while (<>) {
+  my $line = $_;
+  chomp($line);
+  for my $dep (split(/,/,$line)) {
+    my ($path, $name) = $dep =~ /(.*)\.(.*)/;
+    $name .= '.js';
+    $path =~ s/\./\//g;
+    $path .= '/';
+    if ($path=~/^Esc\/magmaweb/) {
+        $path =~ s/^Esc\/magmaweb/$paths{App}/;
+    } elsif ($path=~/^Esc/) {
+        $path =~ s/^Esc/$paths{Esc}/;
+    } elsif ($path=~/^Ext\/ux/) {
+        $path =~ s/^Ext\/ux/$paths{Ux}/;
+    } else {
+	$path =~ s/^Ext/$paths{Ext}/;
+    }
+    push(@files, {'path'=> $path, 'name'=> $name});
+  }
+}
+
+print to_json({
+  'projectName'=> 'MAGMA web results',
+  licenseText=> "Copyright(c) 2011 Netherlands eScience Center",
+    "builds"=> [
+        {
+            "name"=> "All Classes",
+            "target"=> "resultsApp-all-4.1.1a.js",
+            "compress"=> JSON::true,
+            "files"=> \@files
+}
+    ],
+    "resources"=> []
+}, {pretty=>1});
+</pre>
 
 Build magmaweb.results.jsb3
-=========================
+===========================
 
 sencha build -v -d static/app -p magmaweb.results.jsb3
 # in results.mak uncomment resultsApp-all.js

@@ -1,5 +1,9 @@
+# ignore eclipse project files
 .project
 .pydevproject
+.settings
+.classpath
+
 /job/Magma.egg-info
 /job/PKG-INFO
 *.pyc
@@ -16,17 +20,4 @@ job/env2/
 job/*.egg-info/
 job/development.ini
 job/production.ini
-web/magmaweb/static/ext-*
-web/magmaweb/static/extjs-*
-web/magmaweb/static/app/resultsApp-all*.js
-web/cover
-web/.coverage
-web/.tox
-web/docs/_build/
-web/jsdoc
-/web//data
-web/logs
-web/env/
-web/env64/
-web/dist/
-
+env/

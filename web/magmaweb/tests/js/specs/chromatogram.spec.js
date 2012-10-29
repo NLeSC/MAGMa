@@ -57,6 +57,20 @@ describe('Esc.d3.Chromatogram', function() {
     expect(chart.scales.x.range()).toEqual([0,500]);
     expect(chart.scales.y.domain()).toEqual([0,100]);
     expect(chart.scales.y.range()).toEqual([400,0]);
+  });
+
+  it('initAxes', function() {
+	var chart = Ext.create('Esc.d3.Chromatogram', {
+	  width: 500, height: 400, data: data,
+	  axesPadding: [0, 0, 0, 0]
+	});
+	// mock initSvg
+	spyOn(chart, 'getWidth').andReturn(500);
+	spyOn(chart, 'getHeight').andReturn(400);
+    chart.initScales();
+
+	chart.initAxes();
+
     expect(chart.axes.x.scale()).toEqual(chart.scales.x);
     expect(chart.axes.x.ticks()).toEqual({ 0:chart.ticks.x});
     expect(chart.axes.x.orient()).toEqual('bottom');
@@ -77,6 +91,7 @@ describe('Esc.d3.Chromatogram', function() {
       chart.svg = mockSvg();
       spyOn(chart,'onMarkersReady');
       chart.initScales();
+      chart.initAxes();
 
       chart.draw();
 
@@ -104,6 +119,7 @@ describe('Esc.d3.Chromatogram', function() {
       chart.svg = mockSvg();
       spyOn(chart,'onMarkersReady');
       chart.initScales();
+      chart.initAxes();
 
       chart.draw();
 
@@ -141,10 +157,11 @@ describe('Esc.d3.Chromatogram', function() {
           spyOn(chart, 'getHeight').andReturn(400);
           chart.svg = mockSvg();
           chart.initScales();
+          chart.initAxes();
+          chart.initZoom();
 
           chart.onZoom();
 
-          expect(chart.svg.select).toHaveBeenCalledWith('.x.axis');
           expect(chart.svg.select).toHaveBeenCalledWith('path.line');
           expect(chart.svg.select).toHaveBeenCalledWith('path.metaboliteline');
           expect(chart.svg.attr).not.toHaveBeenCalledWith('transform', jasmine.any(Function));
@@ -162,6 +179,8 @@ describe('Esc.d3.Chromatogram', function() {
           spyOn(chart, 'getHeight').andReturn(400);
           chart.svg = mockSvg();
           chart.initScales();
+          chart.initAxes();
+          chart.initZoom();
 
           chart.onZoom();
 
@@ -209,6 +228,18 @@ describe('Esc.d3.Chromatogram', function() {
         chart.selectScan(data[1].id);
 
         expect(chart.fireEvent).toHaveBeenCalledWith('unselectscan', 4);
+        expect(chart.selectedScan).toEqual(5);
+    });
+
+    it('another scan already selected -> deselect silenced', function() {
+        chart.selectScan(data[0].id);
+
+        spyOn(chart,'markerSelect');
+        spyOn(chart,'fireEvent');
+
+        chart.selectScan(data[1].id, true);
+
+        expect(chart.fireEvent).not.toHaveBeenCalledWith('unselectscan', 4);
         expect(chart.selectedScan).toEqual(5);
     });
 
@@ -352,7 +383,8 @@ describe('Esc.d3.Chromatogram', function() {
     chart.svg = mockSvg();
 
     var eic = data;
-    chart.initScales(); // line drawing requires line factory which is made there
+    chart.initScales();
+    chart.initAxes(); // line drawing requires line factory which is made there
     chart.setExtractedIonChromatogram(eic);
 
     expect(chart.metabolitedata).toEqual(eic);

@@ -13,7 +13,7 @@ Ext.define('Esc.magmaweb.view.metabolite.Panel', {
   ],
   tools: [{
      type: 'save',
-     tooltip: 'Save metabolites as comma seperated file',
+     tooltip: 'Save metabolites',
      action: 'download'
   }, {
      type: 'gear',

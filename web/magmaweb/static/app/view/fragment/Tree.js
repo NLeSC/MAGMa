@@ -18,7 +18,21 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
   multiSelect: false,
   rootVisible: false,
   singleExpand: true,
-  useArrows: true,
+  rowLines: true,
+  viewConfig: {
+    // animate is default true causing refresh event to be blocked
+    // we use refresh event to render molecules
+    // so after expanding a node the refresh was not fired causing all prev. rendered mols to disappear
+    // now we turn off animate, so refresh events are fired and mols can be rendered
+    animate: false,
+    blockRefresh: false,
+    deferEmptyText: false,
+    emptyText: 'Select a metabolite and scan, to show its fragments',
+	getRowClass: function(record) {
+		// Make transition between mslevel visible by giving even/odd mslevel different bg color
+    	return record.get("mslevel") % 2 === 0 ? this.altRowCls : "";
+	}
+  },
   tools: [{
      type: 'save',
      disabled: true,
@@ -40,17 +54,7 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
           enableToggle: true
       }]
   }],
-  requires: [ 'Esc.chemdoodle.Column', 'Ext.selection.CheckboxModel' ],
-  viewConfig: {
-    // animate is default true causing refresh event to be blocked
-    // we use refresh event to render molecules
-    // so after expanding a node the refresh was not fired causing all prev. rendered mols to disappear
-    // now we turn off animate, so refresh events are fired and mols can be rendered
-    animate: false,
-    blockRefresh: false,
-    deferEmptyText: false,
-    emptyText: 'Select a metabolite and scan, to show its fragments'
-  },
+  requires: [ 'Esc.chemdoodle.Column', 'Ext.selection.CheckboxModel', 'Ext.grid.column.Number' ],
   initComponent: function() {
     console.log('Init fragment tree');
 
@@ -65,7 +69,7 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
       canvasClass: 'x-chemdoodle-cols2',
       width: 162,
       initCanvas: function(id, width, height, value,record) {
-        var c = new ChemDoodle.ViewerCanvas(id, width, height,true);
+        var c = new ChemDoodle.ViewerCanvas(id, width, height);
         c.specs.bonds_color = 'cyan';
         c.specs.atoms_color = 'cyan';
         var m = ChemDoodle.readMOL(value);
@@ -85,22 +89,39 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
           }
         });
         c.loadMolecule(m);
+        var tip = Ext.create('Ext.tip.ToolTip', {
+            target: id,
+            listeners: {
+                render: function(tip,e) {
+                    console.log('Drawing tooltip for '+id);
+                    var c = new ChemDoodle.ViewerCanvas(id+'-'+tip.id, 300, 300);
+                    c.specs.bonds_color = 'cyan';
+                    c.specs.atoms_color = 'cyan';
+                    c.loadMolecule(m);
+                }
+            }
+         });
+        // if canvas doesn't have tip.id then tooltip is rendered twice, once with molecule, once halfheight blue
+        tip.update('<canvas id="'+id+'-'+tip.id+'"></canvas>');
       }
     });
 
     Ext.apply(this, {
       columns: [
-        { text: 'Score', dataIndex: 'score', xtype: 'treecolumn', width: 120},
+        { text: 'Score', dataIndex: 'score', xtype: 'treecolumn', width: 120, renderer: function(value) {
+        	 // can't use numbercolumn or we will loose depth visualisation, so use renderer
+        	 return Ext.util.Format.number(value, '0.00000');
+        }},
         fmolcol,
         { text: 'ID', dataIndex: 'fragid', hidden: true},
         { text: 'Scan', dataIndex: 'scanid', hidden: false},
         { text: 'Metabolite', dataIndex: 'metid', hidden: true},
-        { text: 'M/z', dataIndex: 'mz'},
-        { text: 'Mass', dataIndex: 'mass'},
+        { text: 'M/z', dataIndex: 'mz', xtype: 'numbercolumn', format: '0.00000'},
+        { text: 'Mass', dataIndex: 'mass', xtype: 'numbercolumn', format: '0.00000'},
         { text: 'MS Level', dataIndex: 'mslevel'},
         { text: 'Fragment atoms', dataIndex: 'atoms', hidden: true},
-        { text: '&Delta;H', dataIndex: 'deltah'},
-        { text: '&Delta;Mass (ppm)', dataIndex: 'deltappm', hidden: true}
+        { text: '&Delta;H', dataIndex: 'deltah', xtype: 'numbercolumn', format: '0.00000'},
+        { text: '&Delta;Mass (ppm)', dataIndex: 'deltappm', hidden: true, xtype: 'numbercolumn', format: '0.00000'}
       ],
       plugins: [fmolcol]
     });

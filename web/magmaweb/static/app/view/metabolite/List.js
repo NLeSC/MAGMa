@@ -8,7 +8,8 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
   requires: [
     'Ext.ux.grid.FiltersFeature', 'Esc.chemdoodle.Column',
     'Ext.toolbar.Paging', 'Ext.grid.column.Boolean',
-    'Ext.grid.column.Action', 'Ext.selection.CheckboxModel'
+    'Ext.grid.column.Action', 'Ext.selection.CheckboxModel',
+    'Ext.grid.column.Number', 'Ext.grid.column.Template'
   ],
   store: 'Metabolites',
   viewConfig: {
@@ -47,7 +48,22 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
     var me = this;
     var molcol = Ext.create('Esc.chemdoodle.Column', {
       text: 'Molecule', dataIndex: 'mol',
-      width: 162
+      width: 162,
+      initCanvas: function(id, width, height, value, record) {
+        var c = new ChemDoodle.ViewerCanvas(id, width, height);
+        c.loadMolecule(ChemDoodle.readMOL(value));
+        var tip = Ext.create('Ext.tip.ToolTip', {
+          target: id,
+          html: null,
+          listeners: {
+            render: function(tip) {
+              var c = new ChemDoodle.ViewerCanvas(id+'-'+tip.id, 300, 300);
+              c.loadMolecule(ChemDoodle.readMOL(value));
+            }
+          }
+        });
+        tip.update('<canvas id="'+id+'-'+tip.id+'"></canvas>');
+      }
     });
 
     var mfilters = Ext.create('Ext.ux.grid.FiltersFeature',{
@@ -69,22 +85,24 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         {text: 'ID', dataIndex: 'metid', hidden: true},
         molcol,
         {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: ['0','1','2','3'] }, hidden:true},
-        {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }},
+        {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Name', dataIndex: 'origin', flex:1, filter: { type: 'string' }},
-        {text: 'Reaction sequence', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' }, renderer: function(v) {
-          return '<ol><li>'+v.replace("\n","</li><li>")+'</li></ol>';
-        }},
-        {text: 'Scans', dataIndex: 'nr_scans', filter: {
+        {
+        	text: 'Reaction sequence', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' },
+        	xtype: 'templatecolumn', tpl: '<ol><tpl for="reactionsequence"><li style="list-style:decimal;list-style-position:inside;">{.}</li></tpl></ol>'
+        },
+        {text: 'Scans', dataIndex: 'nhits', filter: {
             type: 'numeric', value:{gt:0}, active: true
         }},
         {text: 'Smiles', dataIndex: 'smiles', hidden:true},
         {text: 'Formula', dataIndex: 'molformula', filter: { type: 'string' }},
-        {text: 'Monoisotopic mass', dataIndex: 'mim', filter: { type: 'numeric' }, hidden: false},
+        {text: 'Monoisotopic mass', dataIndex: 'mim', filter: { type: 'numeric' }, hidden: false, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', hidden: true, trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
-        {text: 'Candidate score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }},
-        {text: '&Delta;Mass (ppm)', dataIndex: 'deltappm', hidden: true, filter: { type: 'numeric' }},
+        {text: 'Candidate score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
+        {text: '&Delta;Mass (ppm)', dataIndex: 'deltappm', hidden: true, filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Assigned', dataIndex: 'assigned', hidden: false, xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
-        {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true},
+        {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true, xtype: 'numbercolumn', format: '0.00000'},
+        {text: 'Reference', dataIndex: 'reference', filter: { type: 'string' }, sortable: false },
         {xtype: 'actioncolumn', width:30, text:'Commands',
             items: [{
                 tooltip: 'Metabolize',
@@ -101,10 +119,17 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
     this.callParent(arguments);
   },
   /**
+   * @return {Ext.ux.grid.FiltersFeature}
+   * @private
+   */
+  getFilter: function() {
+	return this.getView().getFeature('mfilter');
+  },
+  /**
    * Clears all filters applied to metabolites
    */
   clearFilters: function() {
-    this.getView().getFeature('mfilter').clearFilters();
+    this.getFilter().clearFilters();
   },
   /**
    * Get column with scores.
@@ -155,5 +180,20 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
   showFragmentScoreColumn: function() {
     this.getFragmentScoreColumn().show();
     this.getFragmentDeltaPpmColumn().show();
+  },
+  /**
+   * JSON encoded the filter data as query
+   * @return {String}
+   */
+  getFilterQuery: function() {
+	  var filter = this.getFilter();
+	  return filter.buildQuery(filter.getFilterData());
+  },
+  /**
+   * Array of dataindexes currently visible. In order they appear.
+   * @return {Array}
+   */
+  getVisiblColumnIndices: function() {
+	  return this.getView().getHeaderCt().getVisibleGridColumns().map(function(v) {return v.dataIndex}).filter(function(v) { return v});
   }
 });
