@@ -22,7 +22,6 @@ class User(Base):
     userid = Column(Unicode, primary_key=True)
     displayname = Column(Unicode)
     email = Column(Unicode)
-    roles = relationship('UserRole',backref='user')
 
     def __init__(self, userid, displayname, email):
         self.userid = userid
@@ -37,41 +36,19 @@ class Job(Base):
     description = Column(Unicode) # Kept in sync with Run.description
     parentjobid = Column(Unicode, ForeignKey('job.jobid'))
     state = Column(Unicode) # queued/running/ready etc.
+    owner = Column(Unicode, ForeignKey('user.userid'))
     children = relationship('Job', backref=backref('parent', remote_side=[jobid]))
 
-    def __init__(self, jobid, description='', parentjobid=None, state=None):
+    def __init__(self, jobid, description='', parentjobid=None, state=None, owner=None):
         self.jobid = jobid
         self.description = description
         self.parentjobid = parentjobid
         self.state = state
+        self.owner = owner
 
-class JobUser(Base):
-    """Which user has which roles on a job"""
-    __tablename__ = 'job_user'
-    userid = Column(Unicode, ForeignKey('user.userid'), primary_key=True)
-    jobid = Column(Unicode, ForeignKey('job.jobid'), primary_key=True)
-    role = Column(Unicode)
-
-    def __init__(self, userid, jobid, role):
-        self.userid = userid
-        self.jobid = jobid
-        self.role = role
-
-class UserRole(Base):
-    """Roles of a user"""
-    __tablename__ = 'user_role'
-    userid = Column(Unicode, ForeignKey('user.userid'), primary_key=True)
-    role = Column(Unicode, primary_key=True)
-
-    def __init__(self, userid, role):
-        self.userid = userid
-        self.role = role
-
-def groupfinder(userid, request):
-    roles = DBSession.query(UserRole).filter(UserRole.userid==userid).all()
-    return [r.role for r in roles]
 
 class RootFactory(object):
+    """Context factory which sets default acl"""
     __acl__ = [
         (Allow, Authenticated, 'view'),
         (Deny, Everyone, ALL_PERMISSIONS)
@@ -96,23 +73,17 @@ class JobIdFactory(RootFactory):
             job = self.job_factory.fromId(jobid)
         except JobNotFound:
             raise HTTPNotFound()
-        owner = DBSession.query(JobUser).filter(JobUser.jobid==jobid).filter(JobUser.role=='owner').one()
-        job.__acl__ = [
-            (Allow, owner.userid, 'run')
-        ]
+        ujob = DBSession.query(Job).filter(Job.jobid==jobid).one()
+        job.__acl__ = [(Allow, ujob.owner, 'run')]
         job.__parent__ = self
-        #TODO: add users/groups with other permission on job to acl
         return job
 
 def set_job_owner(jobid, userid):
     """ userid=unauthenticated_userid(self.request)"""
-    # TODO: Only one user should be owner, revoke others ownership
-    grant('owner', jobid, userid)
-
-def grant(role, jobid, userid):
-    """ GRANT role ON job TO who"""
-    ju = JobUser(userid, jobid, role)
-    DBSession().add(ju)
+    session = DBSession()
+    job = session.query(Job).get(jobid)
+    job.owner = userid
+    session.add(job)
 
 def set_job_parent(jobid, parentjobid):
     """ Set Job.parentjobid with jobid==jobid"""
@@ -135,6 +106,6 @@ def add_job(jobid):
 def get_jobs(owner):
     """Retrieve jobs belonging to owner"""
     jobs = []
-    for id,desc in DBSession().query(Job.jobid, Job.description).join(JobUser).filter(JobUser.userid==owner).all():
+    for id,desc in DBSession().query(Job.jobid, Job.description).filter(Job.owner==owner).all():
         jobs.append({'id':id, "description": desc})
     return jobs

@@ -35,11 +35,10 @@ class FunctionalTests(unittest.TestCase):
         populateTestingDB(job.session)
         job.session.commit()
 
-        from magmaweb.user import DBSession, User, JobUser
-        usession = DBSession()
-        usession.add(User('bob', 'Bob', 'bob@example.com'))
-        # No need to add Job because already inserted by jf.fromScratch()
-        usession.add(JobUser('bob', str(job.id), 'owner'))
+        # Setup owner of job
+        from magmaweb.user import DBSession, User
+        DBSession().add(User('bob', 'Bob', 'bob@example.com'))
+        job.owner('bob')
 
         return job.id
 
