@@ -1,10 +1,10 @@
 import unittest
 from pyramid import testing
 from mock import Mock, patch
-from magmaweb.views import Views, JobViews, home, defaults
+from magmaweb.views import Views, JobViews
 from magmaweb.job import JobFactory, Job
 
-class ViewsTestCase(unittest.TestCase):
+class AbstractViewsTestCase(unittest.TestCase):
     def setUp(self):
         self.settings = {
                          'jobfactory.root_dir': '/somedir',
@@ -19,17 +19,20 @@ class ViewsTestCase(unittest.TestCase):
         job.id = 'foo'
         job.runInfo.return_value = 'bla'
         job.maxMSLevel.return_value = 3
-        job.metabolites.return_value = {'total':3, 'rows':[1,2,3]}
+        job.metabolites.return_value = {'total': 3, 'rows': [1, 2, 3]}
         job.metabolitesTotalCount.return_value = 3
-        job.scansWithMetabolites.return_value = [4,5]
-        job.chromatogram.return_value = [1,2,3]
-        job.extractedIonChromatogram.return_value = [1,2,3]
+        job.scansWithMetabolites.return_value = [4, 5]
+        job.chromatogram.return_value = [1, 2, 3]
+        job.extractedIonChromatogram.return_value = [1, 2, 3]
         job.fragments.return_value = [1, 2, 3]
         return job
 
+
+class ViewsTestCase(AbstractViewsTestCase):
     def test_home(self):
         request = testing.DummyRequest()
-        response = home(request)
+        views = Views(request)
+        response = views.home()
 
         self.assertEqual(response, {'userid':None})
 
@@ -104,35 +107,69 @@ class ViewsTestCase(unittest.TestCase):
         get_jobs.assert_called_with(None)
         self.assertEqual(response, {'jobs':jobs})
 
+    def test_defaultsjson(self):
+        request = testing.DummyRequest()
+        views = Views(request)
+        response = views.defaults()
+
+        self.assertEqual(response, {
+                                    'success': True,
+                                    'data': dict(
+                                                 n_reaction_steps=2,
+                                                 metabolism_types=['phase1',
+                                                                   'phase2'],
+                                                 ionisation_mode=1,
+                                                 skip_fragmentation=False,
+                                                 ms_intensity_cutoff=1000000.0,
+                                                 msms_intensity_cutoff=0.1,
+                                                 mz_precision=0.001,
+                                                 use_all_peaks=False,
+                                                 abs_peak_cutoff=1000,
+                                                 rel_peak_cutoff=0.01,
+                                                 max_ms_level=10,
+                                                 precursor_mz_precision=0.005,
+                                                 max_broken_bonds=4
+                                                 )
+                                    })
+
+
+class JobViewsTestCase(AbstractViewsTestCase):
+    """ Test case for magmaweb.views.JobViews"""
+
     def test_metabolitesjson_return(self):
         request = testing.DummyRequest(params={
-                                               'start':0,
-                                               'limit':10
+                                               'start': 0,
+                                               'limit': 10
                                                })
         job = self.fake_job()
         views = JobViews(job, request)
 
         response = views.metabolitesjson()
 
-        self.assertEqual(response, { 'totalUnfiltered': 3, 'total':3, 'rows':[1,2,3], 'scans':[4,5]})
+        self.assertEqual(response, {'totalUnfiltered': 3,
+                                    'total': 3,
+                                    'rows': [1, 2, 3],
+                                    'scans': [4, 5]
+                                    })
 
     def test_metabolitesjson_minimalparams(self):
         request = testing.DummyRequest(params={
-                                               'start':0,
-                                               'limit':10
+                                               'start': 0,
+                                               'limit': 10
                                                })
         job = self.fake_job()
         views = JobViews(job, request)
 
         views.metabolitesjson()
 
-        job.metabolites.assert_called_with(start=0, limit=10, sorts=[],scanid=None, filters=[])
+        job.metabolites.assert_called_with(start=0, limit=10, sorts=[],
+                                           scanid=None, filters=[])
         job.scansWithMetabolites.assert_called_with(filters=[])
 
     def test_metabolitesjson_scanidfilter(self):
         request = testing.DummyRequest(params={
-                                               'start':0,
-                                               'limit':10,
+                                               'start': 0,
+                                               'limit': 10,
                                                'scanid': 641
                                                })
         job = self.fake_job()
@@ -140,14 +177,18 @@ class ViewsTestCase(unittest.TestCase):
 
         views.metabolitesjson()
 
-        job.metabolites.assert_called_with(start=0, limit=10, sorts=[],scanid=641, filters=[])
+        job.metabolites.assert_called_with(start=0, limit=10,
+                                           sorts=[], scanid=641,
+                                           filters=[])
 
     def test_metabolitesjson_nrscaneqfilter(self):
-        filter_in = '[{"type":"numeric","comparison":"eq","value":1,"field":"nr_scans"}]'
-        filter_expected = [{"type":"numeric","comparison":"eq","value":1,"field":"nr_scans"}]
+        filter_in = '[{"type":"numeric","comparison":"eq",'
+        filter_in += '"value":1,"field":"nhits"}]'
+        filter_expected = [{"type": "numeric", "comparison": "eq",
+                            "value": 1, "field": "nhits"}]
         request = testing.DummyRequest(params={
-                                               'start':0,
-                                               'limit':10,
+                                               'start': 0,
+                                               'limit': 10,
                                                'filter': filter_in
                                                })
         job = self.fake_job()
@@ -155,15 +196,17 @@ class ViewsTestCase(unittest.TestCase):
 
         views.metabolitesjson()
 
-        job.metabolites.assert_called_with(start=0, limit=10, sorts=[],scanid=None, filters=filter_expected)
+        job.metabolites.assert_called_with(start=0, limit=10,
+                                           sorts=[], scanid=None,
+                                           filters=filter_expected)
         job.scansWithMetabolites.assert_called_with(filters=filter_expected)
 
     def test_metabolitesjson_sortonlevel(self):
         sort_in = '[{"property":"level","direction":"DESC"}]'
-        sort_expected = [{"property":"level","direction":"DESC"}]
+        sort_expected = [{"property":"level", "direction": "DESC"}]
         request = testing.DummyRequest(params={
-                                               'start':0,
-                                               'limit':10,
+                                               'start': 0,
+                                               'limit': 10,
                                                'sort': sort_in
                                                })
         job = self.fake_job()
@@ -171,12 +214,14 @@ class ViewsTestCase(unittest.TestCase):
 
         views.metabolitesjson()
 
-        job.metabolites.assert_called_with(start=0, limit=10, sorts=sort_expected,scanid=None, filters=[])
+        job.metabolites.assert_called_with(start=0, limit=10,
+                                           sorts=sort_expected,
+                                           scanid=None, filters=[])
 
     def test_metabolitesjson_notfilledreturn(self):
         request = testing.DummyRequest(params={
-                                               'start':0,
-                                               'limit':10
+                                               'start': 0,
+                                               'limit': 10
                                                })
         job = self.fake_job()
         job.metabolitesTotalCount.return_value = 0
@@ -184,7 +229,8 @@ class ViewsTestCase(unittest.TestCase):
 
         response = views.metabolitesjson()
 
-        self.assertEqual(response, { 'totalUnfiltered': 0, 'total':3, 'rows':[1,2,3], 'scans':[4,5]})
+        self.assertEqual(response, {'totalUnfiltered': 0, 'total': 3,
+                                    'rows': [1, 2, 3], 'scans': [4, 5]})
 
     def test_metabolitescsv(self):
         import StringIO
@@ -193,12 +239,12 @@ class ViewsTestCase(unittest.TestCase):
         job = Mock(Job)
         job.metabolites2csv.return_value = csv
         request = testing.DummyRequest(params={
-                                               'start':0,
-                                               'limit':10
+                                               'start': 0,
+                                               'limit': 10
                                                })
         views = JobViews(job, request)
         views.metabolitesjson = Mock(return_value={
-                                                   'rows':[]
+                                                   'rows': []
                                                    })
 
         response = views.metabolitescsv()
@@ -206,30 +252,66 @@ class ViewsTestCase(unittest.TestCase):
         self.assertEqual(response.content_type, 'text/csv')
         self.assertEqual(response.body, 'bla')
 
+    def test_metabolitescsv_somecols(self):
+        import StringIO
+        csv = StringIO.StringIO()
+        csv.write('bla')
+        job = self.fake_job()
+        job.metabolites2csv.return_value = csv
+        request = testing.DummyRequest(params={
+                                               'start': 0,
+                                               'limit': 10,
+                                               'cols': '["name","score"]'
+                                               })
+
+        views = JobViews(job, request)
+        rows = [{'name':'foo', 'score': 'bar', 'id': 123}]
+        views.metabolitesjson = Mock(return_value={'rows': rows})
+
+        views.metabolitescsv()
+
+        job.metabolites2csv.assert_called_with(rows, cols=['name', 'score'])
+
     def test_metabolitessdf(self):
         job = Mock(Job)
         job.metabolites2sdf.return_value = 'bla'
         request = testing.DummyRequest(params={
-                                               'start':0,
-                                               'limit':10
+                                               'start': 0,
+                                               'limit': 10
                                                })
         views = JobViews(job, request)
         views.metabolitesjson = Mock(return_value={
-                                                   'rows':[]
+                                                   'rows': []
                                                    })
         response = views.metabolitessdf()
 
+        job.metabolites2sdf.assert_called_with([], cols=[])
         self.assertEqual(response.content_type, 'chemical/x-mdl-sdfile')
         self.assertEqual(response.body, 'bla')
 
+    def test_metabolitessdf_somecols(self):
+        job = Mock(Job)
+        job.metabolites2sdf.return_value = 'bla'
+        request = testing.DummyRequest(params={
+                                               'start': 0,
+                                               'limit': 10,
+                                               'cols': '["name","score"]'
+                                               })
+        views = JobViews(job, request)
+        views.metabolitesjson = Mock(return_value={
+                                                   'rows': []
+                                                   })
+        views.metabolitessdf()
+
+        job.metabolites2sdf.assert_called_with([], cols=['name', 'score'])
 
     def test_chromatogramjson(self):
         request = testing.DummyRequest()
         views = JobViews(self.fake_job(), request)
 
-        response  = views.chromatogramjson()
+        response = views.chromatogramjson()
 
-        self.assertEqual(response, [1,2,3])
+        self.assertEqual(response, [1, 2, 3])
 
     def test_mspectrajson(self):
         request = testing.DummyRequest(matchdict={'scanid':641})
@@ -242,8 +324,8 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_mspectrajson_withmslevel(self):
         request = testing.DummyRequest(
-                                       matchdict={'scanid':641},
-                                       params={'mslevel':3}
+                                       matchdict={'scanid': 641},
+                                       params={'mslevel': 3}
                                        )
         job = self.fake_job()
         views = JobViews(job, request)
@@ -254,8 +336,8 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_mspectra_withoutscanid_notfound(self):
         from magmaweb.job import ScanNotFound
-
         request = testing.DummyRequest(matchdict={'scanid':641})
+
         job = self.fake_job()
         job.mspectra.side_effect = ScanNotFound()
         views = JobViews(job, request)
@@ -272,16 +354,15 @@ class ViewsTestCase(unittest.TestCase):
         response = views.extractedionchromatogram()
 
         self.assertEqual(response, {
-            'chromatogram': [1,2,3], 'scans': [4,5]
+            'chromatogram': [1, 2, 3], 'scans': [4, 5]
         })
         job.extractedIonChromatogram.assert_called_with(72)
         job.scansWithMetabolites.assert_called_with(metid=72)
 
-
     def test_fragments_metabolitewithoutfragments(self):
         request = testing.DummyRequest(matchdict={
-                                                  'metid':72,
-                                                  'scanid':641
+                                                  'metid': 72,
+                                                  'scanid': 641
                                                   },
                                        params={'node':''})
         job = self.fake_job()
@@ -293,8 +374,8 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_fragments_filteronmslevel(self):
         request = testing.DummyRequest(matchdict={
-                                                  'metid':72,
-                                                  'scanid':641
+                                                  'metid': 72,
+                                                  'scanid': 641
                                                   },
                                        params={'node':1709})
         job = self.fake_job()
@@ -307,8 +388,8 @@ class ViewsTestCase(unittest.TestCase):
     def test_fragments_badmetabolite_notfound(self):
         from magmaweb.job import FragmentNotFound
         request = testing.DummyRequest(matchdict={
-                                                  'metid':72,
-                                                  'scanid':641
+                                                  'metid': 72,
+                                                  'scanid': 641
                                                   },
                                        params={'node':''})
 
@@ -340,11 +421,11 @@ class ViewsTestCase(unittest.TestCase):
         job = self.fake_job()
         from magmaweb.models import Run
         job.runInfo.return_value = Run(
-            n_reaction_steps=2, metabolism_types='phase1,phase2' ,
+            n_reaction_steps=2, metabolism_types='phase1,phase2',
             ionisation_mode=-1, skip_fragmentation=True,
             ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
             mz_precision=0.01, use_all_peaks=True,
-            ms_filename = 'F123456.mzxml', abs_peak_cutoff=1000,
+            ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
             rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=0.01,
             max_broken_bonds=4, description='My first description'
         )
@@ -356,7 +437,8 @@ class ViewsTestCase(unittest.TestCase):
                                     'success': True,
                                     'data': dict(
                                                  n_reaction_steps=2,
-                                                 metabolism_types=['phase1', 'phase2'],
+                                                 metabolism_types=['phase1',
+                                                                   'phase2'],
                                                  ionisation_mode=-1,
                                                  skip_fragmentation=True,
                                                  ms_intensity_cutoff=200000.0,
@@ -372,7 +454,7 @@ class ViewsTestCase(unittest.TestCase):
                                     })
 
     def test_runinfojson_onlymsdatadone(self):
-        self.maxDiff =200000
+        self.maxDiff = 200000
         request = testing.DummyRequest()
         job = self.fake_job()
         from magmaweb.models import Run
@@ -388,7 +470,8 @@ class ViewsTestCase(unittest.TestCase):
                                     'success': True,
                                     'data': dict(
                                                  n_reaction_steps=2,
-                                                 metabolism_types=['phase1', 'phase2'],
+                                                 metabolism_types=['phase1',
+                                                                   'phase2'],
                                                  ionisation_mode=1,
                                                  skip_fragmentation=False,
                                                  ms_intensity_cutoff=1000000.0,
@@ -403,7 +486,6 @@ class ViewsTestCase(unittest.TestCase):
                                                  )
                                     })
 
-
     def test_runinfojson_norundone(self):
         request = testing.DummyRequest()
         job = self.fake_job()
@@ -416,7 +498,8 @@ class ViewsTestCase(unittest.TestCase):
                                     'success': True,
                                     'data': dict(
                                                  n_reaction_steps=2,
-                                                 metabolism_types=['phase1', 'phase2'],
+                                                 metabolism_types=['phase1',
+                                                                   'phase2'],
                                                  ionisation_mode=1,
                                                  skip_fragmentation=False,
                                                  ms_intensity_cutoff=1000000.0,
@@ -430,28 +513,3 @@ class ViewsTestCase(unittest.TestCase):
                                                  max_broken_bonds=4
                                                  )
                                     })
-
-
-    def test_defaultsjson(self):
-        request = testing.DummyRequest()
-        response = defaults(request)
-
-        self.assertEqual(response, {
-                                    'success': True,
-                                    'data': dict(
-                                                 n_reaction_steps=2,
-                                                 metabolism_types=['phase1', 'phase2'],
-                                                 ionisation_mode=1,
-                                                 skip_fragmentation=False,
-                                                 ms_intensity_cutoff=1000000.0,
-                                                 msms_intensity_cutoff=0.1,
-                                                 mz_precision=0.001,
-                                                 use_all_peaks=False,
-                                                 abs_peak_cutoff=1000,
-                                                 rel_peak_cutoff=0.01,
-                                                 max_ms_level=10,
-                                                 precursor_mz_precision=0.005,
-                                                 max_broken_bonds=4
-                                                 )
-                                    })
-

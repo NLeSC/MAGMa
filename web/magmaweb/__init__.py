@@ -2,8 +2,16 @@ import json
 from pyramid.config import Configurator
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.authentication import RemoteUserAuthenticationPolicy
+from pyramid.events import subscriber, NewRequest
 from sqlalchemy import engine_from_config
-from .user import DBSession, Base, RootFactory, JobIdFactory
+from magmweb.user import DBSession, Base, RootFactory, JobIdFactory
+
+@subscriber(NewRequest)
+def extjsurl(event):
+    """Adds extjsroot url to request using extjsroot setting"""
+    extjsroot = event.request.registry.settings['extjsroot']
+    base = 'magmaweb:static/'
+    event.request.extjsroot = event.request.static_url(base + extjsroot)
 
 def main(global_config, **settings):
     """This function returns the Magma WSGI application.
@@ -35,12 +43,15 @@ def main(global_config, **settings):
     add_job_route('metabolites.json', '/results/{jobid}/metabolites.json') # my job
     add_job_route('metabolites.csv', '/results/{jobid}/metabolites.csv') # my job
     add_job_route('metabolites.sdf', '/results/{jobid}/metabolites.sdf') # my job
-    add_job_route('fragments.json', '/results/{jobid}/fragments/{scanid}/{metid}.json') # my job
+    add_job_route('fragments.json',
+                  '/results/{jobid}/fragments/{scanid}/{metid}.json') # my job
     add_job_route('chromatogram.json', '/results/{jobid}/chromatogram.json') # my job
     add_job_route('mspectra.json', '/results/{jobid}/mspectra/{scanid}.json') # my job
-    add_job_route('extractedionchromatogram.json','/results/{jobid}/extractedionchromatogram/{metid}.json') # my job
+    add_job_route('extractedionchromatogram.json',
+                  '/results/{jobid}/extractedionchromatogram/{metid}.json') # my job
     add_job_route('stderr.txt', '/results/{jobid}/stderr.txt') # my job
     add_job_route('runinfo.json', '/results/{jobid}/runinfo.json') # my job
+
     add_job_route('rpc.add_structures', '/rpc/{jobid}/add_structures') # my job + calc
     add_job_route('rpc.add_ms_data', '/rpc/{jobid}/add_ms_data') # my job + calc
     add_job_route('rpc.metabolize', '/rpc/{jobid}/metabolize') # my job + calc
@@ -61,6 +72,7 @@ def main(global_config, **settings):
     #TODO: create view to change permissions of job
     add_job_route('share', '/share/{jobid}')
 
+    # Setup connection to user database
     engine = engine_from_config(settings, 'sqlalchemy.')
     DBSession.configure(bind=engine)
     Base.metadata.create_all(engine)
@@ -68,11 +80,12 @@ def main(global_config, **settings):
     config.scan('magmaweb')
     return config.make_wsgi_app()
 
+
 def jsonhtml_renderer_factory(info):
     """Json renderer with text/html content type
 
-    ExtJS form with file upload requires json response with text/html content type.
-
+    ExtJS form with file upload requires
+    json response with text/html content type.
     See http://extjs.com/deploy/dev/docs/?class=Ext.form.BasicForm hasUpload().
     """
     def _render(value, system):

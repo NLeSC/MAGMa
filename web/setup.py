@@ -8,32 +8,32 @@ README = open(os.path.join(here, 'README.txt')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = [
-    'pyramid',
-    'SQLAlchemy',
-    'zope.sqlalchemy',
-    'pyramid_debugtoolbar',
-    'gunicorn',
-    'colander'
-    ]
+            'pyramid',
+            'SQLAlchemy',
+            'zope.sqlalchemy',
+            'colander',
+            'waitress',
+            'Paste'
+            ]
 
 tests_require = [
-    'WebTest',
-    'mock'
-    ]
+                 'WebTest',
+                 'mock'
+                 ]
 
-if sys.version_info[:3] < (2,5,0):
+if sys.version_info[:3] < (2, 5, 0):
     requires.append('pysqlite')
 
 setup(name='MAGMaWeb',
       version='0.0',
       description='MAGMaWeb',
-      long_description=README + '\n\n' +  CHANGES,
+      long_description=README + '\n\n' + CHANGES,
       classifiers=[
-        "Programming Language :: Python",
-        "Framework :: Pylons",
-        "Topic :: Internet :: WWW/HTTP",
-        "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
-        ],
+                   "Programming Language :: Python",
+                   "Framework :: Pylons",
+                   "Topic :: Internet :: WWW/HTTP",
+                   "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+                   ],
       author='Stefan Verhoeven',
       author_email='s.verhoeven@esciencecenter.nl',
       url='http://www.esciencecenter.com',
@@ -42,12 +42,11 @@ setup(name='MAGMaWeb',
       include_package_data=True,
       zip_safe=False,
       test_suite='magmaweb.tests',
-      install_requires = requires,
-      tests_require = tests_require,
-      entry_points = """\
+      install_requires=requires,
+      tests_require=tests_require,
+      entry_points="""\
       [paste.app_factory]
       main = magmaweb:main
       """,
       paster_plugins=['pyramid'],
       )
-

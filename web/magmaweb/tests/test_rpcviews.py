@@ -4,6 +4,7 @@ from mock import Mock
 from magmaweb.rpc import RpcViews
 from magmaweb.job import JobFactory, Job, JobQuery
 
+
 class RpcViewsTestCase(unittest.TestCase):
     def setUp(self):
         self.settings = {
@@ -59,7 +60,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
-        self.assertEquals(response, { 'success': True, 'jobid': self.jobid})
+        self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_addmsdata(self):
         self.jobquery.add_ms_data.return_value = self.jq
@@ -71,7 +72,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
-        self.assertEquals(response, { 'success': True, 'jobid': self.jobid})
+        self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_metabolize(self):
         self.jobquery.metabolize.return_value = self.jq
@@ -83,7 +84,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
-        self.assertEquals(response, { 'success': True, 'jobid': self.jobid})
+        self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_metabolize_one(self):
         self.jobquery.metabolize_one.return_value = self.jq
@@ -95,7 +96,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
-        self.assertEquals(response, { 'success': True, 'jobid': self.jobid})
+        self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_annotate(self):
         self.jobquery.annotate.return_value = self.jq
@@ -106,7 +107,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
-        self.assertEquals(response, { 'success': True, 'jobid': self.jobid})
+        self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_allinone(self):
         self.jobquery.allinone.return_value = self.jq
@@ -117,26 +118,28 @@ class RpcViewsTestCase(unittest.TestCase):
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
-        self.assertEquals(response, { 'success': True, 'jobid': self.jobid})
+        self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_set_description(self):
-        self.rpc.request.POST = { 'description': 'My description'}
+        self.rpc.request.POST = {'description': 'My description'}
 
         response = self.rpc.set_description()
 
         self.job.description.assert_called_with('My description')
-        self.assertEquals(response, { 'success': True, 'jobid': self.jobid})
+        self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_submit_query_withoutjobmanager(self):
         from urllib2 import URLError
         from pyramid.httpexceptions import HTTPInternalServerError
         import json
 
-        self.rpc.job_factory.submitQuery = Mock(side_effect=URLError('[Errno 111] Connection refused'))
+        q = Mock(side_effect=URLError('[Errno 111] Connection refused'))
+        self.rpc.job_factory.submitQuery = q
         with self.assertRaises(HTTPInternalServerError) as e:
             self.rpc.submit_query({})
 
-        self.assertEquals(json.loads(e.exception.body), { 'success': False, 'msg': 'Unable to submit query'})
+        expected_json = {'success': False, 'msg': 'Unable to submit query'}
+        self.assertEquals(json.loads(e.exception.body), expected_json)
 
     def test_failed_validation(self):
         from colander import Invalid
@@ -155,27 +158,32 @@ class RpcViewsTestCase(unittest.TestCase):
         response = rpc.failed_validation()
 
         self.assertIsInstance(response, HTTPInternalServerError)
-        self.assertEqual(json.loads(response.body), {
-                                    'success': False,
-                                    'errors': {
-                                               'query': 'Bad query field',
-                                               'format': 'Something wrong in form'
-                                               }
-                                    })
+        expected = {'success': False,
+                    'errors': {
+                               'query': 'Bad query field',
+                               'format': 'Something wrong in form'
+                               }
+                    }
+        self.assertEqual(json.loads(response.body), expected)
 
     def test_assign_metabolite2peak(self):
-        self.rpc.request.POST = { 'scanid': 641, 'mz': 109.029563903808, 'metid': 72}
+        self.rpc.request.POST = {'scanid': 641,
+                                 'mz': 109.029563903808,
+                                 'metid': 72}
 
         response = self.rpc.assign_metabolite2peak()
 
-        self.job.assign_metabolite2peak.assert_called_with(641, 109.029563903808, 72)
-        self.assertEquals(response, { 'success': True, 'jobid': self.jobid })
+        self.job.assign_metabolite2peak.assert_called_with(641,
+                                                           109.029563903808,
+                                                           72)
+        self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_unassign_metabolite2peak(self):
-        self.rpc.request.POST = { 'scanid': 641, 'mz': 109.029563903808}
+        self.rpc.request.POST = {'scanid': 641,
+                                 'mz': 109.029563903808}
 
         response = self.rpc.unassign_metabolite2peak()
 
-        self.job.unassign_metabolite2peak.assert_called_with(641, 109.029563903808)
-        self.assertEquals(response, { 'success': True, 'jobid': self.jobid })
-
+        self.job.unassign_metabolite2peak.assert_called_with(641,
+                                                             109.029563903808)
+        self.assertEquals(response, {'success': True, 'jobid': self.jobid})

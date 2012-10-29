@@ -10,27 +10,34 @@ from sqlalchemy import create_engine, and_
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, aliased, scoped_session
 from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import desc, asc, distinct
+from sqlalchemy.sql.expression import desc, asc, null
 from sqlalchemy.orm.exc import NoResultFound
 from magmaweb.models import Base, Metabolite, Scan, Peak, Fragment, Run
 import magmaweb.user
+
 
 class ScanRequiredError(Exception):
     """Raised when a scan identifier is required, but non is supplied"""
     pass
 
+
 class ScanNotFound(Exception):
     """Raised when a scan identifier is not found"""
     pass
+
 
 class FragmentNotFound(Exception):
     """Raised when a fragment is not found"""
     pass
 
+
 class JobNotFound(Exception):
     """Raised when a job with a identifier is not found"""
+
     def __init__(self, jobid):
+        Exception.__init__(self)
         self.jobid = jobid
+
 
 def make_job_factory(params):
     """Returns :class:`JobFactory` instance based on ``params`` dict
@@ -41,11 +48,16 @@ def make_job_factory(params):
     Can be used to create job factory from a config file
     """
     prefix = 'jobfactory.'
-    d = {k.replace(prefix, ''):v for k,v in params.iteritems() if k.startswith(prefix)}
+    d = {k.replace(prefix, ''): v
+         for k, v in params.iteritems()
+         if k.startswith(prefix)}
     return JobFactory(**d)
 
+
 class JobQuery(object):
-    """ Perform actions on a :class:`Job` by parsing post params, staging files and building magma cli commands"""
+    """Perform actions on a :class:`Job` by parsing post params,
+    staging files and building magma cli commands
+    """
 
     class File(object):
         """ Colander schema type for file upload field"""
@@ -58,7 +70,10 @@ class JobQuery(object):
             if cstruct == '':
                 return colander.null
             if not isinstance(cstruct, FieldStorage):
-                raise colander.Invalid(node, '{} is not a cgi.FieldStorage'.format(cstruct))
+                raise colander.Invalid(
+                    node,
+                    '{} is not a cgi.FieldStorage'.format(cstruct)
+                )
             return cstruct
 
     def __init__(self, id, dir, script='', prestaged=None):
@@ -77,39 +92,55 @@ class JobQuery(object):
         self.prestaged = prestaged or []
 
     def __eq__(self, other):
-        return (self.id == other.id and self.dir == other.dir and
-            self.script == other.script and self.prestaged == other.prestaged)
+        return (self.id == other.id and
+                self.dir == other.dir and
+                self.script == other.script and
+                self.prestaged == other.prestaged)
 
     def __repr__(self):
         """Return a printable representation."""
-        return "JobQuery({!r}, {!r}, {!r}, {!r})".format(self.id, self.dir, self.script, self.prestaged)
+        return "JobQuery({!r}, {!r}, {!r}, {!r})".format(self.id,
+                                                         self.dir,
+                                                         self.script,
+                                                         self.prestaged)
 
     def escape(self, string):
         """ Replaces single quote with its html escape sequence"""
         return str(string).replace("'", '&#39;')
 
     def _addAnnotateSchema(self, schema):
-        schema.add(colander.SchemaNode(colander.Float(), name='precursor_mz_precision'))
-        schema.add(colander.SchemaNode(colander.Float(), name='mz_precision'))
-        schema.add(colander.SchemaNode(colander.Float(), name='ms_intensity_cutoff'))
-        schema.add(colander.SchemaNode(colander.Float(), name='msms_intensity_cutoff'))
+        schema.add(colander.SchemaNode(colander.Float(),
+                                       name='precursor_mz_precision'))
+        schema.add(colander.SchemaNode(colander.Float(),
+                                       name='mz_precision'))
+        schema.add(colander.SchemaNode(colander.Float(),
+                                       name='ms_intensity_cutoff'))
+        schema.add(colander.SchemaNode(colander.Float(),
+                                       name='msms_intensity_cutoff'))
         schema.add(colander.SchemaNode(
                                        colander.Integer(),
                                        validator=colander.OneOf([-1, 1]),
-                                       name='ionisation_mode'
-                                       ))
+                                       name='ionisation_mode'))
         schema.add(colander.SchemaNode(colander.Integer(),
                                        validator=colander.Range(min=0),
                                        name='max_broken_bonds'))
-        schema.add(colander.SchemaNode(colander.Boolean(), default=False, missing=False, name='use_all_peaks'))
-        schema.add(colander.SchemaNode(colander.Boolean(), default=False, missing=False, name='skip_fragmentation'))
+        schema.add(colander.SchemaNode(colander.Boolean(),
+                                       default=False, missing=False,
+                                       name='use_all_peaks'))
+        schema.add(colander.SchemaNode(colander.Boolean(),
+                                       default=False, missing=False,
+                                       name='skip_fragmentation'))
 
     def _addMetabolizeSchema(self, schema):
+        validator = colander.OneOf(['phase1', 'phase2'])
         metabolism_type = colander.SchemaNode(colander.String(),
-                                              validator=colander.OneOf(['phase1', 'phase2'])
-                                              )
-        schema.add(colander.SchemaNode(colander.Sequence(), metabolism_type, name='metabolism_types'))
-        schema.add(colander.SchemaNode(colander.Integer(), validator=colander.Range(0, 10), name='n_reaction_steps'))
+                                              validator=validator)
+        schema.add(colander.SchemaNode(colander.Sequence(),
+                                       metabolism_type,
+                                       name='metabolism_types'))
+        schema.add(colander.SchemaNode(colander.Integer(),
+                                       validator=colander.Range(0, 10),
+                                       name='n_reaction_steps'))
 
     def add_structures(self, params, has_ms_data=False):
         """Configure job query to add_structures from params.
@@ -119,30 +150,45 @@ class JobQuery(object):
         * structure_format, in which format is structures or structure_file
         * structures, string with structures
         * structures_file, file-like object with structures
-        * metabolize, when key is set then :meth:`~magmaweb.job.JobQuery.metabolize` will be called.
+        * metabolize, when key is set then
+            :meth:`~magmaweb.job.JobQuery.metabolize` will be called.
 
-        If ``has_ms_data`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
-        If both ``stuctures`` and ``structures_file`` is filled then ``structures`` is ignored.
+        If ``has_ms_data`` is True then
+            :meth:`~magmaweb.job.JobQuery.annotate` will be called.
+        If both ``stuctures`` and ``structures_file`` is filled then
+            ``structures`` is ignored.
         """
         def textarea_or_file(node, value):
-            """ Validator with tests that either textarea or file upload is filled"""
-            if not(not value['structures'] is colander.null or not value['structures_file'] is colander.null):
+            """Validator that either textarea or file upload is filled"""
+            if not(not value['structures'] is colander.null or
+                   not value['structures_file'] is colander.null):
                 error = 'Either structures or structure_file must be set'
                 exception = colander.Invalid(node)
                 exception.add(colander.Invalid(structuresSchema, error))
                 exception.add(colander.Invalid(structures_fileSchema, error))
                 raise exception
 
-        schema = colander.SchemaNode(colander.Mapping(), validator=textarea_or_file)
+        schema = colander.SchemaNode(colander.Mapping(),
+                                     validator=textarea_or_file)
         schema.add(colander.SchemaNode(colander.String(),
-                                       validator=colander.OneOf(['smiles', 'sdf']),
+                                       validator=colander.OneOf(['smiles',
+                                                                 'sdf']),
                                        name='structure_format'
                                        ))
-        structuresSchema = colander.SchemaNode(colander.String(), validator=colander.Length(min=1), missing=colander.null, name='structures')
+        filled = colander.Length(min=1)
+        structuresSchema = colander.SchemaNode(colander.String(),
+                                               validator=filled,
+                                               missing=colander.null,
+                                               name='structures')
         schema.add(structuresSchema)
-        structures_fileSchema = colander.SchemaNode(self.File(), missing=colander.null, name='structures_file')
+        structures_fileSchema = colander.SchemaNode(self.File(),
+                                                    missing=colander.null,
+                                                    name='structures_file')
         schema.add(structures_fileSchema)
-        schema.add(colander.SchemaNode(colander.Boolean(), default=False, missing=False, name='metabolize'))
+        schema.add(colander.SchemaNode(colander.Boolean(),
+                                       default=False,
+                                       missing=False,
+                                       name='metabolize'))
         if has_ms_data:
             self._addAnnotateSchema(schema)
         if ('metabolize' in params):
@@ -150,7 +196,8 @@ class JobQuery(object):
         if hasattr(params, 'mixed'):
             # unflatten multidict
             params = params.mixed()
-        if 'metabolism_types' in params and isinstance(params['metabolism_types'], basestring):
+        if ('metabolism_types' in params and
+                isinstance(params['metabolism_types'], basestring)):
             params['metabolism_types'] = [params['metabolism_types']]
         params = schema.deserialize(params)
 
@@ -168,8 +215,10 @@ class JobQuery(object):
             metsfile.write(params['structures'])
         metsfile.close()
 
-        script = "{{magma}} add_structures -t '{structure_format}' structures.dat {{db}}"
-        self.script += script.format(structure_format=self.escape(params['structure_format']))
+        script = "{{magma}} add_structures -t '{structure_format}'"
+        script += " structures.dat {{db}}"
+        sf = self.escape(params['structure_format'])
+        self.script += script.format(structure_format=sf)
         self.prestaged.append('structures.dat')
 
         if params['metabolize']:
@@ -196,7 +245,8 @@ class JobQuery(object):
         * abs_peak_cutoff
         * rel_peak_cutoff
 
-        If ``has_metabolites`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
+        If ``has_metabolites`` is True then
+            :meth:`~magmaweb.job.JobQuery.annotate` will be called.
 
         """
         schema = colander.SchemaNode(colander.Mapping())
@@ -205,9 +255,15 @@ class JobQuery(object):
                                        name='ms_data_format'
                                        ))
         schema.add(colander.SchemaNode(self.File(), name='ms_data_file'))
-        schema.add(colander.SchemaNode(colander.Integer(), validator=colander.Range(min=0), name='max_ms_level'))
-        schema.add(colander.SchemaNode(colander.Float(), validator=colander.Range(min=0), name='abs_peak_cutoff'))
-        schema.add(colander.SchemaNode(colander.Float(), validator=colander.Range(0,1), name='rel_peak_cutoff'))
+        schema.add(colander.SchemaNode(colander.Integer(),
+                                       validator=colander.Range(min=0),
+                                       name='max_ms_level'))
+        schema.add(colander.SchemaNode(colander.Float(),
+                                       validator=colander.Range(min=0),
+                                       name='abs_peak_cutoff'))
+        schema.add(colander.SchemaNode(colander.Float(),
+                                       validator=colander.Range(0, 1),
+                                       name='rel_peak_cutoff'))
         if has_metabolites:
             self._addAnnotateSchema(schema)
         params = schema.deserialize(params)
@@ -223,13 +279,18 @@ class JobQuery(object):
         msf.close()
         msfile.close()
 
-        script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}' -l '{max_ms_level}' -a '{abs_peak_cutoff}' -r '{rel_peak_cutoff}' ms_data.dat {{db}}\n"
-        self.script += script.format(
-                               ms_data_format=self.escape(params['ms_data_format']),
-                               max_ms_level=self.escape(params['max_ms_level']),
-                               abs_peak_cutoff=self.escape(params['abs_peak_cutoff']),
-                               rel_peak_cutoff=self.escape(params['rel_peak_cutoff'])
-                               )
+        script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}' "
+        script += "-l '{max_ms_level}' "
+        script += "-a '{abs_peak_cutoff}' -r '{rel_peak_cutoff}' "
+        script += "ms_data.dat {{db}}\n"
+        script__substitution = {
+            'ms_data_format': self.escape(params['ms_data_format']),
+            'max_ms_level': self.escape(params['max_ms_level']),
+            'abs_peak_cutoff': self.escape(params['abs_peak_cutoff']),
+            'rel_peak_cutoff': self.escape(params['rel_peak_cutoff'])
+        }
+        self.script += script.format(**script__substitution)
+
         self.prestaged.append('ms_data.dat')
 
         if (has_metabolites):
@@ -245,7 +306,8 @@ class JobQuery(object):
         * n_reaction_steps
         * metabolism_types, comma seperated string with metabolism types
 
-        If ``has_ms_data`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
+        If ``has_ms_data`` is True then
+            :meth:`~magmaweb.job.JobQuery.annotate` will be called.
         If ``from_subset`` is True then metids are read from stdin
         """
         schema = colander.SchemaNode(colander.Mapping())
@@ -255,23 +317,28 @@ class JobQuery(object):
         if hasattr(params, 'mixed'):
             # unflatten multidict
             params = params.mixed()
-        if 'metabolism_types' in params and isinstance(params['metabolism_types'], basestring):
+        if ('metabolism_types' in params and
+                isinstance(params['metabolism_types'], basestring)):
             params['metabolism_types'] = [params['metabolism_types']]
         params = schema.deserialize(params)
 
-        script = "{{magma}} metabolize -s '{n_reaction_steps}' -m '{metabolism_types}'"
-        self.script += script.format(
-                               n_reaction_steps=self.escape(params['n_reaction_steps']),
-                               metabolism_types=self.escape(','.join(params['metabolism_types']))
-                               )
+        script = "{{magma}} metabolize -s '{n_reaction_steps}'"
+        script += " -m '{metabolism_types}'"
+        metabolism_types = ','.join(params['metabolism_types'])
+        script_substitution = {
+            'n_reaction_steps': self.escape(params['n_reaction_steps']),
+            'metabolism_types': self.escape(metabolism_types)
+        }
+        self.script += script.format(**script_substitution)
+
         if from_subset:
-            self.script+= " -j -"
+            self.script += " -j -"
 
         if (has_ms_data):
-            self.script+= " {db} |";
+            self.script += " {db} |"
             self.annotate(params, True)
         else:
-            self.script+= " {db}\n";
+            self.script += " {db}\n"
 
         return self
 
@@ -284,32 +351,39 @@ class JobQuery(object):
         * n_reaction_steps
         * metabolism_types, comma seperated string with metabolism types
 
-        If ``has_ms_data`` is True then :meth:`~magmaweb.job.JobQuery.annotate` will be called.
+        If ``has_ms_data`` is True then
+            :meth:`~magmaweb.job.JobQuery.annotate` will be called.
         """
         schema = colander.SchemaNode(colander.Mapping())
-        schema.add(colander.SchemaNode(colander.Integer(), validator=colander.Range(min=0), name='metid'))
+        schema.add(colander.SchemaNode(colander.Integer(),
+                                       validator=colander.Range(min=0),
+                                       name='metid'))
         self._addMetabolizeSchema(schema)
         if has_ms_data:
             self._addAnnotateSchema(schema)
         if hasattr(params, 'mixed'):
             # unflatten multidict
             params = params.mixed()
-        if 'metabolism_types' in params and isinstance(params['metabolism_types'], basestring):
+        if ('metabolism_types' in params and
+                isinstance(params['metabolism_types'], basestring)):
             params['metabolism_types'] = [params['metabolism_types']]
         params = schema.deserialize(params)
 
-        script = "echo '{metid}' | {{magma}} metabolize -j - -s '{n_reaction_steps}' -m '{metabolism_types}' {{db}}"
-        self.script += script.format(
-                               metid=self.escape(params['metid']),
-                               n_reaction_steps=self.escape(params['n_reaction_steps']),
-                               metabolism_types=self.escape(','.join(params['metabolism_types']))
-                               )
+        script = "echo '{metid}' | {{magma}} metabolize -j - "
+        script += "-s '{n_reaction_steps}' -m '{metabolism_types}' {{db}}"
+        metabolism_types = ','.join(params['metabolism_types'])
+        script_substitutions = {
+             'metid': self.escape(params['metid']),
+             'n_reaction_steps': self.escape(params['n_reaction_steps']),
+             'metabolism_types': self.escape(metabolism_types)
+        }
+        self.script += script.format(**script_substitutions)
 
         if (has_ms_data):
-            self.script+=" |"
+            self.script += " |"
             self.annotate(params, True)
         else:
-            self.script+="\n"
+            self.script += "\n"
 
         return self
 
@@ -325,7 +399,8 @@ class JobQuery(object):
         * ionisation_mode
         * max_broken_bonds
         * use_all_peaks, when key is set then all peaks are used
-        * skip_fragmentation, when key is set then the no fragmentation of structures is performed.
+        * skip_fragmentation, when key is set then
+            the no fragmentation of structures is performed.
 
         If ``from_subset`` is True then metids are read from stdin
         """
@@ -333,16 +408,22 @@ class JobQuery(object):
         self._addAnnotateSchema(schema)
         params = schema.deserialize(params)
 
-        script = "{{magma}} annotate -p '{mz_precision}' -c '{ms_intensity_cutoff}' -d '{msms_intensity_cutoff}' "
-        script+= "-i '{ionisation_mode}' -b '{max_broken_bonds}' --precursor_mz_precision '{precursor_mz_precision}' "
-        script = script.format(
-                               precursor_mz_precision=self.escape(params['precursor_mz_precision']),
-                               mz_precision=self.escape(params['mz_precision']),
-                               ms_intensity_cutoff=self.escape(params['ms_intensity_cutoff']),
-                               msms_intensity_cutoff=self.escape(params['msms_intensity_cutoff']),
-                               ionisation_mode=self.escape(params['ionisation_mode']),
-                               max_broken_bonds=self.escape(params['max_broken_bonds'])
-                               )
+        script = "{{magma}} annotate -p '{mz_precision}'"
+        script += " -c '{ms_intensity_cutoff}' -d '{msms_intensity_cutoff}' "
+        script += "-i '{ionisation_mode}' -b '{max_broken_bonds}'"
+        script += " --precursor_mz_precision '{precursor_mz_precision}' "
+        pmzp = params['precursor_mz_precision']
+        ms_ic = params['ms_intensity_cutoff']
+        msms_ic = params['msms_intensity_cutoff']
+        script_substitutions = {
+               'precursor_mz_precision': self.escape(pmzp),
+               'mz_precision': self.escape(params['mz_precision']),
+               'ms_intensity_cutoff': self.escape(ms_ic),
+               'msms_intensity_cutoff': self.escape(msms_ic),
+               'ionisation_mode': self.escape(params['ionisation_mode']),
+               'max_broken_bonds': self.escape(params['max_broken_bonds'])
+        }
+        script = script.format(**script_substitutions)
 
         if (params['use_all_peaks']):
             script += '-u '
@@ -351,7 +432,7 @@ class JobQuery(object):
             script += '-f '
 
         if from_subset:
-            script +='-j - '
+            script += '-j - '
 
         script += "{db}\n"
         self.script += script
@@ -370,16 +451,17 @@ class JobQuery(object):
         :meth:`~magmaweb.job.JobQuery.annotate` for params.
 
         """
-        return self.add_ms_data(params).add_structures(params).metabolize(params).annotate(params)
+        allin = self.add_ms_data(params).add_structures(params)
+        return allin.metabolize(params).annotate(params)
+
 
 class JobFactory(object):
     """Factory which can create jobs """
     def __init__(
-                 self, root_dir,
-                 init_script='', tarball=None, script_fn='script.sh',
-                 db_fn = 'results.db', state_fn = 'job.state',
-                 submit_url='http://localhost:9998', time_max=30
-                 ):
+                  self, root_dir,
+                  init_script='', tarball=None, script_fn='script.sh',
+                  db_fn='results.db', state_fn='job.state',
+                  submit_url='http://localhost:9998', time_max=30):
         """
         root_dir
             Directory in which jobs are created, retrieved
@@ -388,19 +470,23 @@ class JobFactory(object):
             Sqlite db file name in job directory (default results.db)
 
         submit_url
-            Url of job manager daemon where job can be submitted (default http://localhost:9998)
+            Url of job manager daemon where job can be submitted
+            (default http://localhost:9998)
 
         script_fn
             Script in job directory which must be run by job manager daemon
 
         init_script
-            String containing os commands to put magma in path, eg. activate virtualenv or unpack tarball
+            String containing os commands to put magma in path,
+            eg. activate virtualenv or unpack tarball
 
         tarball
-            Local absolute location of tarball which contains application which init_script will unpack and run
+            Local absolute location of tarball which contains application
+            which init_script will unpack and run
 
         state_fn
-            Filename where job manager daemon writes job state (default job.state)
+            Filename where job manager daemon writes job state
+            (default job.state)
 
         time_max
             Maximum time in minutes a job can take (default 30)
@@ -415,8 +501,7 @@ class JobFactory(object):
         self.init_script = init_script
 
     def fromId(self, jobid):
-        """
-        Finds job db in job root dir.
+        """Finds job db in job root dir.
         Returns a :class:`Job` instance
 
         ``jobid``
@@ -424,7 +509,8 @@ class JobFactory(object):
 
         Raises :class:`JobNotFound` exception when job is not found by jobid
         """
-        return Job(jobid,  self._makeJobSession(jobid)(), self.id2jobdir(jobid))
+        session = self._makeJobSession(jobid)()
+        return Job(jobid, session, self.id2jobdir(jobid))
 
     def _makeJobSession(self, jobid):
         """ Create job db connection """
@@ -448,8 +534,7 @@ class JobFactory(object):
         return jobid
 
     def fromDb(self, dbfile):
-        """
-        A job directory is created and the dbfile is copied into it
+        """A job directory is created and the dbfile is copied into it
         Returns a Job instance
 
         ``dbfile``
@@ -492,13 +577,13 @@ class JobFactory(object):
 
         body is a dict which is submitted as json.
 
-        returns job identifier of job submitted to jobmanager (not the same as job.id).
+        returns job identifier of job submitted to jobmanager
+        (not the same as job.id).
         """
         request = urllib2.Request(
                                   self.submit_url,
                                   json.dumps(body),
-                                  { 'Content-Type': 'application/json' }
-                                  )
+                                  {'Content-Type': 'application/json'})
         # log what is send to job manager
         import logging
         logger = logging.getLogger('magmaweb')
@@ -516,26 +601,23 @@ class JobFactory(object):
         # write job script into job dir
         script = open(os.path.join(query.dir, self.script_fn), 'w')
         script.write(self.init_script)
-        script.write("\n") # hard to add newline in ini file so add it here
+        script.write("\n")  # hard to add newline in ini file so add it here
         script.write(query.script.format(db=self.db_fn, magma='magma'))
         script.close()
 
         body = {
-                'jobdir': query.dir+'/',
-                'executable': "/bin/sh",
-                'prestaged': [
-                              self.script_fn,
-                              self.db_fn
-                              ],
-                "poststaged": [ self.db_fn ],
-                "stderr": "stderr.txt",
-                "stdout": "stdout.txt",
-                "time_max": self.time_max,
-                'arguments': [ self.script_fn ]
-                }
+               'jobdir': query.dir + '/',
+               'executable': '/bin/sh',
+               'prestaged': [self.script_fn, self.db_fn],
+               'poststaged': [self.db_fn],
+               'stderr': 'stderr.txt',
+               'stdout': 'stdout.txt',
+               'time_max': self.time_max,
+               'arguments': [self.script_fn]
+               }
         body['prestaged'].extend(query.prestaged)
 
-        if (self.tarball != None):
+        if (self.tarball is not None):
             body['prestaged'].append(self.tarball)
 
         self.submitJob2Manager(body)
@@ -543,9 +625,13 @@ class JobFactory(object):
         return query.id
 
     def state(self, id):
-        """Returns state of job, see ibis org.gridlab.gat.resources.Job JobState enum for possible states."""
+        """Returns state of job
+
+        See ibis org.gridlab.gat.resources.Job.JobState for possible states.
+        """
         try:
-            jobstatefile = open(os.path.join(self.id2jobdir(id), self.state_fn))
+            jobstatefile = open(os.path.join(self.id2jobdir(id),
+                                             self.state_fn))
             jobstate = jobstatefile.readline().strip()
             jobstatefile.close()
             return jobstate
@@ -565,9 +651,10 @@ class JobFactory(object):
         # 3rd / is for username:pw@host which sqlite does not need
         return 'sqlite:///' + self.id2db(id)
 
+
 class Job(object):
-    """Job contains results database of Magma calculation run
-    """
+    """Job contains results database of Magma calculation run"""
+
     def __init__(self, id, session, dir):
         """
         jobid
@@ -594,9 +681,12 @@ class Job(object):
         return self.session.query(Run).order_by(Run.runid.desc()).first()
 
     def description(self, description):
-        """Sets description column in run table, if there is no run row it is added"""
+        """Sets description column in run table,
+        if there is no run row it is added
+
+        """
         runInfo = self.runInfo()
-        if (runInfo == None):
+        if (runInfo is None):
             runInfo = Run()
 
         runInfo.description = description
@@ -609,7 +699,10 @@ class Job(object):
         return self.session.query(Metabolite).count()
 
     def extjsgridfilter(self, q, column, filter):
-        """Query helper to convert a extjs grid filter to a sqlalchemy query filter"""
+        """Query helper to convert a extjs grid filter dict
+        to a sqlalchemy query filter
+
+        """
         if (filter['type'] == 'numeric'):
             if (filter['comparison'] == 'eq'):
                 return q.filter(column == filter['value'])
@@ -625,11 +718,14 @@ class Job(object):
             return q.filter(column == filter['value'])
         elif (filter['type'] == 'null'):
             if not filter['value']:
-                return q.filter(column == None) # IS NULL
+                return q.filter(column == null())  # IS NULL
             else:
-                return q.filter(column != None) # IS NOT NULL
+                return q.filter(column != null())  # IS NOT NULL
 
-    def metabolites(self, start=0, limit=10, sorts=None, scanid=None, filters=None):
+    def metabolites(self,
+                    start=0, limit=10,
+                    sorts=None, scanid=None,
+                    filters=None):
         """Returns dict with total and rows attribute
 
         start
@@ -637,78 +733,78 @@ class Job(object):
         limit
             Maximum nr of metabolites to return
         scanid
-            Only return metabolites that have hits in scan with this identifier. Adds score column.
+            Only return metabolites that have hits in scan with this identifier
+            Adds score and deltappm columns
         filters
-            List of dicts which is generated by ExtJS component Ext.ux.grid.FiltersFeature
+            List of dicts which is generated by
+            ExtJS component Ext.ux.grid.FiltersFeature
         sorts
             How to sort metabolites. List of dicts. Eg.
 
         .. code-block:: python
 
-                [{"property":"probability","direction":"DESC"},{"property":"metid","direction":"ASC"}]
+                [{"property":"probability","direction":"DESC"},
+                 {"property":"metid","direction":"ASC"}]
 
         """
-        sorts = sorts or [{"property":"probability", "direction":"DESC"}, {"property":"metid", "direction":"ASC"}]
+        sorts = sorts or [{"property":"probability", "direction":"DESC"},
+                          {"property":"metid", "direction":"ASC"}]
         filters = filters or []
         mets = []
         q = self.session.query(Metabolite)
 
         # custom filters
         fragal = aliased(Fragment)
-        if (scanid != None):
-            # TODO add score column + order by score
-            q = q.add_columns(fragal.score, fragal.deltappm).join(fragal.metabolite).filter(
+        if (scanid is not None):
+            # TODO: add score column + order by score
+            q = q.add_columns(fragal.score, fragal.deltappm)
+            q = q.join(fragal.metabolite).filter(
                 fragal.parentfragid == 0).filter(fragal.scanid == scanid)
 
-        # add nr_scans column
-        stmt = self.session.query(Fragment.metid, func.count(distinct(Fragment.scanid)).label('nr_scans')).filter(
-            Fragment.parentfragid == 0).group_by(Fragment.metid).subquery()
-        q = q.add_columns(stmt.c.nr_scans).outerjoin(stmt, Metabolite.metid == stmt.c.metid)
-
         # add assigned column
-        stmt2 = self.session.query(Peak.assigned_metid, func.count('*').label('assigned')).filter(Peak.assigned_metid!=None).group_by(Peak.assigned_metid).subquery()
-        q = q.add_columns(stmt2.c.assigned).outerjoin(stmt2, Metabolite.metid == stmt2.c.assigned_metid)
+        assigned = func.count('*').label('assigned')
+        stmt2 = self.session.query(Peak.assigned_metid, assigned)
+        stmt2 = stmt2.filter(Peak.assigned_metid != null())
+        stmt2 = stmt2.group_by(Peak.assigned_metid).subquery()
+        q = q.add_columns(stmt2.c.assigned).\
+            outerjoin(stmt2, Metabolite.metid == stmt2.c.assigned_metid)
 
         for filter in filters:
-            # generic filters
-            if (filter['field'] == 'nr_scans'):
-                col = stmt.c.nr_scans
-            elif filter['field']=='assigned':
+            if filter['field'] == 'assigned':
                 col = stmt2.c.assigned
                 filter['type'] = 'null'
             elif (filter['field'] == 'score'):
-                if (scanid != None):
+                if (scanid is not None):
                     col = fragal.score
                 else:
                     raise ScanRequiredError()
             elif (filter['field'] == 'deltappm'):
-                if (scanid != None):
+                if (scanid is not None):
                     col = fragal.deltappm
                 else:
                     raise ScanRequiredError()
             else:
-                col = Metabolite.__dict__[filter['field']] #@UndefinedVariable
+                # generic filters
+                col = Metabolite.__dict__[filter['field']]  #@UndefinedVariable @IgnorePep8
             q = self.extjsgridfilter(q, col, filter)
 
         total = q.count()
 
         for col in sorts:
-            if (col['property'] == 'nr_scans'):
-                col2 = stmt.c.nr_scans
-            elif col['property']=='assigned':
+            if col['property'] == 'assigned':
                 col2 = stmt2.c.assigned
             elif (col['property'] == 'score'):
-                if (scanid != None):
+                if (scanid is not None):
                     col2 = fragal.score
                 else:
                     raise ScanRequiredError()
             elif (col['property'] == 'deltappm'):
-                if (scanid != None):
+                if (scanid is not None):
                     col2 = fragal.deltappm
                 else:
                     raise ScanRequiredError()
             else:
-                col2 = Metabolite.__dict__[col['property']] #@UndefinedVariable
+                col2 = Metabolite.__dict__[col['property']]  #@UndefinedVariable @IgnorePep8
             if (col['direction'] == 'DESC'):
                 q = q.order_by(desc(col2))
             elif (col['direction'] == 'ASC'):
@@ -727,99 +823,132 @@ class Job(object):
                 'isquery': met.isquery,
                 'origin': met.origin,
                 'nhits': met.nhits,
-                'nr_scans': r.nr_scans,
                 'mim': met.mim,
                 'logp': met.logp,
-                'assigned': r.assigned>0
+                'assigned': r.assigned > 0,
+                'reference': met.reference
             }
             if ('score' in r.keys()):
                 row['score'] = r.score
                 row['deltappm'] = r.deltappm
             mets.append(row)
 
-        return { 'total': total, 'rows': mets }
+        return {'total': total, 'rows': mets}
 
-    def metabolites2csv(self, metabolites):
+    def metabolites2csv(self, metabolites, cols=None):
         """Converts array of metabolites to csv file handler
 
         Params:
-        metabolites array like metabolites()['rows']
+          `metabolites`
+            array like metabolites()['rows']
+          `cols`
+            Which metabolite columns should be returned.
+            A empty list selects all columns.
 
         Return
         :class:`StringIO.StringIO`
         """
+        cols = cols or []
         csvstr = StringIO.StringIO()
         headers = [
-                   'name', 'smiles', 'probability', 'reactionsequence',
-                   'nr_scans', 'molformula', 'mim' , 'isquery', 'logp'
+                   'origin', 'smiles', 'probability', 'reactionsequence',
+                   'nhits', 'molformula', 'mim', 'isquery', 'logp',
+                   'reference'
                    ]
         if ('score' in metabolites[0].keys()):
             headers.append('score')
 
+        if (len(cols) > 0):
+            crow = [key for key in cols if key in headers]
+            headers = crow
+
         csvwriter = csv.DictWriter(csvstr, headers, extrasaction='ignore')
         csvwriter.writeheader()
         for m in metabolites:
-            m['name'] = m['origin']
+            m['reactionsequence'] = '|'.join(m['reactionsequence'])
             csvwriter.writerow(m)
 
         return csvstr
 
-    def metabolites2sdf(self, metabolites):
+    def metabolites2sdf(self, metabolites, cols=None):
         """Converts array of metabolites to a sdf string
 
         Params:
-        metabolites array like metabolites()['rows']
+          `metabolites`
+            array like metabolites()['rows']
+          `cols`
+            Which metabolite columns should be returned.
+            A empty list selects all columns.
 
         Return
         String
         """
-        str = ''
-        props = ['name', 'smiles', 'probability', 'reactionsequence',
-                   'nr_scans', 'molformula', 'mim' , 'logp']
+        s = ''
+        cols = cols or []
+        props = ['origin', 'smiles', 'probability', 'reactionsequence',
+                 'nhits', 'molformula', 'mim', 'logp',
+                 'reference']
         if ('score' in metabolites[0].keys()):
             props.append('score')
 
-        for m in metabolites:
-            m['name'] = m['origin']
-            str+= m['mol']
-            str+="\n"
-            for p in props:
-                str+='> <{}>\n\n{}\n\n\n'.format(p, m[p])
-            str+= '$$$$'+"\n"
+        if (len(cols) > 0):
+            crow = [key for key in cols if key in props]
+            props = crow
 
-        return str
+        for m in metabolites:
+            s += m['mol']
+            m['reactionsequence'] = '\n'.join(m['reactionsequence'])
+            for p in props:
+                s += '> <{}>\n{}\n\n'.format(p, m[p])
+            s += '$$$$' + "\n"
+
+        return s
 
     def scansWithMetabolites(self, filters=None, metid=None):
-        """Returns id and rt of lvl1 scans which have a fragment in it and for which the filters in params pass
+        """Returns id and rt of lvl1 scans which have a fragment in it
+        and for which the filters in params pass
 
         params:
 
         ``metid``
-            Only return scans that have hits with metabolite with this identifier
+            Only return scans that have hits with metabolite with this id
         ``filters``
-            List which is generated by ExtJS component Ext.ux.grid.FiltersFeature, with columns from Metabolite grid.
+            List of filters which is generated
+            by ExtJS component Ext.ux.grid.FiltersFeature
         """
         filters = filters or []
-        fq = self.session.query(Fragment.scanid).filter(Fragment.parentfragid == 0)
-        if (metid != None):
+        fq = self.session.query(Fragment.scanid).\
+            filter(Fragment.parentfragid == 0)
+        if (metid is not None):
             fq = fq.filter(Fragment.metid == metid)
 
         for filter in filters:
+            if (filter['field'] == 'nhits'
+              and filter['comparison'] == 'gt'
+              and filter['value'] == 0):
+                continue
             if (filter['field'] == 'score'):
                 fq = self.extjsgridfilter(fq, Fragment.score, filter)
+            elif (filter['field'] == 'deltappm'):
+                fq = self.extjsgridfilter(fq, Fragment.deltappm, filter)
             elif (filter['field'] == 'assigned'):
                 filter['type'] = 'null'
-                fq = fq.join(Peak, and_(Fragment.scanid==Peak.scanid, Fragment.mz==Peak.mz))
+                fq = fq.join(Peak, and_(Fragment.scanid == Peak.scanid,
+                                        Fragment.mz == Peak.mz))
                 fq = self.extjsgridfilter(fq, Peak.assigned_metid, filter)
-            elif (filter['field'] != 'nr_scans'):
-                fq = fq.join(Metabolite)
+            else:
+                fq = fq.join(
+                             Metabolite,
+                             Fragment.metabolite  #@UndefinedVariable @IgnorePep8
+                             )
                 fq = self.extjsgridfilter(
                                           fq,
-                                          Metabolite.__dict__[filter['field']], #@UndefinedVariable
+                                          Metabolite.__dict__[filter['field']],  #@UndefinedVariable @IgnorePep8
                                           filter)
 
         hits = []
-        for hit in self.session.query(Scan.rt, Scan.scanid).filter_by(mslevel=1).filter(Scan.scanid.in_(fq)):
+        q = self.session.query(Scan.rt, Scan.scanid).filter_by(mslevel=1)
+        for hit in q.filter(Scan.scanid.in_(fq)):
             hits.append({
                 'id': hit.scanid,
                 'rt': hit.rt
@@ -830,10 +959,18 @@ class Job(object):
     def extractedIonChromatogram(self, metid):
         """Returns extracted ion chromatogram of metabolite with id metid """
         chromatogram = []
-        mzq = self.session.query(func.avg(Fragment.mz)).filter(Fragment.metid == metid).filter(Fragment.parentfragid == 0).scalar()
-        mzoffset = self.session.query(Run.mz_precision).scalar()
+        mzqq = self.session.query(func.avg(Fragment.mz))
+        mzqq = mzqq.filter(Fragment.metid == metid)
+        mzqq = mzqq.filter(Fragment.parentfragid == 0)
+        mzq = mzqq.scalar()
+        precision = 1 + self.session.query(Run.mz_precision).scalar() / 1e6
         # fetch max intensity of peaks with mz = mzq+-mzoffset
-        for (rt, intens) in self.session.query(Scan.rt, func.max(Peak.intensity)).outerjoin(Peak, and_(Peak.scanid == Scan.scanid, Peak.mz.between(mzq - mzoffset, mzq + mzoffset))).filter(Scan.mslevel == 1).group_by(Scan.rt).order_by(asc(Scan.rt)):
+        q = self.session.query(Scan.rt, func.max(Peak.intensity))
+        q = q.outerjoin(Peak, and_(Peak.scanid == Scan.scanid,
+                                   Peak.mz.between(mzq / precision,
+                                                   mzq * precision)))
+        q = q.filter(Scan.mslevel == 1)
+        for (rt, intens) in q.group_by(Scan.rt).order_by(asc(Scan.rt)):
             chromatogram.append({
                 'rt': rt,
                 'intensity': intens or 0
@@ -841,14 +978,25 @@ class Job(object):
         return chromatogram
 
     def chromatogram(self):
-        """Returns dict with scans key with list of dicts with the id, rt and basepeakintensity for each lvl1 scan
+        """Returns dict with scans key with list of dicts with
+         - id
+         - rt
+         - basepeakintensity
+        keys for each lvl1 scan
+
         and cutoff key with ms_intensity_cutoff
         """
         scans = []
 
-        ap = self.session.query(Peak.scanid, func.count('*').label('assigned_peaks')).filter(Peak.assigned_metid!=None).group_by(Peak.scanid).subquery()
+        assigned_peaks = func.count('*').label('assigned_peaks')
+        ap = self.session.query(Peak.scanid, assigned_peaks)
+        ap = ap.filter(Peak.assigned_metid != null())
+        ap = ap.group_by(Peak.scanid).subquery()
 
-        for scan, assigned_peaks in self.session.query(Scan, ap.c.assigned_peaks ).filter_by(mslevel=1).outerjoin(ap, Scan.scanid==ap.c.scanid):
+        q = self.session.query(Scan, ap.c.assigned_peaks)
+        q = q.filter_by(mslevel=1)
+        for scan, assigned_peaks in q.outerjoin(ap,
+                                                Scan.scanid == ap.c.scanid):
             scans.append({
                 'id': scan.scanid,
                 'rt': scan.rt,
@@ -857,7 +1005,7 @@ class Job(object):
             })
 
         runInfo = self.runInfo()
-        if (runInfo !=None):
+        if (runInfo is not None):
             return {
                     'scans': scans,
                     'cutoff': runInfo.ms_intensity_cutoff
@@ -883,7 +1031,7 @@ class Job(object):
 
         """
         scanq = self.session.query(Scan).filter(Scan.scanid == scanid)
-        if (mslevel != None):
+        if (mslevel is not None):
             scanq = scanq.filter(Scan.mslevel == mslevel)
 
         try:
@@ -895,7 +1043,9 @@ class Job(object):
         if (scan.mslevel == 1):
             cutoff = self.session.query(Run.ms_intensity_cutoff).scalar()
         else:
-            cutoff = self.session.query(Scan.basepeakintensity * Run.msms_intensity_cutoff).filter(Scan.scanid == scanid).scalar()
+            cutoff = self.session.query(
+                Scan.basepeakintensity * Run.msms_intensity_cutoff
+                ).filter(Scan.scanid == scanid).scalar()
 
         peaks = []
         for peak in self.session.query(Peak).filter_by(scanid=scanid):
@@ -905,11 +1055,17 @@ class Job(object):
                 'assigned_metid': peak.assigned_metid
             })
 
-        return { 'peaks': peaks, 'cutoff': cutoff, 'mslevel': scan.mslevel, 'precursor': { 'id': scan.precursorscanid, 'mz': scan.precursormz } }
+        return {'peaks': peaks, 'cutoff': cutoff, 'mslevel': scan.mslevel,
+                'precursor': {
+                    'id': scan.precursorscanid, 'mz': scan.precursormz
+                    }
+                }
 
     def fragments(self, scanid, metid, node):
-        """Returns dict with metabolites and its lvl2 fragments when node is not set
-        When node is set then returns the children fragments as list which have node as parent fragment
+        """Returns fragments of a metabolite on a scan.
+        When node is not set then returns metabolites and its lvl2 fragments.
+        When node is set then returns children fragments as list
+            which have ``node`` as parent fragment.
 
         Can be used in a Extjs.data.TreeStore if jsonified.
 
@@ -920,12 +1076,16 @@ class Job(object):
             Fragments of metabolite with this identifier
 
         ``node``
-            The fragment identifier to fetch children fragments for. 'root' for root node.
+            The fragment identifier to fetch children fragments for.
+            Use 'root' for root node.
 
-        Raises FragmentNotFound when no fragment is found with scanid/metid combination
+        Raises FragmentNotFound when no fragment is found
+            with the given scanid/metid combination
         """
         def q():
-            return self.session.query(Fragment, Metabolite.mol, Scan.mslevel).join(Metabolite).join(Scan)
+            return self.session.query(Fragment,
+                                      Metabolite.mol,
+                                      Scan.mslevel).join(Metabolite).join(Scan)
 
         def fragment2json(row):
             (frag, mol, mslevel) = row
@@ -951,7 +1111,7 @@ class Job(object):
             return f
 
         # parent metabolite
-        if (node=='root'):
+        if (node == 'root'):
             structures = []
             for row in q().filter(
                                   Fragment.scanid == scanid
@@ -962,21 +1122,22 @@ class Job(object):
                          ):
                 structure = fragment2json(row)
 
-                structure['isAssigned'] = self.session.query(
-                                                         func.count('*')).filter(
-                                                         Peak.scanid == scanid).filter(
-                                                         Peak.assigned_metid == metid).scalar() > 0
+                qa = self.session.query(func.count('*')).\
+                    filter(Peak.scanid == scanid).\
+                    filter(Peak.assigned_metid == metid)
+                structure['isAssigned'] = qa.scalar() > 0
 
                 # load children
                 structure['children'] = []
-                for frow in q().filter(Fragment.parentfragid == structure['fragid']):
+                pf = Fragment.parentfragid
+                for frow in q().filter(pf == structure['fragid']):
                     structure['expanded'] = True
                     structure['children'].append(fragment2json(frow))
                 structures.append(structure)
 
             if (len(structures) == 0):
                 raise FragmentNotFound()
-            return { 'children': structures, 'expanded': True}
+            return {'children': structures, 'expanded': True}
         # fragments
         else:
             fragments = []
@@ -992,17 +1153,22 @@ class Job(object):
             return StringIO.StringIO()
 
     def _peak(self, scanid, mz):
-        mzoffset = self.session.query(Run.mz_precision).scalar()
-        # fetch max intensity of peaks with mz = mzq+-mzoffset
-        return self.session.query(Peak).filter(Peak.scanid==scanid).filter(Peak.mz.between(float(mz) - mzoffset, float(mz) + mzoffset)).one()
+        mzoffset = 1e-6  # precision for comparing floating point values
+        # fetch peak corresponding to given scanid and mz
+        q = self.session.query(Peak).filter(Peak.scanid == scanid)
+        q = q.filter(Peak.mz.between(float(mz) - mzoffset,
+                                     float(mz) + mzoffset))
+        return q.one()
 
     def assign_metabolite2peak(self, scanid, mz, metid):
+        """Assign metabolites to peak"""
         peak = self._peak(scanid, mz)
         peak.assigned_metid = metid
         self.session.add(peak)
         self.session.commit()
 
     def unassign_metabolite2peak(self, scanid, mz):
+        """Unassign any metabolite from peak"""
         peak = self._peak(scanid, mz)
         peak.assigned_metid = None
         self.session.add(peak)

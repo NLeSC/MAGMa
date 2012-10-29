@@ -15,11 +15,20 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
   uses: [ 'Esc.magmaweb.view.fragment.AnnotateForm' ],
   /**
    * Can only annotate when there are structures and ms data.
-   * @property {Object} annotatable
-   * @property {Boolean} annotabable.structures Whether there are structures
-   * @property {Boolean} annotabable.msdata Whether there is ms data
+   * @property {Object} annotabable
    */
-  annotatable: { structures: false, msdata: false },
+  annotatable: {
+	  /**
+	   * Whether there are structures.
+	   * @property {Boolean} annotabable.structures
+	   */
+	  structures: false,
+	  /**
+	   * Whether there is ms data.
+	   * @property {Boolean} annotabable.msdata
+	   */
+	  msdata: false
+  },
   init: function() {
     console.log('Fragments controller init');
 

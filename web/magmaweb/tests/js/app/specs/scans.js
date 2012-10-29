@@ -16,7 +16,8 @@ describe('Scans controller', function() {
       hasData: function() {},
       setMarkers: function() {},
       redraw: function() {},
-      resetScales: function() {}
+      resetScales: function() {},
+      setZoom: function() {}
     };
     spyOn(ctrl, 'getChromatogram').andReturn(mocked_chromatogram);
   });
@@ -156,17 +157,33 @@ describe('Scans controller', function() {
     Ext.util.Observable.releaseCapture(ctrl.application);
   });
 
-  it('selectScan', function() {
-    var f = { callback: function() {} };
-    spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
-    Ext.util.Observable.capture(ctrl.application, f.callback);
-    spyOn(mocked_chromatogram, 'selectScan');
+  describe('selectScan', function() {
+  	var f;
 
-    ctrl.selectScan(1133);
+  	beforeEach(function() {
+	    f = { callback: function() {} };
+	    spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+	    Ext.util.Observable.capture(ctrl.application, f.callback);
+	    spyOn(mocked_chromatogram, 'selectScan');
+  	});
 
-    expect(mocked_chromatogram.selectScan).toHaveBeenCalledWith(1133);
-    expect(f.callback).toHaveBeenCalledWith('selectscan', 1133);
-    Ext.util.Observable.releaseCapture(ctrl.application);
+  	afterEach(function() {
+    	Ext.util.Observable.releaseCapture(ctrl.application);
+    });
+
+    it('default', function() {
+	    ctrl.selectScan(1133);
+
+	    expect(mocked_chromatogram.selectScan).toHaveBeenCalledWith(1133, undefined);
+	    expect(f.callback).toHaveBeenCalledWith('selectscan', 1133);
+	});
+
+    it('silent', function() {
+	    ctrl.selectScan(1133, true);
+
+	    expect(mocked_chromatogram.selectScan).toHaveBeenCalledWith(1133, true);
+	    expect(f.callback).toHaveBeenCalledWith('selectscan', 1133);
+	});
   });
 
   describe('setScansOfMetabolites', function() {
@@ -384,5 +401,40 @@ describe('Scans controller', function() {
           success: jasmine.any(Function),
           failure: jasmine.any(Function)
       });
+  });
+
+  it('showActionsMenu', function() {
+      var event = { getXY: function() { return [5,10]; }};
+      spyOn(ctrl.actionsMenu, 'showAt');
+
+      ctrl.showActionsMenu('tool', event);
+
+      expect(ctrl.actionsMenu.showAt).toHaveBeenCalledWith([5,10]);
+  });
+
+  describe('onZoomDirectionChange', function() {
+	it('x', function() {
+	  spyOn(ctrl, 'onZoomDirectionChange');
+
+	  ctrl.onZoomDirectionXChange(null, false);
+
+	  expect(ctrl.onZoomDirectionChange).toHaveBeenCalledWith('x', false);
+	});
+
+	it('y', function() {
+	  spyOn(ctrl, 'onZoomDirectionChange');
+
+	  ctrl.onZoomDirectionYChange(null, false);
+
+	  expect(ctrl.onZoomDirectionChange).toHaveBeenCalledWith('y', false);
+	});
+
+	it('setZoom', function() {
+		spyOn(mocked_chromatogram, 'setZoom');
+
+		ctrl.onZoomDirectionChange('z', true);
+
+		expect(mocked_chromatogram.setZoom).toHaveBeenCalledWith('z', true);
+	})
   });
 });

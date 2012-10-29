@@ -175,14 +175,14 @@ describe('Metabolites', function() {
      it('before select metabolite with scans', function() {
        var record = store.getById(352);
        var rm = Ext.create('Ext.selection.RowModel');
-       expect(record.data.nr_scans).toBeGreaterThan(0);
+       expect(record.data.nhits).toBeGreaterThan(0);
        expect(ctrl.beforeSelect(rm, record)).toBeTruthy();
      });
 
      it('before select metabolite without scans', function() {
        var record = store.getById(78);
        var rm = Ext.create('Ext.selection.RowModel');
-       expect(record.data.nr_scans).toEqual(0);
+       expect(record.data.nhits).toEqual(0);
        expect(ctrl.beforeSelect(rm, record)).toBeFalsy();
      });
 
@@ -383,24 +383,13 @@ describe('Metabolites', function() {
     describe('download metabolites in csv', function() {
       it('default', function() {
           spyOn(window, 'open');
-
-          // create fake filter
           spyOn(ctrl, 'getMetaboliteList').andReturn({
-              getView: function() {
-                  return {
-                      getFeature: function() {
-                          return {
-                              getFilterData: function() {},
-                              buildQuery: function() {
-                                  return {};
-                              }
-                          }
-                      }
-                  }
-              }
+             getFilterQuery: function() { return []},
+             getVisiblColumnIndices: function() { return ['origin', 'score']}
           })
 
           ctrl.download_csv();
+
           var url = Ext.urlAppend('data/metabolites.csv', Ext.Object.toQueryString({
               page: 1,
               start: 0,
@@ -411,39 +400,32 @@ describe('Metabolites', function() {
               },{
                 property: 'metid',
                 direction: 'ASC'
-              }])
+              }]),
+              cols: Ext.JSON.encode(['origin', 'score'])
           }));
           expect(window.open).toHaveBeenCalledWith(url ,'metabolitescsv');
       });
 
       it('filtered', function() {
+      	  // select scan
           var proxy = store.getProxy();
           proxy.extraParams.scanid = 50;
 
-          // create fake filter
-          var filter = Ext.JSON.encode([{
-              field: 'nr_scans',
+          // apply filter
+          filter = Ext.JSON.encode([{
+              field: 'nhits',
               value: 1,
               type: 'numeric',
               comparison: 'gt'
           }])
+          spyOn(window, 'open');
           spyOn(ctrl, 'getMetaboliteList').andReturn({
-              getView: function() {
-                  return {
-                      getFeature: function() {
-                          return {
-                              getFilterData: function() {},
-                              buildQuery: function() {
-                                  return { filter: filter };
-                              }
-                          }
-                      }
-                  }
-              }
+             getFilterQuery: function() { return {filter: filter}},
+             getVisiblColumnIndices: function() { return ['origin', 'score']}
           })
 
-          spyOn(window, 'open');
           ctrl.download_csv();
+
           var url = Ext.urlAppend('data/metabolites.csv', Ext.Object.toQueryString({
               scanid: 50,
               page: 1,
@@ -456,7 +438,8 @@ describe('Metabolites', function() {
                 property: 'metid',
                 direction: 'ASC'
               }]),
-              filter: filter
+              filter: filter,
+              cols: Ext.JSON.encode(['origin', 'score'])
           }));
           expect(window.open).toHaveBeenCalledWith(url ,'metabolitescsv');
       });

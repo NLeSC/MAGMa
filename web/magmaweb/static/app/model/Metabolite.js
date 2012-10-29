@@ -24,11 +24,9 @@ Ext.define('Esc.magmaweb.model.Metabolite', {
   },{
     name: 'origin'
   },{
-    name: 'nhits'
+    name: 'nhits', type:'number'
   },{
     name: 'atoms', defaultValue: [] // array of atom indexes of molecule which are the substructure of the query
-  },{
-    name: 'nr_scans', type:'number'
   },{
     name: 'scans', defaultValue: [] // Filled when metabolite is selected
   },{
@@ -41,5 +39,7 @@ Ext.define('Esc.magmaweb.model.Metabolite', {
     name: 'logp', type:'number'
   }, {
     name: 'assigned', type:'bool'
+  }, {
+    name: 'reference'
   }]
 });

@@ -144,7 +144,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
    */
   onLaunch: function() {
       // store not loaded in init because metaboliteload event is fired before listeners of views are registerd
-      // the nr_scans column has an active filter
+      // the nhits column has an active filter
       // so do not use list.store.load() , but trigger a filter update to load
       this.getMetaboliteList().filters.createFilters();
       this.getMetabolitesStore().load();
@@ -201,7 +201,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
   /**
    * Listens for chromatogram load event.
    * And toggles annotation fieldset in add structures form.
-   * @param {Esc.d3.Chromatagram} chromatogram
+   * @param {Esc.d3.Chromatogram} chromatogram
    */
   onChromatrogramLoad: function(chromatogram) {
     this.hasMSData = chromatogram.data.length > 0;
@@ -212,7 +212,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
    * The extracted ion chromatogram of a metabolite without scans can not be shown because it can not be selected.
    */
   beforeSelect: function(rm, metabolite) {
-    return (metabolite.data.nr_scans > 0);
+    return (metabolite.data.nhits > 0);
   },
   onSelect: function(rm, metabolite) {
     var metid = metabolite.data.metid;
@@ -287,8 +287,10 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     var params = request.params;
     // Ext.ux.grid.FiltersFeature adds filters to request.params in store.beforeLoad event handler
     // so we do the same to get the filter query string
-    var filter = this.getMetaboliteList().getView().getFeature('mfilter');
-    Ext.apply(params, filter.buildQuery(filter.getFilterData()));
+    Ext.apply(params, this.getMetaboliteList().getFilterQuery());
+
+    // visible ordered columns
+    params['cols'] = Ext.JSON.encode(this.getMetaboliteList().getVisiblColumnIndices());
 
     var url = Ext.urlAppend(
         this.application.metabolitesUrl(format),

@@ -1,4 +1,32 @@
 describe('Esc.d3.Abstract', function() {
+
+  function mockSvg() {
+    var svg = {
+      selectAll: function() { return this; },
+      select: function() { return this; },
+      append: function() { return this; },
+      attr: function() { return this; },
+      call: function() { return this; },
+      data: function() { return this; },
+      enter: function() { return this; },
+      remove: function() { return this; },
+      classed: function() { return this; },
+      on: function() { return this; },
+      text: function() { return this; }
+    };
+    spyOn(svg, 'selectAll').andCallThrough();
+    spyOn(svg, 'select').andCallThrough();
+    spyOn(svg, 'append').andCallThrough();
+    spyOn(svg, 'attr').andCallThrough();
+    spyOn(svg, 'text').andCallThrough();
+    spyOn(svg, 'data').andCallThrough();
+    spyOn(svg, 'enter').andCallThrough();
+    spyOn(svg, 'remove').andCallThrough();
+    spyOn(svg, 'classed').andCallThrough();
+    spyOn(svg, 'on').andCallThrough();
+    return svg;
+  }
+
   var data = [{x:1,y:2},{x:3,y:4}];
   describe('create', function() {
     it('default', function() {
@@ -151,5 +179,97 @@ describe('Esc.d3.Abstract', function() {
     expect(chart.scales.y.domain).toHaveBeenCalledWith([200, 300]);
     expect(chart.initZoom).toHaveBeenCalled();
     expect(chart.onZoom).toHaveBeenCalled();
+  });
+
+  it('zoomBehavior', function() {
+      var chart = Ext.create('Esc.d3.Abstract', {
+      width: 400, height: 500,
+      scales: {
+        x: d3.scale.linear(),
+        y: d3.scale.linear()
+      }
+      });
+
+      var zoom = chart.zoomBehavior();
+
+      expect(chart.scales0.x).toBeDefined();
+      expect(chart.scales0.y).toBeDefined();
+  });
+
+  it('enableZoom', function() {
+	  var chart = Ext.create('Esc.d3.Abstract', {
+	    width: 400, height: 500,
+	    zoom: {x: true, y: false}
+	  });
+	  spyOn(chart, 'initZoom');
+
+	  chart.setZoom('y', true);
+
+	  expect(chart.zoom.y).toEqual(true);
+	  expect(chart.initZoom).toHaveBeenCalledWith();
+  });
+
+  describe('onZoom', function() {
+      var chart;
+
+	  beforeEach(function() {
+		chart = Ext.create('Esc.d3.Abstract', {
+		  width: 400, height: 500,
+		  zoom: {x: true, y: true}
+		});
+		// mock initSvg
+		spyOn(chart, 'getWidth').andReturn(500);
+		spyOn(chart, 'getHeight').andReturn(400);
+		chart.svg = mockSvg();
+		chart.initScales();
+		chart.scales.x = d3.scale.linear().domain([1,3]).range([0, chart.chartWidth]);
+		chart.scales.y = d3.scale.linear().domain([2,4]).range([chart.chartHeight, 0]);
+		chart.initZoom();
+	  });
+
+	  it('Zoom x,y without d3.event', function() {
+	      // perform a zoom/pan
+	      chart.scales.x.domain([5,6]);
+	      chart.scales.y.domain([7,8]);
+
+	      chart.onZoom();
+
+	      // expect scales to reset back
+	      expect(chart.scales.x.domain()).toEqual([1,3]);
+	      expect(chart.scales.y.domain()).toEqual([2,4]);
+	      // expect svg axis to draw
+	      expect(chart.svg.select).toHaveBeenCalledWith('.x.axis');
+	      expect(chart.svg.select).toHaveBeenCalledWith('.y.axis');
+	  });
+
+	  it('Zoom x with d3.event', function() {
+		  chart.zoom.y = false;
+		  d3.event = {
+		      translate: [9,10],
+		      scale: 2
+		  };
+
+	      chart.onZoom();
+
+	      expect(chart.scales.x.domain()).toEqual([0.9778325123152709, 1.977832512315271]);
+	      expect(chart.scales.y.domain()).toEqual([2,4]);
+	      expect(chart.svg.select).toHaveBeenCalledWith('.x.axis');
+	      expect(chart.svg.select).not.toHaveBeenCalledWith('.y.axis');
+	  });
+
+	  it('Zoom y with d3.event', function() {
+		  chart.zoom.x = false;
+		  d3.event = {
+		      translate: [9,10],
+		      scale: 2
+		  };
+
+	      chart.onZoom();
+
+	      expect(chart.scales.x.domain()).toEqual([1,3]);
+	      expect(chart.scales.y.domain()).toEqual([2,3]);
+	      expect(chart.svg.select).not.toHaveBeenCalledWith('.x.axis');
+	      expect(chart.svg.select).toHaveBeenCalledWith('.y.axis');
+	  });
   });
 });

@@ -3,14 +3,16 @@ import unittest
 from webtest import TestApp
 from magmaweb import main
 
+
 class FunctionalTests(unittest.TestCase):
     def setUp(self):
         self.root_dir = tempfile.mkdtemp()
         self.settings = {
-                    'jobfactory.root_dir': self.root_dir,
-                    'mako.directories': 'magmaweb:templates', 'extjsroot': 'ext',
-                    'sqlalchemy.url': 'sqlite:///:memory:'
-                    }
+                         'jobfactory.root_dir': self.root_dir,
+                         'mako.directories': 'magmaweb:templates',
+                         'extjsroot': 'ext',
+                         'sqlalchemy.url': 'sqlite:///:memory:'
+                         }
         app = main({}, **self.settings)
 
         self.testapp = TestApp(app)
@@ -44,15 +46,18 @@ class FunctionalTests(unittest.TestCase):
     def test_metabolites(self):
         jobid = self.fake_jobid()
 
-        res = self.testapp.get('/results/'+str(jobid)+'/metabolites.json?limit=10&start=0', status=200, extra_environ=dict(REMOTE_USER='bob'))
+        res_url = '/results/' + str(jobid)
+        res_url += '/metabolites.json?limit=10&start=0'
+        env = dict(REMOTE_USER='bob')
+        res = self.testapp.get(res_url, status=200, extra_environ=env)
         import json
-        self.assertEqual(json.loads(res.body),{
+        self.assertEqual(json.loads(res.body), {
             'totalUnfiltered': 2,
             'total': 2,
             'scans': [{
                 'rt': 933.317,
                 'id': 641
-            },{
+            }, {
                'rt': 1254.15,
                'id': 870
             }],
@@ -63,22 +68,26 @@ class FunctionalTests(unittest.TestCase):
                 'mol': u'Molfile',
                 'molformula': u'C6H6O2',
                 'nhits': None,
-                'nr_scans': 1,
+                'nhits': 1,
                 'origin': u'pyrocatechol',
                 'probability': 1.0,
-                'reactionsequence': u'PARENT',
+                'reactionsequence': [u'PARENT'],
                 'smiles': u'Oc1ccccc1O',
                 'mim': 110.03677, 'logp':1.231,
-                'assigned': False
-            },{
-                'isquery': True, 'level': 0, 'metid': 352, 'mol': "Molfile of dihydroxyphenyl-valerolactone",
+                'assigned': False,
+                'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
+            }, {
+                'isquery': True, 'level': 0, 'metid': 352,
+                'mol': "Molfile of dihydroxyphenyl-valerolactone",
                 'molformula': "C11H12O4",
                 'nhits': None,
-                'nr_scans': 1,
+                'nhits': 1,
                 'origin': "dihydroxyphenyl-valerolactone",
-                'probability': 1, 'reactionsequence': "PARENT",
+                'probability': 1,
+                'reactionsequence': ["PARENT", "CHILD"],
                 'smiles': "O=C1OC(Cc2ccc(O)c(O)c2)CC1",
                 'mim': 208.07355, 'logp':2.763,
-                'assigned': False
+                'assigned': False,
+                'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=152432">CID: 152432</a>',
             }]
         })
