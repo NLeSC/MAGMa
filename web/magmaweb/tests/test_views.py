@@ -43,7 +43,8 @@ class ViewsTestCase(AbstractViewsTestCase):
         response = views.uploaddb()
         self.assertEqual(response, {})
 
-    def test_uploaddb_post(self):
+    @patch('magmaweb.views.unauthenticated_userid')
+    def test_uploaddb_post(self, unauthenticated_userid):
         self.config.add_route('results', '/results/{jobid}')
         from cgi import FieldStorage
         import StringIO
@@ -52,13 +53,16 @@ class ViewsTestCase(AbstractViewsTestCase):
         request = testing.DummyRequest(post={'db_file': dbfile})
         views = Views(request)
         views.job_factory = Mock(JobFactory)
+        unauthenticated_userid.return_value = 'Bob'
         job = self.fake_job()
+        job.description.return_value = 'My desc'
         views.job_factory.fromDb.return_value = job
 
         response = views.uploaddb()
 
         views.job_factory.fromDb.assert_called_with(dbfile.file)
-        job.owner.assert_called_with(None) # TODO: set authenticated user
+        job.owner.assert_called_with('Bob')
+        job.description.assert_called_with('My desc')
         self.assertEqual(response.location, 'http://example.com/results/foo')
 
     def test_jobfromscratch(self):

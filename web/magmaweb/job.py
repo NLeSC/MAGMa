@@ -553,8 +553,6 @@ class JobFactory(object):
             jobdb.write(data)
         jobdb.close()
 
-        # TODO: set jobs description in user db when db is uploaded or job is cloned
-
         return self.fromId(jobid)
 
     def fromScratch(self):
@@ -568,7 +566,8 @@ class JobFactory(object):
         """ Returns new :class:`Job` which has copy of 'job' db. """
         newjob = self.fromDb(open(self.id2db(job.id)))
         # set parent of job in user db
-        newjob.parent(job)
+        magmaweb.user.set_job_parent(str(newjob.id), str(job.id))
+        newjob.description(job.description())
 
         return newjob
 
@@ -680,19 +679,22 @@ class Job(object):
         """Returns last run info or None if there is no run info"""
         return self.session.query(Run).order_by(Run.runid.desc()).first()
 
-    def description(self, description):
+    def description(self, description=None):
         """Sets description column in run table,
         if there is no run row it is added
-
+        Returns description
         """
         runInfo = self.runInfo()
         if (runInfo is None):
             runInfo = Run()
 
-        runInfo.description = description
-        self.session.add(runInfo)
-        self.session.commit()
-        magmaweb.user.set_job_description(self.id, description)
+        if (description is not None):
+            runInfo.description = description
+            self.session.add(runInfo)
+            self.session.commit()
+            magmaweb.user.set_job_description(self.id, description)
+
+        return runInfo.description
 
     def metabolitesTotalCount(self):
         """Returns unfiltered and not paged count of metabolites"""
@@ -1177,6 +1179,3 @@ class Job(object):
     def owner(self, userid):
         """ Set owner of this job in the user db"""
         magmaweb.user.set_job_owner(str(self.id), userid)
-
-    def parent(self, parentjob):
-        magmaweb.user.set_job_parent(str(self.id), str(parentjob.id))
