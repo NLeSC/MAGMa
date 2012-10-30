@@ -19,7 +19,6 @@ class RpcViews(object):
         """Returns clone of job of current request"""
         job = self.job_factory.cloneJob(self.job)
         job.owner(unauthenticated_userid(self.request))
-        # TODO: not only copy owner but also acl
         return job
 
     def submit_query(self, query):

@@ -49,6 +49,7 @@ class Views(object):
         if (self.request.method == 'POST'):
             job = self.job_factory.fromDb(self.request.POST['db_file'].file)
             job.owner(unauthenticated_userid(self.request))
+            job.description(job.description()) # store description in user db
             results = self.request.route_url('results', jobid=job.id)
             return HTTPFound(location=results)
         else:

@@ -119,5 +119,5 @@ class TestUtils(unittest.TestCase):
 
     def test_add_job(self):
         user.add_job('11223344')
-        r = self.session.query(user.Job).get('67890')
+        r = self.session.query(user.Job).get('11223344')
         self.assertEqual(r.jobid, '11223344')

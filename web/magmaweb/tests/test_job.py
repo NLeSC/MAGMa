@@ -474,15 +474,17 @@ class JobFactoryTestCase(unittest.TestCase):
         self.assertEqual(job.maxMSLevel(), 0)
         add_job.assert_called_with(str(job.id))
 
+    @patch('magmaweb.user.set_job_description')
     @patch('magmaweb.user.set_job_parent')
-    def test_cloneJob(self, sjp):
+    def test_cloneJob(self, sjp, sjd):
         job = self.factory.fromScratch()
+        job.description('My desc')
 
         newjob = self.factory.cloneJob(job)
 
         self.assertNotEqual(job.id, newjob.id)
         sjp.assert_called_with(str(newjob.id), str(job.id))
-
+        self.assertEqual(newjob.description(), 'My desc')
 
 class JobNotFound(unittest.TestCase):
     def test_it(self):
@@ -549,6 +551,7 @@ class JobTestCase(unittest.TestCase):
 
         runInfo = self.job.runInfo()
 
+        # run with highest id is returned
         self.assertEqual(runInfo.description, 'My second description')
 
     def test_maxMSLevel(self):
@@ -623,6 +626,9 @@ class JobTestCase(unittest.TestCase):
         self.assertEqual(self.job.runInfo().description,
                          'My second description')
 
+    def test_get_description(self):
+        self.assertEqual(self.job.description(), 'My first description')
+
     def test_assign_metabolite2peak(self):
         metid = 72
         scanid = 641
@@ -677,13 +683,6 @@ class JobTestCase(unittest.TestCase):
 
         sjo.assert_has_been_called_with(self.job.id, 'someone')
 
-    @patch('magmaweb.user.set_job_parent')
-    def test_parent(self, sjp):
-        parent_job = Mock(Job)
-        parent_job.id = 'somejob'
-        self.job.parent(parent_job)
-
-        sjp.assert_has_been_called_with(self.job.id, 'somejob')
 
 class JobEmptyDatasetTestCase(unittest.TestCase):
     def setUp(self):
