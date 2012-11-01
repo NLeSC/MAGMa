@@ -2,7 +2,7 @@ import unittest
 from pyramid import testing
 from mock import Mock, patch
 from magmaweb.views import Views, JobViews
-from magmaweb.job import JobFactory, Job
+from magmaweb.job import JobFactory, Job, JobDb
 
 class AbstractViewsTestCase(unittest.TestCase):
     def setUp(self):
@@ -17,14 +17,15 @@ class AbstractViewsTestCase(unittest.TestCase):
     def fake_job(self):
         job = Mock(Job)
         job.id = 'foo'
-        job.runInfo.return_value = 'bla'
-        job.maxMSLevel.return_value = 3
-        job.metabolites.return_value = {'total': 3, 'rows': [1, 2, 3]}
-        job.metabolitesTotalCount.return_value = 3
-        job.scansWithMetabolites.return_value = [4, 5]
-        job.chromatogram.return_value = [1, 2, 3]
-        job.extractedIonChromatogram.return_value = [1, 2, 3]
-        job.fragments.return_value = [1, 2, 3]
+        job.db = Mock(JobDb)
+        job.db.runInfo.return_value = 'bla'
+        job.db.maxMSLevel.return_value = 3
+        job.db.metabolites.return_value = {'total': 3, 'rows': [1, 2, 3]}
+        job.db.metabolitesTotalCount.return_value = 3
+        job.db.scansWithMetabolites.return_value = [4, 5]
+        job.db.chromatogram.return_value = [1, 2, 3]
+        job.db.extractedIonChromatogram.return_value = [1, 2, 3]
+        job.db.fragments.return_value = [1, 2, 3]
         return job
 
 
@@ -45,6 +46,7 @@ class ViewsTestCase(AbstractViewsTestCase):
 
     @patch('magmaweb.views.unauthenticated_userid')
     def test_uploaddb_post(self, unauthenticated_userid):
+        unauthenticated_userid.return_value = 'bob'
         self.config.add_route('results', '/results/{jobid}')
         from cgi import FieldStorage
         import StringIO
@@ -53,19 +55,17 @@ class ViewsTestCase(AbstractViewsTestCase):
         request = testing.DummyRequest(post={'db_file': dbfile})
         views = Views(request)
         views.job_factory = Mock(JobFactory)
-        unauthenticated_userid.return_value = 'Bob'
         job = self.fake_job()
-        job.description.return_value = 'My desc'
         views.job_factory.fromDb.return_value = job
 
         response = views.uploaddb()
 
-        views.job_factory.fromDb.assert_called_with(dbfile.file)
-        job.owner.assert_called_with('Bob')
-        job.description.assert_called_with('My desc')
+        views.job_factory.fromDb.assert_called_with(dbfile.file, 'bob')
         self.assertEqual(response.location, 'http://example.com/results/foo')
 
-    def test_jobfromscratch(self):
+    @patch('magmaweb.views.unauthenticated_userid')
+    def test_jobfromscratch(self, unauthenticated_userid):
+        unauthenticated_userid.return_value = 'bob'
         self.config.add_route('results', '/results/{jobid}')
         request = testing.DummyRequest()
         job = self.fake_job()
@@ -74,8 +74,8 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         response = views.jobfromscratch()
 
+        views.job_factory.fromScratch.assert_called_with('bob')
         self.assertEqual(response.location, 'http://example.com/results/foo')
-        job.owner.assert_called_with(None)
 
     def test_results(self):
         request = testing.DummyRequest()
@@ -88,16 +88,6 @@ class ViewsTestCase(AbstractViewsTestCase):
                                         run='bla',
                                         maxmslevel=3
                                         ))
-
-    def test_jobstatus(self):
-        request = testing.DummyRequest()
-        request.matchdict['jobid'] = 'bla'
-        views = Views(request)
-        views.job_factory.state = Mock(return_value='RUNNING')
-
-        response = views.job_status()
-
-        self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
 
     @patch('magmaweb.views.get_jobs')
     def test_jobs(self, get_jobs):
@@ -139,6 +129,16 @@ class ViewsTestCase(AbstractViewsTestCase):
 
 class JobViewsTestCase(AbstractViewsTestCase):
     """ Test case for magmaweb.views.JobViews"""
+    def test_jobstatus(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'RUNNING'
+        views = JobViews(job, request)
+
+        response = views.job_status()
+
+        self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
 
     def test_metabolitesjson_return(self):
         request = testing.DummyRequest(params={
@@ -166,9 +166,9 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         views.metabolitesjson()
 
-        job.metabolites.assert_called_with(start=0, limit=10, sorts=[],
+        job.db.metabolites.assert_called_with(start=0, limit=10, sorts=[],
                                            scanid=None, filters=[])
-        job.scansWithMetabolites.assert_called_with(filters=[])
+        job.db.scansWithMetabolites.assert_called_with(filters=[])
 
     def test_metabolitesjson_scanidfilter(self):
         request = testing.DummyRequest(params={
@@ -181,7 +181,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         views.metabolitesjson()
 
-        job.metabolites.assert_called_with(start=0, limit=10,
+        job.db.metabolites.assert_called_with(start=0, limit=10,
                                            sorts=[], scanid=641,
                                            filters=[])
 
@@ -200,10 +200,10 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         views.metabolitesjson()
 
-        job.metabolites.assert_called_with(start=0, limit=10,
+        job.db.metabolites.assert_called_with(start=0, limit=10,
                                            sorts=[], scanid=None,
                                            filters=filter_expected)
-        job.scansWithMetabolites.assert_called_with(filters=filter_expected)
+        job.db.scansWithMetabolites.assert_called_with(filters=filter_expected)
 
     def test_metabolitesjson_sortonlevel(self):
         sort_in = '[{"property":"level","direction":"DESC"}]'
@@ -218,7 +218,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         views.metabolitesjson()
 
-        job.metabolites.assert_called_with(start=0, limit=10,
+        job.db.metabolites.assert_called_with(start=0, limit=10,
                                            sorts=sort_expected,
                                            scanid=None, filters=[])
 
@@ -228,7 +228,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                'limit': 10
                                                })
         job = self.fake_job()
-        job.metabolitesTotalCount.return_value = 0
+        job.db.metabolitesTotalCount.return_value = 0
         views = JobViews(job, request)
 
         response = views.metabolitesjson()
@@ -240,8 +240,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
         import StringIO
         csv = StringIO.StringIO()
         csv.write('bla')
-        job = Mock(Job)
-        job.metabolites2csv.return_value = csv
+        job = self.fake_job()
+        job.db.metabolites2csv.return_value = csv
         request = testing.DummyRequest(params={
                                                'start': 0,
                                                'limit': 10
@@ -261,7 +261,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
         csv = StringIO.StringIO()
         csv.write('bla')
         job = self.fake_job()
-        job.metabolites2csv.return_value = csv
+        job.db.metabolites2csv.return_value = csv
         request = testing.DummyRequest(params={
                                                'start': 0,
                                                'limit': 10,
@@ -274,11 +274,11 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         views.metabolitescsv()
 
-        job.metabolites2csv.assert_called_with(rows, cols=['name', 'score'])
+        job.db.metabolites2csv.assert_called_with(rows, cols=['name', 'score'])
 
     def test_metabolitessdf(self):
-        job = Mock(Job)
-        job.metabolites2sdf.return_value = 'bla'
+        job = self.fake_job()
+        job.db.metabolites2sdf.return_value = 'bla'
         request = testing.DummyRequest(params={
                                                'start': 0,
                                                'limit': 10
@@ -289,13 +289,13 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                    })
         response = views.metabolitessdf()
 
-        job.metabolites2sdf.assert_called_with([], cols=[])
+        job.db.metabolites2sdf.assert_called_with([], cols=[])
         self.assertEqual(response.content_type, 'chemical/x-mdl-sdfile')
         self.assertEqual(response.body, 'bla')
 
     def test_metabolitessdf_somecols(self):
-        job = Mock(Job)
-        job.metabolites2sdf.return_value = 'bla'
+        job = self.fake_job()
+        job.db.metabolites2sdf.return_value = 'bla'
         request = testing.DummyRequest(params={
                                                'start': 0,
                                                'limit': 10,
@@ -307,7 +307,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                    })
         views.metabolitessdf()
 
-        job.metabolites2sdf.assert_called_with([], cols=['name', 'score'])
+        job.db.metabolites2sdf.assert_called_with([], cols=['name', 'score'])
 
     def test_chromatogramjson(self):
         request = testing.DummyRequest()
@@ -324,7 +324,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         views.mspectrajson()
 
-        job.mspectra.assert_called_with(641, None)
+        job.db.mspectra.assert_called_with(641, None)
 
     def test_mspectrajson_withmslevel(self):
         request = testing.DummyRequest(
@@ -336,14 +336,14 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         views.mspectrajson()
 
-        job.mspectra.assert_called_with(641, 3)
+        job.db.mspectra.assert_called_with(641, 3)
 
     def test_mspectra_withoutscanid_notfound(self):
         from magmaweb.job import ScanNotFound
         request = testing.DummyRequest(matchdict={'scanid':641})
 
         job = self.fake_job()
-        job.mspectra.side_effect = ScanNotFound()
+        job.db.mspectra.side_effect = ScanNotFound()
         views = JobViews(job, request)
 
         from pyramid.httpexceptions import HTTPNotFound
@@ -360,8 +360,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(response, {
             'chromatogram': [1, 2, 3], 'scans': [4, 5]
         })
-        job.extractedIonChromatogram.assert_called_with(72)
-        job.scansWithMetabolites.assert_called_with(metid=72)
+        job.db.extractedIonChromatogram.assert_called_with(72)
+        job.db.scansWithMetabolites.assert_called_with(metid=72)
 
     def test_fragments_metabolitewithoutfragments(self):
         request = testing.DummyRequest(matchdict={
@@ -374,7 +374,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         views.fragments()
 
-        job.fragments.assert_called_with(metid=72, scanid=641, node='')
+        job.db.fragments.assert_called_with(metid=72, scanid=641, node='')
 
     def test_fragments_filteronmslevel(self):
         request = testing.DummyRequest(matchdict={
@@ -387,7 +387,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         views.fragments()
 
-        job.fragments.assert_called_with(metid=72, scanid=641, node=1709)
+        job.db.fragments.assert_called_with(metid=72, scanid=641, node=1709)
 
     def test_fragments_badmetabolite_notfound(self):
         from magmaweb.job import FragmentNotFound
@@ -398,7 +398,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                        params={'node':''})
 
         job = self.fake_job()
-        job.fragments.side_effect = FragmentNotFound
+        job.db.fragments.side_effect = FragmentNotFound
         views = JobViews(job, request)
 
         from pyramid.httpexceptions import HTTPNotFound
@@ -424,7 +424,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
         request = testing.DummyRequest()
         job = self.fake_job()
         from magmaweb.models import Run
-        job.runInfo.return_value = Run(
+        job.db.runInfo.return_value = Run(
             n_reaction_steps=2, metabolism_types='phase1,phase2',
             ionisation_mode=-1, skip_fragmentation=True,
             ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
@@ -462,7 +462,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
         request = testing.DummyRequest()
         job = self.fake_job()
         from magmaweb.models import Run
-        job.runInfo.return_value = Run(
+        job.db.runInfo.return_value = Run(
             abs_peak_cutoff=1100,
             rel_peak_cutoff=0.012
         )
@@ -493,7 +493,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
     def test_runinfojson_norundone(self):
         request = testing.DummyRequest()
         job = self.fake_job()
-        job.runInfo.return_value = None
+        job.db.runInfo.return_value = None
         views = JobViews(job, request)
 
         response = views.runinfojson()

@@ -1,4 +1,5 @@
 import unittest
+import uuid
 from mock import Mock
 from sqlalchemy import create_engine
 from pyramid import testing
@@ -51,8 +52,10 @@ class TestJobIdFactory(unittest.TestCase):
         init_user_db()
         self.session = user.DBSession()
         u = user.User('me', 'My', 'myself')
-        j = user.Job('12345', 'My job', owner='me')
-        self.session.add_all([u, j])
+        self.session.add(u)
+        job_id = uuid.UUID('11111111-1111-1111-1111-111111111111')
+        j = user.JobMeta(job_id, 'My job', owner='me')
+        self.session.add(j)
 
     def tearDown(self):
         destroy_user_db()
@@ -61,63 +64,42 @@ class TestJobIdFactory(unittest.TestCase):
     def test_getJob(self):
         from magmaweb.job import Job
         mjob = Mock(Job)
+        mjob.owner = 'bob'
         jif = user.JobIdFactory(self.request)
         jif.job_factory.fromId = Mock(return_value=mjob)
+        job_id = uuid.UUID('11111111-1111-1111-1111-111111111111')
 
-        job = jif['12345']
+        job = jif[str(job_id)]
 
-        jif.job_factory.fromId.assert_called_once_with('12345')
+        jif.job_factory.fromId.assert_called_once_with(job_id)
         self.assertEqual(job, mjob)
         self.assertEqual(job.__parent__, jif)
-        self.assertListEqual(job.__acl__, [(Allow, 'me', 'run')])
+        self.assertEqual(job.__acl__, [(Allow, 'bob', 'run')])
 
     def test_getJobNotFound(self):
         from magmaweb.job import JobNotFound
+        jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
         jif = user.JobIdFactory(self.request)
-        jif.job_factory.fromId = Mock(side_effect=JobNotFound('67890'))
+        notfound = JobNotFound('Job not found', jobid)
+        jif.job_factory.fromId = Mock(side_effect=notfound)
 
         with self.assertRaises(HTTPNotFound):
-            jif['67890']
+            jif[str(jobid)]
 
 class TestUtils(unittest.TestCase):
     def setUp(self):
         init_user_db()
         self.session = user.DBSession()
         u = user.User('me', 'My', 'myself')
-        j = user.Job('12345', description='My job', owner='me')
-        self.session.add_all([u, j])
+        self.session.add(u)
+        job_id = uuid.UUID('11111111-1111-1111-1111-111111111111')
+        j = user.JobMeta(job_id, 'My job', owner='me')
+        self.session.add(j)
 
     def tearDown(self):
         destroy_user_db()
 
-    def test_set_job_owner(self):
-        j = user.Job('67890', 'My job')
-        self.session.add(j)
-
-        user.set_job_owner('67890', 'me')
-
-        r = self.session.query(user.Job).get('67890')
-        self.assertEqual(r.owner, 'me')
-
-    def test_set_job_parent(self):
-        j = user.Job('67890', 'My second job')
-        self.session.add(j)
-
-        user.set_job_parent('67890', '12345')
-
-        r = self.session.query(user.Job).get('67890')
-        self.assertEqual(r.parentjobid, '12345')
-
-    def test_set_job_description(self):
-        user.set_job_description('12345', 'My desc')
-
-        r = self.session.query(user.Job).get('12345')
-        self.assertEqual(r.description, 'My desc')
-
     def test_get_my_jobs(self):
-        self.assertListEqual([{'id':'12345', 'description':'My job'}], user.get_jobs('me'))
-
-    def test_add_job(self):
-        user.add_job('11223344')
-        r = self.session.query(user.Job).get('11223344')
-        self.assertEqual(r.jobid, '11223344')
+        expected_jobs = [{'id':'11111111-1111-1111-1111-111111111111',
+                          'description':u'My job'}]
+        self.assertListEqual(user.get_jobs('me'), expected_jobs)
