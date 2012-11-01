@@ -4,6 +4,7 @@ import csv
 import StringIO
 import urllib2
 import json
+import shutil
 from cgi import FieldStorage
 import colander
 from sqlalchemy import create_engine, and_
@@ -34,8 +35,8 @@ class FragmentNotFound(Exception):
 class JobNotFound(Exception):
     """Raised when a job with a identifier is not found"""
 
-    def __init__(self, jobid):
-        Exception.__init__(self)
+    def __init__(self, message, jobid):
+        Exception.__init__(self, message)
         self.jobid = jobid
 
 
@@ -454,6 +455,25 @@ class JobQuery(object):
         allin = self.add_ms_data(params).add_structures(params)
         return allin.metabolize(params).annotate(params)
 
+    @classmethod
+    def defaults(cls):
+        """Returns dictionary with default params"""
+        return dict(
+                    n_reaction_steps=2,
+                    metabolism_types=['phase1', 'phase2'],
+                    ionisation_mode=1,
+                    skip_fragmentation=False,
+                    ms_intensity_cutoff=1000000.0,
+                    msms_intensity_cutoff=0.1,
+                    mz_precision=0.001,
+                    use_all_peaks=False,
+                    abs_peak_cutoff=1000,
+                    rel_peak_cutoff=0.01,
+                    max_ms_level=10,
+                    precursor_mz_precision=0.005,
+                    max_broken_bonds=4
+                    )
+
 
 class JobFactory(object):
     """Factory which can create jobs """
@@ -500,76 +520,144 @@ class JobFactory(object):
         self.time_max = time_max
         self.init_script = init_script
 
-    def fromId(self, jobid):
-        """Finds job db in job root dir.
-        Returns a :class:`Job` instance
-
-        ``jobid``
-            Job identifier
-
-        Raises :class:`JobNotFound` exception when job is not found by jobid
-        """
-        session = self._makeJobSession(jobid)()
-        return Job(jobid, session, self.id2jobdir(jobid))
-
     def _makeJobSession(self, jobid):
         """ Create job db connection """
         engine = create_engine(self.id2url(jobid))
         try:
             engine.connect()
         except OperationalError:
-            raise JobNotFound(jobid)
+            raise JobNotFound("Data of job not found", jobid)
         return scoped_session(sessionmaker(bind=engine))
 
-    def _makeJobDir(self):
-        """ Create job dir and returns the job id"""
-        jobid = uuid.uuid4()
+    def fromId(self, jobid):
+        """Finds job db in job root dir.
+        Returns a :class:`Job` instance
 
-        # create job dir
-        os.makedirs(self.id2jobdir(jobid))
+        ``jobid``
+            Job identifier as uuid
 
-        #register job in user db
-        magmaweb.user.add_job(str(jobid))
+        Raises :class:`JobNotFound` exception when job is not found by jobid
+        """
+        meta = self._getJobMeta(jobid)
+        session = self._makeJobSession(jobid)
+        db = JobDb(session)
+        dir = self.id2jobdir(jobid)
+        return Job(meta, dir, db)
 
-        return jobid
+    def _makeJobDir(self, jobid):
+        dir = self.id2jobdir(jobid)
+        os.makedirs(dir)
+        return dir
 
-    def fromDb(self, dbfile):
+    def _getJobMeta(self, jobid):
+        meta = magmaweb.user.DBSession.query(magmaweb.user.JobMeta).get(jobid)
+        if meta is None:
+            raise JobNotFound("Job not found in database", jobid)
+        return meta
+
+    def _addJobMeta(self, jobmeta):
+        magmaweb.user.DBSession().add(jobmeta)
+
+    def fromDb(self, dbfile, owner):
         """A job directory is created and the dbfile is copied into it
         Returns a Job instance
 
         ``dbfile``
             The sqlite result db
 
+        ``owner``
+            User id of owner
+
         Returns a :class:`Job` instance
         """
-        jobid = self._makeJobDir()
-        # copy dbfile into job dir
-        jobdb = open(self.id2db(jobid), 'wb')
-        dbfile.seek(0)
-        while 1:
-            data = dbfile.read(2 << 16)
-            if not data:
-                break
-            jobdb.write(data)
-        jobdb.close()
+        jobid = uuid.uuid4()
 
-        return self.fromId(jobid)
+        # create job dir
+        dir = self._makeJobDir(jobid)
 
-    def fromScratch(self):
-        """ Returns :class:`Job` from scratch with empty results db """
-        jobid = self._makeJobDir()
-        session = self._makeJobSession(jobid)()
+        #copy dbfile into jobdir
+        self._copyFile(dbfile, jobid)
+
+        # session for job db
+        session = self._makeJobSession(jobid)
+        db = JobDb(session)
+        description = db.runInfo().description
+
+        #register job in user db
+        jobmeta = magmaweb.user.JobMeta(jobid,
+                                        owner=owner,
+                                        description=description,
+                                        state='STOPPED')
+        self._addJobMeta(jobmeta)
+
+        return Job(jobmeta, dir, db)
+
+    def fromScratch(self, owner):
+        """Job from scratch with empty results db
+
+        ``owner``
+            User id of owner
+
+        Returns a :class:`Job` instance
+        """
+        jobid = uuid.uuid4()
+
+        # create job dir
+        dir = self._makeJobDir(jobid)
+
+        # session for job db
+        session = self._makeJobSession(jobid)
         Base.metadata.create_all(session.connection())
-        return Job(jobid, session, self.id2jobdir(jobid))
+        db = JobDb(session)
 
-    def cloneJob(self, job):
-        """ Returns new :class:`Job` which has copy of 'job' db. """
-        newjob = self.fromDb(open(self.id2db(job.id)))
-        # set parent of job in user db
-        magmaweb.user.set_job_parent(str(newjob.id), str(job.id))
-        newjob.description(job.description())
+        #register job in user db
+        jobmeta = magmaweb.user.JobMeta(jobid,
+                                        owner=owner,
+                                        state='STOPPED')
+        self._addJobMeta(jobmeta)
 
-        return newjob
+        return Job(jobmeta, dir, db)
+
+    def _copyFile(self, src, id):
+        src.seek(0) # start from beginning
+        dst = open(self.id2db(id), 'wb')
+        shutil.copyfileobj(src, dst, 2 << 16)
+        dst.close()
+
+    def cloneJob(self, job, owner):
+        """Returns new Job which has copy of 'job's database.
+
+        ``job``
+            :class:Job job to clone
+
+        ``owner``
+            User id of owner
+
+        Returns a :class:`Job` instance
+        """
+        jobid = uuid.uuid4()
+
+        # create job dir
+        dir = self._makeJobDir(jobid)
+
+        #copy db of old job into new jobdir
+        src = open(self.id2db(job.id))
+        self._copyFile(src, jobid)
+        src.close()
+
+        # session for job db
+        session = self._makeJobSession(jobid)
+        db = JobDb(session)
+
+        #register job in user db
+        jobmeta = magmaweb.user.JobMeta(jobid,
+                                        owner=owner,
+                                        description=job.description,
+                                        parentjobid=job.id,
+                                        state='STOPPED')
+        self._addJobMeta(jobmeta)
+
+        return Job(jobmeta, dir, db)
 
     def submitJob2Manager(self, body):
         """Submits job query to jobmanager daemon
@@ -623,20 +711,6 @@ class JobFactory(object):
 
         return query.id
 
-    def state(self, id):
-        """Returns state of job
-
-        See ibis org.gridlab.gat.resources.Job.JobState for possible states.
-        """
-        try:
-            jobstatefile = open(os.path.join(self.id2jobdir(id),
-                                             self.state_fn))
-            jobstate = jobstatefile.readline().strip()
-            jobstatefile.close()
-            return jobstate
-        except IOError:
-            return 'UNKNOWN'
-
     def id2jobdir(self, id):
         """Returns job directory based on id and root_dir """
         return os.path.join(self.root_dir, str(id))
@@ -654,22 +728,89 @@ class JobFactory(object):
 class Job(object):
     """Job contains results database of Magma calculation run"""
 
-    def __init__(self, id, session, dir):
+    def __init__(self, meta, dir, db=None):
         """
-        jobid
-            A UUID of the job
-        session
-            Sqlalchemy session to read/write to job db
+        meta
+            :class:magmaweb.user.JobMeta instance
+
         dir
             Directory where input and output files reside
+
+        db
+            :class:JobDb instance
         """
-        self.id = id
-        self.session = session
         self.dir = dir
+        self.meta = meta # magmaweb.user.Job, for id, owner, state etc.
+
+        if db is not None:
+            self.db = db
+
+    @property
+    def id(self):
+        """Identifier of the job, is a :class:uuid.UUID"""
+        return self.meta.jobid
+
+    @property
+    def __name__(self):
+        """Same as id and as lookup key using :class:magmaweb.user.JobIdFactory"""
+        return str(self.id)
 
     def jobquery(self):
         """Returns :class:`JobQuery` """
         return JobQuery(self.id, self.dir)
+
+    @property
+    def description(self):
+        """Description string of job"""
+        return self.meta.description
+
+    @description.setter
+    def description(self, description):
+        self.meta.description = description
+
+    @property
+    def parent(self):
+        """Identifier of parent job"""
+        return self.meta.parentjobid
+
+    @parent.setter
+    def parent(self, parent):
+        self.meta.parentjobid = parent
+
+    @property
+    def owner(self):
+        """User id which owns this job"""
+        return self.meta.owner
+
+    @owner.setter
+    def owner(self, userid):
+        self.meta.owner = userid
+
+    @property
+    def state(self):
+        """Returns state of job
+
+        See ibis org.gridlab.gat.resources.Job.JobState for possible states.
+        """
+        return self.meta.state
+
+    @state.setter
+    def state(self, newstate):
+        self.meta.state = newstate
+
+    def stderr(self):
+        """Returns stderr text file or empty file if stderr does not exist"""
+        try:
+            return open(os.path.join(self.dir, 'stderr.txt'), 'rb')
+        except IOError:
+            return StringIO.StringIO()
+
+
+class JobDb(object):
+    """Database of a job"""
+    def __init__(self, session):
+        """SQLAlchemy session which is connected to database of job"""
+        self.session = session
 
     def maxMSLevel(self):
         """Returns the maximum nr of MS levels """
@@ -678,23 +819,6 @@ class Job(object):
     def runInfo(self):
         """Returns last run info or None if there is no run info"""
         return self.session.query(Run).order_by(Run.runid.desc()).first()
-
-    def description(self, description=None):
-        """Sets description column in run table,
-        if there is no run row it is added
-        Returns description
-        """
-        runInfo = self.runInfo()
-        if (runInfo is None):
-            runInfo = Run()
-
-        if (description is not None):
-            runInfo.description = description
-            self.session.add(runInfo)
-            self.session.commit()
-            magmaweb.user.set_job_description(self.id, description)
-
-        return runInfo.description
 
     def metabolitesTotalCount(self):
         """Returns unfiltered and not paged count of metabolites"""
@@ -1147,13 +1271,6 @@ class Job(object):
                 fragments.append(fragment2json(row))
             return fragments
 
-    def stderr(self):
-        """Returns stderr text file or empty file if stderr does not exist"""
-        try:
-            return open(os.path.join(self.dir, 'stderr.txt'), 'rb')
-        except IOError:
-            return StringIO.StringIO()
-
     def _peak(self, scanid, mz):
         mzoffset = 1e-6  # precision for comparing floating point values
         # fetch peak corresponding to given scanid and mz
@@ -1175,7 +1292,3 @@ class Job(object):
         peak.assigned_metid = None
         self.session.add(peak)
         self.session.commit()
-
-    def owner(self, userid):
-        """ Set owner of this job in the user db"""
-        magmaweb.user.set_job_owner(str(self.id), userid)

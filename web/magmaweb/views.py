@@ -5,7 +5,7 @@ from pyramid.view import view_defaults
 from pyramid.httpexceptions import HTTPNotFound, HTTPFound
 from pyramid.security import unauthenticated_userid
 from magmaweb.job import make_job_factory
-from magmaweb.job import Job
+from magmaweb.job import Job, JobQuery
 from magmaweb.user import get_jobs
 
 
@@ -22,34 +22,17 @@ class Views(object):
     @view_config(route_name='defaults.json', renderer="json", permission='view')
     def defaults(self):
         """ Returns defaults settings to run a job"""
-        defaults = dict(
-                    n_reaction_steps=2,
-                    metabolism_types=['phase1', 'phase2'],
-                    ionisation_mode=1,
-                    skip_fragmentation=False,
-                    ms_intensity_cutoff=1000000.0,
-                    msms_intensity_cutoff=0.1,
-                    mz_precision=0.001,
-                    use_all_peaks=False,
-                    abs_peak_cutoff=1000,
-                    rel_peak_cutoff=0.01,
-                    max_ms_level=10,
-                    precursor_mz_precision=0.005,
-                    max_broken_bonds=4
-                    )
-        return {
-                'success': True,
-                'data': defaults
-                }
+        return {'success': True,
+                'data': JobQuery.defaults()}
 
     @view_config(route_name='uploaddb', renderer='uploaddb.mak', permission='run')
     def uploaddb(self):
         """Upload a sqlitedb as ``db_file`` param in POST request
         and redirects to job results page"""
         if (self.request.method == 'POST'):
-            job = self.job_factory.fromDb(self.request.POST['db_file'].file)
-            job.owner(unauthenticated_userid(self.request))
-            job.description(job.description()) # store description in user db
+            dbfile = self.request.POST['db_file'].file
+            owner = unauthenticated_userid(self.request)
+            job = self.job_factory.fromDb(dbfile, owner)
             results = self.request.route_url('results', jobid=job.id)
             return HTTPFound(location=results)
         else:
@@ -58,10 +41,21 @@ class Views(object):
     @view_config(route_name='jobfromscratch', permission='run')
     def jobfromscratch(self):
         """ Initializes a new job and redirects to its results page"""
-        job = self.job_factory.fromScratch()
-        job.owner(unauthenticated_userid(self.request))
+        owner = unauthenticated_userid(self.request)
+        job = self.job_factory.fromScratch(owner)
         results = self.request.route_url('results', jobid=job.id)
         return HTTPFound(location=results)
+
+    @view_config(route_name='jobs', permission='view', renderer='jobs.mak')
+    def jobs(self):
+        return {'jobs': get_jobs(unauthenticated_userid(self.request)) }
+
+@view_defaults(context=Job)
+class JobViews(object):
+    """Views for pyramid based web application with job"""
+    def __init__(self, job, request):
+        self.request = request
+        self.job = job
 
     @view_config(route_name='status', renderer='status.mak', permission='run')
     @view_config(route_name='status.json', renderer='json', permission='run')
@@ -78,27 +72,17 @@ class Views(object):
             }
 
         """
-        jobid = self.request.matchdict['jobid']
-        jobstate = self.job_factory.state(jobid)
+        jobid = self.job.id
+        jobstate = self.job.state
         return dict(status=jobstate, jobid=jobid)
-
-    @view_config(route_name='jobs', permission='view', renderer='jobs.mak')
-    def jobs(self):
-        return {'jobs': get_jobs(unauthenticated_userid(self.request)) }
-
-@view_defaults(context=Job)
-class JobViews(object):
-    """Views for pyramid based web application with job"""
-    def __init__(self, job, request):
-        self.request = request
-        self.job = job
 
     @view_config(route_name='results', renderer='results.mak', permission='view')
     def results(self):
         """Returns results page"""
+        db = self.job.db
         return dict(
-                    run=self.job.runInfo(),
-                    maxmslevel=self.job.maxMSLevel(),
+                    run=db.runInfo(),
+                    maxmslevel=db.maxMSLevel(),
                     jobid=self.job.id
                     )
 
@@ -190,7 +174,7 @@ class JobViews(object):
 
         filters = jd('filter') if ('filter' in request.params) else []
         sorts = jd('sort') if ('sort' in request.params) else []
-        job = self.job
+        job = self.job.db
         metabolites = job.metabolites(
             start=int(request.params['start']),
             limit=int(request.params['limit']),
@@ -217,7 +201,7 @@ class JobViews(object):
         cols = []
         if ('cols' in self.request.params):
             cols = json.loads(self.request.params['cols'])
-        csv = self.job.metabolites2csv(mets['rows'], cols=cols)
+        csv = self.job.db.metabolites2csv(mets['rows'], cols=cols)
         response = Response(content_type='text/csv', body=csv.getvalue())
         # response.app_iter does not work on StringIO, so use response.body
         # response.app_iter = csv
@@ -237,7 +221,7 @@ class JobViews(object):
         cols = []
         if ('cols' in self.request.params):
             cols = json.loads(self.request.params['cols'])
-        sdf = self.job.metabolites2sdf(mets['rows'], cols=cols)
+        sdf = self.job.db.metabolites2sdf(mets['rows'], cols=cols)
         response = Response(content_type='chemical/x-mdl-sdfile',
                             charset='utf-8', body=sdf)
         return response
@@ -263,7 +247,7 @@ class JobViews(object):
                 "cutoff": 200000.0
             }
         """
-        return self.job.chromatogram()
+        return self.job.db.chromatogram()
 
     @view_config(route_name='mspectra.json', renderer='json', permission='view')
     def mspectrajson(self):
@@ -308,7 +292,7 @@ class JobViews(object):
             mslevel = self.request.params['mslevel']
         from magmaweb.job import ScanNotFound
         try:
-            return self.job.mspectra(scanid, mslevel)
+            return self.job.db.mspectra(scanid, mslevel)
         except ScanNotFound:
             raise HTTPNotFound()
 
@@ -350,8 +334,8 @@ class JobViews(object):
         """
         metid = self.request.matchdict['metid']
         return {
-            'chromatogram': self.job.extractedIonChromatogram(metid),
-            'scans': self.job.scansWithMetabolites(metid=metid)
+            'chromatogram': self.job.db.extractedIonChromatogram(metid),
+            'scans': self.job.db.scansWithMetabolites(metid=metid)
         }
 
     @view_config(route_name='fragments.json', renderer='json', permission='view')
@@ -438,7 +422,7 @@ class JobViews(object):
         request = self.request
         from magmaweb.job import FragmentNotFound
         try:
-            fragments = self.job.fragments(
+            fragments = self.job.db.fragments(
                 scanid=request.matchdict['scanid'],
                 metid=request.matchdict['metid'],
                 node=request.params['node']
@@ -460,7 +444,7 @@ class JobViews(object):
         if job has not run the default value
 
         """
-        r = self.job.runInfo()
+        r = self.job.db.runInfo()
         defaults = Views(self.request).defaults()
         if (r is None):
             return defaults

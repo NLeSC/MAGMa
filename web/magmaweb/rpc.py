@@ -17,8 +17,8 @@ class RpcViews(object):
 
     def new_job(self):
         """Returns clone of job of current request"""
-        job = self.job_factory.cloneJob(self.job)
-        job.owner(unauthenticated_userid(self.request))
+        owner = unauthenticated_userid(self.request)
+        job = self.job_factory.cloneJob(self.job, owner)
         return job
 
     def submit_query(self, query):
@@ -42,7 +42,7 @@ class RpcViews(object):
         """
         job = self.new_job()
         jobquery = job.jobquery().add_structures(self.request.POST,
-                                                 job.maxMSLevel() > 0)
+                                                 job.db.maxMSLevel() > 0)
         self.submit_query(jobquery)
         return {'success': True, 'jobid': str(job.id)}
 
@@ -56,7 +56,7 @@ class RpcViews(object):
         """
         job = self.new_job()
         jobquery = job.jobquery().add_ms_data(self.request.POST,
-                                              job.metabolitesTotalCount() > 0)
+                                              job.db.metabolitesTotalCount() > 0)
         self.submit_query(jobquery)
         return {'success': True, 'jobid': str(job.id)}
 
@@ -68,7 +68,7 @@ class RpcViews(object):
         """
         job = self.new_job()
         jobquery = job.jobquery().metabolize(self.request.POST,
-                                             job.maxMSLevel() > 0)
+                                             job.db.maxMSLevel() > 0)
         self.submit_query(jobquery)
         return {'success': True, 'jobid': str(job.id)}
 
@@ -82,7 +82,7 @@ class RpcViews(object):
         """
         job = self.new_job()
         jobquery = job.jobquery().metabolize_one(self.request.POST,
-                                                 job.maxMSLevel() > 0)
+                                                 job.db.maxMSLevel() > 0)
         self.submit_query(jobquery)
         return {'success': True, 'jobid': str(job.id)}
 
@@ -116,8 +116,7 @@ class RpcViews(object):
         ``description`` of post parameter.
         """
         job = self.job
-        desc = self.request.POST['description']
-        job.description(desc)
+        job.description = self.request.POST['description']
         return {'success': True, 'jobid': str(job.id)}
 
     @view_config(context=colander.Invalid)
@@ -134,7 +133,7 @@ class RpcViews(object):
         scanid = self.request.POST['scanid']
         mz = self.request.POST['mz']
         metid = self.request.POST['metid']
-        job.assign_metabolite2peak(scanid, mz, metid)
+        job.db.assign_metabolite2peak(scanid, mz, metid)
         return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.unassign', renderer='json')
@@ -142,5 +141,5 @@ class RpcViews(object):
         job = self.job
         scanid = self.request.POST['scanid']
         mz = self.request.POST['mz']
-        job.unassign_metabolite2peak(scanid, mz)
+        job.db.unassign_metabolite2peak(scanid, mz)
         return {'success': True, 'jobid': str(job.id)}

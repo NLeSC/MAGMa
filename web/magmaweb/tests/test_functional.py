@@ -27,18 +27,17 @@ class FunctionalTests(unittest.TestCase):
         self.assertTrue('Homepage' in res.body)
 
     def fake_jobid(self):
-        """ Create job in self.root_dir filled with test db"""
-        from magmaweb.job import make_job_factory
-        jf = make_job_factory(self.settings)
-        job = jf.fromScratch()
-        from test_job import populateTestingDB
-        populateTestingDB(job.session)
-        job.session.commit()
-
         # Setup owner of job
         from magmaweb.user import DBSession, User
         DBSession().add(User('bob', 'Bob', 'bob@example.com'))
-        job.owner('bob')
+
+        """ Create job in self.root_dir filled with test db"""
+        from magmaweb.job import make_job_factory
+        jf = make_job_factory(self.settings)
+        job = jf.fromScratch('bob')
+        from test_job import populateTestingDB
+        populateTestingDB(job.db.session)
+        job.db.session.commit()
 
         return job.id
 
