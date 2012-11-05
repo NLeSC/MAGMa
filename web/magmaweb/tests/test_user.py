@@ -125,7 +125,7 @@ class TestUtils(unittest.TestCase):
     def tearDown(self):
         destroy_user_db()
 
-    def test_get_my_jobs(self):
-        expected_jobs = [{'id':'11111111-1111-1111-1111-111111111111',
-                          'description':u'My job'}]
-        self.assertListEqual(user.get_jobs('me'), expected_jobs)
+    def test_jobs_of_user(self):
+        u = self.session.query(user.User).get('me')
+        jobs = u.jobs
+        self.assertEqual(jobs[0].description, 'My job')

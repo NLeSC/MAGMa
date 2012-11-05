@@ -6,7 +6,6 @@ from pyramid.httpexceptions import HTTPNotFound, HTTPFound
 from pyramid.security import has_permission
 from magmaweb.job import make_job_factory
 from magmaweb.job import Job, JobQuery
-from magmaweb.user import get_jobs
 
 
 class Views(object):
@@ -48,8 +47,13 @@ class Views(object):
 
     @view_config(route_name='jobs', permission='view', renderer='jobs.mak')
     def jobs(self):
-        owner = self.request.user.userid
-        return {'jobs': get_jobs(owner)}
+        jobs = []
+        owner = self.request.user
+        for jobmeta in owner.jobs:
+            jobs.append({'id': str(jobmeta.jobid),
+                         'description': jobmeta.description})
+
+        return {'jobs': jobs}
 
     @view_config(route_name='user', permission='view', renderer='user.mak')
     def user(self):
