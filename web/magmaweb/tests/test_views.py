@@ -3,6 +3,8 @@ from pyramid import testing
 from mock import Mock, patch
 from magmaweb.views import Views, JobViews
 from magmaweb.job import JobFactory, Job, JobDb
+from magmaweb.user import User
+
 
 class AbstractViewsTestCase(unittest.TestCase):
     def setUp(self):
@@ -35,7 +37,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         views = Views(request)
         response = views.home()
 
-        self.assertEqual(response, {'userid':None})
+        self.assertEqual(response, {})
 
     def test_uploaddb_get(self):
         request = testing.DummyRequest()
@@ -44,15 +46,14 @@ class ViewsTestCase(AbstractViewsTestCase):
         response = views.uploaddb()
         self.assertEqual(response, {})
 
-    @patch('magmaweb.views.unauthenticated_userid')
-    def test_uploaddb_post(self, unauthenticated_userid):
-        unauthenticated_userid.return_value = 'bob'
+    def test_uploaddb_post(self):
         self.config.add_route('results', '/results/{jobid}')
         from cgi import FieldStorage
         import StringIO
         dbfile = FieldStorage()
         dbfile.file = StringIO.StringIO()
         request = testing.DummyRequest(post={'db_file': dbfile})
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
         views = Views(request)
         views.job_factory = Mock(JobFactory)
         job = self.fake_job()
@@ -63,11 +64,10 @@ class ViewsTestCase(AbstractViewsTestCase):
         views.job_factory.fromDb.assert_called_with(dbfile.file, 'bob')
         self.assertEqual(response.location, 'http://example.com/results/foo')
 
-    @patch('magmaweb.views.unauthenticated_userid')
-    def test_jobfromscratch(self, unauthenticated_userid):
-        unauthenticated_userid.return_value = 'bob'
+    def test_jobfromscratch(self):
         self.config.add_route('results', '/results/{jobid}')
         request = testing.DummyRequest()
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
         job = self.fake_job()
         views = Views(request)
         views.job_factory.fromScratch = Mock(return_value=job)
@@ -77,29 +77,71 @@ class ViewsTestCase(AbstractViewsTestCase):
         views.job_factory.fromScratch.assert_called_with('bob')
         self.assertEqual(response.location, 'http://example.com/results/foo')
 
-    def test_results(self):
+    def test_results_cantrun(self):
         request = testing.DummyRequest()
-        views = JobViews(self.fake_job(),request)
+        views = JobViews(self.fake_job(), request)
 
         response = views.results()
 
-        self.assertEqual(response, dict(
-                                        jobid='foo',
+        self.assertEqual(response, dict(jobid='foo',
                                         run='bla',
-                                        maxmslevel=3
+                                        maxmslevel=3,
+                                        canRun=True  # no authorization -> allows all
                                         ))
+
+    @patch('magmaweb.views.has_permission')
+    def test_resuls_canrun(self, has_permission):
+        from pyramid.security import Allowed
+        has_permission.return_value = Allowed('Faked allowed')
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        views = JobViews(job, request)
+
+        response = views.results()
+
+        self.assertEqual(response, dict(jobid='foo',
+                                        run='bla',
+                                        maxmslevel=3,
+                                        canRun=True
+                                        ))
+        has_permission.assert_called_with('run', job, request)
+
+    @patch('magmaweb.views.has_permission')
+    def test_resuls_cantrun(self, has_permission):
+        from pyramid.security import Denied
+        has_permission.return_value = Denied('Faked denied')
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        views = JobViews(job, request)
+
+        response = views.results()
+
+        self.assertEqual(response, dict(jobid='foo',
+                                        run='bla',
+                                        maxmslevel=3,
+                                        canRun=False
+                                        ))
+        has_permission.assert_called_with('run', job, request)
 
     @patch('magmaweb.views.get_jobs')
     def test_jobs(self, get_jobs):
         jobs = [{'id':12345, 'description': 'My job'}]
         get_jobs.return_value = jobs
         request = testing.DummyRequest()
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
         views = Views(request)
 
         response = views.jobs()
 
-        get_jobs.assert_called_with(None)
-        self.assertEqual(response, {'jobs':jobs})
+        get_jobs.assert_called_with('bob')
+        self.assertEqual(response, {'jobs': jobs})
+
+    def test_user(self):
+        request = testing.DummyRequest()
+        views = Views(request)
+
+        response = views.user()
+        self.assertDictEqual(response, {})
 
     def test_defaultsjson(self):
         request = testing.DummyRequest()
@@ -340,7 +382,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
     def test_mspectra_withoutscanid_notfound(self):
         from magmaweb.job import ScanNotFound
-        request = testing.DummyRequest(matchdict={'scanid':641})
+        request = testing.DummyRequest(matchdict={'scanid': 641})
 
         job = self.fake_job()
         job.db.mspectra.side_effect = ScanNotFound()
@@ -351,7 +393,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
             views.mspectrajson()
 
     def test_extractedionchromatogram(self):
-        request = testing.DummyRequest(matchdict={'metid':72})
+        request = testing.DummyRequest(matchdict={'metid': 72})
         job = self.fake_job()
         views = JobViews(job, request)
 
@@ -368,7 +410,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                   'metid': 72,
                                                   'scanid': 641
                                                   },
-                                       params={'node':''})
+                                       params={'node': ''})
         job = self.fake_job()
         views = JobViews(job, request)
 
@@ -381,7 +423,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                   'metid': 72,
                                                   'scanid': 641
                                                   },
-                                       params={'node':1709})
+                                       params={'node': 1709})
         job = self.fake_job()
         views = JobViews(job, request)
 
@@ -395,7 +437,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                   'metid': 72,
                                                   'scanid': 641
                                                   },
-                                       params={'node':''})
+                                       params={'node': ''})
 
         job = self.fake_job()
         job.db.fragments.side_effect = FragmentNotFound

@@ -12,12 +12,14 @@ from sqlalchemy.orm import (
 import sqlalchemy.types as types
 from zope.sqlalchemy import ZopeTransactionExtension #@UnresolvedImport
 from pyramid.httpexceptions import HTTPNotFound
-from pyramid.security import Allow, Deny, Everyone, ALL_PERMISSIONS, Authenticated
+from pyramid.security import Allow, Deny, Everyone, ALL_PERMISSIONS
+from pyramid.security import Authenticated, unauthenticated_userid
 from magmaweb.job import make_job_factory, JobNotFound
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 
 Base = declarative_base()
+
 
 class UUIDType(types.TypeDecorator):
     """ Stores UUID as Unicode string in database"""
@@ -32,6 +34,7 @@ class UUIDType(types.TypeDecorator):
         if value is None:
             return None
         return uuid.UUID(value)
+
 
 class User(Base):
     """User list"""
@@ -50,18 +53,22 @@ class JobMeta(Base):
     """Job metadata"""
     __tablename__ = 'job'
     jobid = Column(UUIDType, primary_key=True)
-    description = Column(Unicode) # Kept in sync with Run.description
+    description = Column(Unicode)  # Kept in sync with Run.description
     parentjobid = Column(UUIDType, ForeignKey('job.jobid'))
-    state = Column(Unicode) # queued/running/ready etc.
+    state = Column(Unicode)  # queued/running/ready etc.
     owner = Column(Unicode, ForeignKey('user.userid'))
-    children = relationship('JobMeta', backref=backref('parent', remote_side=[jobid]))
+    children = relationship('JobMeta',
+                            backref=backref('parent', remote_side=[jobid]))
 
-    def __init__(self, jobid, description='', parentjobid=None, state=None, owner=None):
+    def __init__(self, jobid,
+                 description='', parentjobid=None,
+                 state=None, owner=None):
         self.jobid = jobid
         self.description = description
         self.parentjobid = parentjobid
         self.state = state
         self.owner = owner
+
 
 class RootFactory(object):
     """Context factory which sets default acl"""
@@ -74,14 +81,37 @@ class RootFactory(object):
     def __init__(self, request):
         self.request = request
         self.extjsurl()
+        self.user()
 
     def extjsurl(self):
-        """Adds extjsroot url to request using extjsroot setting"""
-        extjsroot = 'magmaweb:static/'+self.request.registry.settings['extjsroot']
+        """Adds extjsroot url as request.extjsroot
+        Uses 'extjsroot' setting
+        """
+        extjsroot = 'magmaweb:static/'
+        extjsroot = extjsroot + self.request.registry.settings['extjsroot']
         self.request.extjsroot = self.request.static_url(extjsroot)
 
+    def user(self):
+        """Adds :class:User as request.user
+
+        Returns None when there is no authenticatied userid or
+        if user is not found in user db
+        """
+
+        def userid2user(request):
+            userid = unauthenticated_userid(request)
+            if userid is not None:
+                return DBSession().query(User).get(userid)
+            else:
+                return None
+
+        # make request.user property lazy
+        self.request.set_property(userid2user, 'user', reify=True)
+
 class JobIdFactory(RootFactory):
-    """Context factory which creates DataSet as context of request"""
+    """Context factory which creates :class:magmaweb.job.Job
+    as context of request
+    """
     def __init__(self, request):
         super(JobIdFactory, self).__init__(request)
         self.job_factory = make_job_factory(request.registry.settings)
@@ -99,9 +129,11 @@ class JobIdFactory(RootFactory):
             raise HTTPNotFound()
         return job
 
+
 def get_jobs(owner):
     """Retrieve jobs belonging to owner"""
     jobs = []
-    for jobmeta in DBSession().query(JobMeta).filter(JobMeta.owner==owner):
-        jobs.append({'id':str(jobmeta.jobid), "description": jobmeta.description})
+    for jobmeta in DBSession().query(JobMeta).filter(JobMeta.owner == owner):
+        jobs.append({'id': str(jobmeta.jobid),
+                     'description': jobmeta.description})
     return jobs

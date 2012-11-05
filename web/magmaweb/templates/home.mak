@@ -1,30 +1,47 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
-  <title>MAGMa - Homepage</title>
-<link rel="stylesheet" href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
-<link rel="stylesheet" href="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb.css')}" type="text/css"></link>
-<link rel="stylesheet" href="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.8.7.custom.css')}" type="text/css"></link>
-<script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb-libs.js')}"></script>
-<script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb.js')}"></script>
-<script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.8.7.custom.min.js')}"></script>
-<script type="text/javascript" src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/ChemDoodleWeb-sketcher.js')}"></script>
+<title>MAGMa - Ms Annotation based on in silico Generated Metabolites</title>
+<link rel="stylesheet"
+	href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
+<link rel="stylesheet"
+	href="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb.css')}"
+	type="text/css"></link>
+<link rel="stylesheet"
+	href="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.8.7.custom.css')}"
+	type="text/css"></link>
+<script type="text/javascript"
+	src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb-libs.js')}"></script>
+<script type="text/javascript"
+	src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb.js')}"></script>
+<script type="text/javascript"
+	src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.8.7.custom.min.js')}"></script>
+<script type="text/javascript"
+	src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/ChemDoodleWeb-sketcher.js')}"></script>
 <script type="text/javascript" src="${request.extjsroot}/ext-all.js"></script>
 <style type="text/css">
 .x-logo a {
+  font-size: 40px;
+  padding-left: 520px;
+  padding-top: 3px; /* aligns app title with text in logo  */
+  background: url(${request.static_url('magmaweb:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}) no-repeat 5px 4px;
+}
+
+.x-title a {
   font-size: 40px;
   font-weight: bold;
   color: #333;
   text-decoration:none;
   padding-left: 520px;
   padding-top: 3px; /* aligns app title with text in logo  */
-  background: url(${request.static_url('magmaweb:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}) no-repeat 5px 4px;
 }
 
 #welcome h1 {
-  font-size: 200%;
+	font-size: 200%;
+	padding-top: 40px;
+	padding-bottom: 40px;
+	color: #333;
 }
-
 </style>
 <script type="text/javascript">
 if (!window.console) window.console = {};
@@ -116,46 +133,66 @@ Ext.onReady(function() {
       waitMsg: 'Fetching defaults'
   });
 
+  var header = {
+    border: false,
+	region: 'north',
+	layout: {
+	  type: 'hbox',
+	  align: 'middle',
+	  padding: 2
+	},
+	items: [{
+	  xtype: 'buttongroup',
+	  columns: 2,
+	  items: [{
+	    text: 'Help',
+	    tooltip: 'Goto help pages',
+	    disabled: true
+	  }, {
+	    text: 'Upload result',
+	    tooltip: 'Upload a result db for viewing',
+	    url: '${request.route_url('uploaddb')}'
+	  }, {
+	    text: 'Workspace',
+        tooltip: 'My settings and jobs',
+        menu: {
+            items: [{
+                text: 'User settings',
+                href: "${request.route_url('user')}",
+            }, {
+                text: 'Jobs',
+                href: "${request.route_url('jobs')}"
+            }]
+        }
+	  }]
+	}, {
+	  xtype:'tbspacer',
+	  flex:1 // aligns buttongroup right
+	}, {
+	  xtype: 'component',
+	  cls: 'x-title',
+	  html: '<a href="." data-qtip="<b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites">MAGMa</a>'
+	}, {
+	  xtype:'tbspacer',
+	  flex:1 // aligns buttongroup right
+	}, {
+	  xtype: 'component',
+	  cls: 'x-logo',
+	  html: '<a href="http://www.esciencecenter.nl"></a>'
+	}]
+  };
+
   Ext.create('Ext.container.Viewport', {
     layout: 'border',
-    items: [{
-      border: false,
-      region: 'north',
-      layout: {
-        type: 'hbox',
-        align: 'middle',
-        padding: 2
-      },
-      items: [{
-        xtype: 'component',
-        cls: 'x-logo',
-        html: '<a href="${request.route_url('home')}" data-qtip="<b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites">MAGMa</a>'
-      }, {
-        xtype:'tbspacer',
-        flex:1 // aligns buttongroup right
-      }, {
-          xtype: 'buttongroup',
-          columns: 3,
-          items: [{
-            text: 'Help',
-            tooltip: 'Goto help pages',
-            disabled: true
-          },{
-            text: 'Upload result',
-            tooltip: 'Upload a result db for viewing',
-            url: '${request.route_url('uploaddb')}'
-          }]
-        }]
-     },
-     form
-     ]
+    items: [header, form]
   });
+
 });
 </script>
 </head>
 <body>
-<div id="sketcher_content" class="x-hidden">
-<script language="javascript">
+	<div id="sketcher_content" class="x-hidden">
+		<script language="javascript">
 var sketcher = new ChemDoodle.SketcherCanvas(
         'sketcher_canvas', 500, 300,
         '${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/icons/')}',
@@ -164,10 +201,12 @@ sketcher.repaint();
 sketcher.toolbarManager.buttonSave.disable();
 sketcher.toolbarManager.buttonOpen.disable();
 </script>
-</div>
-<div id="welcome" class="x-hidden">
-<h1>Welcome to the <b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites application</h1>
-${userid}
-</div>
+	</div>
+	<div id="welcome" class="x-hidden">
+		<h1>
+			Welcome to the <b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated
+			<b>M</b>et<b>a</b>bolites application
+		</h1>
+	</div>
 </body>
 </html>

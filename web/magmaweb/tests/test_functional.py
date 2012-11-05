@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from webtest import TestApp
 from magmaweb import main
+from magmaweb.user import DBSession, User
 
 
 class FunctionalTests(unittest.TestCase):
@@ -14,23 +15,23 @@ class FunctionalTests(unittest.TestCase):
                          'sqlalchemy.url': 'sqlite:///:memory:'
                          }
         app = main({}, **self.settings)
-
         self.testapp = TestApp(app)
+
+        # Setup owner of job
+        DBSession().add(User('bob', 'Bob Example', 'bob@example.com'))
 
     def tearDown(self):
         import shutil
         shutil.rmtree(self.root_dir)
         del self.testapp
+        DBSession.remove()
 
     def test_home(self):
-        res = self.testapp.get('/', status=200, extra_environ=dict(REMOTE_USER='bob'))
-        self.assertTrue('Homepage' in res.body)
+        env = dict(REMOTE_USER='bob')
+        res = self.testapp.get('/', status=200, extra_environ=env)
+        self.assertTrue('Welcome' in res.body)
 
     def fake_jobid(self):
-        # Setup owner of job
-        from magmaweb.user import DBSession, User
-        DBSession().add(User('bob', 'Bob', 'bob@example.com'))
-
         """ Create job in self.root_dir filled with test db"""
         from magmaweb.job import make_job_factory
         jf = make_job_factory(self.settings)

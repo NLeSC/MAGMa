@@ -242,8 +242,8 @@ Ext.define('Esc.magmaweb.resultsApp', {
     Ext.ComponentQuery.query('component[action=information]')[0].setHandler(function() {
         me.infoWindow.show();
     });
-    Ext.ComponentQuery.query('component[action=restart]')[0].setHandler(function() {
-        window.location = me.urls.home;
-    });
+    Ext.ComponentQuery.query('component[action=restart]')[0].href = this.urls.home;
+    Ext.ComponentQuery.query('component[action=myjobs]')[0].href = this.urls.home+'jobs';
+    Ext.ComponentQuery.query('component[action=usersettings]')[0].href = this.urls.home+'user';
   }
 });

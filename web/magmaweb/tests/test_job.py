@@ -366,7 +366,6 @@ class JobFactoryTestCase(unittest.TestCase):
     def test_fromid_notfoundasdb(self):
         from magmaweb.job import JobNotFound
         jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
-        exc = JobNotFound("Data of job not found", jobid)
         self.factory._getJobMeta = Mock(mu.JobMeta)
 
         with self.assertRaises(JobNotFound) as exc:
@@ -452,10 +451,9 @@ class JobFactoryTestCase(unittest.TestCase):
         # mock/stub private methods which do external calls
         self.factory._makeJobDir = Mock(return_value='/mydir')
         self.factory._copyFile = Mock()
-        self.factory._makeJobSession = Mock(return_value=initTestingDB(dataset=None))
+        db = initTestingDB(dataset=None)
+        self.factory._makeJobSession = Mock(return_value=db)
         self.factory._addJobMeta = Mock()
-
-        dbfile = os.tmpfile()
 
         job = self.factory.fromScratch('bob')
 
@@ -484,7 +482,7 @@ class JobNotFound(unittest.TestCase):
     def test_it(self):
         from magmaweb.job import JobNotFound
         jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
-        e = JobNotFound('Job not found',jobid)
+        e = JobNotFound('Job not found', jobid)
         self.assertEqual(e.jobid, jobid)
         self.assertEqual(e.message, 'Job not found')
 
@@ -493,11 +491,12 @@ class JobTestCase(unittest.TestCase):
     def setUp(self):
         import tempfile
 
+        self.parentjobid = uuid.UUID('22222222-2222-2222-2222-222222222222')
         self.jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
         self.meta = mu.JobMeta(jobid=self.jobid,
                             description="My desc",
                             state='STOPPED',
-                            parentjobid=uuid.UUID('22222222-2222-2222-2222-222222222222'),
+                            parentjobid=self.parentjobid,
                             owner='bob')
         self.db = Mock(JobDb)
         self.jobdir = tempfile.mkdtemp()
@@ -515,10 +514,10 @@ class JobTestCase(unittest.TestCase):
         self.assertEqual(self.job.dir, self.jobdir)
 
     def test_id(self):
-        self.assertEqual(self.job.id, uuid.UUID('11111111-1111-1111-1111-111111111111'))
+        self.assertEqual(self.job.id, self.jobid)
 
     def test_name(self):
-        self.assertEqual(self.job.__name__, '11111111-1111-1111-1111-111111111111')
+        self.assertEqual(self.job.__name__, str(self.jobid))
 
     def test_get_description(self):
         self.assertEqual(self.job.description, 'My desc')
@@ -562,12 +561,13 @@ class JobTestCase(unittest.TestCase):
         self.assertEquals(self.job.state, 'RUNNING')
 
     def test_parent(self):
-        self.assertEquals(self.job.parent, uuid.UUID('22222222-2222-2222-2222-222222222222'))
+        self.assertEquals(self.job.parent, self.parentjobid)
 
     def test_set_parent(self):
-        self.job.parent = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
+        id = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
+        self.job.parent = id
 
-        self.assertEquals(self.job.parent, uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790'))
+        self.assertEquals(self.job.parent, id)
 
 
 class JobDbTestCaseAbstract(unittest.TestCase):
@@ -1588,7 +1588,6 @@ class JobQueryFileTestCase(unittest.TestCase):
 
 class JobQueryActionTestCase(unittest.TestCase):
     def setUp(self):
-        import uuid
         import tempfile
         self.jobid = uuid.uuid1()
         self.jobdir = tempfile.mkdtemp()

@@ -4,7 +4,7 @@ from pyramid import testing
 from mock import Mock, patch
 from magmaweb.rpc import RpcViews
 from magmaweb.job import JobFactory, Job, JobDb, JobQuery
-from magmaweb.user import JobMeta
+from magmaweb.user import JobMeta, User
 
 class RpcViewsTestCase(unittest.TestCase):
     def setUp(self):
@@ -39,10 +39,9 @@ class RpcViewsTestCase(unittest.TestCase):
         self.assertEqual(request, rpc.request)
         self.assertEqual(self.job, rpc.job)
 
-    @patch('magmaweb.rpc.unauthenticated_userid')
-    def test_new_job(self, uu):
-        uu.return_value = 'bob'
+    def test_new_job(self):
         request = testing.DummyRequest()
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
         parent_job = Mock(Job)
         rpc = RpcViews(parent_job, request)
         rpc.job_factory.cloneJob = Mock(return_value=self.job)
