@@ -42,6 +42,7 @@ class User(Base):
     userid = Column(Unicode, primary_key=True)
     displayname = Column(Unicode)
     email = Column(Unicode)
+    jobs = relationship("JobMeta", order_by="JobMeta.jobid")
 
     def __init__(self, userid, displayname, email):
         self.userid = userid
@@ -128,12 +129,3 @@ class JobIdFactory(RootFactory):
             # TODO to fetch job state job's db can be absent
             raise HTTPNotFound()
         return job
-
-
-def get_jobs(owner):
-    """Retrieve jobs belonging to owner"""
-    jobs = []
-    for jobmeta in DBSession().query(JobMeta).filter(JobMeta.owner == owner):
-        jobs.append({'id': str(jobmeta.jobid),
-                     'description': jobmeta.description})
-    return jobs

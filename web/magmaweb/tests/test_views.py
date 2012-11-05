@@ -3,7 +3,7 @@ from pyramid import testing
 from mock import Mock, patch
 from magmaweb.views import Views, JobViews
 from magmaweb.job import JobFactory, Job, JobDb
-from magmaweb.user import User
+from magmaweb.user import User, JobMeta
 
 
 class AbstractViewsTestCase(unittest.TestCase):
@@ -123,18 +123,20 @@ class ViewsTestCase(AbstractViewsTestCase):
                                         ))
         has_permission.assert_called_with('run', job, request)
 
-    @patch('magmaweb.views.get_jobs')
-    def test_jobs(self, get_jobs):
-        jobs = [{'id':12345, 'description': 'My job'}]
-        get_jobs.return_value = jobs
+    def test_jobs(self):
+        import uuid
         request = testing.DummyRequest()
         request.user = User('bob', 'Bob Example', 'bob@example.com')
+        jobs = [JobMeta(uuid.UUID('11111111-1111-1111-1111-111111111111'),
+                        'My job', 'bob')]
+        request.user.jobs = jobs
         views = Views(request)
 
         response = views.jobs()
 
-        get_jobs.assert_called_with('bob')
-        self.assertEqual(response, {'jobs': jobs})
+        expected_jobs = [{'id':'11111111-1111-1111-1111-111111111111',
+                          'description': 'My job'}]
+        self.assertEqual(response, {'jobs': expected_jobs})
 
     def test_user(self):
         request = testing.DummyRequest()
