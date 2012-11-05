@@ -1,6 +1,6 @@
 import unittest
 import uuid
-from mock import Mock
+from mock import Mock, patch
 from sqlalchemy import create_engine
 from pyramid import testing
 from pyramid.httpexceptions import HTTPNotFound
@@ -39,6 +39,32 @@ class TestRootFactory(unittest.TestCase):
         rf = user.RootFactory(self.request)
 
         self.assertEqual(rf.request.extjsroot, 'http://example.com/static/extjsroot')
+
+    def test_user_nologin(self):
+        rf = user.RootFactory(self.request)
+
+        self.assertIsNone(rf.request.user)
+
+    @patch('magmaweb.user.unauthenticated_userid')
+    def test_user_notindb(self, uau):
+        uau.return_value = 'bob'
+        init_user_db()
+
+        rf = user.RootFactory(self.request)
+
+        self.assertIsNone(rf.request.user)
+
+    @patch('magmaweb.user.unauthenticated_userid')
+    def test_user(self, uau):
+        uau.return_value = 'bob'
+        init_user_db()
+        u = user.User('bob', 'Bobs name', 'bob@example.com')
+        user.DBSession().add(u)
+
+        rf = user.RootFactory(self.request)
+
+        self.assertEqual(rf.request.user, u)
+
 
 class TestJobIdFactory(unittest.TestCase):
     def setUp(self):

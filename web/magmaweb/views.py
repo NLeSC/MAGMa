@@ -3,7 +3,7 @@ from pyramid.response import Response
 from pyramid.view import view_config
 from pyramid.view import view_defaults
 from pyramid.httpexceptions import HTTPNotFound, HTTPFound
-from pyramid.security import unauthenticated_userid
+from pyramid.security import has_permission
 from magmaweb.job import make_job_factory
 from magmaweb.job import Job, JobQuery
 from magmaweb.user import get_jobs
@@ -17,7 +17,7 @@ class Views(object):
     @view_config(route_name='home', renderer='home.mak', request_method='GET', permission='view')
     def home(self):
         """Returns homepage on GET. """
-        return {'userid':unauthenticated_userid(self.request)}
+        return {}
 
     @view_config(route_name='defaults.json', renderer="json", permission='view')
     def defaults(self):
@@ -31,7 +31,7 @@ class Views(object):
         and redirects to job results page"""
         if (self.request.method == 'POST'):
             dbfile = self.request.POST['db_file'].file
-            owner = unauthenticated_userid(self.request)
+            owner = self.request.user.userid
             job = self.job_factory.fromDb(dbfile, owner)
             results = self.request.route_url('results', jobid=job.id)
             return HTTPFound(location=results)
@@ -41,14 +41,20 @@ class Views(object):
     @view_config(route_name='jobfromscratch', permission='run')
     def jobfromscratch(self):
         """ Initializes a new job and redirects to its results page"""
-        owner = unauthenticated_userid(self.request)
+        owner = self.request.user.userid
         job = self.job_factory.fromScratch(owner)
         results = self.request.route_url('results', jobid=job.id)
         return HTTPFound(location=results)
 
     @view_config(route_name='jobs', permission='view', renderer='jobs.mak')
     def jobs(self):
-        return {'jobs': get_jobs(unauthenticated_userid(self.request)) }
+        owner = self.request.user.userid
+        return {'jobs': get_jobs(owner)}
+
+    @view_config(route_name='user', permission='view', renderer='user.mak')
+    def user(self):
+        return {}
+
 
 @view_defaults(context=Job)
 class JobViews(object):
@@ -80,10 +86,13 @@ class JobViews(object):
     def results(self):
         """Returns results page"""
         db = self.job.db
+        # determine if Run buttons should be shown
+        canRun = has_permission('run', self.job, self.request)
         return dict(
                     run=db.runInfo(),
                     maxmslevel=db.maxMSLevel(),
-                    jobid=self.job.id
+                    jobid=self.job.id,
+                    canRun=bool(canRun)  # coerce pyramid.security.Allowed|Denied to boolean
                     )
 
     @view_config(route_name='metabolites.json', renderer='json', permission='view')

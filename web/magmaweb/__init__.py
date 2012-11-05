@@ -29,7 +29,7 @@ def main(global_config, **settings):
 
     # JobFactory + traverse
     def add_job_route(name, pattern):
-        config.add_route(name,pattern, traverse='/{jobid}', factory=JobIdFactory)
+        config.add_route(name, pattern, traverse='/{jobid}', factory=JobIdFactory)
 
     add_job_route('results','/results/{jobid}') # my job
     add_job_route('metabolites.json', '/results/{jobid}/metabolites.json') # my job

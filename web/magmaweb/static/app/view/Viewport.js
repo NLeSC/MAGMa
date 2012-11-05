@@ -21,7 +21,7 @@ Ext.define('Esc.magmaweb.view.Viewport', {
           },
           items: [{
               xtype: 'buttongroup',
-              columns: 2,
+              columns: 3,
               items: [{
                   text: 'Restart',
                   action: 'restart',
@@ -40,6 +40,20 @@ Ext.define('Esc.magmaweb.view.Viewport', {
                   text: 'Information',
                   tooltip: 'Information about input parameters',
                   action: 'information'
+              },{
+              	text: 'Workspace',
+              	tooltip: 'My settings and jobs',
+              	menu: {
+              		items: [{
+              		    text: 'User settings',
+              		    tooltip: 'My user settings',
+              		    action: 'usersettings'
+              		}, {
+              			text: 'Jobs',
+              			tooltip: 'List of my jobs',
+              			action: 'myjobs'
+              		}]
+              	}
               }]
           }, {
             xtype:'tbspacer',
@@ -54,7 +68,7 @@ Ext.define('Esc.magmaweb.view.Viewport', {
           }, {
             xtype: 'component',
             cls: 'x-logo',
-            html: '<a href="http://www.esciencecenter.nl"></a>'              
+            html: '<a href="http://www.esciencecenter.nl"></a>'
           }]
       }, {
           // master side

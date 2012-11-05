@@ -164,12 +164,16 @@ Ext.Loader.setConfig({
 <script type="text/javascript">
 
 Ext.require('Esc.magmaweb.resultsApp');
+<%!
+import json
+%>
 
 Ext.onReady(function() {
     Ext.create('Esc.magmaweb.resultsApp', {
       appFolder: "${request.static_url('magmaweb:static/app')}",
       maxmslevel: ${maxmslevel},
       jobid: '${jobid}',
+      canRun: ${json.dumps(canRun)|n},
       urls: {
         home: '${request.route_url('home')}',
         fragments: '${request.application_url}/results/${jobid}/fragments/{0}/{1}.json',

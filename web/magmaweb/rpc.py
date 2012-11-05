@@ -2,7 +2,6 @@ import urllib2
 import json
 from pyramid.view import view_config, view_defaults
 from pyramid.httpexceptions import HTTPInternalServerError
-from pyramid.security import unauthenticated_userid
 import colander
 from magmaweb.job import make_job_factory
 
@@ -17,7 +16,7 @@ class RpcViews(object):
 
     def new_job(self):
         """Returns clone of job of current request"""
-        owner = unauthenticated_userid(self.request)
+        owner = self.request.user.userid
         job = self.job_factory.cloneJob(self.job, owner)
         return job
 
@@ -55,8 +54,9 @@ class RpcViews(object):
         Annotation is performed if current job has structures
         """
         job = self.new_job()
+        has_metabolites = job.db.metabolitesTotalCount() > 0
         jobquery = job.jobquery().add_ms_data(self.request.POST,
-                                              job.db.metabolitesTotalCount() > 0)
+                                              has_metabolites)
         self.submit_query(jobquery)
         return {'success': True, 'jobid': str(job.id)}
 
