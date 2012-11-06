@@ -6,6 +6,7 @@ from pyramid.httpexceptions import HTTPNotFound, HTTPFound
 from pyramid.security import has_permission
 from magmaweb.job import make_job_factory
 from magmaweb.job import Job, JobQuery
+from magmaweb.user import status_url
 
 
 class Views(object):
@@ -29,7 +30,8 @@ class Views(object):
         owner = self.request.user.userid
         job = self.job_factory.fromScratch(owner)
         jobquery = job.jobquery().allinone(self.request.POST)
-        self.job_factory.submitQuery(jobquery)
+        status_callback = status_url(jobquery.id, self.request)
+        self.job_factory.submitQuery(jobquery, status_callback)
         return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='uploaddb', renderer='uploaddb.mak', permission='run')
@@ -76,7 +78,8 @@ class JobViews(object):
         self.job = job
 
     @view_config(route_name='status', renderer='status.mak', permission='run')
-    @view_config(route_name='status.json', renderer='json', permission='run')
+    @view_config(route_name='status.json', renderer='json',
+                 request_method='GET', permission='run')
     def job_status(self):
         """Returns status of a job
 
@@ -93,6 +96,16 @@ class JobViews(object):
         jobid = self.job.id
         jobstate = self.job.state
         return dict(status=jobstate, jobid=jobid)
+
+    @view_config(route_name='status.json', renderer='json',
+                 request_method='PUT', permission='monitor')
+    def set_job_status(self):
+        """Set job status
+
+        'monitor' permission is given to jobmanager in :attr:magmaweb.user.RootFactory.__acl__
+        """
+        self.job.state = self.request.json_body['status']
+        return self.job_status()
 
     @view_config(route_name='results', renderer='results.mak', permission='view')
     def results(self):

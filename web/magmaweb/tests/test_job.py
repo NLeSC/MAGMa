@@ -380,10 +380,12 @@ class JobFactoryTestCase(unittest.TestCase):
         self.factory.script_fn = 'script.sh'
         cmd = "magma add_structures -t smiles structures.dat results.db\n"
         jobquery = JobQuery(job.id, job.dir, cmd, ['structures.dat'])
+        callback_url = 'http://jobmanager:somepassword@example.com/status/'
+        callback_url += str(job.id) + '.json'
 
         self.factory.submitJob2Manager = Mock()
 
-        jobid = self.factory.submitQuery(jobquery)
+        jobid = self.factory.submitQuery(jobquery, callback_url)
 
         self.assertEqual(jobid, jobquery.id)
         job_script_fn = os.path.join(jobquery.dir, self.factory.script_fn)
@@ -404,7 +406,8 @@ class JobFactoryTestCase(unittest.TestCase):
                             "stderr": "stderr.txt",
                             "stdout": "stdout.txt",
                             "time_max": self.factory.time_max,
-                            'arguments': [self.factory.script_fn]
+                            'arguments': [self.factory.script_fn],
+                            'status_callback': callback_url
                             }
         self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
 
@@ -413,8 +416,10 @@ class JobFactoryTestCase(unittest.TestCase):
         self.factory.submitJob2Manager = Mock()
         job = self.factory.fromScratch('bob')
         jobquery = JobQuery(job.id, job.dir, "", [])
+        callback_url = 'http://jobmanager:somepassword@example.com/status/'
+        callback_url += str(job.id) + '.json'
 
-        jobid = self.factory.submitQuery(jobquery)
+        jobid = self.factory.submitQuery(jobquery, callback_url)
 
         self.assertEqual(jobid, jobquery.id)
         jobmanager_query = {
@@ -430,7 +435,8 @@ class JobFactoryTestCase(unittest.TestCase):
                             "stderr": "stderr.txt",
                             "stdout": "stdout.txt",
                             "time_max": self.factory.time_max,
-                            'arguments': [self.factory.script_fn]
+                            'arguments': [self.factory.script_fn],
+                            'status_callback': callback_url
                             }
         self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
 
