@@ -3,9 +3,10 @@ import json
 from pyramid.view import view_config, view_defaults
 from pyramid.httpexceptions import HTTPInternalServerError
 import colander
-from magmaweb.job import make_job_factory
+from magmaweb.job import make_job_factory, Job
 
-@view_defaults(permission='run')
+
+@view_defaults(permission='run', context=Job)
 class RpcViews(object):
     """Rpc endpoints"""
     def __init__(self, job, request):
@@ -93,19 +94,6 @@ class RpcViews(object):
         """
         job = self.new_job()
         jobquery = job.jobquery().annotate(self.request.POST)
-        self.submit_query(jobquery)
-        return {'success': True, 'jobid': str(job.id)}
-
-    @view_config(route_name='rpc.allinone', renderer='jsonhtml')
-    @view_config(route_name='home', renderer='jsonhtml', request_method='POST')
-    def allinone(self):
-        """Create a copy of current job or new job and submit a allinone job
-
-        Adds structures and ms data, then metabolizes all structures
-        and annotates structures/peaks
-        """
-        job = self.new_job()
-        jobquery = job.jobquery().allinone(self.request.POST)
         self.submit_query(jobquery)
         return {'success': True, 'jobid': str(job.id)}
 

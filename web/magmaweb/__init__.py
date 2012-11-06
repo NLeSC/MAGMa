@@ -49,7 +49,6 @@ def main(global_config, **settings):
     add_job_route('rpc.metabolize', '/rpc/{jobid}/metabolize') # my job + calc
     add_job_route('rpc.metabolize_one', '/rpc/{jobid}/metabolize_one') # my job + calc
     add_job_route('rpc.annotate', '/rpc/{jobid}/annotate') # my job + calc
-    add_job_route('rpc.allinone', '/rpc/{jobid}/allinone') # my job + calc
     add_job_route('rpc.set_description', '/rpc/{jobid}/set_description') # my job + calc
     add_job_route('rpc.assign', '/rpc/{jobid}/assign') # my job + assigner
     add_job_route('rpc.unassign', '/rpc/{jobid}/unassign') # my job + assigner
