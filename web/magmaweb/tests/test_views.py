@@ -10,6 +10,7 @@ class AbstractViewsTestCase(unittest.TestCase):
     def setUp(self):
         self.settings = {
                          'jobfactory.root_dir': '/somedir',
+                         'jobmanager.callback_password': 'somepassword'
                          }
         self.config = testing.setUp(settings=self.settings)
 
@@ -19,6 +20,7 @@ class AbstractViewsTestCase(unittest.TestCase):
     def fake_job(self):
         job = Mock(Job)
         job.id = 'foo'
+        job.dir = '/somedir'
         job.db = Mock(JobDb)
         job.db.runInfo.return_value = 'bla'
         job.db.maxMSLevel.return_value = 3
@@ -40,11 +42,13 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(response, {})
 
     def test_allinone(self):
+        self.config.add_route('status.json', '/status/{jobid}.json')
         post = {'key': 'value'}
         request = testing.DummyRequest(post=post)
         request.user = User('bob', 'Bob Example', 'bob@example.com')
         job = self.fake_job()
-        jobquery = Mock(JobQuery)
+        jobquery = JobQuery(job.id, job.dir)
+        jobquery.allinone = Mock(return_value=jobquery)
         job.jobquery.return_value = jobquery
         views = Views(request)
         views.job_factory = Mock(JobFactory)
@@ -54,7 +58,10 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         views.job_factory.fromScratch.assert_called_with('bob')
         jobquery.allinone.assert_called_with(post)
-        views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
+        callback_url = 'http://jobmanager:somepassword@example.com/status/'
+        callback_url += str(job.id) + '.json'
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(),
+                                                         callback_url)
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
 
     def test_uploaddb_get(self):
@@ -199,6 +206,21 @@ class JobViewsTestCase(AbstractViewsTestCase):
         views = JobViews(job, request)
 
         response = views.job_status()
+
+        self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
+
+    def test_set_jobstatus(self):
+        request = testing.DummyRequest()
+        request.json_body = {'status': 'RUNNING'}
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'PENDING'
+        views = JobViews(job, request)
+
+        # TODO called by jobmanager
+        # during submitQuery add callback url as attribute
+        # callback url contains job id and credentials
+        response = views.set_job_status()
 
         self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
 

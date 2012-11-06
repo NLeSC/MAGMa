@@ -30,6 +30,9 @@ jobfactory.tarball = /home/stefanv/workspace/magmajobmanager/Magma-1.1.tar.gz
 # To submit job to local installation of MAGMaJob
 jobfactory.init_script = . /home/stefanv/workspace/MAGMaJob/env2/bin/activate
 
+# Jobmanager service will submit the status of jobs back to magma webapp
+# As magma is protected by basic auth, it needs a password
+jobmanager.callback_password = somepassword
 
 [server:main]
 use = egg:waitress#main

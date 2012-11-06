@@ -4,6 +4,7 @@ from pyramid.view import view_config, view_defaults
 from pyramid.httpexceptions import HTTPInternalServerError
 import colander
 from magmaweb.job import make_job_factory, Job
+from magmaweb.user import status_url
 
 
 @view_defaults(permission='run', context=Job)
@@ -27,8 +28,9 @@ class RpcViews(object):
         Raises a HTTPInternalServerError exception when
         job factory fails to communicate with job manager
         """
+        status_callback = status_url(query.id, self.request)
         try:
-            self.job_factory.submitQuery(query)
+            self.job_factory.submitQuery(query, status_callback)
         except urllib2.URLError:
             body = {'success': False, 'msg': 'Unable to submit query'}
             raise HTTPInternalServerError(body=json.dumps(body))
