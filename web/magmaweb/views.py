@@ -24,6 +24,14 @@ class Views(object):
         return {'success': True,
                 'data': JobQuery.defaults()}
 
+    @view_config(route_name='home', renderer='jsonhtml', request_method='POST')
+    def allinone(self):
+        owner = self.request.user.userid
+        job = self.job_factory.fromScratch(owner)
+        jobquery = job.jobquery().allinone(self.request.POST)
+        self.job_factory.submitQuery(jobquery)
+        return {'success': True, 'jobid': str(job.id)}
+
     @view_config(route_name='uploaddb', renderer='uploaddb.mak', permission='run')
     def uploaddb(self):
         """Upload a sqlitedb as ``db_file`` param in POST request
@@ -490,4 +498,3 @@ class JobViews(object):
             if r.max_broken_bonds:
                 runinfo['max_broken_bonds'] = r.max_broken_bonds
             return {'success': True, 'data': runinfo}
-

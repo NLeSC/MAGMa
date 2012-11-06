@@ -2,7 +2,7 @@ import unittest
 from pyramid import testing
 from mock import Mock, patch
 from magmaweb.views import Views, JobViews
-from magmaweb.job import JobFactory, Job, JobDb
+from magmaweb.job import JobFactory, Job, JobDb, JobQuery
 from magmaweb.user import User, JobMeta
 
 
@@ -38,6 +38,24 @@ class ViewsTestCase(AbstractViewsTestCase):
         response = views.home()
 
         self.assertEqual(response, {})
+
+    def test_allinone(self):
+        post = {'key': 'value'}
+        request = testing.DummyRequest(post=post)
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+        job = self.fake_job()
+        jobquery = Mock(JobQuery)
+        job.jobquery.return_value = jobquery
+        views = Views(request)
+        views.job_factory = Mock(JobFactory)
+        views.job_factory.fromScratch = Mock(return_value=job)
+
+        response = views.allinone()
+
+        views.job_factory.fromScratch.assert_called_with('bob')
+        jobquery.allinone.assert_called_with(post)
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
+        self.assertEqual(response, {'success': True, 'jobid': 'foo'})
 
     def test_uploaddb_get(self):
         request = testing.DummyRequest()

@@ -110,17 +110,6 @@ class RpcViewsTestCase(unittest.TestCase):
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
-    def test_allinone(self):
-        self.jobquery.allinone.return_value = self.jq
-
-        response = self.rpc.allinone()
-
-        self.jobquery.allinone.assert_called_with(self.post)
-        self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with()
-        self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
-        self.assertEquals(response, {'success': True, 'jobid': self.jobid})
-
     def test_set_description(self):
         self.rpc.request.POST = {'description': 'My description'}
 
