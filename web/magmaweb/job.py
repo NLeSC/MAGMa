@@ -677,12 +677,10 @@ class JobFactory(object):
         logger.info(request.data)
         return urllib2.urlopen(request)
 
-    def submitQuery(self, query, status_callback):
+    def submitQuery(self, query):
         """Writes job script to job dir and submits job to job manager
 
         query is a :class:`JobQuery` object
-
-        status_callback is url that the job status must be PUT to
 
         Returns job identifier
         """
@@ -693,6 +691,7 @@ class JobFactory(object):
         script.write("\n")  # hard to add newline in ini file so add it here
         script.write(query.script.format(db=self.db_fn, magma='magma'))
         script.close()
+
         body = {
                'jobdir': query.dir + '/',
                'executable': '/bin/sh',
@@ -701,8 +700,7 @@ class JobFactory(object):
                'stderr': 'stderr.txt',
                'stdout': 'stdout.txt',
                'time_max': self.time_max,
-               'arguments': [self.script_fn],
-               'status_callback': status_callback
+               'arguments': [self.script_fn]
                }
         body['prestaged'].extend(query.prestaged)
 

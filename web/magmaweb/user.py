@@ -1,8 +1,8 @@
 import uuid
-import urlparse
 from sqlalchemy import Column
 from sqlalchemy import Unicode
 from sqlalchemy import ForeignKey
+import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm import (
@@ -38,7 +38,7 @@ class UUIDType(types.TypeDecorator):
 
 class User(Base):
     """User list"""
-    __tablename__ = 'user'
+    __tablename__= 'user'
     userid = Column(Unicode, primary_key=True)
     displayname = Column(Unicode)
     email = Column(Unicode)
@@ -76,9 +76,6 @@ class RootFactory(object):
     __name__ = ''
     __acl__ = [
         (Allow, Authenticated, 'view'),
-        # jobmanager can perform monitor actions
-        # like change job status on all jobs
-        (Allow, 'jobmanager', 'monitor'),
         (Deny, Everyone, ALL_PERMISSIONS)
     ]
 
@@ -112,7 +109,6 @@ class RootFactory(object):
         # make request.user property lazy
         self.request.set_property(userid2user, 'user', reify=True)
 
-
 class JobIdFactory(RootFactory):
     """Context factory which creates :class:magmaweb.job.Job
     as context of request
@@ -133,13 +129,3 @@ class JobIdFactory(RootFactory):
             # TODO to fetch job state job's db can be absent
             raise HTTPNotFound()
         return job
-
-
-def status_url(jobid, request):
-    url = request.route_url('status.json', jobid=jobid)
-    # inject username and password of jobmanager
-    username = 'jobmanager'
-    password = request.registry.settings['jobmanager.callback_password']
-    parts = list(urlparse.urlparse(url))
-    parts[1] = '{}:{}@{}'.format(username, password, parts[1])
-    return urlparse.urlunparse(parts)

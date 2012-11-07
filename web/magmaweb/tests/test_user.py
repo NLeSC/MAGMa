@@ -7,7 +7,6 @@ from pyramid.httpexceptions import HTTPNotFound
 from pyramid.security import Allow, Deny, Everyone, ALL_PERMISSIONS, Authenticated
 from magmaweb import user
 
-
 def init_user_db():
     engine = create_engine('sqlite:///:memory:')
     user.DBSession.configure(bind=engine)
@@ -32,7 +31,6 @@ class TestRootFactory(unittest.TestCase):
 
         expected_acl = [
             (Allow, Authenticated, 'view'),
-            (Allow, 'jobmanager', 'monitor'),
             (Deny, Everyone, ALL_PERMISSIONS)
         ]
         self.assertEqual(expected_acl, rf.__acl__)
@@ -114,16 +112,14 @@ class TestJobIdFactory(unittest.TestCase):
         with self.assertRaises(HTTPNotFound):
             jif[str(jobid)]
 
-
 class TestUtils(unittest.TestCase):
     def setUp(self):
-        self.config = testing.setUp()
         init_user_db()
         self.session = user.DBSession()
         u = user.User('me', 'My', 'myself')
         self.session.add(u)
-        self.job_id = uuid.UUID('11111111-1111-1111-1111-111111111111')
-        j = user.JobMeta(self.job_id, 'My job', owner='me')
+        job_id = uuid.UUID('11111111-1111-1111-1111-111111111111')
+        j = user.JobMeta(job_id, 'My job', owner='me')
         self.session.add(j)
 
     def tearDown(self):
@@ -133,14 +129,3 @@ class TestUtils(unittest.TestCase):
         u = self.session.query(user.User).get('me')
         jobs = u.jobs
         self.assertEqual(jobs[0].description, 'My job')
-
-    def test_status_url(self):
-        self.config.add_route('status.json', '/status/{jobid}.json')
-        request = testing.DummyRequest()
-        request.registry.settings = {
-            'jobmanager.callback_password': 'somepassword'
-        }
-        url = user.status_url(self.job_id, request)
-        expected_url = 'http://jobmanager:somepassword@example.com/status/'
-        expected_url += str(self.job_id) + '.json'
-        self.assertEqual(url, expected_url)
