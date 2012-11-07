@@ -3,6 +3,7 @@
 # -- O-glucuronidation --
 [C;!$(C1CCOCC1);!$(C1COCCC1);!$(C(O)=O):1][OH1:2]>>[C:1][O:2]C1OC(C(O)=O)C(O)C(O)C1O	0.102502	O-glucuronidation_(aliphatic_hydroxyl)	# 213/2078
 [c:1][OH1:2]>>[c:1][O:2]C1OC(C(O)=O)C(O)C(O)C1O	0.248155	O-glucuronidation_(aromatic_hydroxyl)	# 269/1084
+[N:1][OH1:2]>>[N:1][O:2]C1OC(C(O)=O)C(O)C(O)C1O	0.212766	O-glucuronidation_(N-hydroxyl)	# 10/47
 [C:1][C;!$(C(O)(=O)C1OCCCC1):2](=O)[OH1]>>[C:1][C:2](=O)OC1OC(C(O)=O)C(O)C(O)C1O	0.160102	O-glucuronidation_(aliphatic_carboxyl)	# 126/787
 [c:1][C:2](=O)[OH1]>>[c:1][C:2](=O)OC1OC(C(O)=O)C(O)C(O)C1O	0.295302	O-glucuronidation_(aromatic_carboxyl)	# 44/149
 
