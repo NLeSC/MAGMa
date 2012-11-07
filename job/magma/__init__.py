@@ -634,23 +634,33 @@ class AnnotateEngine(object):
         # First a dictionary is created with candidate molecules based on all level1 peaks
         # In this way duplicates originating from repeated detection of the same component
         # are removed before attempting to add the candidates to the database
+        masses=[]
         for scan in self.scans:
             for peak in scan.peaks:
                 mass=peak.mz-self.ionisation_mode*Hmass
                 if not ((not self.use_all_peaks) and peak.childscan==None):
-                    result = c.execute('SELECT * FROM molecules WHERE refscore > 2 AND mim BETWEEN ? AND ?' , (mass/self.precision,mass*self.precision))
-                    # result = c.execute('SELECT * FROM connectivities JOIN isomers ON isomers.cid = (SELECT cid FROM isomers WHERE isomers.conn_id = connectivities.id LIMIT 1) WHERE connectivities.mim BETWEEN ? AND ?', 
-                    #                             (mass/self.precision,mass*self.precision))
-                    for (id,cid,mim,molblock,inchikey,molform,name,refscore) in result:
-                        db_candidates[id]={'mim':mim,
-                                           'mol':zlib.decompress(molblock),
-                                           'inchikey':inchikey,
-                                           'molform':molform,
-                                           'cid':cid,
-                                           'name':name,
-                                           'refscore':refscore
-                                           }
-                    print str(scan.scanid)+','+str(peak.mz)+' --> '+str(len(db_candidates))+' candidates'
+                    masses.append(mass)
+        masses.sort()
+        queries=[[0,0]]
+        for mass in masses:
+            ql,qh=mass/self.precision,mass*self.precision
+            if queries[-1][0] < ql < queries[-1][1]:
+                queries[-1][1]=qh
+            else:
+                queries.append([ql,qh])
+        for ql,qh in queries:
+            result = c.execute('SELECT * FROM molecules WHERE refscore > 2 AND mim BETWEEN ? AND ?' , (ql,qh))
+            # result = c.execute('SELECT * FROM connectivities JOIN isomers ON isomers.cid = (SELECT cid FROM isomers WHERE isomers.conn_id = connectivities.id LIMIT 1) WHERE connectivities.mim BETWEEN ? AND ?', 
+            #                             (mass/self.precision,mass*self.precision))
+            for (id,cid,mim,molblock,inchikey,molform,name,refscore) in result:
+                db_candidates[id]={'mim':mim,
+                                   'mol':zlib.decompress(molblock),
+                                   'inchikey':inchikey,
+                                   'molform':molform,
+                                   'cid':cid,
+                                   'name':name,
+                                   'refscore':refscore
+                                   }
         return db_candidates
 
     def search_structures(self,metids=None,ncpus=1):
