@@ -50,8 +50,9 @@ class MagmaCommand(object):
         sc = subparsers.add_parser("add_structures", help=self.add_structures.__doc__, description=self.add_structures.__doc__)
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # add_structures arguments
-        sc.add_argument('structures', type=argparse.FileType('rb'), help="File with smiles used as structures")
         sc.add_argument('-t', '--structure_format', help="Structure input type (default: %(default)s)", default="smiles", choices=["smiles", "sdf"])
+        sc.add_argument('--mass_filter', help="Filter input structures on maximum monoisotopic mass (default: %(default)s)", default=9999,type=int)
+        sc.add_argument('structures', type=argparse.FileType('rb'), help="File with smiles used as structures")
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.add_structures)
 
@@ -151,14 +152,14 @@ class MagmaCommand(object):
         metids=set([])
         if args.structure_format == 'smiles':
             for mol in self.smiles2mols(args.structures):
-                metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 'PARENT', 1))
+                metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 'PARENT', 1, args.mass_filter))
         elif args.structure_format == 'sdf':
             for mol in Chem.SDMolSupplier(args.structures.name):
                 try:
                     rs=mol.GetProp('ReactionSequence')
                     if rs!="":
                         rs=rs+"\n"
-                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0,rs, 1))
+                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0,rs, 1, args.mass_filter))
                 except:
                     print sys.exc_info()
         magma_session.commit()

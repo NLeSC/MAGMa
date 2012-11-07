@@ -235,13 +235,15 @@ class StructureEngine(object):
               (atom.GetNumImplicitHs()+atom.GetNumExplicitHs()))
         return mim
 
-    def add_structure(self,molblock,name,prob,level,sequence,isquery,mim=None,inchikey=None,molform=None,reference=None):
+    def add_structure(self,molblock,name,prob,level,sequence,isquery,mass_filter=9999,mim=None,inchikey=None,molform=None,reference=None):
         mol=Chem.MolFromMolBlock(molblock)
         if inchikey == None:
             inchikey=Chem.MolToInchiKey(mol)[:14]
             # inchikey=Chem.MolToSmiles(mol)
         if mim == None or molform == None:
             mim,molform=Chem.GetFormulaProps(mol)
+        if mim > mass_filter:
+            return
         # mim=self.calc_mim(mol)
         metab=Metabolite(
             mol=unicode(molblock, 'utf-8', 'xmlcharrefreplace'),
