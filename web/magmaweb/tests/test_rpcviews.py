@@ -1,25 +1,21 @@
 import unittest
 import uuid
 from pyramid import testing
-from mock import Mock
+from mock import Mock, patch
 from magmaweb.rpc import RpcViews
 from magmaweb.job import JobFactory, Job, JobDb, JobQuery
 from magmaweb.user import JobMeta, User
-
 
 class RpcViewsTestCase(unittest.TestCase):
     def setUp(self):
         self.settings = {
                          'jobfactory.root_dir': '/somedir',
-                         'jobmanager.callback_password': 'somepassword'
                          }
         self.config = testing.setUp(settings=self.settings)
-        self.config.add_route('status.json', '/status/{jobid}.json')
 
         self.jobid = '3ad25048-26f6-11e1-851e-00012e260790'
         self.post = {'key': 'value'}
         self.jq = Mock(JobQuery)
-        self.jq.id = self.jobid
         self.jobquery = Mock(JobQuery)
         jobmeta = JobMeta(uuid.UUID(self.jobid), owner='bob')
         self.job = Job(jobmeta, '/mydir', Mock(JobDb))
@@ -30,8 +26,6 @@ class RpcViewsTestCase(unittest.TestCase):
         self.rpc = RpcViews(self.job, testing.DummyRequest(post=self.post))
         self.rpc.new_job = Mock(return_value=self.job)
         self.rpc.job_factory.submitQuery = Mock()
-        self.status_cb = 'http://jobmanager:somepassword@example.com'
-        self.status_cb += '/status/' + str(self.jobid) + '.json'
 
     def tearDown(self):
         testing.tearDown()
@@ -66,8 +60,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.job.db.maxMSLevel.assert_called_with()
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
-        self.rpc.job_factory.submitQuery.assert_called_with(self.jq,
-                                                            self.status_cb)
+        self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_addmsdata(self):
@@ -79,8 +72,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.job.db.metabolitesTotalCount.assert_called_with()
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
-        self.rpc.job_factory.submitQuery.assert_called_with(self.jq,
-                                                            self.status_cb)
+        self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_metabolize(self):
@@ -92,8 +84,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.job.db.maxMSLevel.assert_called_with()
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
-        self.rpc.job_factory.submitQuery.assert_called_with(self.jq,
-                                                            self.status_cb)
+        self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_metabolize_one(self):
@@ -105,8 +96,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.job.db.maxMSLevel.assert_called_with()
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
-        self.rpc.job_factory.submitQuery.assert_called_with(self.jq,
-                                                            self.status_cb)
+        self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_annotate(self):
@@ -117,8 +107,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.jobquery.annotate.assert_called_with(self.post)
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
-        self.rpc.job_factory.submitQuery.assert_called_with(self.jq,
-                                                            self.status_cb)
+        self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_set_description(self):
@@ -137,7 +126,7 @@ class RpcViewsTestCase(unittest.TestCase):
         q = Mock(side_effect=URLError('[Errno 111] Connection refused'))
         self.rpc.job_factory.submitQuery = q
         with self.assertRaises(HTTPInternalServerError) as e:
-            self.rpc.submit_query(self.jq)
+            self.rpc.submit_query({})
 
         expected_json = {'success': False, 'msg': 'Unable to submit query'}
         self.assertEquals(json.loads(e.exception.body), expected_json)
