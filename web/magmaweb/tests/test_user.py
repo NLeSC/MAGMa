@@ -4,16 +4,64 @@ from mock import Mock, patch
 from sqlalchemy import create_engine
 from pyramid import testing
 from pyramid.httpexceptions import HTTPNotFound
-from pyramid.security import Allow, Deny, Everyone, ALL_PERMISSIONS, Authenticated
+from pyramid.security import Allow, Deny, Everyone
+from pyramid.security import ALL_PERMISSIONS, Authenticated
 from magmaweb import user
+
 
 def init_user_db():
     engine = create_engine('sqlite:///:memory:')
     user.DBSession.configure(bind=engine)
-    user.Base.metadata.create_all(engine) #@UndefinedVariable
+    user.Base.metadata.create_all(engine)  #@UndefinedVariable
+
 
 def destroy_user_db():
     user.DBSession.remove()
+
+
+class TestUser(unittest.TestCase):
+    def test_construct(self):
+        u = user.User('bob', 'Bob Smith', 'bob@smith.org')
+        self.assertEqual(u.userid, 'bob')
+        self.assertEqual(u.displayname, 'Bob Smith')
+        self.assertEqual(u.email, 'bob@smith.org')
+
+    @patch('bcrypt.hashpw')
+    @patch('bcrypt.gensalt')
+    def test_construct_with_password(self, salt, hashpw):
+        salt.return_value = 'salty'
+
+        u = user.User('bob', 'Bob Smith', 'bob@smith.org', 'mypassword')
+
+        self.assertEqual(u.userid, 'bob')
+        self.assertEqual(u.displayname, 'Bob Smith')
+        self.assertEqual(u.email, 'bob@smith.org')
+        salt.assert_called_with(12)
+        hashpw.assert_called_with('mypassword', 'salty')
+
+    def test_validate_password_correct(self):
+        u = user.User('bob', 'Bob Smith', 'bob@smith.org', 'mypassword')
+        self.assertTrue(u.validate_password('mypassword'))
+
+    def test_validate_password_incorrect(self):
+        u = user.User('bob', 'Bob Smith', 'bob@smith.org', 'mypassword')
+        self.assertFalse(u.validate_password('otherpassword'))
+
+    def test_repr(self):
+        u = user.User('bob', 'Bob Smith', 'bob@smith.org', 'mypassword')
+        self.assertEqual(repr(u), "<User('bob', 'Bob Smith', 'bob@smith.org')>")
+
+    def test_by_id(self):
+        init_user_db()
+        self.session = user.DBSession()
+        u = user.User('bob', 'Bob Smith', 'bob@smith.org')
+        self.session.add(u)
+
+        u2 = user.User.by_id('bob')
+        self.assertEqual(u, u2)
+
+        destroy_user_db()
+
 
 class TestRootFactory(unittest.TestCase):
     def setUp(self):
@@ -45,7 +93,7 @@ class TestRootFactory(unittest.TestCase):
 
         self.assertIsNone(rf.request.user)
 
-    @patch('magmaweb.user.unauthenticated_userid')
+    @patch('magmaweb.user.authenticated_userid')
     def test_user_notindb(self, uau):
         uau.return_value = 'bob'
         init_user_db()
@@ -54,7 +102,7 @@ class TestRootFactory(unittest.TestCase):
 
         self.assertIsNone(rf.request.user)
 
-    @patch('magmaweb.user.unauthenticated_userid')
+    @patch('magmaweb.user.authenticated_userid')
     def test_user(self, uau):
         uau.return_value = 'bob'
         init_user_db()
@@ -111,6 +159,7 @@ class TestJobIdFactory(unittest.TestCase):
 
         with self.assertRaises(HTTPNotFound):
             jif[str(jobid)]
+
 
 class TestUtils(unittest.TestCase):
     def setUp(self):

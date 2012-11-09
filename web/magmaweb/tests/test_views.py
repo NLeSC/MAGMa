@@ -39,6 +39,13 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         self.assertEqual(response, {})
 
+    def test_startjob(self):
+        request = testing.DummyRequest()
+        views = Views(request)
+        response = views.startjob()
+
+        self.assertEqual(response, {})
+
     def test_allinone(self):
         post = {'key': 'value'}
         request = testing.DummyRequest(post=post)
@@ -187,6 +194,48 @@ class ViewsTestCase(AbstractViewsTestCase):
                                                  max_broken_bonds=4
                                                  )
                                     })
+
+    def test_login_get_from_loginpage(self):
+        self.config.add_route('home', '/')
+        self.config.add_route('login', '/login')
+        request = testing.DummyRequest()
+        request.url = 'http://example.com/login'
+        views = Views(request)
+        response = views.login()
+
+        expected_response = {'came_from': 'http://example.com/',
+                             'userid': '',
+                             'password': ''
+                             }
+        self.assertDictEqual(response, expected_response)
+
+    def test_login_get(self):
+        self.config.add_route('home', '/')
+        self.config.add_route('login', '/login')
+        request = testing.DummyRequest()
+        request.url = 'http://example.com/startjob'
+        views = Views(request)
+
+        response = views.login()
+
+        expected_response = {'came_from': 'http://example.com/startjob',
+                             'userid': '',
+                             'password': ''
+                             }
+        self.assertDictEqual(response, expected_response)
+
+    @patch('magmaweb.views.forget')
+    def test_logout(self, forget):
+        self.config.add_route('home', '/')
+        forget.return_value = {'forget': 'headers'}
+        request = testing.DummyRequest()
+        views = Views(request)
+
+        response = views.logout()
+
+        forget.assert_called_with(request)
+        self.assertEqual(response.location, 'http://example.com/')
+        self.assertDictContainsSubset({'forget': 'headers'}, response.headers)
 
 
 class JobViewsTestCase(AbstractViewsTestCase):

@@ -1,19 +1,19 @@
 import uuid
+import bcrypt
 from sqlalchemy import Column
 from sqlalchemy import Unicode
+from sqlalchemy import String
 from sqlalchemy import ForeignKey
-import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy.orm import (
-    scoped_session,
-    sessionmaker,
-    )
-import sqlalchemy.types as types
+from sqlalchemy.orm import scoped_session
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.types import TypeDecorator
 from zope.sqlalchemy import ZopeTransactionExtension #@UnresolvedImport
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.security import Allow, Deny, Everyone, ALL_PERMISSIONS
-from pyramid.security import Authenticated, unauthenticated_userid
+from pyramid.security import Authenticated, authenticated_userid
+
 from magmaweb.job import make_job_factory, JobNotFound
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
@@ -21,7 +21,7 @@ DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
 
-class UUIDType(types.TypeDecorator):
+class UUIDType(TypeDecorator):
     """ Stores UUID as Unicode string in database"""
     impl = Unicode
 
@@ -38,16 +38,41 @@ class UUIDType(types.TypeDecorator):
 
 class User(Base):
     """User list"""
-    __tablename__= 'user'
+    __tablename__ = 'user'
     userid = Column(Unicode, primary_key=True)
     displayname = Column(Unicode)
     email = Column(Unicode)
+    password = Column(String)  # bcrypted hashed pw
     jobs = relationship("JobMeta", order_by="JobMeta.jobid")
 
-    def __init__(self, userid, displayname, email):
+    def __init__(self, userid, displayname, email, password=None):
         self.userid = userid
         self.displayname = displayname
         self.email = email
+        if password is not None:
+            self._set_password(password)
+
+    def _set_password(self, clear_password):
+        salt = bcrypt.gensalt(12)
+        self.password = bcrypt.hashpw(clear_password, salt)
+
+    def validate_password(self, clear_password):
+        return bcrypt.hashpw(clear_password, self.password) == self.password
+
+    def __repr__(self):
+        return '<User({!r}, {!r}, {!r})>'.format(self.userid,
+                                                self.displayname,
+                                                self.email)
+
+    def __eq__(self, other):
+        return (self.userid == other.userid and
+            self.displayname == other.displayname and
+            self.email == other.email and
+            self.password == other.password)
+
+    @classmethod
+    def by_id(cls, userid):
+        return DBSession().query(cls).get(userid)
 
 
 class JobMeta(Base):
@@ -62,8 +87,8 @@ class JobMeta(Base):
                             backref=backref('parent', remote_side=[jobid]))
 
     def __init__(self, jobid,
-                 description='', parentjobid=None,
-                 state=None, owner=None):
+                  description='', parentjobid=None,
+                  state=None, owner=None):
         self.jobid = jobid
         self.description = description
         self.parentjobid = parentjobid
@@ -100,14 +125,15 @@ class RootFactory(object):
         """
 
         def userid2user(request):
-            userid = unauthenticated_userid(request)
+            userid = authenticated_userid(request)
             if userid is not None:
-                return DBSession().query(User).get(userid)
+                return User.by_id(userid)
             else:
                 return None
 
         # make request.user property lazy
         self.request.set_property(userid2user, 'user', reify=True)
+
 
 class JobIdFactory(RootFactory):
     """Context factory which creates :class:magmaweb.job.Job

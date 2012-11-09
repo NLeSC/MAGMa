@@ -1,11 +1,16 @@
 import json
 from pyramid.response import Response
+from pyramid.view import forbidden_view_config
 from pyramid.view import view_config
 from pyramid.view import view_defaults
 from pyramid.httpexceptions import HTTPNotFound, HTTPFound
 from pyramid.security import has_permission
+from pyramid.security import remember
+from pyramid.security import forget
+from pyramid.security import NO_PERMISSION_REQUIRED
 from magmaweb.job import make_job_factory
 from magmaweb.job import Job, JobQuery
+from magmaweb.user import User
 
 
 class Views(object):
@@ -13,9 +18,14 @@ class Views(object):
         self.request = request
         self.job_factory = make_job_factory(request.registry.settings)
 
-    @view_config(route_name='home', renderer='home.mak', request_method='GET', permission='view')
+    @view_config(route_name='home', renderer='home.mak', permission=NO_PERMISSION_REQUIRED)
     def home(self):
         """Returns homepage on GET. """
+        return {}
+
+    @view_config(route_name='startjob', renderer='startjob.mak', request_method='GET', permission='view')
+    def startjob(self):
+        """Returns startjob on GET. """
         return {}
 
     @view_config(route_name='defaults.json', renderer="json", permission='view')
@@ -66,6 +76,39 @@ class Views(object):
     @view_config(route_name='user', permission='view', renderer='user.mak')
     def user(self):
         return {}
+
+    @view_config(route_name='login', renderer='login.mak')
+    @forbidden_view_config(renderer='login.mak')
+    def login(self):
+        login_url = self.request.route_url('login')
+        referrer = self.request.url
+        if referrer == login_url:
+            # never use the login form itself as came_from
+            referrer = self.request.route_url('home')
+        came_from = self.request.params.get('came_from', referrer)
+        userid = ''
+        password = ''
+
+        if self.request.method == 'POST':
+            userid = self.request.params['userid']
+            password = self.request.params['password']
+            user = User.by_id(userid)
+            if user.validate_password(password):
+                headers = remember(self.request, userid)
+                return HTTPFound(location = came_from,
+                                 headers = headers)
+
+        return dict(
+            came_from = came_from,
+            userid = userid,
+            password = password,
+            )
+
+    @view_config(route_name='logout')
+    def logout(self):
+        headers = forget(self.request)
+        return HTTPFound(location = self.request.route_url('home'),
+                         headers = headers)
 
 
 @view_defaults(context=Job)

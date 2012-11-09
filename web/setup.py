@@ -13,6 +13,7 @@ requires = [
             'zope.sqlalchemy',
             'colander',
             'waitress',
+            'py-bcrypt',
             'Paste'
             ]
 

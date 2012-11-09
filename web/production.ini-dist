@@ -12,6 +12,9 @@ pyramid.default_locale_name = en
 
 mako.directories = magmaweb:templates
 
+# secret for cookie signing
+cookie.secret = agh7ahfixeiwieCh6Oovei1faecao4ee
+
 extjsroot = ext-4.1.1a
 
 jobfactory.root_dir = %(here)s/data/jobs
