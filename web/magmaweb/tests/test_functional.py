@@ -12,13 +12,15 @@ class FunctionalTests(unittest.TestCase):
                          'jobfactory.root_dir': self.root_dir,
                          'mako.directories': 'magmaweb:templates',
                          'extjsroot': 'ext',
-                         'sqlalchemy.url': 'sqlite:///:memory:'
+                         'sqlalchemy.url': 'sqlite:///:memory:',
+                         'cookie.secret': 'aepeeV6aizaiph5Ae0Reimeequuluwoh'
                          }
         app = main({}, **self.settings)
         self.testapp = TestApp(app)
 
         # Setup owner of job
-        DBSession().add(User('bob', 'Bob Example', 'bob@example.com'))
+        user = User('bob', 'Bob Example', 'bob@example.com', 'mypassword')
+        DBSession().add(user)
 
     def tearDown(self):
         import shutil
@@ -42,13 +44,17 @@ class FunctionalTests(unittest.TestCase):
 
         return job.id
 
+    def do_login(self):
+        params = {'userid': 'bob', 'password': 'mypassword'}
+        self.testapp.post('/login', params)
+
     def test_metabolites(self):
+        self.do_login()
         jobid = self.fake_jobid()
 
         res_url = '/results/' + str(jobid)
         res_url += '/metabolites.json?limit=10&start=0'
-        env = dict(REMOTE_USER='bob')
-        res = self.testapp.get(res_url, status=200, extra_environ=env)
+        res = self.testapp.get(res_url, status=200)
         import json
         self.assertEqual(json.loads(res.body), {
             'totalUnfiltered': 2,

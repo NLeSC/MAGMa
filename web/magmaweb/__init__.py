@@ -1,7 +1,7 @@
 import json
 from pyramid.config import Configurator
 from pyramid.authorization import ACLAuthorizationPolicy
-from pyramid.authentication import RemoteUserAuthenticationPolicy
+from pyramid.authentication import AuthTktAuthenticationPolicy
 from sqlalchemy import engine_from_config
 from magmaweb.user import DBSession, Base, RootFactory, JobIdFactory
 
@@ -10,7 +10,10 @@ def main(global_config, **settings):
     """
     config = Configurator(settings=settings)
 
-    config.set_authentication_policy(RemoteUserAuthenticationPolicy())
+    authn_policy = AuthTktAuthenticationPolicy(
+        secret=settings['cookie.secret']
+    )
+    config.set_authentication_policy(authn_policy)
     config.set_authorization_policy(ACLAuthorizationPolicy())
     config.set_root_factory(RootFactory)
 
@@ -21,6 +24,7 @@ def main(global_config, **settings):
     config.add_route('home','/') # allow everyone
     config.add_route('defaults.json', '/defaults.json') # allow everyone
 
+    config.add_route('startjob', '/start')
     config.add_route('jobfromscratch', '/results/') # calc
     config.add_route('uploaddb', '/uploaddb') # calc
 
@@ -59,9 +63,9 @@ def main(global_config, **settings):
     # user preferences (email, displayName)
     #TODO: create user view
     config.add_route('user', '/user')
-    # share job, make viewable|editable
-    #TODO: create view to change permissions of job
-    add_job_route('share', '/share/{jobid}')
+
+    config.add_route('login', '/login')
+    config.add_route('logout', '/logout')
 
     # Setup connection to user database
     engine = engine_from_config(settings, 'sqlalchemy.')

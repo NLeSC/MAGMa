@@ -3,21 +3,7 @@
 <head>
 <title>MAGMa - Ms Annotation based on in silico Generated Metabolites</title>
 <link rel="stylesheet"
-	href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
-<link rel="stylesheet"
-	href="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb.css')}"
-	type="text/css"></link>
-<link rel="stylesheet"
-	href="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.8.7.custom.css')}"
-	type="text/css"></link>
-<script type="text/javascript"
-	src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb-libs.js')}"></script>
-<script type="text/javascript"
-	src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb.js')}"></script>
-<script type="text/javascript"
-	src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.8.7.custom.min.js')}"></script>
-<script type="text/javascript"
-	src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/ChemDoodleWeb-sketcher.js')}"></script>
+    href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
 <script type="text/javascript" src="${request.extjsroot}/ext-all.js"></script>
 <style type="text/css">
 .x-logo a {
@@ -37,10 +23,10 @@
 }
 
 #welcome h1 {
-	font-size: 200%;
-	padding-top: 40px;
-	padding-bottom: 40px;
-	color: #333;
+    font-size: 200%;
+    padding-top: 40px;
+    padding-bottom: 40px;
+    color: #333;
 }
 </style>
 <script type="text/javascript">
@@ -67,7 +53,7 @@ Ext.require([
 Ext.onReady(function() {
   Ext.QuickTips.init();
 
-  var form = Ext.create('Ext.form.Panel', {
+  var form = Ext.create('Ext.panel.Panel', {
     border: false,
     region: 'center',
     bodyPadding: 5,
@@ -76,84 +62,30 @@ Ext.onReady(function() {
     items:[{
         contentEl: 'welcome',
         border: false
-    }, {
-        xtype : 'addstructurefieldset'
-    }, {
-        xtype : 'uploadmsdatafieldset'
-    }, {
-        xtype : 'metabolizefieldset',
-        collapsed : true,
-        collapsible : true
-    }, {
-        xtype : 'annotatefieldset',
-        collapsed : true,
-        collapsible : true
     }],
-    buttons: [{
-      text: 'Start from scratch',
-      tooltip: 'Do no fill form, but go straight to empty result page which can be filled later',
-      href: '${request.route_url('jobfromscratch')}',
-      hrefTarget: '_self'
-    },{
-      text: 'Submit',
-      handler: function(){
-          var form = this.up('form').getForm();
-          var mol = sketcher.getMolecule();
-          if (mol.bonds.length > 0) {
-              form.setValues({
-                 structures_format: 'sdf',
-                 structures_area: ChemDoodle.writeMOL(mol)
-              });
-          }
-          if(form.isValid()){
-              // TODO test if structures textarea or file is filled
-              form.submit({
-                  url: '${request.route_url('home')}',
-                  waitMsg: 'Uploading your data...',
-                  success: function(fp, o) {
-                      window.location = '${request.application_url}/status/'+o.result.jobid;
-                  },
-                  failure: function(form, action) {
-                      console.log(action.failureType);
-                      console.log(action.result);
-                  }
-              });
-          }
-      }
-    }, {
-      text: 'Reset',
-      handler: function() {
-        this.up('form').getForm().reset();
-      }
-    }]
-  });
-  form.load({
-      url: '${request.route_url('defaults.json')}',
-      method: 'GET',
-      waitMsg: 'Fetching defaults'
   });
 
   var header = {
     border: false,
-	region: 'north',
-	layout: {
-	  type: 'hbox',
-	  align: 'middle',
-	  padding: 2
-	},
-	items: [{
-	  xtype: 'buttongroup',
-	  columns: 2,
-	  items: [{
-	    text: 'Help',
-	    tooltip: 'Goto help pages',
-	    disabled: true
-	  }, {
-	    text: 'Upload result',
-	    tooltip: 'Upload a result db for viewing',
-	    url: '${request.route_url('uploaddb')}'
-	  }, {
-	    text: 'Workspace',
+    region: 'north',
+    layout: {
+      type: 'hbox',
+      align: 'middle',
+      padding: 2
+    },
+    items: [{
+      xtype: 'buttongroup',
+      columns: 2,
+      items: [{
+        text: 'Help',
+        tooltip: 'Goto help pages',
+        disabled: true
+      }, {
+        text: 'Upload result',
+        tooltip: 'Upload a result db for viewing',
+        url: '${request.route_url('uploaddb')}'
+      }, {
+        text: 'Workspace',
         tooltip: 'My settings and jobs',
         menu: {
             items: [{
@@ -164,22 +96,22 @@ Ext.onReady(function() {
                 href: "${request.route_url('jobs')}"
             }]
         }
-	  }]
-	}, {
-	  xtype:'tbspacer',
-	  flex:1 // aligns buttongroup right
-	}, {
-	  xtype: 'component',
-	  cls: 'x-title',
-	  html: '<a href="." data-qtip="<b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites">MAGMa</a>'
-	}, {
-	  xtype:'tbspacer',
-	  flex:1 // aligns buttongroup right
-	}, {
-	  xtype: 'component',
-	  cls: 'x-logo',
-	  html: '<a href="http://www.esciencecenter.nl"></a>'
-	}]
+      }]
+    }, {
+      xtype:'tbspacer',
+      flex:1 // aligns buttongroup right
+    }, {
+      xtype: 'component',
+      cls: 'x-title',
+      html: '<a href="." data-qtip="<b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated <b>M</b>et<b>a</b>bolites">MAGMa</a>'
+    }, {
+      xtype:'tbspacer',
+      flex:1 // aligns buttongroup right
+    }, {
+      xtype: 'component',
+      cls: 'x-logo',
+      html: '<a href="http://www.esciencecenter.nl"></a>'
+    }]
   };
 
   Ext.create('Ext.container.Viewport', {
@@ -191,22 +123,14 @@ Ext.onReady(function() {
 </script>
 </head>
 <body>
-	<div id="sketcher_content" class="x-hidden">
-		<script language="javascript">
-var sketcher = new ChemDoodle.SketcherCanvas(
-        'sketcher_canvas', 500, 300,
-        '${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/icons/')}',
-        ChemDoodle.featureDetection.supports_touch(), false);
-sketcher.repaint();
-sketcher.toolbarManager.buttonSave.disable();
-sketcher.toolbarManager.buttonOpen.disable();
-</script>
-	</div>
-	<div id="welcome" class="x-hidden">
-		<h1>
-			Welcome to the <b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated
-			<b>M</b>et<b>a</b>bolites application
-		</h1>
-	</div>
+    <div id="welcome" class="x-hidden">
+        <h1>
+            Welcome to the <b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated
+            <b>M</b>et<b>a</b>bolites application
+        </h1>
+        <ul>
+        <li><a href="${request.route_url('startjob')}">Start new calculation</a></li>
+        </ul>
+    </div>
 </body>
 </html>
