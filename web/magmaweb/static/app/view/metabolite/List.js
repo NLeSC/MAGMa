@@ -40,7 +40,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
       ],
       forceSelection: true,
       triggerAction: 'all',
-      action: 'pagesize'
+      itemId: 'pagesizeCombo'
     }]
   }],
   initComponent: function() {
@@ -195,5 +195,11 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
    */
   getVisiblColumnIndices: function() {
 	  return this.getView().getHeaderCt().getVisibleGridColumns().map(function(v) {return v.dataIndex}).filter(function(v) { return v});
+  },
+  hideCommandsColumn: function() {
+	  this.getCommandsColumn().hide();
+  },
+  setPageSize: function(size) {
+	  this.getDockedComponent('pagesizeCombo').select(size);
   }
 });

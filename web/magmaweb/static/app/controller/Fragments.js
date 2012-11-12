@@ -120,6 +120,9 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
       'assignmentchanged'
     );
   },
+  onLaunch: function() {
+    this.applyRole();
+  },
   /**
    * Loads lvl 1 and 2 fragments of a metabolite scan combination.
    *
@@ -388,5 +391,15 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
   },
   getAssignStruct2PeakButton: function() {
       return this.getFragmentTree().getAssignStruct2PeakButton();
+  },
+  /**
+   * Apply role to user interface.
+   * Checks canRun and if false removes all action buttons.
+   */
+  applyRole: function() {
+	  if (this.application.canRun) {
+		  return;
+	  }
+	  this.getAssignStruct2PeakButton().hide();
   }
 });

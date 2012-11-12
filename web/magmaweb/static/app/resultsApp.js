@@ -48,6 +48,11 @@ Ext.define('Esc.magmaweb.resultsApp', {
      */
     jobid: null,
     /**
+     * Whether user has rights to run actions like add structures or assign a peak to a structure.
+     * @cfg {Boolean}
+     */
+    canRun: true,
+    /**
      * Endpoints/templates for contacting server.
      * @cfg {Object}
      */
@@ -245,5 +250,18 @@ Ext.define('Esc.magmaweb.resultsApp', {
     Ext.ComponentQuery.query('component[action=restart]')[0].href = this.urls.home;
     Ext.ComponentQuery.query('component[action=myjobs]')[0].href = this.urls.home+'jobs';
     Ext.ComponentQuery.query('component[action=usersettings]')[0].href = this.urls.home+'user';
+
+    this.applyRole();
+  },
+  /**
+   * Apply role to user interface.
+   * Checks canRun and if false removes all action buttons.
+   * All controllers should apply roles to user themselves if required.
+   */
+  applyRole: function() {
+	  if (this.canRun) {
+		  return;
+	  }
+	  Ext.ComponentQuery.query('component[id=annotateaction]')[0].hide();
   }
 });
