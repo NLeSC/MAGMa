@@ -53,6 +53,11 @@ Ext.define('Esc.magmaweb.resultsApp', {
      */
     canRun: true,
     /**
+     * Whether user is logged in, shows login or logout button.
+     * @cfg {Boolean}
+     */
+    is_authenticated_user: true,
+    /**
      * Endpoints/templates for contacting server.
      * @cfg {Object}
      */
@@ -247,11 +252,9 @@ Ext.define('Esc.magmaweb.resultsApp', {
     Ext.ComponentQuery.query('component[action=information]')[0].setHandler(function() {
         me.infoWindow.show();
     });
-    Ext.ComponentQuery.query('component[action=restart]')[0].href = this.urls.home;
-    Ext.ComponentQuery.query('component[action=myjobs]')[0].href = this.urls.home+'jobs';
-    Ext.ComponentQuery.query('component[action=usersettings]')[0].href = this.urls.home+'user';
 
     this.applyRole();
+    this.user_authenticated(this.is_authenticated_user);
   },
   /**
    * Apply role to user interface.
@@ -263,5 +266,15 @@ Ext.define('Esc.magmaweb.resultsApp', {
 		  return;
 	  }
 	  Ext.ComponentQuery.query('component[id=annotateaction]')[0].hide();
+  },
+  user_authenticated: function(toggle) {
+     if (toggle) {
+    	 // hide login
+    	 Ext.ComponentQuery.query('component[text=Login]')[0].hide();
+     } else {
+    	 // hide workspace+logout
+         Ext.ComponentQuery.query('component[text=Workspace]')[0].hide();
+         Ext.ComponentQuery.query('component[text=Logout]')[0].hide();
+     }
   }
 });

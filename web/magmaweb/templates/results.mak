@@ -174,6 +174,7 @@ Ext.onReady(function() {
       maxmslevel: ${maxmslevel},
       jobid: '${jobid}',
       canRun: ${json.dumps(canRun)|n},
+      is_user_authenticated: ${json.dumps(request.user is not None)},
       urls: {
         home: '${request.route_url('home')}',
         fragments: '${request.application_url}/results/${jobid}/fragments/{0}/{1}.json',
