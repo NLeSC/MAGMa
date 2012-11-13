@@ -13,7 +13,8 @@ class FunctionalTests(unittest.TestCase):
                          'mako.directories': 'magmaweb:templates',
                          'extjsroot': 'ext',
                          'sqlalchemy.url': 'sqlite:///:memory:',
-                         'cookie.secret': 'aepeeV6aizaiph5Ae0Reimeequuluwoh'
+                         'cookie.secret': 'aepeeV6aizaiph5Ae0Reimeequuluwoh',
+                         'cookie.path': '/magma'
                          }
         app = main({}, **self.settings)
         self.testapp = TestApp(app)

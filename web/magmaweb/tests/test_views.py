@@ -148,7 +148,7 @@ class ViewsTestCase(AbstractViewsTestCase):
                                         ))
         has_permission.assert_called_with('run', job, request)
 
-    def test_jobs(self):
+    def test_workspace(self):
         import uuid
         request = testing.DummyRequest()
         request.user = User('bob', 'Bob Example', 'bob@example.com')
@@ -157,18 +157,11 @@ class ViewsTestCase(AbstractViewsTestCase):
         request.user.jobs = jobs
         views = Views(request)
 
-        response = views.jobs()
+        response = views.workspace()
 
-        expected_jobs = [{'id':'11111111-1111-1111-1111-111111111111',
+        expected_jobs = [{'id': '11111111-1111-1111-1111-111111111111',
                           'description': 'My job'}]
         self.assertEqual(response, {'jobs': expected_jobs})
-
-    def test_user(self):
-        request = testing.DummyRequest()
-        views = Views(request)
-
-        response = views.user()
-        self.assertDictEqual(response, {})
 
     def test_defaultsjson(self):
         request = testing.DummyRequest()
@@ -201,6 +194,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         request = testing.DummyRequest()
         request.url = 'http://example.com/login'
         views = Views(request)
+
         response = views.login()
 
         expected_response = {'came_from': 'http://example.com/',

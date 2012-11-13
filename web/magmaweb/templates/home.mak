@@ -81,21 +81,18 @@ Ext.onReady(function() {
         tooltip: 'Goto help pages',
         disabled: true
       }, {
-        text: 'Upload result',
-        tooltip: 'Upload a result db for viewing',
-        url: '${request.route_url('uploaddb')}'
-      }, {
         text: 'Workspace',
         tooltip: 'My settings and jobs',
-        menu: {
-            items: [{
-                text: 'User settings',
-                href: "${request.route_url('user')}",
-            }, {
-                text: 'Jobs',
-                href: "${request.route_url('jobs')}"
-            }]
-        }
+        href: "${request.route_url('workspace')}",
+        hrefTarget: '_self'
+      }, {
+        text: 'Logout',
+        href: "${request.route_url('logout')}",
+        hrefTarget: '_self'
+      }, {
+        text: 'Login',
+        href: "${request.route_url('login')}",
+        hrefTarget: '_self'
       }]
     }, {
       xtype:'tbspacer',
@@ -118,6 +115,22 @@ Ext.onReady(function() {
     layout: 'border',
     items: [header, form]
   });
+
+  <%!
+  import json
+  %>
+  function user_authenticated(toggle) {
+     if (toggle) {
+    	 // hide login
+    	 Ext.ComponentQuery.query('component[text=Login]')[0].hide();
+     } else {
+    	 // hide workspace+logout
+         Ext.ComponentQuery.query('component[text=Workspace]')[0].hide();
+         Ext.ComponentQuery.query('component[text=Logout]')[0].hide();
+     }
+  };
+
+  user_authenticated(${json.dumps(request.user is not None)});
 
 });
 </script>

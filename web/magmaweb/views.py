@@ -18,12 +18,14 @@ class Views(object):
         self.request = request
         self.job_factory = make_job_factory(request.registry.settings)
 
-    @view_config(route_name='home', renderer='home.mak', permission=NO_PERMISSION_REQUIRED)
+    @view_config(route_name='home', renderer='home.mak',
+                 permission=NO_PERMISSION_REQUIRED)
     def home(self):
         """Returns homepage on GET. """
         return {}
 
-    @view_config(route_name='startjob', renderer='startjob.mak', request_method='GET', permission='view')
+    @view_config(route_name='startjob', renderer='startjob.mak',
+                 request_method='GET', permission='view')
     def startjob(self):
         """Returns startjob on GET. """
         return {}
@@ -42,7 +44,7 @@ class Views(object):
         self.job_factory.submitQuery(jobquery)
         return {'success': True, 'jobid': str(job.id)}
 
-    @view_config(route_name='uploaddb', renderer='uploaddb.mak', permission='run')
+    @view_config(route_name='uploaddb', renderer='uploaddb.mak', permission='view')
     def uploaddb(self):
         """Upload a sqlitedb as ``db_file`` param in POST request
         and redirects to job results page"""
@@ -55,7 +57,7 @@ class Views(object):
         else:
             return {}
 
-    @view_config(route_name='jobfromscratch', permission='run')
+    @view_config(route_name='jobfromscratch', permission='view')
     def jobfromscratch(self):
         """ Initializes a new job and redirects to its results page"""
         owner = self.request.user.userid
@@ -63,8 +65,10 @@ class Views(object):
         results = self.request.route_url('results', jobid=job.id)
         return HTTPFound(location=results)
 
-    @view_config(route_name='jobs', permission='view', renderer='jobs.mak')
-    def jobs(self):
+    @view_config(route_name='workspace',
+                 permission='view',
+                 renderer='workspace.mak')
+    def workspace(self):
         jobs = []
         owner = self.request.user
         for jobmeta in owner.jobs:
@@ -73,12 +77,7 @@ class Views(object):
 
         return {'jobs': jobs}
 
-    @view_config(route_name='user', permission='view', renderer='user.mak')
-    def user(self):
-        return {}
-
     @view_config(route_name='login', renderer='login.mak')
-    @forbidden_view_config(renderer='login.mak')
     def login(self):
         login_url = self.request.route_url('login')
         referrer = self.request.url
@@ -93,22 +92,36 @@ class Views(object):
             userid = self.request.params['userid']
             password = self.request.params['password']
             user = User.by_id(userid)
-            if user.validate_password(password):
+            if user is not None and user.validate_password(password):
                 headers = remember(self.request, userid)
-                return HTTPFound(location = came_from,
-                                 headers = headers)
+                return HTTPFound(location=came_from,
+                                 headers=headers)
 
         return dict(
-            came_from = came_from,
-            userid = userid,
-            password = password,
+            came_from=came_from,
+            userid=userid,
+            password=password,
             )
+
+    @forbidden_view_config()
+    def forbidden(self):
+        """Redirect to login if not logged in or give forbidden exception"""
+        if self.request.user is None:
+            referrer = self.request.url
+            if referrer == self.request.route_url('login'):
+                # never use the login form itself as came_from
+                referrer = self.request.route_url('home')
+            query = {'came_from': referrer}
+            location = self.request.route_url('login', _query=query)
+            return HTTPFound(location=location)
+        else:
+            return self.request.exception
 
     @view_config(route_name='logout')
     def logout(self):
         headers = forget(self.request)
-        return HTTPFound(location = self.request.route_url('home'),
-                         headers = headers)
+        return HTTPFound(location=self.request.route_url('home'),
+                         headers=headers)
 
 
 @view_defaults(context=Job)

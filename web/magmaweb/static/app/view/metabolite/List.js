@@ -40,7 +40,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
       ],
       forceSelection: true,
       triggerAction: 'all',
-      itemId: 'pagesizeCombo'
+      action: 'pagesizeCombo'
     }]
   }],
   initComponent: function() {
@@ -200,6 +200,6 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
 	  this.getCommandsColumn().hide();
   },
   setPageSize: function(size) {
-	  this.getDockedComponent('pagesizeCombo').select(size);
+	  Ext.ComponentQuery.query('component[action=pagesizeCombo]')[0].select(size);
   }
 });
