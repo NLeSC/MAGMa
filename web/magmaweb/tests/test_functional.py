@@ -1,8 +1,12 @@
 import tempfile
 import unittest
+import transaction
+import json
 from webtest import TestApp
 from magmaweb import main
 from magmaweb.user import DBSession, User
+from magmaweb.job import make_job_factory
+from test_job import populateTestingDB
 
 
 class FunctionalTests(unittest.TestCase):
@@ -20,8 +24,12 @@ class FunctionalTests(unittest.TestCase):
         self.testapp = TestApp(app)
 
         # Setup owner of job
-        user = User('bob', 'Bob Example', 'bob@example.com', 'mypassword')
-        DBSession().add(user)
+        jf = make_job_factory(self.settings)
+        with transaction.manager:
+            user = User('bob', 'Bob Example', 'bob@example.com', 'mypassword')
+            DBSession().add(user)
+            self.job = jf.fromScratch('bob')
+            self.jobid = self.job.id
 
     def tearDown(self):
         import shutil
@@ -36,14 +44,9 @@ class FunctionalTests(unittest.TestCase):
 
     def fake_jobid(self):
         """ Create job in self.root_dir filled with test db"""
-        from magmaweb.job import make_job_factory
-        jf = make_job_factory(self.settings)
-        job = jf.fromScratch('bob')
-        from test_job import populateTestingDB
-        populateTestingDB(job.db.session)
-        job.db.session.commit()
-
-        return job.id
+        populateTestingDB(self.job.db.session)
+        self.job.db.session.commit()
+        return self.jobid
 
     def do_login(self):
         params = {'userid': 'bob', 'password': 'mypassword'}
@@ -56,7 +59,6 @@ class FunctionalTests(unittest.TestCase):
         res_url = '/results/' + str(jobid)
         res_url += '/metabolites.json?limit=10&start=0'
         res = self.testapp.get(res_url, status=200)
-        import json
         self.assertEqual(json.loads(res.body), {
             'totalUnfiltered': 2,
             'total': 2,

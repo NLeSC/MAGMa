@@ -5,7 +5,7 @@ from sqlalchemy import Column
 from sqlalchemy import Unicode
 from sqlalchemy import String
 from sqlalchemy import ForeignKey
-from sqlalchemy import Date
+from sqlalchemy import DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm import scoped_session
@@ -74,6 +74,7 @@ class User(Base):
 
     @classmethod
     def by_id(cls, userid):
+        """Fetch :class:User by `userid`"""
         return DBSession().query(cls).get(userid)
 
 
@@ -86,7 +87,7 @@ class JobMeta(Base):
     parentjobid = Column(UUIDType, ForeignKey('job.jobid'))
     state = Column(Unicode, nullable=False)  # queued/running/ready etc.
     owner = Column(Unicode, ForeignKey('user.userid'), nullable=False)
-    created_at = Column(Date, nullable=False)
+    created_at = Column(DateTime, nullable=False)
     children = relationship('JobMeta',
                             backref=backref('parent', remote_side=[jobid]))
 
@@ -104,6 +105,16 @@ class JobMeta(Base):
             self.created_at = datetime.datetime.utcnow()
         else:
             self.created_at = created_at
+
+    @classmethod
+    def by_id(cls, jobid):
+        """Fetch :class:JobMeta by `jobid`"""
+        return DBSession().query(cls).get(jobid)
+
+    @classmethod
+    def add(cls, jobmeta):
+        """Adds :class:JobMeta to db"""
+        DBSession().add(jobmeta)
 
 
 class RootFactory(object):
