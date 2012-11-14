@@ -550,13 +550,13 @@ class JobFactory(object):
         return jdir
 
     def _getJobMeta(self, jobid):
-        meta = magmaweb.user.DBSession.query(magmaweb.user.JobMeta).get(jobid)
+        meta = magmaweb.user.JobMeta.by_id(jobid)
         if meta is None:
             raise JobNotFound("Job not found in database", jobid)
         return meta
 
     def _addJobMeta(self, jobmeta):
-        magmaweb.user.DBSession().add(jobmeta)
+        magmaweb.user.JobMeta.add(jobmeta)
 
     def fromDb(self, dbfile, owner):
         """A job directory is created and the dbfile is copied into it

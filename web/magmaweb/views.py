@@ -92,8 +92,8 @@ class Views(object):
         password = ''
 
         if self.request.method == 'POST':
-            userid = self.request.params['userid']
-            password = self.request.params['password']
+            userid = self.request.POST['userid']
+            password = self.request.POST['password']
             user = User.by_id(userid)
             if user is not None and user.validate_password(password):
                 headers = remember(self.request, userid)
@@ -127,7 +127,7 @@ class Views(object):
                          headers=headers)
 
 
-@view_defaults(context=Job)
+@view_defaults(context=Job, permission='view')
 class JobViews(object):
     """Views for pyramid based web application with job"""
     def __init__(self, job, request):
@@ -153,7 +153,7 @@ class JobViews(object):
         jobstate = self.job.state
         return dict(status=jobstate, jobid=jobid)
 
-    @view_config(route_name='results', renderer='results.mak', permission='view')
+    @view_config(route_name='results', renderer='results.mak')
     def results(self):
         """Returns results page"""
         db = self.job.db
@@ -166,7 +166,7 @@ class JobViews(object):
                     canRun=bool(canRun)  # coerce pyramid.security.Allowed|Denied to boolean
                     )
 
-    @view_config(route_name='metabolites.json', renderer='json', permission='view')
+    @view_config(route_name='metabolites.json', renderer='json')
     def metabolitesjson(self):
         """Returns json document with metabolites,
         which can be used in a extjs store
@@ -267,7 +267,7 @@ class JobViews(object):
                 'rows': metabolites['rows'],
                 'scans': scans}
 
-    @view_config(route_name='metabolites.csv', permission='view')
+    @view_config(route_name='metabolites.csv')
     def metabolitescsv(self):
         """Same as metabolitesjson(), but returns csv file
 
@@ -287,7 +287,7 @@ class JobViews(object):
         # response.app_iter = csv
         return response
 
-    @view_config(route_name='metabolites.sdf', permission='view')
+    @view_config(route_name='metabolites.sdf')
     def metabolitessdf(self):
         """Same as metabolitesjson(), but returns sdf file
 
@@ -329,7 +329,7 @@ class JobViews(object):
         """
         return self.job.db.chromatogram()
 
-    @view_config(route_name='mspectra.json', renderer='json', permission='view')
+    @view_config(route_name='mspectra.json', renderer='json')
     def mspectrajson(self):
         """Returns json object with peaks of a scan
 
@@ -376,7 +376,7 @@ class JobViews(object):
         except ScanNotFound:
             raise HTTPNotFound()
 
-    @view_config(route_name='extractedionchromatogram.json', renderer='json', permission='view')
+    @view_config(route_name='extractedionchromatogram.json', renderer='json')
     def extractedionchromatogram(self):
         """Returns json object with the extracted ion chromatogram
         for a metabolite and the id,rt of scans which have metabolite hits
@@ -418,7 +418,7 @@ class JobViews(object):
             'scans': self.job.db.scansWithMetabolites(metid=metid)
         }
 
-    @view_config(route_name='fragments.json', renderer='json', permission='view')
+    @view_config(route_name='fragments.json', renderer='json')
     def fragments(self):
         """Returns json object with metabolites
         and its lvl2 fragments when ``node`` is not set.
@@ -518,7 +518,7 @@ class JobViews(object):
         response.app_iter = self.job.stderr()
         return response
 
-    @view_config(route_name='runinfo.json', renderer="json", permission='view')
+    @view_config(route_name='runinfo.json', renderer="json")
     def runinfojson(self):
         """ Returns settings used for job run or
         if job has not run the default value

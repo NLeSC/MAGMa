@@ -227,6 +227,50 @@ class ViewsTestCase(AbstractViewsTestCase):
                              }
         self.assertDictEqual(response, expected_response)
 
+    @patch('magmaweb.views.remember')
+    @patch('magmaweb.views.User')
+    def test_login_post_correct_pw(self, user, remember):
+        from pyramid.httpexceptions import HTTPFound
+        u = Mock(User)
+        u.validate_password.return_value = True
+        user.by_id.return_value = u
+        self.config.add_route('login', '/login')
+        post = {'userid': 'bob',
+                'password': 'mypw'}
+        params = {'came_from': 'http://example.com/startjob'}
+        request = testing.DummyRequest(post=post, params=params)
+        views = Views(request)
+
+        response = views.login()
+
+        self.assertIsInstance(response, HTTPFound)
+        self.assertEqual(response.location, 'http://example.com/startjob')
+        u.validate_password.assert_called_with('mypw')
+        remember.assert_called_with(request, 'bob')
+
+    @patch('magmaweb.views.remember')
+    @patch('magmaweb.views.User')
+    def test_login_post_incorrect_pw(self, user, remember):
+        u = Mock(User)
+        u.validate_password.return_value = False
+        user.by_id.return_value = u
+        self.config.add_route('login', '/login')
+        post = {'userid': 'bob',
+                'password': 'mypw'}
+        params = {'came_from': 'http://example.com/startjob'}
+        request = testing.DummyRequest(post=post, params=params)
+        views = Views(request)
+
+        response = views.login()
+
+        expected_response = {'came_from': 'http://example.com/startjob',
+                             'userid': 'bob',
+                             'password': 'mypw'
+                             }
+        self.assertDictEqual(response, expected_response)
+        u.validate_password.assert_called_with('mypw')
+        self.assertFalse(remember.called)
+
     @patch('magmaweb.views.forget')
     def test_logout(self, forget):
         self.config.add_route('home', '/')

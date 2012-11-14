@@ -11,6 +11,8 @@ def main(global_config, **settings):
     """
     config = Configurator(settings=settings)
 
+    config.include('pyramid_tm')
+
     authn_policy = AuthTktAuthenticationPolicy(
         secret=settings['cookie.secret'],
         path=settings['cookie.path']
@@ -70,6 +72,7 @@ def main(global_config, **settings):
     # Setup connection to user database
     engine = engine_from_config(settings)
     DBSession.configure(bind=engine)
+    Base.metadata.bind = engine
     Base.metadata.create_all(engine)
 
     config.scan('magmaweb')
