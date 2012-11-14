@@ -231,6 +231,49 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(response.location, 'http://example.com/')
         self.assertDictContainsSubset({'forget': 'headers'}, response.headers)
 
+    def test_forbidden_authenticated(self):
+        from pyramid.exceptions import Forbidden
+        request = testing.DummyRequest()
+        request.user = 'bob'
+        request.exception = Forbidden()
+        views = Views(request)
+
+        response = views.forbidden()
+
+        self.assertIsInstance(response, Forbidden)
+
+    def test_forbidden_unauthenticated(self):
+        from pyramid.httpexceptions import HTTPFound
+        self.config.add_route('home', '/')
+        self.config.add_route('login', '/login')
+        request = testing.DummyRequest()
+        request.user = None
+        request.url = 'http://example.com/somepage'
+        views = Views(request)
+
+        response = views.forbidden()
+
+        self.assertIsInstance(response, HTTPFound)
+        loc = 'http://example.com/login?'
+        loc += 'came_from=http%3A%2F%2Fexample.com%2Fsomepage'
+        self.assertEqual(response.location, loc)
+
+    def test_forbidden_unauthenticated_from_loginpage(self):
+        from pyramid.httpexceptions import HTTPFound
+        self.config.add_route('home', '/')
+        self.config.add_route('login', '/login')
+        request = testing.DummyRequest()
+        request.user = None
+        request.url = 'http://example.com/login'
+        views = Views(request)
+
+        response = views.forbidden()
+
+        self.assertIsInstance(response, HTTPFound)
+        loc = 'http://example.com/login?'
+        loc += 'came_from=http%3A%2F%2Fexample.com%2F'
+        self.assertEqual(response.location, loc)
+
 
 class JobViewsTestCase(AbstractViewsTestCase):
     """ Test case for magmaweb.views.JobViews"""
