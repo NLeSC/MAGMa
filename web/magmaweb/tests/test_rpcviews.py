@@ -64,12 +64,18 @@ class RpcViewsTestCase(unittest.TestCase):
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_addmsdata(self):
+        from cgi import FieldStorage
+        ms_file = FieldStorage()
+        ms_file.filename = 'c:\bla\bla\F1234.mzxml'
+        post = {'ms_data_file': ms_file}
+        self.rpc.request.POST = post
         self.jobquery.add_ms_data.return_value = self.jq
 
         response = self.rpc.add_ms_data()
 
-        self.jobquery.add_ms_data.assert_called_with(self.post, True)
+        self.jobquery.add_ms_data.assert_called_with(post, True)
         self.job.db.metabolitesTotalCount.assert_called_with()
+        self.assertEqual(self.job.ms_filename, 'c:\bla\bla\F1234.mzxml')
         self.rpc.new_job.assert_called_with()
         self.job.jobquery.assert_called_with()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)

@@ -1,15 +1,17 @@
 import uuid
+import datetime
 import bcrypt
 from sqlalchemy import Column
 from sqlalchemy import Unicode
 from sqlalchemy import String
 from sqlalchemy import ForeignKey
+from sqlalchemy import Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.types import TypeDecorator
-from zope.sqlalchemy import ZopeTransactionExtension #@UnresolvedImport
+from zope.sqlalchemy import ZopeTransactionExtension
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.security import Allow, Deny, Everyone, ALL_PERMISSIONS
 from pyramid.security import Authenticated, authenticated_userid
@@ -80,20 +82,28 @@ class JobMeta(Base):
     __tablename__ = 'job'
     jobid = Column(UUIDType, primary_key=True)
     description = Column(Unicode)  # Kept in sync with Run.description
+    ms_filename = Column(Unicode)  # Kept in sync with Run.ms_filename
     parentjobid = Column(UUIDType, ForeignKey('job.jobid'))
-    state = Column(Unicode)  # queued/running/ready etc.
-    owner = Column(Unicode, ForeignKey('user.userid'))
+    state = Column(Unicode, nullable=False)  # queued/running/ready etc.
+    owner = Column(Unicode, ForeignKey('user.userid'), nullable=False)
+    created_at = Column(Date, nullable=False)
     children = relationship('JobMeta',
                             backref=backref('parent', remote_side=[jobid]))
 
-    def __init__(self, jobid,
-                  description='', parentjobid=None,
-                  state=None, owner=None):
+    def __init__(self, jobid, owner,
+                  description=u'', parentjobid=None,
+                  state=u'STOPPED', ms_filename='',
+                  created_at=None):
         self.jobid = jobid
+        self.owner = owner
         self.description = description
         self.parentjobid = parentjobid
         self.state = state
-        self.owner = owner
+        self.ms_filename = ms_filename
+        if created_at is None:
+            self.created_at = datetime.datetime.utcnow()
+        else:
+            self.created_at = created_at
 
 
 class RootFactory(object):

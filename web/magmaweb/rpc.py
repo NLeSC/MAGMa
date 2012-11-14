@@ -55,6 +55,7 @@ class RpcViews(object):
         Annotation is performed if current job has structures
         """
         job = self.new_job()
+        job.ms_filename = self.request.POST['ms_data_file'].filename
         has_metabolites = job.db.metabolitesTotalCount() > 0
         jobquery = job.jobquery().add_ms_data(self.request.POST,
                                               has_metabolites)

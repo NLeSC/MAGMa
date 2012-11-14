@@ -40,6 +40,7 @@ class Views(object):
     def allinone(self):
         owner = self.request.user.userid
         job = self.job_factory.fromScratch(owner)
+        job.ms_filename = self.request.POST['ms_data_file'].filename
         jobquery = job.jobquery().allinone(self.request.POST)
         self.job_factory.submitQuery(jobquery)
         return {'success': True, 'jobid': str(job.id)}
@@ -73,7 +74,9 @@ class Views(object):
         owner = self.request.user
         for jobmeta in owner.jobs:
             jobs.append({'id': str(jobmeta.jobid),
-                         'description': jobmeta.description})
+                         'description': jobmeta.description,
+                         'ms_filename': jobmeta.ms_filename,
+                         'created_at': str(jobmeta.created_at)})
 
         return {'jobs': jobs}
 

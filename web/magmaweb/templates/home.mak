@@ -18,7 +18,8 @@
   font-weight: bold;
   color: #333;
   text-decoration:none;
-  padding-left: 520px;
+  margin-left: auto;
+  margin-right: auto;
   padding-top: 3px; /* aligns app title with text in logo  */
 }
 

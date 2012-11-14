@@ -1,3 +1,4 @@
+import datetime
 import os
 import uuid
 import unittest
@@ -7,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from magmaweb.job import JobFactory, Job, JobDb, make_job_factory, JobQuery
 from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
 import magmaweb.user as mu
+
 
 def initTestingDB(url='sqlite://', dataset='default'):
     """Creates testing db and populates with test data"""
@@ -21,6 +23,7 @@ def initTestingDB(url='sqlite://', dataset='default'):
     elif (dataset == 'useallpeaks'):
         populateWithUseAllPeaks(dbh)
     return dbh
+
 
 def populateTestingDB(session):
     """Populates test db with data
@@ -333,11 +336,14 @@ class JobFactoryTestCase(unittest.TestCase):
         self.assertEqual(job.dir, '/mydir')
         self.assertEqual(job.meta.owner, 'bob')
         self.assertEqual(job.meta.description, 'My first description')
+        self.assertEqual(job.meta.ms_filename, 'F123456.mzxml')
         self.assertEqual(job.meta.state, 'STOPPED')
 
         self.factory._makeJobDir.assert_called_with(job.id)
         self.factory._copyFile.assert_called_with(dbfile, job.id)
-        self.assertEqual(mu.DBSession().query(mu.JobMeta.owner).filter(mu.JobMeta.jobid==job.id).scalar(), 'bob')
+        o = mu.DBSession().query(mu.JobMeta.owner
+                                 ).filter(mu.JobMeta.jobid == job.id).scalar()
+        self.assertEqual(o, 'bob', 'job meta has been inserted')
 
     def test_fromid(self):
         jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
@@ -461,12 +467,15 @@ class JobFactoryTestCase(unittest.TestCase):
         self.assertEqual(job.dir, '/mydir')
         self.assertEqual(job.meta.owner, 'bob')
         self.assertEqual(job.meta.state, 'STOPPED')
+        self.assertEqual(job.meta.description, '')
+        self.assertEqual(job.meta.ms_filename, '')
         self.assertEqual(job.db.maxMSLevel(), 0)
         self.factory._makeJobDir.assert_called_with(job.id)
 
     def test_cloneJob(self):
         oldjob = self.factory.fromScratch('ed')
         oldjob.description = 'My first description'
+        oldjob.ms_filename = 'F123456.mzxml'
 
         job = self.factory.cloneJob(oldjob, 'bob')
 
@@ -474,6 +483,7 @@ class JobFactoryTestCase(unittest.TestCase):
         self.assertNotEqual(job.id, oldjob.id)
         self.assertEqual(job.meta.owner, 'bob')
         self.assertEqual(job.meta.description, 'My first description')
+        self.assertEqual(job.meta.ms_filename, 'F123456.mzxml')
         self.assertEqual(job.meta.state, 'STOPPED')
         self.assertEqual(job.meta.parentjobid, oldjob.id)
 
@@ -490,14 +500,16 @@ class JobNotFound(unittest.TestCase):
 class JobTestCase(unittest.TestCase):
     def setUp(self):
         import tempfile
-
         self.parentjobid = uuid.UUID('22222222-2222-2222-2222-222222222222')
         self.jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
+        self.created_at = datetime.datetime(2012, 11, 14, 10, 48, 26, 504478)
         self.meta = mu.JobMeta(jobid=self.jobid,
                             description="My desc",
                             state='STOPPED',
                             parentjobid=self.parentjobid,
-                            owner='bob')
+                            owner='bob',
+                            created_at=self.created_at,
+                            ms_filename='F1234.mzxml')
         self.db = Mock(JobDb)
         self.jobdir = tempfile.mkdtemp()
         stderr = open(os.path.join(self.jobdir, 'stderr.txt'), 'w')
@@ -526,6 +538,17 @@ class JobTestCase(unittest.TestCase):
         self.job.description = 'My second description'
 
         self.assertEqual(self.job.description, 'My second description')
+        self.assertEqual(self.job.meta.description, 'My second description')
+        self.assertEqual(self.job.db.runInfo().description,
+                         'My second description')
+
+    def test_set_description_withoutruninfo(self):
+        self.job.db.runInfo.return_value = None
+
+        self.job.description = 'My second description'
+
+        self.assertEqual(self.job.description, 'My second description')
+        self.assertEqual(self.job.meta.description, 'My second description')
 
     def test_owner(self):
         self.assertEqual(self.job.owner, 'bob')
@@ -564,10 +587,31 @@ class JobTestCase(unittest.TestCase):
         self.assertEquals(self.job.parent, self.parentjobid)
 
     def test_set_parent(self):
-        id = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
-        self.job.parent = id
+        jid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
+        self.job.parent = jid
 
-        self.assertEquals(self.job.parent, id)
+        self.assertEquals(self.job.parent, jid)
+
+    def test_created_at(self):
+        self.assertEqual(self.job.created_at, self.created_at)
+
+    def test_ms_filename(self):
+        self.assertEqual(self.job.ms_filename, 'F1234.mzxml')
+
+    def test_set_ms_filename(self):
+        self.job.ms_filename = 'F4567.mzxml'
+
+        self.assertEqual(self.job.ms_filename, 'F4567.mzxml')
+        self.assertEqual(self.job.meta.ms_filename, 'F4567.mzxml')
+        self.assertEqual(self.job.db.runInfo().ms_filename, 'F4567.mzxml')
+
+    def test_set_ms_filename_withoutruninfo(self):
+        self.job.db.runInfo.return_value = None
+
+        self.job.ms_filename = 'F4567.mzxml'
+
+        self.assertEqual(self.job.ms_filename, 'F4567.mzxml')
+        self.assertEqual(self.job.meta.ms_filename, 'F4567.mzxml')
 
 
 class JobDbTestCaseAbstract(unittest.TestCase):

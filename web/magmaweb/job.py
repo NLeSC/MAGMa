@@ -541,13 +541,13 @@ class JobFactory(object):
         meta = self._getJobMeta(jobid)
         session = self._makeJobSession(jobid)
         db = JobDb(session)
-        dir = self.id2jobdir(jobid)
-        return Job(meta, dir, db)
+        jdir = self.id2jobdir(jobid)
+        return Job(meta, jdir, db)
 
     def _makeJobDir(self, jobid):
-        dir = self.id2jobdir(jobid)
-        os.makedirs(dir)
-        return dir
+        jdir = self.id2jobdir(jobid)
+        os.makedirs(jdir)
+        return jdir
 
     def _getJobMeta(self, jobid):
         meta = magmaweb.user.DBSession.query(magmaweb.user.JobMeta).get(jobid)
@@ -573,7 +573,7 @@ class JobFactory(object):
         jobid = uuid.uuid4()
 
         # create job dir
-        dir = self._makeJobDir(jobid)
+        jdir = self._makeJobDir(jobid)
 
         #copy dbfile into jobdir
         self._copyFile(dbfile, jobid)
@@ -581,16 +581,15 @@ class JobFactory(object):
         # session for job db
         session = self._makeJobSession(jobid)
         db = JobDb(session)
-        description = db.runInfo().description
+        run = db.runInfo()
 
         #register job in user db
-        jobmeta = magmaweb.user.JobMeta(jobid,
-                                        owner=owner,
-                                        description=description,
-                                        state='STOPPED')
+        jobmeta = magmaweb.user.JobMeta(jobid, owner,
+                                        description=run.description,
+                                        ms_filename=run.ms_filename)
         self._addJobMeta(jobmeta)
 
-        return Job(jobmeta, dir, db)
+        return Job(jobmeta, jdir, db)
 
     def fromScratch(self, owner):
         """Job from scratch with empty results db
@@ -603,7 +602,7 @@ class JobFactory(object):
         jobid = uuid.uuid4()
 
         # create job dir
-        dir = self._makeJobDir(jobid)
+        jdir = self._makeJobDir(jobid)
 
         # session for job db
         session = self._makeJobSession(jobid)
@@ -611,16 +610,15 @@ class JobFactory(object):
         db = JobDb(session)
 
         #register job in user db
-        jobmeta = magmaweb.user.JobMeta(jobid,
-                                        owner=owner,
-                                        state='STOPPED')
+        jobmeta = magmaweb.user.JobMeta(jobid, owner)
         self._addJobMeta(jobmeta)
 
-        return Job(jobmeta, dir, db)
+        return Job(jobmeta, jdir, db)
 
-    def _copyFile(self, src, id):
-        src.seek(0) # start from beginning
-        dst = open(self.id2db(id), 'wb')
+    def _copyFile(self, src, jid):
+        """Copy content of file object 'src' to result db of job with identifier 'jid'."""
+        src.seek(0)  # start from beginning
+        dst = open(self.id2db(jid), 'wb')
         shutil.copyfileobj(src, dst, 2 << 16)
         dst.close()
 
@@ -638,7 +636,7 @@ class JobFactory(object):
         jobid = uuid.uuid4()
 
         # create job dir
-        dir = self._makeJobDir(jobid)
+        jdir = self._makeJobDir(jobid)
 
         #copy db of old job into new jobdir
         src = open(self.id2db(job.id))
@@ -650,14 +648,13 @@ class JobFactory(object):
         db = JobDb(session)
 
         #register job in user db
-        jobmeta = magmaweb.user.JobMeta(jobid,
-                                        owner=owner,
+        jobmeta = magmaweb.user.JobMeta(jobid, owner,
                                         description=job.description,
-                                        parentjobid=job.id,
-                                        state='STOPPED')
+                                        ms_filename=job.ms_filename,
+                                        parentjobid=job.id)
         self._addJobMeta(jobmeta)
 
-        return Job(jobmeta, dir, db)
+        return Job(jobmeta, jdir, db)
 
     def submitJob2Manager(self, body):
         """Submits job query to jobmanager daemon
@@ -711,18 +708,18 @@ class JobFactory(object):
 
         return query.id
 
-    def id2jobdir(self, id):
-        """Returns job directory based on id and root_dir """
-        return os.path.join(self.root_dir, str(id))
+    def id2jobdir(self, jid):
+        """Returns job directory based on jid and root_dir """
+        return os.path.join(self.root_dir, str(jid))
 
-    def id2db(self, id):
-        """Returns sqlite db of job with id """
-        return os.path.join(self.id2jobdir(id), self.db_fn)
+    def id2db(self, jid):
+        """Returns sqlite db of job with jid"""
+        return os.path.join(self.id2jobdir(jid), self.db_fn)
 
-    def id2url(self, id):
-        """Returns sqlalchemy url of sqlite db of job with id """
+    def id2url(self, jid):
+        """Returns sqlalchemy url of sqlite db of job with jid """
         # 3rd / is for username:pw@host which sqlite does not need
-        return 'sqlite:///' + self.id2db(id)
+        return 'sqlite:///' + self.id2db(jid)
 
 
 class Job(object):
@@ -731,7 +728,8 @@ class Job(object):
     def __init__(self, meta, dir, db=None):
         """
         meta
-            :class:magmaweb.user.JobMeta instance
+            :class:magmaweb.user.JobMeta instance.
+            For owner, parent etc.
 
         dir
             Directory where input and output files reside
@@ -740,7 +738,7 @@ class Job(object):
             :class:JobDb instance
         """
         self.dir = dir
-        self.meta = meta # magmaweb.user.Job, for id, owner, state etc.
+        self.meta = meta
 
         if db is not None:
             self.db = db
@@ -766,7 +764,11 @@ class Job(object):
 
     @description.setter
     def description(self, description):
+        """Sets description in JobMeta and JobDb.runInfo() if present"""
         self.meta.description = description
+        run = self.db.runInfo()
+        if run is not None:
+            run.description = description
 
     @property
     def parent(self):
@@ -804,6 +806,24 @@ class Job(object):
             return open(os.path.join(self.dir, 'stderr.txt'), 'rb')
         except IOError:
             return StringIO.StringIO()
+
+    @property
+    def created_at(self):
+        """Datetime when job was created"""
+        return self.meta.created_at
+
+    @property
+    def ms_filename(self):
+        """Filename of MS datafile"""
+        return self.meta.ms_filename
+
+    @ms_filename.setter
+    def ms_filename(self, ms_filename):
+        """Sets Filename of MS datafile in JobMeta and JobDb.runInfo(0 if present"""
+        self.meta.ms_filename = ms_filename
+        run = self.db.runInfo()
+        if run is not None:
+            run.ms_filename = ms_filename
 
 
 class JobDb(object):
