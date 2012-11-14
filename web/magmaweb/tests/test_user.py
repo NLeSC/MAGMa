@@ -49,7 +49,8 @@ class TestUser(unittest.TestCase):
 
     def test_repr(self):
         u = user.User('bob', 'Bob Smith', 'bob@smith.org', 'mypassword')
-        self.assertEqual(repr(u), "<User('bob', 'Bob Smith', 'bob@smith.org')>")
+        self.assertEqual(repr(u),
+                         "<User('bob', 'Bob Smith', 'bob@smith.org')>")
 
     def test_by_id(self):
         init_user_db()
@@ -61,6 +62,32 @@ class TestUser(unittest.TestCase):
         self.assertEqual(u, u2)
 
         destroy_user_db()
+
+
+class TestJobMeta(unittest.TestCase):
+    def test_contruct_minimal(self):
+        id = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
+
+        j = user.JobMeta(id)
+
+        self.assertEqual(j.jobid, id)
+        self.assertEqual(j.description, '')
+        self.assertIsNone(j.parentjobid)
+        self.assertIsNone(j.owner)
+        self.assertIsNone(j.state)
+
+    def test_contstruct(self):
+        id = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
+        pid = uuid.UUID('83198655-b287-427f-af0d-c6bc1ca566d8')
+
+        j = user.JobMeta(id, description='My desc', parentjobid=pid,
+                         owner='bob', state='STOPPED')
+
+        self.assertEqual(j.jobid, id)
+        self.assertEqual(j.description, 'My desc')
+        self.assertEqual(j.parentjobid, pid)
+        self.assertEqual(j.owner, 'bob')
+        self.assertEqual(j.state, 'STOPPED')
 
 
 class TestRootFactory(unittest.TestCase):

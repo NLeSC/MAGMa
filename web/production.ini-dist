@@ -16,6 +16,10 @@ mako.directories = magmaweb:templates
 cookie.secret = agh7ahfixeiwieCh6Oovei1faecao4ee
 cookie.path = /magma
 
+# user database
+sqlalchemy.url = sqlite:///%(here)s/data/users.db
+
+# In magmaweb/static/ which ExtJS directory to use
 extjsroot = ext-4.1.1a
 
 jobfactory.root_dir = %(here)s/data/jobs
@@ -33,7 +37,6 @@ jobfactory.tarball = /home/stefanv/workspace/magmajobmanager/Magma-1.1.tar.gz
 
 # To submit job to local installation of MAGMaJob
 jobfactory.init_script = . /home/stefanv/workspace/MAGMaJob/env2/bin/activate
-
 
 [server:main]
 use = egg:waitress#main
