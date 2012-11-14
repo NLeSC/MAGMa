@@ -1,4 +1,5 @@
 import unittest
+import datetime
 from pyramid import testing
 from mock import Mock, patch
 from magmaweb.views import Views, JobViews
@@ -47,7 +48,10 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(response, {})
 
     def test_allinone(self):
-        post = {'key': 'value'}
+        from cgi import FieldStorage
+        ms_file = FieldStorage()
+        ms_file.filename = 'c:\bla\bla\F1234.mzxml'
+        post = {'ms_data_file': ms_file}
         request = testing.DummyRequest(post=post)
         request.user = User('bob', 'Bob Example', 'bob@example.com')
         job = self.fake_job()
@@ -63,6 +67,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         jobquery.allinone.assert_called_with(post)
         views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
+        self.assertEqual(job.ms_filename, 'c:\bla\bla\F1234.mzxml')
 
     def test_uploaddb_get(self):
         request = testing.DummyRequest()
@@ -152,15 +157,19 @@ class ViewsTestCase(AbstractViewsTestCase):
         import uuid
         request = testing.DummyRequest()
         request.user = User('bob', 'Bob Example', 'bob@example.com')
+        created_at = datetime.datetime(2012, 11, 14, 10, 48, 26, 504478)
         jobs = [JobMeta(uuid.UUID('11111111-1111-1111-1111-111111111111'),
-                        'My job', 'bob')]
+                        'bob', description='My job', created_at=created_at,
+                        ms_filename='F1234.mzxml')]
         request.user.jobs = jobs
         views = Views(request)
 
         response = views.workspace()
 
         expected_jobs = [{'id': '11111111-1111-1111-1111-111111111111',
-                          'description': 'My job'}]
+                          'description': 'My job',
+                          'ms_filename': 'F1234.mzxml',
+                          'created_at': '2012-11-14 10:48:26.504478'}]
         self.assertEqual(response, {'jobs': expected_jobs})
 
     def test_defaultsjson(self):

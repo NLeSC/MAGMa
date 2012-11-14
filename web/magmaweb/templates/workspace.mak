@@ -11,20 +11,23 @@
         <input name="userid" disabled value="${request.user.userid}"></input>
         </div><div>
         <label for="displayname">Display Name</label>
-        <input name="displayname" value="${request.user.displayname}"></input>
+        <input name="displayname" value="${request.user.displayname}" size=50></input>
         </div><div>
         <label for="email">Email</label>
-        <input name="email" value="${request.user.email}"></input>
+        <input name="email" value="${request.user.email}" size=50></input>
         </div>
         <button>Update</button>
     </form>
     <h1>Jobs</h1>
-    <ul>
+    <table>
+<thead><tr><th>Description</th><th>MS filename</th><th>Created at</th></tr></thead>
+<tbody>
         % for job in jobs:
-        <li><a href="${request.route_url('results',jobid=job['id'])}">${job['description']}
-                (${job['id']})</a></li>
+        <tr><td><a href="${request.route_url('results',jobid=job['id'])}">${job['description']}</a></td>
+        <td>${job['ms_filename']}</td><td>${job['created_at']}</td>
+        </tr>
         % endfor
-    </ul>
+    </tbody></table>
     <hr></hr>
     <a href="${request.route_url('home')}">Home</a>
 </body>

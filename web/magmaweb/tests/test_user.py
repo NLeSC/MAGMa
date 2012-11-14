@@ -1,5 +1,6 @@
 import unittest
 import uuid
+import datetime
 from mock import Mock, patch
 from sqlalchemy import create_engine
 from pyramid import testing
@@ -63,31 +64,55 @@ class TestUser(unittest.TestCase):
 
         destroy_user_db()
 
+    def test_jobs(self):
+        init_user_db()
+        session = user.DBSession()
+        u = user.User('bob', 'Bob Smith', 'bob@smith.org')
+        session.add(u)
+        job_id = uuid.UUID('11111111-1111-1111-1111-111111111111')
+        j = user.JobMeta(job_id, 'bob')
+        session.add(j)
+
+        u2 = user.User.by_id('bob')  # force commit
+        self.assertEqual(u2.jobs, [j])
+
+        destroy_user_db()
+
 
 class TestJobMeta(unittest.TestCase):
-    def test_contruct_minimal(self):
-        id = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
+    @patch('datetime.datetime')
+    def test_contruct_minimal(self, mock_dt):
+        jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
+        created_at = datetime.datetime(2012, 11, 14, 10, 48, 26, 504478)
+        mock_dt.utcnow.return_value = created_at
 
-        j = user.JobMeta(id)
+        j = user.JobMeta(jid, 'bob')
 
-        self.assertEqual(j.jobid, id)
+        self.assertEqual(j.jobid, jid)
+        self.assertEqual(j.owner, 'bob')
         self.assertEqual(j.description, '')
+        self.assertEqual(j.ms_filename, '')
         self.assertIsNone(j.parentjobid)
-        self.assertIsNone(j.owner)
-        self.assertIsNone(j.state)
+        self.assertEqual(j.state, 'STOPPED')
+        self.assertEqual(j.created_at, created_at)
 
     def test_contstruct(self):
-        id = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
+        jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
         pid = uuid.UUID('83198655-b287-427f-af0d-c6bc1ca566d8')
+        created_at = datetime.datetime(2012, 11, 14, 10, 48, 26, 504478)
 
-        j = user.JobMeta(id, description='My desc', parentjobid=pid,
-                         owner='bob', state='STOPPED')
+        j = user.JobMeta(jid, 'bob', description='My desc',
+                         parentjobid=pid, state='RUNNING',
+                         ms_filename='F00346.mzxml',
+                         created_at=created_at)
 
-        self.assertEqual(j.jobid, id)
-        self.assertEqual(j.description, 'My desc')
-        self.assertEqual(j.parentjobid, pid)
+        self.assertEqual(j.jobid, jid)
         self.assertEqual(j.owner, 'bob')
-        self.assertEqual(j.state, 'STOPPED')
+        self.assertEqual(j.description, 'My desc')
+        self.assertEqual(j.ms_filename, 'F00346.mzxml')
+        self.assertEqual(j.parentjobid, pid)
+        self.assertEqual(j.state, 'RUNNING')
+        self.assertEqual(j.created_at, created_at)
 
 
 class TestRootFactory(unittest.TestCase):
@@ -113,7 +138,8 @@ class TestRootFactory(unittest.TestCase):
     def test_extjsroot(self):
         rf = user.RootFactory(self.request)
 
-        self.assertEqual(rf.request.extjsroot, 'http://example.com/static/extjsroot')
+        self.assertEqual(rf.request.extjsroot,
+                         'http://example.com/static/extjsroot')
 
     def test_user_nologin(self):
         rf = user.RootFactory(self.request)
@@ -155,7 +181,7 @@ class TestJobIdFactory(unittest.TestCase):
         u = user.User('me', 'My', 'myself')
         self.session.add(u)
         job_id = uuid.UUID('11111111-1111-1111-1111-111111111111')
-        j = user.JobMeta(job_id, 'My job', owner='me')
+        j = user.JobMeta(job_id, 'me', description='My job')
         self.session.add(j)
 
     def tearDown(self):
@@ -186,22 +212,3 @@ class TestJobIdFactory(unittest.TestCase):
 
         with self.assertRaises(HTTPNotFound):
             jif[str(jobid)]
-
-
-class TestUtils(unittest.TestCase):
-    def setUp(self):
-        init_user_db()
-        self.session = user.DBSession()
-        u = user.User('me', 'My', 'myself')
-        self.session.add(u)
-        job_id = uuid.UUID('11111111-1111-1111-1111-111111111111')
-        j = user.JobMeta(job_id, 'My job', owner='me')
-        self.session.add(j)
-
-    def tearDown(self):
-        destroy_user_db()
-
-    def test_jobs_of_user(self):
-        u = self.session.query(user.User).get('me')
-        jobs = u.jobs
-        self.assertEqual(jobs[0].description, 'My job')
