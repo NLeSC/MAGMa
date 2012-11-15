@@ -23,6 +23,24 @@ DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
 
+def init_user_db(engine, create=True, fill=True):
+    """Binds engine with DBSession and Mappings.
+
+    'engine' is a :class:sqlalchemy.engine.base.Engine .
+    Set 'create' to False to skip createing tables.
+    Set 'fill' to False to skipp adding 'jobmanager' user.
+    """
+    DBSession.configure(bind=engine)
+    Base.metadata.bind = engine
+    if create:
+        Base.metadata.create_all(engine)
+    if fill:
+        # create jobmanager account
+        DBSession.add(User('jobmananger', 'Job Manager daemon',
+                           's.verhoeven@esciencecenter.nl'))
+        # TODO register all found jobs
+
+
 class UUIDType(TypeDecorator):
     """ Stores UUID as Unicode string in database"""
     impl = Unicode
@@ -76,6 +94,11 @@ class User(Base):
     def by_id(cls, userid):
         """Fetch :class:User by `userid`"""
         return DBSession().query(cls).get(userid)
+
+    @classmethod
+    def add(cls, user):
+        """Adds :class:User to db"""
+        DBSession().add(user)
 
 
 class JobMeta(Base):

@@ -386,6 +386,8 @@ class JobFactoryTestCase(unittest.TestCase):
         self.factory.script_fn = 'script.sh'
         cmd = "magma add_structures -t smiles structures.dat results.db\n"
         jobquery = JobQuery(job.id, job.dir, cmd, ['structures.dat'])
+        status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
+        jobquery.status_callback_url = status_cb_url
 
         self.factory.submitJob2Manager = Mock()
 
@@ -410,7 +412,8 @@ class JobFactoryTestCase(unittest.TestCase):
                             "stderr": "stderr.txt",
                             "stdout": "stdout.txt",
                             "time_max": self.factory.time_max,
-                            'arguments': [self.factory.script_fn]
+                            'arguments': [self.factory.script_fn],
+                            'status_callback_url': status_cb_url
                             }
         self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
 
@@ -419,6 +422,8 @@ class JobFactoryTestCase(unittest.TestCase):
         self.factory.submitJob2Manager = Mock()
         job = self.factory.fromScratch('bob')
         jobquery = JobQuery(job.id, job.dir, "", [])
+        status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
+        jobquery.status_callback_url = status_cb_url
 
         jobid = self.factory.submitQuery(jobquery)
 
@@ -436,7 +441,8 @@ class JobFactoryTestCase(unittest.TestCase):
                             "stderr": "stderr.txt",
                             "stdout": "stdout.txt",
                             "time_max": self.factory.time_max,
-                            'arguments': [self.factory.script_fn]
+                            'arguments': [self.factory.script_fn],
+                            'status_callback_url': status_cb_url
                             }
         self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
 
@@ -570,7 +576,8 @@ class JobTestCase(unittest.TestCase):
             self.assertEqual(log.read(), '')
 
     def test_jobquery(self):
-        jobquery = self.job.jobquery()
+        status_cb_url = 'http://example/status/{}.json'.format(self.job.id)
+        jobquery = self.job.jobquery(status_cb_url)
         self.assertIsInstance(jobquery, JobQuery)
         self.assertEqual(jobquery.id, self.job.id)
         self.assertEqual(jobquery.dir, self.job.dir)

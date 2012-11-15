@@ -33,6 +33,9 @@ class RpcViews(object):
             body = {'success': False, 'msg': 'Unable to submit query'}
             raise HTTPInternalServerError(body=json.dumps(body))
 
+    def _status_url(self):
+        return self.request.route_url('status.json', jobid=self.job.id)
+
     @view_config(route_name='rpc.add_structures', renderer='jsonhtml')
     def add_structures(self):
         """Create a copy of current job or new job
@@ -41,7 +44,7 @@ class RpcViews(object):
         Annotation is performed if current job has ms data
         """
         job = self.new_job()
-        jobquery = job.jobquery().add_structures(self.request.POST,
+        jobquery = job.jobquery(self._status_url()).add_structures(self.request.POST,
                                                  job.db.maxMSLevel() > 0)
         self.submit_query(jobquery)
         return {'success': True, 'jobid': str(job.id)}
@@ -57,7 +60,7 @@ class RpcViews(object):
         job = self.new_job()
         job.ms_filename = self.request.POST['ms_data_file'].filename
         has_metabolites = job.db.metabolitesTotalCount() > 0
-        jobquery = job.jobquery().add_ms_data(self.request.POST,
+        jobquery = job.jobquery(self._status_url()).add_ms_data(self.request.POST,
                                               has_metabolites)
         self.submit_query(jobquery)
         return {'success': True, 'jobid': str(job.id)}
@@ -69,7 +72,7 @@ class RpcViews(object):
         Annotation is performed if current job has ms data
         """
         job = self.new_job()
-        jobquery = job.jobquery().metabolize(self.request.POST,
+        jobquery = job.jobquery(self._status_url()).metabolize(self.request.POST,
                                              job.db.maxMSLevel() > 0)
         self.submit_query(jobquery)
         return {'success': True, 'jobid': str(job.id)}
@@ -83,7 +86,7 @@ class RpcViews(object):
         Annotation is performed if current job has ms data
         """
         job = self.new_job()
-        jobquery = job.jobquery().metabolize_one(self.request.POST,
+        jobquery = job.jobquery(self._status_url()).metabolize_one(self.request.POST,
                                                  job.db.maxMSLevel() > 0)
         self.submit_query(jobquery)
         return {'success': True, 'jobid': str(job.id)}
@@ -94,7 +97,7 @@ class RpcViews(object):
 
         """
         job = self.new_job()
-        jobquery = job.jobquery().annotate(self.request.POST)
+        jobquery = job.jobquery(self._status_url()).annotate(self.request.POST)
         self.submit_query(jobquery)
         return {'success': True, 'jobid': str(job.id)}
 

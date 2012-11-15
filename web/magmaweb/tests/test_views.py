@@ -13,6 +13,7 @@ class AbstractViewsTestCase(unittest.TestCase):
                          'jobfactory.root_dir': '/somedir',
                          }
         self.config = testing.setUp(settings=self.settings)
+        self.config.add_route('status.json', '/status/{jobid}.json')
 
     def tearDown(self):
         testing.tearDown()
@@ -68,6 +69,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
         self.assertEqual(job.ms_filename, 'c:\bla\bla\F1234.mzxml')
+        job.jobquery.assert_called_with('http://example.com/status/foo.json')
 
     def test_uploaddb_get(self):
         request = testing.DummyRequest()
@@ -340,6 +342,19 @@ class JobViewsTestCase(AbstractViewsTestCase):
         response = views.job_status()
 
         self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
+
+    def test_set_jobstatus(self):
+        request = testing.DummyRequest()
+        request.body = 'STOPPED'
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'RUNNING'
+        views = JobViews(job, request)
+
+        response = views.set_job_status()
+
+        self.assertEqual(response, dict(status='STOPPED', jobid='bla'))
+        self.assertEqual(job.state, 'STOPPED')
 
     def test_metabolitesjson_return(self):
         request = testing.DummyRequest(params={
