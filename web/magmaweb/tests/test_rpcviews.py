@@ -12,6 +12,7 @@ class RpcViewsTestCase(unittest.TestCase):
                          'jobfactory.root_dir': '/somedir',
                          }
         self.config = testing.setUp(settings=self.settings)
+        self.config.add_route('status.json', '/status/{jobid}.json')
 
         self.jobid = '3ad25048-26f6-11e1-851e-00012e260790'
         self.post = {'key': 'value'}
@@ -59,7 +60,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.jobquery.add_structures.assert_called_with(self.post, True)
         self.job.db.maxMSLevel.assert_called_with()
         self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with()
+        self.job.jobquery.assert_called_with('http://example.com/status/3ad25048-26f6-11e1-851e-00012e260790.json')
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
@@ -77,7 +78,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.job.db.metabolitesTotalCount.assert_called_with()
         self.assertEqual(self.job.ms_filename, 'c:\bla\bla\F1234.mzxml')
         self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with()
+        self.job.jobquery.assert_called_with('http://example.com/status/3ad25048-26f6-11e1-851e-00012e260790.json')
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
@@ -89,7 +90,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.jobquery.metabolize.assert_called_with(self.post, True)
         self.job.db.maxMSLevel.assert_called_with()
         self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with()
+        self.job.jobquery.assert_called_with('http://example.com/status/3ad25048-26f6-11e1-851e-00012e260790.json')
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
@@ -101,7 +102,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.jobquery.metabolize_one.assert_called_with(self.post, True)
         self.job.db.maxMSLevel.assert_called_with()
         self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with()
+        self.job.jobquery.assert_called_with('http://example.com/status/3ad25048-26f6-11e1-851e-00012e260790.json')
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
@@ -112,7 +113,7 @@ class RpcViewsTestCase(unittest.TestCase):
 
         self.jobquery.annotate.assert_called_with(self.post)
         self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with()
+        self.job.jobquery.assert_called_with('http://example.com/status/3ad25048-26f6-11e1-851e-00012e260790.json')
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 

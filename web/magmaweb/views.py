@@ -18,8 +18,7 @@ class Views(object):
         self.request = request
         self.job_factory = make_job_factory(request.registry.settings)
 
-    @view_config(route_name='home', renderer='home.mak',
-                 permission=NO_PERMISSION_REQUIRED)
+    @view_config(route_name='home', renderer='home.mak')
     def home(self):
         """Returns homepage on GET. """
         return {}
@@ -30,7 +29,8 @@ class Views(object):
         """Returns startjob on GET. """
         return {}
 
-    @view_config(route_name='defaults.json', renderer="json", permission='view')
+    @view_config(route_name='defaults.json', renderer="json",
+                 permission='view')
     def defaults(self):
         """ Returns defaults settings to run a job"""
         return {'success': True,
@@ -41,11 +41,13 @@ class Views(object):
         owner = self.request.user.userid
         job = self.job_factory.fromScratch(owner)
         job.ms_filename = self.request.POST['ms_data_file'].filename
-        jobquery = job.jobquery().allinone(self.request.POST)
+        status_url = self.request.route_url('status.json', jobid=job.id)
+        jobquery = job.jobquery(status_url).allinone(self.request.POST)
         self.job_factory.submitQuery(jobquery)
         return {'success': True, 'jobid': str(job.id)}
 
-    @view_config(route_name='uploaddb', renderer='uploaddb.mak', permission='view')
+    @view_config(route_name='uploaddb', renderer='uploaddb.mak',
+                 permission='view')
     def uploaddb(self):
         """Upload a sqlitedb as ``db_file`` param in POST request
         and redirects to job results page"""
@@ -80,7 +82,8 @@ class Views(object):
 
         return {'jobs': jobs}
 
-    @view_config(route_name='login', renderer='login.mak')
+    @view_config(route_name='login', renderer='login.mak',
+                 permission=NO_PERMISSION_REQUIRED)
     def login(self):
         login_url = self.request.route_url('login')
         referrer = self.request.url
@@ -120,11 +123,11 @@ class Views(object):
         else:
             return self.request.exception
 
-    @view_config(route_name='logout')
+    @view_config(route_name='logout', permission='view')
     def logout(self):
         headers = forget(self.request)
-        return HTTPFound(location=self.request.route_url('home'),
-                         headers=headers)
+        home = self.request.route_url('home')
+        return HTTPFound(location=home, headers=headers)
 
 
 @view_defaults(context=Job, permission='view')
@@ -135,7 +138,7 @@ class JobViews(object):
         self.job = job
 
     @view_config(route_name='status', renderer='status.mak', permission='run')
-    @view_config(route_name='status.json', renderer='json', permission='run')
+    @view_config(route_name='status.json', renderer='json', permission='run', request_method='GET')
     def job_status(self):
         """Returns status of a job
 
@@ -153,6 +156,14 @@ class JobViews(object):
         jobstate = self.job.state
         return dict(status=jobstate, jobid=jobid)
 
+    @view_config(route_name='status.json', renderer='json',
+                 permission='monitor', request_method='PUT')
+    def set_job_status(self):
+        jobid = self.job.id
+        jobstate = self.request.body
+        self.job.state = jobstate
+        return dict(status=jobstate, jobid=jobid)
+
     @view_config(route_name='results', renderer='results.mak')
     def results(self):
         """Returns results page"""
@@ -163,7 +174,8 @@ class JobViews(object):
                     run=db.runInfo(),
                     maxmslevel=db.maxMSLevel(),
                     jobid=self.job.id,
-                    canRun=bool(canRun)  # coerce pyramid.security.Allowed|Denied to boolean
+                    # coerce pyramid.security.Allowed|Denied to boolean
+                    canRun=bool(canRun)
                     )
 
     @view_config(route_name='metabolites.json', renderer='json')

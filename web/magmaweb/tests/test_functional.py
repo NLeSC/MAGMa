@@ -20,8 +20,11 @@ class FunctionalTests(unittest.TestCase):
                          'cookie.secret': 'aepeeV6aizaiph5Ae0Reimeequuluwoh',
                          'cookie.path': '/magma'
                          }
+        # add REMOTE_ADDR to prevent ip auth
+        # treating requests as coming from localhost
+        env = dict(REMOTE_ADDR='1.2.3.4')
         app = main({}, **self.settings)
-        self.testapp = TestApp(app)
+        self.testapp = TestApp(app, extra_environ=env)
 
         # Setup owner of job
         jf = make_job_factory(self.settings)
@@ -38,8 +41,7 @@ class FunctionalTests(unittest.TestCase):
         DBSession.remove()
 
     def test_home(self):
-        env = dict(REMOTE_USER='bob')
-        res = self.testapp.get('/', status=200, extra_environ=env)
+        res = self.testapp.get('/', status=200)
         self.assertTrue('Welcome' in res.body)
 
     def fake_jobid(self):

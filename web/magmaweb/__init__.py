@@ -2,8 +2,10 @@ import json
 from pyramid.config import Configurator
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.authentication import AuthTktAuthenticationPolicy
+from pyramid_ipauth import IPAuthenticationPolicy
+from pyramid_multiauth import MultiAuthenticationPolicy
 from sqlalchemy import engine_from_config
-from magmaweb.user import DBSession, Base, RootFactory, JobIdFactory
+from magmaweb.user import init_user_db, RootFactory, JobIdFactory
 
 
 def main(global_config, **settings):
@@ -13,10 +15,15 @@ def main(global_config, **settings):
 
     config.include('pyramid_tm')
 
-    authn_policy = AuthTktAuthenticationPolicy(
+    authn_policy1 = AuthTktAuthenticationPolicy(
         secret=settings['cookie.secret'],
         path=settings['cookie.path']
     )
+    # TODO Make jobmanager_ipadr a setting
+    jobmanager_ipadr = "127.0.*.*"
+    authn_policy2 = IPAuthenticationPolicy(jobmanager_ipadr, "jobmanager",
+                                           ["monitor"], '127.0.0.1')
+    authn_policy = MultiAuthenticationPolicy([authn_policy1, authn_policy2])
     config.set_authentication_policy(authn_policy)
     config.set_authorization_policy(ACLAuthorizationPolicy())
     config.set_root_factory(RootFactory)
@@ -71,9 +78,7 @@ def main(global_config, **settings):
 
     # Setup connection to user database
     engine = engine_from_config(settings)
-    DBSession.configure(bind=engine)
-    Base.metadata.bind = engine
-    Base.metadata.create_all(engine)
+    init_user_db(engine)
 
     config.scan('magmaweb')
     return config.make_wsgi_app()

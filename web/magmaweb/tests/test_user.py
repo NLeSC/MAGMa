@@ -12,8 +12,7 @@ from magmaweb import user
 
 def init_user_db():
     engine = create_engine('sqlite:///:memory:')
-    user.DBSession.configure(bind=engine)
-    user.Base.metadata.create_all(engine)  #@UndefinedVariable
+    user.init_user_db(engine, True, False)
 
 
 def destroy_user_db():
@@ -60,6 +59,18 @@ class TestUser(unittest.TestCase):
         self.session.add(u)
 
         u2 = user.User.by_id('bob')
+        self.assertEqual(u, u2)
+
+        destroy_user_db()
+
+    def test_add(self):
+        init_user_db()
+
+        u = user.User('bob', 'Bob Smith', 'bob@smith.org')
+        user.User.add(u)
+
+        session = user.DBSession()
+        u2 = session.query(user.User).get('bob')
         self.assertEqual(u, u2)
 
         destroy_user_db()

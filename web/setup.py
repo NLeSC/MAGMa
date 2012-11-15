@@ -11,6 +11,8 @@ requires = [
             'pyramid',
             'SQLAlchemy',
             'pyramid_tm',
+            'pyramid_multiauth',
+            'pyramid_ipauth',
             'zope.sqlalchemy',
             'colander',
             'waitress',

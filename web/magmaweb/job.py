@@ -77,7 +77,8 @@ class JobQuery(object):
                 )
             return cstruct
 
-    def __init__(self, id, dir, script='', prestaged=None):
+    def __init__(self, id, dir, script='', prestaged=None,
+                  status_callback_url=None):
         """Contruct JobQuery
 
         Params:
@@ -85,12 +86,14 @@ class JobQuery(object):
         - dir, job directory
         - script, script to run in job directory
         - prestaged, list of files to prestage
+        - status_callback_url, Url to PUT status of job to.
 
         """
         self.id = id
         self.dir = dir
         self.script = script
         self.prestaged = prestaged or []
+        self.status_callback_url = status_callback_url
 
     def __eq__(self, other):
         return (self.id == other.id and
@@ -697,7 +700,8 @@ class JobFactory(object):
                'stderr': 'stderr.txt',
                'stdout': 'stdout.txt',
                'time_max': self.time_max,
-               'arguments': [self.script_fn]
+               'arguments': [self.script_fn],
+               'status_callback_url': query.status_callback_url
                }
         body['prestaged'].extend(query.prestaged)
 
@@ -753,9 +757,12 @@ class Job(object):
         """Same as id and as lookup key using :class:magmaweb.user.JobIdFactory"""
         return str(self.id)
 
-    def jobquery(self):
-        """Returns :class:`JobQuery` """
-        return JobQuery(self.id, self.dir)
+    def jobquery(self, status_callback_url):
+        """Returns :class:`JobQuery`
+
+        'status_callback_url' is the url to PUT status of job to.
+        """
+        return JobQuery(self.id, self.dir, status_callback_url)
 
     @property
     def description(self):
