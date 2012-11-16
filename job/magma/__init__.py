@@ -273,7 +273,7 @@ class StructureEngine(object):
                 metab = dupid
         except NoResultFound:
             self.db_session.add(metab)
-            sys.stderr.write('Added: '+name+'\n')
+            #sys.stderr.write('Added: '+name+'\n')
         self.db_session.flush()
         return metab.metid
 
@@ -643,8 +643,8 @@ class AnnotateEngine(object):
         masses.sort()
         queries=[[0,0]]
         for mass in masses:
-            ql,qh=mass/self.precision,mass*self.precision
-            if queries[-1][0] < ql < queries[-1][1]:
+            ql,qh=int(1e6*mass/self.precision),int(1e6*mass*self.precision)
+            if queries[-1][0] <= ql <= queries[-1][1] and (qh-queries[-1][0]) < 1e6:
                 queries[-1][1]=qh
             else:
                 queries.append([ql,qh])
@@ -652,8 +652,8 @@ class AnnotateEngine(object):
             result = c.execute('SELECT * FROM molecules WHERE refscore > 2 AND mim BETWEEN ? AND ?' , (ql,qh))
             # result = c.execute('SELECT * FROM connectivities JOIN isomers ON isomers.cid = (SELECT cid FROM isomers WHERE isomers.conn_id = connectivities.id LIMIT 1) WHERE connectivities.mim BETWEEN ? AND ?', 
             #                             (mass/self.precision,mass*self.precision))
-            for (id,cid,mim,molblock,inchikey,molform,name,refscore) in result:
-                db_candidates[id]={'mim':mim,
+            for (cid,mim,molblock,inchikey,molform,name,refscore) in result:
+                db_candidates[cid]={'mim':float(mim/1e6),
                                    'mol':zlib.decompress(molblock),
                                    'inchikey':inchikey,
                                    'molform':molform,
@@ -661,6 +661,7 @@ class AnnotateEngine(object):
                                    'name':name,
                                    'refscore':refscore
                                    }
+            print str(ql)+','+str(qh)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
 
     def search_structures(self,metids=None,ncpus=1):
