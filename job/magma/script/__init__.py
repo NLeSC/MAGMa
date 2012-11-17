@@ -229,7 +229,7 @@ class MagmaCommand(object):
             candidates=annotate_engine.get_pubchem_candidates()
             metids=set([])
             for id in candidates:
-                try:
+                #try:
                     cid=str(candidates[id]['cid'])
                     metids.add(struct_engine.add_structure(molblock=candidates[id]['mol'],
                                        name=candidates[id]['name']+' ('+cid+')',
@@ -244,8 +244,8 @@ class MagmaCommand(object):
                                                  cid+'">'+cid+' (PubChem)</a>'
                                        )
                                )
-                except:
-                    logging.warn('Could not parse compound: ' + str(candidates[id]['cid']))
+                #except:
+                #    logging.warn('Could not parse compound: ' + str(candidates[id]['cid']))
             annotate_engine.search_structures(metids=metids,ncpus=args.ncpus)
         magma_session.commit()
             # annotate_engine.search_some_structures(metids)
