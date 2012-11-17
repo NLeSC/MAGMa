@@ -708,7 +708,6 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
 
     Fragmented=False
     mol=Chem.MolFromMolBlock(str(structure.mol))
-    print structure.mol
 
     typew={"AROMATIC":3.0,\
            "DOUBLE":2.0,\
@@ -782,10 +781,6 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
 #                                                     x.GetEndAtom().GetAtomicNum() != 6]
                 self.bonds.add(bond)
                 self.bondscore[bond]=bondscore
-            print self.atom_masses
-            print self.bonded_atoms
-            print self.bonds
-            print self.bondscore
                 
             self.all_fragments=set([frag])
             self.total_fragments=set([frag])
@@ -1002,8 +997,6 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
                     #fragment_engine=GrowingEngine(mol)
                     fragment_engine.generate_fragments()
                     sys.stderr.write('N fragments kept: '+str(len(fragment_engine.fragments))+"\n")
-                    print fragment_engine.fragments
-                    print fragment_engine.fragment_masses
                     Fragmented=True
                 hit=gethit(peak,(1<<Chem.natoms(mol)-1),0,0,structure.mim,-deltaH)
                 add_fragment_data_to_hit(hit)
