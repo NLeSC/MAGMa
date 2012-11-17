@@ -26,20 +26,8 @@ generate 2D conformation for those
 generate smiles
 """
 
-typew={"AROMATIC":3.0,\
-       "DOUBLE":2.0,\
-       "TRIPLE":3.0,\
-       "SINGLE":1.0}
-#typew={Chem.rdchem.BondType.AROMATIC:3.0,\
-#         Chem.rdchem.BondType.DOUBLE:2.0,\
-#         Chem.rdchem.BondType.TRIPLE:3.0,\
-#         Chem.rdchem.BondType.SINGLE:1.0}
-ringw={False:1,True:1}
-heterow={False:2,True:1}
 missingfragmentpenalty=10
 max_small_losses=1
-weigh_scores=False
-
 
 mims={1:1.0078250321,\
       6:12.0000000,\
@@ -621,7 +609,7 @@ class AnnotateEngine(object):
         for structure,job in jobs:
             raw_result=job(raw_result=True)
             hits,sout = pickle.loads(raw_result)
-            print sout
+            #print sout
             sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
             structure.nhits=len(hits)
             self.db_session.add(structure)
@@ -713,15 +701,10 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
            "DOUBLE":2.0,\
            "TRIPLE":3.0,\
            "SINGLE":1.0}
-    #typew={Chem.rdchem.BondType.AROMATIC:3.0,\
-    #         Chem.rdchem.BondType.DOUBLE:2.0,\
-    #         Chem.rdchem.BondType.TRIPLE:3.0,\
-    #         Chem.rdchem.BondType.SINGLE:1.0}
     global missingfragmentpenalty
     ringw={False:1,True:1}
     heterow={False:2,True:1}
     missingfragmentpenalty=10
-    max_small_losses=1
     weigh_scores=False
     
     
@@ -996,9 +979,9 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
                     fragment_engine=FragmentationEngine(mol)
                     #fragment_engine=GrowingEngine(mol)
                     fragment_engine.generate_fragments()
-                    sys.stderr.write('N fragments kept: '+str(len(fragment_engine.fragments))+"\n")
+                    #sys.stderr.write('N fragments kept: '+str(len(fragment_engine.fragments))+"\n")
                     Fragmented=True
-                hit=gethit(peak,(1<<Chem.natoms(mol)-1),0,0,structure.mim,-deltaH)
+                hit=gethit(peak,(1<<Chem.natoms(mol))-1,0,0,structure.mim,-deltaH)
                 add_fragment_data_to_hit(hit)
                 hits.append(hit)
     return hits
