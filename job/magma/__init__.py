@@ -5,18 +5,18 @@ import sqlite3,struct,zlib,gzip,copy
 import pkg_resources
 import numpy
 import logging
-# from rdkit import Chem, Geometry
-# from rdkit.Chem import AllChem, Descriptors
 from lxml import etree
 from sqlalchemy import create_engine,and_,desc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from models import Base, Metabolite, Scan, Peak, Fragment, Run
-import jpype,glob,os
 import pp
 import cPickle as pickle
 import types
+import rdkit_engine as Chem     # Use rdkit_engine
+# import cdk_engine               # Use cdk_engine
+# Chem=cdk_engine.engine()
 
 """
 RDkit dependencies:
@@ -25,104 +25,6 @@ read smiles
 generate 2D conformation for those
 generate smiles
 """
-
-#jars= glob.glob('/home/ridderl/cdk/Marijn_jars/*jar')
-jars= ('/home/ridderl/cdk/cdk-1.4.13.jar',)
-classpath = ":".join([ os.path.abspath(jar) for jar in jars])
-os.environ['JAVA_HOME'] = '/usr/lib/jvm/java-6-openjdk'
-jpype.startJVM(jpype.getDefaultJVMPath(),"-ea", "-Djava.class.path="+classpath)
-#
-#cdk = jpype.JPackage("org").openscience.cdk
-#java = jpype.java
-
-
-class CDKengine(object):
-    def __init__(self):
-#        jars= ('/home/ridderl/cdk/cdk-1.4.13.jar',)
-#        classpath = ":".join([ os.path.abspath(jar) for jar in jars])
-#        os.environ['JAVA_HOME'] = '/usr/lib/jvm/java-6-openjdk'
-#        jpype.startJVM(jpype.getDefaultJVMPath(),"-ea", "-Djava.class.path="+classpath)
-        self.cdk = jpype.JPackage("org").openscience.cdk
-        self.java = jpype.java
-
-        self.builder = self.cdk.DefaultChemObjectBuilder.getInstance()
-        self.sp = self.cdk.smiles.SmilesParser(self.builder)
-        self.sp.setPreservingAromaticity(True)
-        self.sg = self.cdk.smiles.SmilesGenerator()
-        self.sg.setUseAromaticityFlag(True)
-        self.isof=self.cdk.config.IsotopeFactory.getInstance(self.builder)
-        self.Hmass=self.isof.getMajorIsotope('H').getExactMass().floatValue()
-        self.acm = self.cdk.tools.manipulator.AtomContainerManipulator
-    def MolToMolBlock(self,molecule):
-        mol2stringio = self.java.io.StringWriter()
-        mol2writer = self.cdk.io.MDLV2000Writer(mol2stringio)
-        try:
-            dbst = self.cdk.smiles.DeduceBondSystemTool()
-            molecule = dbst.fixAromaticBondOrders(molecule)
-        except:
-            pass
-        mol2writer.write(molecule)
-        # mol2writer.close()
-        return mol2stringio.toString()
-    def MolFromMolBlock(self,mol_block):
-        stringio2mol = self.java.io.StringReader(mol_block)
-        reader2mol = self.cdk.io.MDLReader(stringio2mol)
-        molecule=self.cdk.Molecule()
-        reader2mol.read(molecule)
-        self.cdk.tools.manipulator.AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(molecule)
-        self.cdk.aromaticity.CDKHueckelAromaticityDetector.detectAromaticity(molecule) #
-        ha=self.cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
-        ha.addImplicitHydrogens(molecule)
-        return molecule
-    def generateCoordinates(self,molecule):
-        sdg = self.cdk.layout.StructureDiagramGenerator(molecule)
-        sdg.generateCoordinates()
-        return sdg.getMolecule()
-    def MolFromSmiles(self,smiles):
-        molecule = self.sp.parseSmiles(smiles)
-        self.cdk.tools.manipulator.AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(molecule) #
-        self.cdk.aromaticity.CDKHueckelAromaticityDetector.detectAromaticity(molecule)
-        ha=self.cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
-        ha.addImplicitHydrogens(molecule)
-        molecule = self.generateCoordinates(molecule)
-        return molecule
-    def MolToSmiles(self,molecule):
-        return self.sg.createSMILES(molecule) #sg.createSMILES(molecule,True)
-    def MolToInchiKey(self,molecule):
-        # For some reason inchikey fails when bond flag 5 (ISCONJUGATED) is set
-        # Make a copy and set all flag 5 values to 0
-        mol=molecule.clone()
-        for x in range(mol.getBondCount()):
-            mol.getBond(x).setFlag(5,0)
-        igf = self.cdk.inchi.InChIGeneratorFactory.getInstance()
-        ig = igf.getInChIGenerator(mol)
-        return ig.getInchiKey()
-    def GetExtendedAtomMass(self,atom):
-        mass=self.isof.getMajorIsotope(atom.getSymbol()).getExactMass().floatValue()
-        try:
-            hc=atom.getImplicitHydrogenCount().intValue()
-        except:
-            hc=0
-        return mass+self.Hmass*hc
-    def GetFormulaProps(self,mol):
-        formula=self.cdk.tools.manipulator.MolecularFormulaManipulator.getMolecularFormula(mol)
-        formula_string = self.cdk.tools.manipulator.MolecularFormulaManipulator.getString(formula)
-        mim = self.cdk.tools.manipulator.MolecularFormulaManipulator.getMajorIsotopeMass(formula)
-        return mim,formula_string
-    def FragmentToSmiles(self,mol,atomlist):
-        return self.sg.createSMILES(self.acm.extractSubstructure(mol,atomlist))
-    def FragmentToInchiKey(self,mol,atomlist):
-        ac=self.acm.extractSubstructure(mol,atomlist)
-        return self.MolToInchiKey(ac)
-    def XLogP(self,mol):
-        ha=self.cdk.tools.CDKHydrogenAdder.getInstance(self.builder)
-        newmol=mol.clone()
-        ha.addImplicitHydrogens(newmol)
-        self.acm.convertImplicitToExplicitHydrogens(newmol)
-        xlpd=self.cdk.qsar.descriptors.molecular.XLogPDescriptor()
-        return xlpd.calculate(newmol).getValue().toString()
-
-Chem = CDKengine()
 
 typew={"AROMATIC":3.0,\
        "DOUBLE":2.0,\
@@ -257,7 +159,7 @@ class StructureEngine(object):
             nhits=0,
             mim=mim,
             reference=reference,
-            logp=Chem.XLogP(mol)
+            logp=Chem.LogP(mol)
             #logp=Chem.Crippen.MolLogP(m)
             )
         try:
@@ -708,18 +610,18 @@ class AnnotateEngine(object):
                               self.mz_precision_abs,
                               self.use_all_peaks,
                               self.ionisation_mode
-                              ),(
-                              CDKengine,
-                              ),(
+                              ),(),(
                               "numpy",
                               "jpype",
+                              "magma.rdkit_engine", # Use rdkit_engine
+                              # "magma.cdk_engine",   # Use cdk_engine
                               "magma.types"
                               )
                            )))
         for structure,job in jobs:
             raw_result=job(raw_result=True)
             hits,sout = pickle.loads(raw_result)
-            # print sout
+            print sout
             sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
             structure.nhits=len(hits)
             self.db_session.add(structure)
@@ -801,9 +703,12 @@ class DataAnalysisEngine(object):
             print '$$$$'
 
 def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode):
+    # Chem=magma.cdk_engine.engine()      # Use cdk_engine
+    Chem=magma.rdkit_engine             # Use rdkit_engine
+
     Fragmented=False
-    Chem=CDKengine()
     mol=Chem.MolFromMolBlock(str(structure.mol))
+    print structure.mol
 
     typew={"AROMATIC":3.0,\
            "DOUBLE":2.0,\
@@ -834,69 +739,9 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
     
     Hmass=mims[1]     # Mass of hydrogen atom
 
-    class GrowingEngine(object):
-        def __init__(self,mol):
-#                self.natoms=mol.GetNumAtoms() # RDKit
-            self.natoms=mol.getAtomCount()
-            self.FragmentBreaks={}
-            self.FragmentMass={}
-            self.atombits=[]          # [1,2,4,8,16,....]
-            self.atommass={}          # {atombit:atommass(incl. attached hydrogens)}
-            self.bondbits=[]
-            self.bondscore=[]
-
-            for x in range(self.natoms):
-                self.atombits.append(2**x)
-#                    an=mol.GetAtomWithIdx(x).GetAtomicNum() #RDKit
-                an=mol.getAtom(x).getAtomicNumber()
-                self.atommass[2**x]=Chem.GetExtendedAtomMass(mol.getAtom(x))
-#                for x in mol.GetBonds():
-            for x in range(mol.getBondCount()):
-                bondbit=0
-                for a in mol.getBond(x).atoms().iterator():
-                    bondbit=bondbit | mol.getAtomNumber(a)
-                self.bondbits.append(bondbit)
-                
-#                    self.bondbits.append(self.atombits[x.GetBeginAtomIdx()]|\
-#                                         self.atombits[x.GetEndAtomIdx()])
-#                    self.bondscore.append(typew[x.GetBondType()]*ringw[x.IsInRing()]*\
-#                                          heterow[x.GetBeginAtom().GetAtomicNum() != 6 or \
-#                                                     x.GetEndAtom().GetAtomicNum() != 6])
-
-        def grow(self,fragment):
-            NewFragments=[]
-            for bond in self.bondbits:
-                if 0 < (fragment & bond) < bond:
-                    NewFragments.append(fragment|bond)
-            self.FragmentBreaks[fragment]=len(NewFragments)
-            if len(NewFragments) <= max_broken_bonds+3:
-                for NewFragment in NewFragments:
-                    if NewFragment not in self.FragmentMass:
-                        self.FragmentMass[NewFragment]=self.FragmentMass[fragment]+self.atommass[NewFragment^fragment]
-                        self.grow(NewFragment)
-
-        def generate_fragments(self):
-            for atom in self.atombits:
-                self.FragmentMass[atom]=self.atommass[atom]
-                self.grow(atom)
-            sys.stderr.write('N fragments created: '+str(len(self.FragmentMass))+"\n")
-
-            # first items fragment_masses and fragment_info represent the complete molecule
-            # represent the complete molecule
-            fragment_store=FragmentStore()
-            for fragment in self.FragmentMass:
-                if self.FragmentBreaks[fragment]<=max_broken_bonds:
-                    score=0
-                    for bond in range(len(self.bondbits)):
-                        if 0 < (fragment & self.bondbits[bond]) < self.bondbits[bond]:
-                            score += self.bondscore[bond]
-                    fragment_store.add_fragment(fragment,self.FragmentMass[fragment],score,self.FragmentBreaks[fragment])
-            return fragment_store
-
-
     class FragmentationEngine(object):
         def __init__(self,mol):
-            self.natoms=mol.getAtomCount()  # number of atoms in the molecule
+            self.natoms=Chem.natoms(mol)  # number of atoms in the molecule
             self.atom_masses=[]
             self.neutral_loss_atoms=[]
             self.bonded_atoms=[]           # [[list of atom numbers]]
@@ -913,22 +758,15 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
 
             for x in range(self.natoms):
                 self.bonded_atoms.append([])
-                self.atom_masses.append(Chem.GetExtendedAtomMass(mol.getAtom(x)))
-                if mol.getAtom(x).getSymbol() == 'O' and mol.getAtom(x).getImplicitHydrogenCount() == 1:
+                self.atom_masses.append(Chem.GetExtendedAtomMass(mol,x))
+                if Chem.GetAtomSymbol(mol,x) == 'O' and Chem.GetAtomHs(mol,x) == 1:
                     self.neutral_loss_atoms.append(x)
-            for x in range(mol.getBondCount()):
-                bond=0
-                heterobond=False
-                for a in mol.getBond(x).atoms().iterator():
-                    self.bonded_atoms[mol.getAtomNumber(a)].append(mol.getAtomNumber(mol.getBond(x).getConnectedAtom(a)))
-                    bond = bond | 1<<mol.getAtomNumber(a)
-                    if a.getSymbol() != 'C':
-                        heterobond=True
-                if mol.getBond(x).getFlag(4) == 1:
-                    bondscore = typew["AROMATIC"]
-                else:
-                    bondscore = typew[mol.getBond(x).getOrder().toString()]
-                bondscore*=heterow[heterobond]
+            for x in range(Chem.nbonds(mol)):
+                a1,a2 = Chem.GetBondAtoms(mol,x)
+                self.bonded_atoms[a1].append(a2)
+                self.bonded_atoms[a2].append(a1)
+                bond = 1<<a1 | 1<<a2
+                bondscore = typew[Chem.GetBondType(mol,x)]*heterow[Chem.GetAtomSymbol(mol,a1) != 'C' or Chem.GetAtomSymbol(mol,a2) != 'C']
                     
 
 #                    for bond in mol.GetAtomWithIdx(x).GetBonds():
@@ -944,12 +782,17 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
 #                                                     x.GetEndAtom().GetAtomicNum() != 6]
                 self.bonds.add(bond)
                 self.bondscore[bond]=bondscore
+            print self.atom_masses
+            print self.bonded_atoms
+            print self.bonds
+            print self.bondscore
                 
             self.all_fragments=set([frag])
             self.total_fragments=set([frag])
             self.current_fragments=set([frag])
             self.new_fragments=set([frag])
             self.add_fragment(frag,self.calc_fragment_mass(frag),0,0)
+            print frag,self.calc_fragment_mass(frag)
         
         def extend(self,atom):
             for a in self.bonded_atoms[atom]:
@@ -1129,16 +972,17 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
         atomlist=[]
         atomstring=''
         if hit.fragment != 0:
-            for atom in range(mol.getAtomCount()):
+            for atom in range(Chem.natoms(mol)):
                 if ((1<<atom) & hit.fragment):
                     atomstring+=','+str(atom)
                     atomlist.append(atom)
             hit.atomstring=atomstring
             hit.atomlist=atomlist
-            try:
-                hit.inchikey=Chem.FragmentToInchiKey(mol,hit.atomlist)[:14]
-            except:
-                exit('failed inchi for: '+atomstring+'--'+str(hit.fragment))
+            #try:
+            hit.inchikey=Chem.FragmentToInchiKey(mol,hit.atomlist)
+            #except:
+            #    exit('failed inchi for: '+atomstring+'--'+str(hit.fragment))
+            print hit.fragment,hit.atomlist,hit.atomstring,hit.mass,hit.inchikey
             if len(hit.besthits)>0:
                 for childhit in hit.besthits:
                     if childhit != None: # still need to work out how to deal with missed fragments
@@ -1157,9 +1001,11 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
                     fragment_engine=FragmentationEngine(mol)
                     #fragment_engine=GrowingEngine(mol)
                     fragment_engine.generate_fragments()
-                    #sys.stderr.write('N fragments kept: '+str(len(fragment_engine.fragments))+"\n")
+                    sys.stderr.write('N fragments kept: '+str(len(fragment_engine.fragments))+"\n")
+                    print fragment_engine.fragments
+                    print fragment_engine.fragment_masses
                     Fragmented=True
-                hit=gethit(peak,(1<<mol.getAtomCount())-1,0,0,structure.mim,-deltaH)
+                hit=gethit(peak,(1<<Chem.natoms(mol)-1),0,0,structure.mim,-deltaH)
                 add_fragment_data_to_hit(hit)
                 hits.append(hit)
     return hits
