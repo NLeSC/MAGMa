@@ -58,3 +58,9 @@ def FragmentToInchiKey(mol,atomlist):
         emol.RemoveAtom(atom)
     frag = emol.GetMol()
     return Chem.MolToSmiles(frag)
+def GetFormulaProps(mol):
+    mim=0.0
+    for a in range(mol.GetNumAtoms()):
+        mim+=GetExtendedAtomMass(mol,a)
+    formula_string=Chem.rdMolDescriptors.CalcMolFormula(mol)
+    return mim,formula_string
