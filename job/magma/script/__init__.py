@@ -284,7 +284,7 @@ class MagmaCommand(object):
             line = line.strip()
             if line=="":
                 continue
-            (smilestring, molname) = line.split('|')
+            (molname, smilestring) = line.split('\t')
             mol = Chem.MolFromSmiles(smilestring)
             mol.SetProp('_Name', molname)
             AllChem.Compute2DCoords(mol)
