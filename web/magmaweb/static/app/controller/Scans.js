@@ -110,7 +110,10 @@ Ext.define('Esc.magmaweb.controller.Scans', {
             		checkHandler: this.onZoomDirectionYChange.bind(this)
             	}]
             }
-        }]
+        }],
+        hideUploadAction: function() {
+        	this.getComponent('uploadmssaction').hide();
+        }
     });
 
     /**
@@ -139,12 +142,14 @@ Ext.define('Esc.magmaweb.controller.Scans', {
        */
       'chromatogramload'
     );
+
   },
   /**
    * Loads the chromatogram from server.
    */
   onLaunch: function() {
       this.loadChromatogram(this.loadChromatogramCallback);
+      this.applyRole();
   },
   loadChromatogram: function(callback) {
       var me = this;
@@ -356,5 +361,16 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    */
   onZoomDirectionChange: function(axis, checked) {
 	  this.getChromatogram().setZoom(axis, checked);
+  },
+  /**
+   * Apply role to user interface.
+   * Checks canRun and if false removes all action buttons.
+   */
+  applyRole: function() {
+	  if (this.application.canRun) {
+		  return;
+	  }
+	  this.actionsMenu.hideUploadAction();
+	  // TODO change tooltip of gears tool
   }
 });

@@ -15,11 +15,20 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
   uses: [ 'Esc.magmaweb.view.fragment.AnnotateForm' ],
   /**
    * Can only annotate when there are structures and ms data.
-   * @property {Object} annotatable
-   * @property {Boolean} annotabable.structures Whether there are structures
-   * @property {Boolean} annotabable.msdata Whether there is ms data
+   * @property {Object} annotabable
    */
-  annotatable: { structures: false, msdata: false },
+  annotatable: {
+	  /**
+	   * Whether there are structures.
+	   * @property {Boolean} annotabable.structures
+	   */
+	  structures: false,
+	  /**
+	   * Whether there is ms data.
+	   * @property {Boolean} annotabable.msdata
+	   */
+	  msdata: false
+  },
   init: function() {
     console.log('Fragments controller init');
 
@@ -110,6 +119,9 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
        */
       'assignmentchanged'
     );
+  },
+  onLaunch: function() {
+    this.applyRole();
   },
   /**
    * Loads lvl 1 and 2 fragments of a metabolite scan combination.
@@ -379,5 +391,15 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
   },
   getAssignStruct2PeakButton: function() {
       return this.getFragmentTree().getAssignStruct2PeakButton();
+  },
+  /**
+   * Apply role to user interface.
+   * Checks canRun and if false removes all action buttons.
+   */
+  applyRole: function() {
+	  if (this.application.canRun) {
+		  return;
+	  }
+	  this.getAssignStruct2PeakButton().hide();
   }
 });

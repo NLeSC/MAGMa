@@ -1,9 +1,10 @@
 import unittest
+import uuid
 from pyramid import testing
-from mock import Mock
+from mock import Mock, patch
 from magmaweb.rpc import RpcViews
-from magmaweb.job import JobFactory, Job, JobQuery
-
+from magmaweb.job import JobFactory, Job, JobDb, JobQuery
+from magmaweb.user import JobMeta, User
 
 class RpcViewsTestCase(unittest.TestCase):
     def setUp(self):
@@ -11,17 +12,19 @@ class RpcViewsTestCase(unittest.TestCase):
                          'jobfactory.root_dir': '/somedir',
                          }
         self.config = testing.setUp(settings=self.settings)
+        self.config.add_route('status.json', '/status/{jobid}.json')
 
         self.jobid = '3ad25048-26f6-11e1-851e-00012e260790'
         self.post = {'key': 'value'}
-        self.rpc = RpcViews(testing.DummyRequest(post=self.post))
         self.jq = Mock(JobQuery)
         self.jobquery = Mock(JobQuery)
-        self.job = Mock(Job)
-        self.job.id = self.jobid
-        self.job.jobquery.return_value = self.jobquery
-        self.job.maxMSLevel.return_value = 1
-        self.job.metabolitesTotalCount.return_value = 1
+        jobmeta = JobMeta(uuid.UUID(self.jobid), owner='bob')
+        self.job = Job(jobmeta, '/mydir', Mock(JobDb))
+        self.job.jobquery = Mock(return_value=self.jobquery)
+        self.job.db.maxMSLevel.return_value = 1
+        self.job.db.metabolitesTotalCount.return_value = 1
+
+        self.rpc = RpcViews(self.job, testing.DummyRequest(post=self.post))
         self.rpc.new_job = Mock(return_value=self.job)
         self.rpc.job_factory.submitQuery = Mock()
 
@@ -31,46 +34,23 @@ class RpcViewsTestCase(unittest.TestCase):
     def test_construct(self):
         request = testing.DummyRequest()
 
-        rpc = RpcViews(request)
+        rpc = RpcViews(self.job, request)
 
         self.assertIsInstance(rpc.job_factory, JobFactory)
         self.assertEqual(request, rpc.request)
+        self.assertEqual(self.job, rpc.job)
 
-    def test_job(self):
-        jobid = '3ad25048-26f6-11e1-851e-00012e260790'
+    def test_new_job(self):
         request = testing.DummyRequest()
-        request.matchdict['jobid'] = jobid
-        rpc = RpcViews(request)
-        rpc.job_factory.fromId = Mock(return_value=12345)
-
-        job = rpc.job()
-
-        self.assertEqual(job, 12345)
-        rpc.job_factory.fromId.assert_called_with(jobid)
-
-    def test_new_job_with_jobid(self):
-        jobid = '3ad25048-26f6-11e1-851e-00012e260790'
-        request = testing.DummyRequest()
-        request.matchdict['jobid'] = jobid
-        rpc = RpcViews(request)
-        rpc.job_factory.fromId = Mock(return_value=12345)
-        rpc.job_factory.cloneJob = Mock(return_value=67890)
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+        parent_job = Mock(Job)
+        rpc = RpcViews(parent_job, request)
+        rpc.job_factory.cloneJob = Mock(return_value=self.job)
 
         job = rpc.new_job()
 
-        self.assertEqual(job, 67890)
-        rpc.job_factory.fromId.assert_called_with(jobid)
-        rpc.job_factory.cloneJob.assert_called_with(12345)
-
-    def test_new_job_without_jobid(self):
-        request = testing.DummyRequest()
-        rpc = RpcViews(request)
-        rpc.job_factory.fromScratch = Mock(return_value=12345)
-
-        job = rpc.new_job()
-
-        self.assertEqual(job, 12345)
-        rpc.job_factory.fromScratch.assert_called_with()
+        self.assertEqual(job, self.job)
+        rpc.job_factory.cloneJob.assert_called_with(parent_job, 'bob')
 
     def test_addstructure(self):
         self.jobquery.add_structures.return_value = self.jq
@@ -78,21 +58,27 @@ class RpcViewsTestCase(unittest.TestCase):
         response = self.rpc.add_structures()
 
         self.jobquery.add_structures.assert_called_with(self.post, True)
-        self.job.maxMSLevel.assert_called_with()
+        self.job.db.maxMSLevel.assert_called_with()
         self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with()
+        self.job.jobquery.assert_called_with('http://example.com/status/3ad25048-26f6-11e1-851e-00012e260790.json')
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_addmsdata(self):
+        from cgi import FieldStorage
+        ms_file = FieldStorage()
+        ms_file.filename = 'c:\bla\bla\F1234.mzxml'
+        post = {'ms_data_file': ms_file}
+        self.rpc.request.POST = post
         self.jobquery.add_ms_data.return_value = self.jq
 
         response = self.rpc.add_ms_data()
 
-        self.jobquery.add_ms_data.assert_called_with(self.post, True)
-        self.job.metabolitesTotalCount.assert_called_with()
+        self.jobquery.add_ms_data.assert_called_with(post, True)
+        self.job.db.metabolitesTotalCount.assert_called_with()
+        self.assertEqual(self.job.ms_filename, 'c:\bla\bla\F1234.mzxml')
         self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with()
+        self.job.jobquery.assert_called_with('http://example.com/status/3ad25048-26f6-11e1-851e-00012e260790.json')
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
@@ -102,9 +88,9 @@ class RpcViewsTestCase(unittest.TestCase):
         response = self.rpc.metabolize()
 
         self.jobquery.metabolize.assert_called_with(self.post, True)
-        self.job.maxMSLevel.assert_called_with()
+        self.job.db.maxMSLevel.assert_called_with()
         self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with()
+        self.job.jobquery.assert_called_with('http://example.com/status/3ad25048-26f6-11e1-851e-00012e260790.json')
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
@@ -114,9 +100,9 @@ class RpcViewsTestCase(unittest.TestCase):
         response = self.rpc.metabolize_one()
 
         self.jobquery.metabolize_one.assert_called_with(self.post, True)
-        self.job.maxMSLevel.assert_called_with()
+        self.job.db.maxMSLevel.assert_called_with()
         self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with()
+        self.job.jobquery.assert_called_with('http://example.com/status/3ad25048-26f6-11e1-851e-00012e260790.json')
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
@@ -127,28 +113,16 @@ class RpcViewsTestCase(unittest.TestCase):
 
         self.jobquery.annotate.assert_called_with(self.post)
         self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with()
-        self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
-        self.assertEquals(response, {'success': True, 'jobid': self.jobid})
-
-    def test_allinone(self):
-        self.jobquery.allinone.return_value = self.jq
-
-        response = self.rpc.allinone()
-
-        self.jobquery.allinone.assert_called_with(self.post)
-        self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with()
+        self.job.jobquery.assert_called_with('http://example.com/status/3ad25048-26f6-11e1-851e-00012e260790.json')
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_set_description(self):
         self.rpc.request.POST = {'description': 'My description'}
-        self.rpc.job = Mock(return_value=self.job)
 
         response = self.rpc.set_description()
 
-        self.job.description.assert_called_with('My description')
+        self.assertEquals(self.job.description, 'My description')
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_submit_query_withoutjobmanager(self):
@@ -193,11 +167,10 @@ class RpcViewsTestCase(unittest.TestCase):
         self.rpc.request.POST = {'scanid': 641,
                                  'mz': 109.029563903808,
                                  'metid': 72}
-        self.rpc.job = Mock(return_value=self.job)
 
         response = self.rpc.assign_metabolite2peak()
 
-        self.job.assign_metabolite2peak.assert_called_with(641,
+        self.job.db.assign_metabolite2peak.assert_called_with(641,
                                                            109.029563903808,
                                                            72)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
@@ -205,10 +178,9 @@ class RpcViewsTestCase(unittest.TestCase):
     def test_unassign_metabolite2peak(self):
         self.rpc.request.POST = {'scanid': 641,
                                  'mz': 109.029563903808}
-        self.rpc.job = Mock(return_value=self.job)
 
         response = self.rpc.unassign_metabolite2peak()
 
-        self.job.unassign_metabolite2peak.assert_called_with(641,
+        self.job.db.unassign_metabolite2peak.assert_called_with(641,
                                                              109.029563903808)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})

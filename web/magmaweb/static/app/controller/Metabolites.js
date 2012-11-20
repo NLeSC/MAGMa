@@ -148,8 +148,8 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       // so do not use list.store.load() , but trigger a filter update to load
       this.getMetaboliteList().filters.createFilters();
       this.getMetabolitesStore().load();
-      // combo isnt available during init to select pagesize in onlaunch
-      Ext.ComponentQuery.query("metabolitelist combo[action=pagesize]")[0].select(this.getMetabolitesStore().pageSize);
+      this.getMetaboliteList().setPageSize(this.getMetabolitesStore().pageSize);
+      this.applyRole();
   },
   /**
    * Listens for metabolite store load event.
@@ -201,7 +201,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
   /**
    * Listens for chromatogram load event.
    * And toggles annotation fieldset in add structures form.
-   * @param {Esc.d3.Chromatagram} chromatogram
+   * @param {Esc.d3.Chromatogram} chromatogram
    */
   onChromatrogramLoad: function(chromatogram) {
     this.hasMSData = chromatogram.data.length > 0;
@@ -454,6 +454,18 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
    */
   showDownloadMenu: function(tool, event) {
     this.downloadMenu.showAt(event.getXY());
+  },
+  /**
+   * Apply role to user interface.
+   * Checks canRun and if false removes all action buttons.
+   */
+  applyRole: function() {
+	  if (this.application.canRun) {
+		  return;
+	  }
+	  this.actionsMenu.getComponent('addstructuresaction').hide();
+	  this.actionsMenu.getComponent('metabolizeaction').hide();
+	  this.getMetaboliteList().hideCommandsColumn();
   }
 });
 
