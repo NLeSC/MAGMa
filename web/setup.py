@@ -10,10 +10,13 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 requires = [
             'pyramid',
             'SQLAlchemy',
-            'pyramid_debugtoolbar',
-            'gunicorn',
+            'pyramid_tm',
+            'pyramid_multiauth',
+            'pyramid_ipauth',
+            'zope.sqlalchemy',
             'colander',
             'waitress',
+            'py-bcrypt',
             'Paste'
             ]
 
@@ -37,7 +40,7 @@ setup(name='MAGMaWeb',
                    ],
       author='Stefan Verhoeven',
       author_email='s.verhoeven@esciencecenter.nl',
-      url='http://www.esciencecenter.com',
+      url='http://www.esciencecenter.nl',
       keywords='web wsgi bfg pylons pyramid',
       packages=find_packages(),
       include_package_data=True,

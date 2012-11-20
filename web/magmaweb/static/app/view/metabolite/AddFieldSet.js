@@ -47,7 +47,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                     /**
                      * Use validator to write sketched molecule in textarea as molblock.
                      * A sketched molecule will overwrite the textarea.
-                     * @param {} value
+                     * @param {Object} value
                      * @return {Boolean}
                      */
                     validator: function(value) {

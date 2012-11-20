@@ -1,16 +1,19 @@
 import unittest
+import datetime
 from pyramid import testing
-from mock import Mock
-from magmaweb.views import Views
-from magmaweb.job import JobFactory, JobNotFound, Job
+from mock import Mock, patch
+from magmaweb.views import Views, JobViews
+from magmaweb.job import JobFactory, Job, JobDb, JobQuery
+from magmaweb.user import User, JobMeta
 
 
-class ViewsTestCase(unittest.TestCase):
+class AbstractViewsTestCase(unittest.TestCase):
     def setUp(self):
         self.settings = {
                          'jobfactory.root_dir': '/somedir',
                          }
         self.config = testing.setUp(settings=self.settings)
+        self.config.add_route('status.json', '/status/{jobid}.json')
 
     def tearDown(self):
         testing.tearDown()
@@ -18,65 +21,55 @@ class ViewsTestCase(unittest.TestCase):
     def fake_job(self):
         job = Mock(Job)
         job.id = 'foo'
-        job.runInfo.return_value = 'bla'
-        job.maxMSLevel.return_value = 3
-        job.metabolites.return_value = {'total': 3, 'rows': [1, 2, 3]}
-        job.metabolitesTotalCount.return_value = 3
-        job.scansWithMetabolites.return_value = [4, 5]
-        job.chromatogram.return_value = [1, 2, 3]
-        job.extractedIonChromatogram.return_value = [1, 2, 3]
-        job.fragments.return_value = [1, 2, 3]
+        job.db = Mock(JobDb)
+        job.db.runInfo.return_value = 'bla'
+        job.db.maxMSLevel.return_value = 3
+        job.db.metabolites.return_value = {'total': 3, 'rows': [1, 2, 3]}
+        job.db.metabolitesTotalCount.return_value = 3
+        job.db.scansWithMetabolites.return_value = [4, 5]
+        job.db.chromatogram.return_value = [1, 2, 3]
+        job.db.extractedIonChromatogram.return_value = [1, 2, 3]
+        job.db.fragments.return_value = [1, 2, 3]
         return job
 
-    def test_jobid(self):
-        jobid = '11111111-1111-1111-1111-111111111111'
-        request = testing.DummyRequest()
-        request.matchdict['jobid'] = jobid
-        views = Views(request)
 
-        actual_jobid = views.jobid()
-        self.assertEqual(actual_jobid, jobid)
-
-    def test_jobid_withOutJobidInRequest_redirects2Homepage(self):
-        self.config.add_route('home', '/homepage')
-        request = testing.DummyRequest()
-        views = Views(request)
-
-        from pyramid.httpexceptions import HTTPFound
-        with self.assertRaises(HTTPFound) as e:
-            views.jobid()
-            self.assertEqual(e.location, '/homepage')
-
-    def test_job(self):
-        jobid = '11111111-1111-1111-1111-111111111111'
-        request = testing.DummyRequest()
-        views = Views(request)
-        views.jobid = Mock(return_value=jobid)
-        views.job_factory.fromId = Mock(return_value=Mock(Job))
-
-        job = views.job()
-
-        self.assertIsInstance(job, Job)
-
-    def test_job_withWrongJobid_notFound(self):
-        jobid = '11111111-1111-1111-1111-111111111111'
-        request = testing.DummyRequest()
-        request.matchdict['jobid'] = jobid
-        views = Views(request)
-        views.job_factory = Mock(JobFactory)
-        views.job_factory.fromId.side_effect = JobNotFound(jobid)
-
-        from pyramid.httpexceptions import HTTPNotFound
-        with self.assertRaises(HTTPNotFound):
-            views.job()
-
+class ViewsTestCase(AbstractViewsTestCase):
     def test_home(self):
         request = testing.DummyRequest()
         views = Views(request)
-
         response = views.home()
 
         self.assertEqual(response, {})
+
+    def test_startjob(self):
+        request = testing.DummyRequest()
+        views = Views(request)
+        response = views.startjob()
+
+        self.assertEqual(response, {})
+
+    def test_allinone(self):
+        from cgi import FieldStorage
+        ms_file = FieldStorage()
+        ms_file.filename = 'c:\bla\bla\F1234.mzxml'
+        post = {'ms_data_file': ms_file}
+        request = testing.DummyRequest(post=post)
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+        job = self.fake_job()
+        jobquery = Mock(JobQuery)
+        job.jobquery.return_value = jobquery
+        views = Views(request)
+        views.job_factory = Mock(JobFactory)
+        views.job_factory.fromScratch = Mock(return_value=job)
+
+        response = views.allinone()
+
+        views.job_factory.fromScratch.assert_called_with('bob')
+        jobquery.allinone.assert_called_with(post)
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
+        self.assertEqual(response, {'success': True, 'jobid': 'foo'})
+        self.assertEqual(job.ms_filename, 'c:\bla\bla\F1234.mzxml')
+        job.jobquery.assert_called_with('http://example.com/status/foo.json')
 
     def test_uploaddb_get(self):
         request = testing.DummyRequest()
@@ -92,56 +85,284 @@ class ViewsTestCase(unittest.TestCase):
         dbfile = FieldStorage()
         dbfile.file = StringIO.StringIO()
         request = testing.DummyRequest(post={'db_file': dbfile})
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
         views = Views(request)
         views.job_factory = Mock(JobFactory)
-        views.job_factory.fromDb.return_value = self.fake_job()
+        job = self.fake_job()
+        views.job_factory.fromDb.return_value = job
 
         response = views.uploaddb()
 
-        views.job_factory.fromDb.assert_called_with(dbfile.file)
+        views.job_factory.fromDb.assert_called_with(dbfile.file, 'bob')
         self.assertEqual(response.location, 'http://example.com/results/foo')
 
     def test_jobfromscratch(self):
         self.config.add_route('results', '/results/{jobid}')
         request = testing.DummyRequest()
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+        job = self.fake_job()
         views = Views(request)
-        views.job_factory.fromScratch = Mock(return_value=self.fake_job())
+        views.job_factory.fromScratch = Mock(return_value=job)
 
         response = views.jobfromscratch()
 
+        views.job_factory.fromScratch.assert_called_with('bob')
         self.assertEqual(response.location, 'http://example.com/results/foo')
 
-    def test_results(self):
+    def test_results_cantrun(self):
         request = testing.DummyRequest()
-        views = Views(request)
-        views.job = Mock(return_value=self.fake_job())
+        views = JobViews(self.fake_job(), request)
 
         response = views.results()
 
-        self.assertEqual(response, dict(
-                                        jobid='foo',
+        self.assertEqual(response, dict(jobid='foo',
                                         run='bla',
-                                        maxmslevel=3
+                                        maxmslevel=3,
+                                        canRun=True  # no authorization -> allows all
                                         ))
 
-    def test_jobstatus(self):
+    @patch('magmaweb.views.has_permission')
+    def test_resuls_canrun(self, has_permission):
+        from pyramid.security import Allowed
+        has_permission.return_value = Allowed('Faked allowed')
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        views = JobViews(job, request)
+
+        response = views.results()
+
+        self.assertEqual(response, dict(jobid='foo',
+                                        run='bla',
+                                        maxmslevel=3,
+                                        canRun=True
+                                        ))
+        has_permission.assert_called_with('run', job, request)
+
+    @patch('magmaweb.views.has_permission')
+    def test_resuls_cantrun(self, has_permission):
+        from pyramid.security import Denied
+        has_permission.return_value = Denied('Faked denied')
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        views = JobViews(job, request)
+
+        response = views.results()
+
+        self.assertEqual(response, dict(jobid='foo',
+                                        run='bla',
+                                        maxmslevel=3,
+                                        canRun=False
+                                        ))
+        has_permission.assert_called_with('run', job, request)
+
+    def test_workspace(self):
+        import uuid
+        request = testing.DummyRequest()
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+        created_at = datetime.datetime(2012, 11, 14, 10, 48, 26, 504478)
+        jobs = [JobMeta(uuid.UUID('11111111-1111-1111-1111-111111111111'),
+                        'bob', description='My job', created_at=created_at,
+                        ms_filename='F1234.mzxml')]
+        request.user.jobs = jobs
+        views = Views(request)
+
+        response = views.workspace()
+
+        expected_jobs = [{'id': '11111111-1111-1111-1111-111111111111',
+                          'description': 'My job',
+                          'ms_filename': 'F1234.mzxml',
+                          'created_at': '2012-11-14 10:48:26.504478'}]
+        self.assertEqual(response, {'jobs': expected_jobs})
+
+    def test_defaultsjson(self):
         request = testing.DummyRequest()
         views = Views(request)
-        views.jobid = Mock(return_value='bla')
-        views.job_factory.state = Mock(return_value='RUNNING')
+        response = views.defaults()
+
+        self.assertEqual(response, {
+                                    'success': True,
+                                    'data': dict(
+                                                 n_reaction_steps=2,
+                                                 metabolism_types=['phase1',
+                                                                   'phase2'],
+                                                 ionisation_mode=1,
+                                                 skip_fragmentation=False,
+                                                 ms_intensity_cutoff=1000000.0,
+                                                 msms_intensity_cutoff=0.1,
+                                                 mz_precision=0.001,
+                                                 use_all_peaks=False,
+                                                 abs_peak_cutoff=1000,
+                                                 rel_peak_cutoff=0.01,
+                                                 max_ms_level=10,
+                                                 precursor_mz_precision=0.005,
+                                                 max_broken_bonds=4
+                                                 )
+                                    })
+
+    def test_login_get_from_loginpage(self):
+        self.config.add_route('home', '/')
+        self.config.add_route('login', '/login')
+        request = testing.DummyRequest()
+        request.url = 'http://example.com/login'
+        views = Views(request)
+
+        response = views.login()
+
+        expected_response = {'came_from': 'http://example.com/',
+                             'userid': '',
+                             'password': ''
+                             }
+        self.assertDictEqual(response, expected_response)
+
+    def test_login_get(self):
+        self.config.add_route('home', '/')
+        self.config.add_route('login', '/login')
+        request = testing.DummyRequest()
+        request.url = 'http://example.com/startjob'
+        views = Views(request)
+
+        response = views.login()
+
+        expected_response = {'came_from': 'http://example.com/startjob',
+                             'userid': '',
+                             'password': ''
+                             }
+        self.assertDictEqual(response, expected_response)
+
+    @patch('magmaweb.views.remember')
+    @patch('magmaweb.views.User')
+    def test_login_post_correct_pw(self, user, remember):
+        from pyramid.httpexceptions import HTTPFound
+        u = Mock(User)
+        u.validate_password.return_value = True
+        user.by_id.return_value = u
+        self.config.add_route('login', '/login')
+        post = {'userid': 'bob',
+                'password': 'mypw'}
+        params = {'came_from': 'http://example.com/startjob'}
+        request = testing.DummyRequest(post=post, params=params)
+        views = Views(request)
+
+        response = views.login()
+
+        self.assertIsInstance(response, HTTPFound)
+        self.assertEqual(response.location, 'http://example.com/startjob')
+        u.validate_password.assert_called_with('mypw')
+        remember.assert_called_with(request, 'bob')
+
+    @patch('magmaweb.views.remember')
+    @patch('magmaweb.views.User')
+    def test_login_post_incorrect_pw(self, user, remember):
+        u = Mock(User)
+        u.validate_password.return_value = False
+        user.by_id.return_value = u
+        self.config.add_route('login', '/login')
+        post = {'userid': 'bob',
+                'password': 'mypw'}
+        params = {'came_from': 'http://example.com/startjob'}
+        request = testing.DummyRequest(post=post, params=params)
+        views = Views(request)
+
+        response = views.login()
+
+        expected_response = {'came_from': 'http://example.com/startjob',
+                             'userid': 'bob',
+                             'password': 'mypw'
+                             }
+        self.assertDictEqual(response, expected_response)
+        u.validate_password.assert_called_with('mypw')
+        self.assertFalse(remember.called)
+
+    @patch('magmaweb.views.forget')
+    def test_logout(self, forget):
+        self.config.add_route('home', '/')
+        forget.return_value = {'forget': 'headers'}
+        request = testing.DummyRequest()
+        views = Views(request)
+
+        response = views.logout()
+
+        forget.assert_called_with(request)
+        self.assertEqual(response.location, 'http://example.com/')
+        self.assertDictContainsSubset({'forget': 'headers'}, response.headers)
+
+    def test_forbidden_authenticated(self):
+        from pyramid.exceptions import Forbidden
+        request = testing.DummyRequest()
+        request.user = 'bob'
+        request.exception = Forbidden()
+        views = Views(request)
+
+        response = views.forbidden()
+
+        self.assertIsInstance(response, Forbidden)
+
+    def test_forbidden_unauthenticated(self):
+        from pyramid.httpexceptions import HTTPFound
+        self.config.add_route('home', '/')
+        self.config.add_route('login', '/login')
+        request = testing.DummyRequest()
+        request.user = None
+        request.url = 'http://example.com/somepage'
+        views = Views(request)
+
+        response = views.forbidden()
+
+        self.assertIsInstance(response, HTTPFound)
+        loc = 'http://example.com/login?'
+        loc += 'came_from=http%3A%2F%2Fexample.com%2Fsomepage'
+        self.assertEqual(response.location, loc)
+
+    def test_forbidden_unauthenticated_from_loginpage(self):
+        from pyramid.httpexceptions import HTTPFound
+        self.config.add_route('home', '/')
+        self.config.add_route('login', '/login')
+        request = testing.DummyRequest()
+        request.user = None
+        request.url = 'http://example.com/login'
+        views = Views(request)
+
+        response = views.forbidden()
+
+        self.assertIsInstance(response, HTTPFound)
+        loc = 'http://example.com/login?'
+        loc += 'came_from=http%3A%2F%2Fexample.com%2F'
+        self.assertEqual(response.location, loc)
+
+
+class JobViewsTestCase(AbstractViewsTestCase):
+    """ Test case for magmaweb.views.JobViews"""
+    def test_jobstatus(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'RUNNING'
+        views = JobViews(job, request)
 
         response = views.job_status()
 
         self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
+
+    def test_set_jobstatus(self):
+        request = testing.DummyRequest()
+        request.body = 'STOPPED'
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'RUNNING'
+        views = JobViews(job, request)
+
+        response = views.set_job_status()
+
+        self.assertEqual(response, dict(status='STOPPED', jobid='bla'))
+        self.assertEqual(job.state, 'STOPPED')
 
     def test_metabolitesjson_return(self):
         request = testing.DummyRequest(params={
                                                'start': 0,
                                                'limit': 10
                                                })
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         response = views.metabolitesjson()
 
@@ -156,15 +377,14 @@ class ViewsTestCase(unittest.TestCase):
                                                'start': 0,
                                                'limit': 10
                                                })
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.metabolitesjson()
 
-        job.metabolites.assert_called_with(start=0, limit=10, sorts=[],
+        job.db.metabolites.assert_called_with(start=0, limit=10, sorts=[],
                                            scanid=None, filters=[])
-        job.scansWithMetabolites.assert_called_with(filters=[])
+        job.db.scansWithMetabolites.assert_called_with(filters=[])
 
     def test_metabolitesjson_scanidfilter(self):
         request = testing.DummyRequest(params={
@@ -172,13 +392,12 @@ class ViewsTestCase(unittest.TestCase):
                                                'limit': 10,
                                                'scanid': 641
                                                })
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.metabolitesjson()
 
-        job.metabolites.assert_called_with(start=0, limit=10,
+        job.db.metabolites.assert_called_with(start=0, limit=10,
                                            sorts=[], scanid=641,
                                            filters=[])
 
@@ -192,16 +411,15 @@ class ViewsTestCase(unittest.TestCase):
                                                'limit': 10,
                                                'filter': filter_in
                                                })
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.metabolitesjson()
 
-        job.metabolites.assert_called_with(start=0, limit=10,
+        job.db.metabolites.assert_called_with(start=0, limit=10,
                                            sorts=[], scanid=None,
                                            filters=filter_expected)
-        job.scansWithMetabolites.assert_called_with(filters=filter_expected)
+        job.db.scansWithMetabolites.assert_called_with(filters=filter_expected)
 
     def test_metabolitesjson_sortonlevel(self):
         sort_in = '[{"property":"level","direction":"DESC"}]'
@@ -211,13 +429,12 @@ class ViewsTestCase(unittest.TestCase):
                                                'limit': 10,
                                                'sort': sort_in
                                                })
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.metabolitesjson()
 
-        job.metabolites.assert_called_with(start=0, limit=10,
+        job.db.metabolites.assert_called_with(start=0, limit=10,
                                            sorts=sort_expected,
                                            scanid=None, filters=[])
 
@@ -226,10 +443,9 @@ class ViewsTestCase(unittest.TestCase):
                                                'start': 0,
                                                'limit': 10
                                                })
-        views = Views(request)
         job = self.fake_job()
-        job.metabolitesTotalCount.return_value = 0
-        views.job = Mock(return_value=job)
+        job.db.metabolitesTotalCount.return_value = 0
+        views = JobViews(job, request)
 
         response = views.metabolitesjson()
 
@@ -240,14 +456,13 @@ class ViewsTestCase(unittest.TestCase):
         import StringIO
         csv = StringIO.StringIO()
         csv.write('bla')
-        job = Mock(Job)
-        job.metabolites2csv.return_value = csv
+        job = self.fake_job()
+        job.db.metabolites2csv.return_value = csv
         request = testing.DummyRequest(params={
                                                'start': 0,
                                                'limit': 10
                                                })
-        views = Views(request)
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
         views.metabolitesjson = Mock(return_value={
                                                    'rows': []
                                                    })
@@ -261,97 +476,91 @@ class ViewsTestCase(unittest.TestCase):
         import StringIO
         csv = StringIO.StringIO()
         csv.write('bla')
+        job = self.fake_job()
+        job.db.metabolites2csv.return_value = csv
         request = testing.DummyRequest(params={
                                                'start': 0,
                                                'limit': 10,
                                                'cols': '["name","score"]'
                                                })
 
-        views = Views(request)
-        job = self.fake_job()
-        job.metabolites2csv.return_value = csv
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
         rows = [{'name':'foo', 'score': 'bar', 'id': 123}]
         views.metabolitesjson = Mock(return_value={'rows': rows})
 
         views.metabolitescsv()
 
-        job.metabolites2csv.assert_called_with(rows, cols=['name', 'score'])
+        job.db.metabolites2csv.assert_called_with(rows, cols=['name', 'score'])
 
     def test_metabolitessdf(self):
-        job = Mock(Job)
-        job.metabolites2sdf.return_value = 'bla'
+        job = self.fake_job()
+        job.db.metabolites2sdf.return_value = 'bla'
         request = testing.DummyRequest(params={
                                                'start': 0,
                                                'limit': 10
                                                })
-        views = Views(request)
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
         views.metabolitesjson = Mock(return_value={
                                                    'rows': []
                                                    })
         response = views.metabolitessdf()
 
-        job.metabolites2sdf.assert_called_with([], cols=[])
+        job.db.metabolites2sdf.assert_called_with([], cols=[])
         self.assertEqual(response.content_type, 'chemical/x-mdl-sdfile')
         self.assertEqual(response.body, 'bla')
 
     def test_metabolitessdf_somecols(self):
-        job = Mock(Job)
-        job.metabolites2sdf.return_value = 'bla'
+        job = self.fake_job()
+        job.db.metabolites2sdf.return_value = 'bla'
         request = testing.DummyRequest(params={
                                                'start': 0,
                                                'limit': 10,
                                                'cols': '["name","score"]'
                                                })
-        views = Views(request)
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
         views.metabolitesjson = Mock(return_value={
                                                    'rows': []
                                                    })
         views.metabolitessdf()
 
-        job.metabolites2sdf.assert_called_with([], cols=['name', 'score'])
+        job.db.metabolites2sdf.assert_called_with([], cols=['name', 'score'])
 
     def test_chromatogramjson(self):
         request = testing.DummyRequest()
-        views = Views(request)
-        views.job = Mock(return_value=self.fake_job())
+        views = JobViews(self.fake_job(), request)
 
         response = views.chromatogramjson()
 
         self.assertEqual(response, [1, 2, 3])
 
     def test_mspectrajson(self):
-        request = testing.DummyRequest(matchdict={'scanid': 641})
-        views = Views(request)
+        request = testing.DummyRequest(matchdict={'scanid':641})
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.mspectrajson()
 
-        job.mspectra.assert_called_with(641, None)
+        job.db.mspectra.assert_called_with(641, None)
 
     def test_mspectrajson_withmslevel(self):
         request = testing.DummyRequest(
                                        matchdict={'scanid': 641},
                                        params={'mslevel': 3}
                                        )
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.mspectrajson()
 
-        job.mspectra.assert_called_with(641, 3)
+        job.db.mspectra.assert_called_with(641, 3)
 
     def test_mspectra_withoutscanid_notfound(self):
-        request = testing.DummyRequest(matchdict={'scanid': 641})
-        views = Views(request)
-        job = self.fake_job()
         from magmaweb.job import ScanNotFound
-        job.mspectra.side_effect = ScanNotFound()
-        views.job = Mock(return_value=job)
+        request = testing.DummyRequest(matchdict={'scanid': 641})
+
+        job = self.fake_job()
+        job.db.mspectra.side_effect = ScanNotFound()
+        views = JobViews(job, request)
 
         from pyramid.httpexceptions import HTTPNotFound
         with self.assertRaises(HTTPNotFound):
@@ -359,17 +568,16 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_extractedionchromatogram(self):
         request = testing.DummyRequest(matchdict={'metid': 72})
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         response = views.extractedionchromatogram()
 
         self.assertEqual(response, {
             'chromatogram': [1, 2, 3], 'scans': [4, 5]
         })
-        job.extractedIonChromatogram.assert_called_with(72)
-        job.scansWithMetabolites.assert_called_with(metid=72)
+        job.db.extractedIonChromatogram.assert_called_with(72)
+        job.db.scansWithMetabolites.assert_called_with(metid=72)
 
     def test_fragments_metabolitewithoutfragments(self):
         request = testing.DummyRequest(matchdict={
@@ -377,13 +585,12 @@ class ViewsTestCase(unittest.TestCase):
                                                   'scanid': 641
                                                   },
                                        params={'node': ''})
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.fragments()
 
-        job.fragments.assert_called_with(metid=72, scanid=641, node='')
+        job.db.fragments.assert_called_with(metid=72, scanid=641, node='')
 
     def test_fragments_filteronmslevel(self):
         request = testing.DummyRequest(matchdict={
@@ -391,25 +598,24 @@ class ViewsTestCase(unittest.TestCase):
                                                   'scanid': 641
                                                   },
                                        params={'node': 1709})
-        views = Views(request)
         job = self.fake_job()
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         views.fragments()
 
-        job.fragments.assert_called_with(metid=72, scanid=641, node=1709)
+        job.db.fragments.assert_called_with(metid=72, scanid=641, node=1709)
 
     def test_fragments_badmetabolite_notfound(self):
+        from magmaweb.job import FragmentNotFound
         request = testing.DummyRequest(matchdict={
                                                   'metid': 72,
                                                   'scanid': 641
                                                   },
                                        params={'node': ''})
-        views = Views(request)
+
         job = self.fake_job()
-        from magmaweb.job import FragmentNotFound
-        job.fragments.side_effect = FragmentNotFound
-        views.job = Mock(return_value=job)
+        job.db.fragments.side_effect = FragmentNotFound
+        views = JobViews(job, request)
 
         from pyramid.httpexceptions import HTTPNotFound
         with self.assertRaises(HTTPNotFound):
@@ -417,14 +623,13 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_stderr(self):
         request = testing.DummyRequest()
-        views = Views(request)
         job = self.fake_job()
         import StringIO
         log = StringIO.StringIO()
         log.write('bla')
         log.seek(0)
         job.stderr.return_value = log
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         response = views.stderr()
 
@@ -433,10 +638,9 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_runinfojson(self):
         request = testing.DummyRequest()
-        views = Views(request)
         job = self.fake_job()
         from magmaweb.models import Run
-        job.runInfo.return_value = Run(
+        job.db.runInfo.return_value = Run(
             n_reaction_steps=2, metabolism_types='phase1,phase2',
             ionisation_mode=-1, skip_fragmentation=True,
             ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
@@ -445,7 +649,7 @@ class ViewsTestCase(unittest.TestCase):
             rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=0.01,
             max_broken_bonds=4, description='My first description'
         )
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         response = views.runinfojson()
 
@@ -472,14 +676,13 @@ class ViewsTestCase(unittest.TestCase):
     def test_runinfojson_onlymsdatadone(self):
         self.maxDiff = 200000
         request = testing.DummyRequest()
-        views = Views(request)
         job = self.fake_job()
         from magmaweb.models import Run
-        job.runInfo.return_value = Run(
+        job.db.runInfo.return_value = Run(
             abs_peak_cutoff=1100,
             rel_peak_cutoff=0.012
         )
-        views.job = Mock(return_value=job)
+        views = JobViews(job, request)
 
         response = views.runinfojson()
 
@@ -505,37 +708,11 @@ class ViewsTestCase(unittest.TestCase):
 
     def test_runinfojson_norundone(self):
         request = testing.DummyRequest()
-        views = Views(request)
         job = self.fake_job()
-        job.runInfo.return_value = None
-        views.job = Mock(return_value=job)
+        job.db.runInfo.return_value = None
+        views = JobViews(job, request)
 
         response = views.runinfojson()
-
-        self.assertEqual(response, {
-                                    'success': True,
-                                    'data': dict(
-                                                 n_reaction_steps=2,
-                                                 metabolism_types=['phase1',
-                                                                   'phase2'],
-                                                 ionisation_mode=1,
-                                                 skip_fragmentation=False,
-                                                 ms_intensity_cutoff=1000000.0,
-                                                 msms_intensity_cutoff=0.1,
-                                                 mz_precision=0.001,
-                                                 use_all_peaks=False,
-                                                 abs_peak_cutoff=1000,
-                                                 rel_peak_cutoff=0.01,
-                                                 max_ms_level=10,
-                                                 precursor_mz_precision=0.005,
-                                                 max_broken_bonds=4
-                                                 )
-                                    })
-
-    def test_defaultsjson(self):
-        request = testing.DummyRequest()
-        views = Views(request)
-        response = views.defaults()
 
         self.assertEqual(response, {
                                     'success': True,

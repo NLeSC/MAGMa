@@ -1,9 +1,13 @@
+import datetime
+import os
+import uuid
 import unittest
+from mock import Mock, patch
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from mock import Mock, patch
-from magmaweb.job import JobFactory, Job, make_job_factory, JobQuery
+from magmaweb.job import JobFactory, Job, JobDb, make_job_factory, JobQuery
 from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
+import magmaweb.user as mu
 
 
 def initTestingDB(url='sqlite://', dataset='default'):
@@ -286,90 +290,104 @@ class JobFactoryTestCase(unittest.TestCase):
         self.root_dir = tempfile.mkdtemp()
         self.factory = JobFactory(root_dir=self.root_dir)
 
+        # fill user db
+        engine = create_engine('sqlite:///:memory:')
+        mu.DBSession.configure(bind=engine)
+        mu.Base.metadata.create_all(engine)
+        mu.DBSession().add(mu.User('bob', 'Bob', 'bob@example.com'))
+        jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
+        mu.DBSession().add(mu.JobMeta(jobid, owner='bob'))
+
     def tearDown(self):
         import shutil
         shutil.rmtree(self.root_dir)
+        mu.DBSession.remove()
 
     def test_hasrootdir(self):
         self.assertEqual(self.factory.root_dir, self.root_dir)
 
     def test_id2url(self):
-        import uuid
-        import os
         jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
         jobdbfn = 'sqlite:///'
         jobdbfn += os.path.join(self.root_dir, str(jobid), 'results.db')
         self.assertEqual(self.factory.id2url(jobid), jobdbfn)
 
     def test_id2jobdir(self):
-        import uuid
-        import os
         jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
         jobdir = os.path.join(self.root_dir, str(jobid))
         self.assertEqual(self.factory.id2jobdir(jobid), jobdir)
 
     def test_id2db(self):
-        import uuid
-        import os
         jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
         jobdbfn = os.path.join(self.root_dir, str(jobid), 'results.db')
         self.assertEqual(self.factory.id2db(jobid), jobdbfn)
 
     def test_fromdb(self):
-        import uuid
-        import os
+        # mock/stub private methods which do external calls
+        self.factory._makeJobDir = Mock(return_value='/mydir')
+        self.factory._copyFile = Mock()
+        self.factory._makeJobSession = Mock(return_value=initTestingDB())
+
         dbfile = os.tmpfile()
-        dbfile.write('bla')
 
-        job = self.factory.fromDb(dbfile)
+        job = self.factory.fromDb(dbfile, 'bob')
 
-        self.assertIsInstance(job, Job)
         self.assertIsInstance(job.id, uuid.UUID)
-        self.assertEqual(
-            str(job.session.get_bind().url),
-            self.factory.id2url(job.id),
-            'job has dbsession set to sqlite file in job dir'
-        )
-        self.assertEqual(
-            open(self.factory.id2db(job.id)).read(),
-            'bla',
-            'query db file content has been copied to job dir'
-        )
+        self.assertEqual(job.dir, '/mydir')
+        self.assertEqual(job.meta.owner, 'bob')
+        self.assertEqual(job.meta.description, 'My first description')
+        self.assertEqual(job.meta.ms_filename, 'F123456.mzxml')
+        self.assertEqual(job.meta.state, 'STOPPED')
+
+        self.factory._makeJobDir.assert_called_with(job.id)
+        self.factory._copyFile.assert_called_with(dbfile, job.id)
+        o = mu.DBSession().query(mu.JobMeta.owner
+                                 ).filter(mu.JobMeta.jobid == job.id).scalar()
+        self.assertEqual(o, 'bob', 'job meta has been inserted')
 
     def test_fromid(self):
-        import uuid
-        import os
         jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
-        os.mkdir(self.factory.id2jobdir(jobid))
-        expected_job_dburl = self.factory.id2url(jobid)
-        initTestingDB(expected_job_dburl)
+        self.factory._makeJobSession = Mock(return_value=456)
+        self.factory.id2jobdir = Mock(return_value=789)
 
         job = self.factory.fromId(jobid)
 
-        self.assertIsInstance(job, Job)
-        self.assertEqual(job.id, jobid)
-        self.assertEqual(
-            str(job.session.get_bind().url),
-            expected_job_dburl,
-            'job has dbsession set to sqlite file in job dir'
-        )
+        self.assertEqual(job.owner, 'bob')
+        self.assertEqual(job.db.session, 456)
+        self.assertEqual(job.dir, 789)
+        self.factory._makeJobSession.assert_called_with(jobid)
+        self.factory.id2jobdir.assert_called_with(jobid)
 
-    def test_fromid_notfound(self):
-        import uuid
-        jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
+    def test_fromid_notfoundindb(self):
         from magmaweb.job import JobNotFound
+        jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
+        self.factory._makeJobSession = Mock()
+        self.factory.id2jobdir = Mock()
+
         with self.assertRaises(JobNotFound) as exc:
             self.factory.fromId(jobid)
         self.assertEqual(exc.exception.jobid, jobid)
+        self.assertEqual(exc.exception.message, "Job not found in database")
+
+    def test_fromid_notfoundasdb(self):
+        from magmaweb.job import JobNotFound
+        jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
+        self.factory._getJobMeta = Mock(mu.JobMeta)
+
+        with self.assertRaises(JobNotFound) as exc:
+            self.factory.fromId(jobid)
+        self.assertEqual(exc.exception.jobid, jobid)
+        self.assertEqual(exc.exception.message, "Data of job not found")
 
     def test_submitQuery(self):
-        import os
         self.factory.init_script = "# make magma available"
-        job = self.factory.fromScratch()
+        job = self.factory.fromScratch('bob')
 
         self.factory.script_fn = 'script.sh'
         cmd = "magma add_structures -t smiles structures.dat results.db\n"
         jobquery = JobQuery(job.id, job.dir, cmd, ['structures.dat'])
+        status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
+        jobquery.status_callback_url = status_cb_url
 
         self.factory.submitJob2Manager = Mock()
 
@@ -394,15 +412,18 @@ class JobFactoryTestCase(unittest.TestCase):
                             "stderr": "stderr.txt",
                             "stdout": "stdout.txt",
                             "time_max": self.factory.time_max,
-                            'arguments': [self.factory.script_fn]
+                            'arguments': [self.factory.script_fn],
+                            'status_callback_url': status_cb_url
                             }
         self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
 
     def test_submitQuery_with_tarball(self):
         self.factory.tarball = 'Magma-1.1.tar.gz'
         self.factory.submitJob2Manager = Mock()
-        job = self.factory.fromScratch()
+        job = self.factory.fromScratch('bob')
         jobquery = JobQuery(job.id, job.dir, "", [])
+        status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
+        jobquery.status_callback_url = status_cb_url
 
         jobid = self.factory.submitQuery(jobquery)
 
@@ -420,7 +441,8 @@ class JobFactoryTestCase(unittest.TestCase):
                             "stderr": "stderr.txt",
                             "stdout": "stdout.txt",
                             "time_max": self.factory.time_max,
-                            'arguments': [self.factory.script_fn]
+                            'arguments': [self.factory.script_fn],
+                            'status_callback_url': status_cb_url
                             }
         self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
 
@@ -437,76 +459,178 @@ class JobFactoryTestCase(unittest.TestCase):
         self.assertEquals(req.get_full_url(), self.factory.submit_url)
         self.assertEquals(req.get_header('Content-type'), 'application/json')
 
-    def test_state(self):
-        import uuid
-        import os
-        jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
-        jobdir = self.factory.id2jobdir(jobid)
-        os.mkdir(jobdir)
-        jobstatefile = open(os.path.join(jobdir, 'job.state'), 'w')
-        jobstatefile.write('STOPPED')
-        jobstatefile.close()
-
-        state = self.factory.state(jobid)
-
-        self.assertEquals(state, 'STOPPED')
-
-    def test_stateNotExisting(self):
-        import uuid
-        import os
-        jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
-        jobdir = self.factory.id2jobdir(jobid)
-        os.mkdir(jobdir)
-
-        state = self.factory.state(jobid)
-
-        self.assertEquals(state, 'UNKNOWN')
-
     def test_fromScratch(self):
-        import uuid
+        # mock/stub private methods which do external calls
+        self.factory._makeJobDir = Mock(return_value='/mydir')
+        self.factory._copyFile = Mock()
+        db = initTestingDB(dataset=None)
+        self.factory._makeJobSession = Mock(return_value=db)
+        self.factory._addJobMeta = Mock()
 
-        job = self.factory.fromScratch()
+        job = self.factory.fromScratch('bob')
 
         self.assertIsInstance(job.id, uuid.UUID)
-        self.assertEqual(job.maxMSLevel(), 0)
+        self.assertEqual(job.dir, '/mydir')
+        self.assertEqual(job.meta.owner, 'bob')
+        self.assertEqual(job.meta.state, 'STOPPED')
+        self.assertEqual(job.meta.description, '')
+        self.assertEqual(job.meta.ms_filename, '')
+        self.assertEqual(job.db.maxMSLevel(), 0)
+        self.factory._makeJobDir.assert_called_with(job.id)
 
     def test_cloneJob(self):
-        job = self.factory.fromScratch()
-        newjob = self.factory.cloneJob(job)
-        self.assertNotEqual(job.id, newjob.id)
+        oldjob = self.factory.fromScratch('ed')
+        oldjob.description = 'My first description'
+        oldjob.ms_filename = 'F123456.mzxml'
+
+        job = self.factory.cloneJob(oldjob, 'bob')
+
+        self.assertIsInstance(job.id, uuid.UUID)
+        self.assertNotEqual(job.id, oldjob.id)
+        self.assertEqual(job.meta.owner, 'bob')
+        self.assertEqual(job.meta.description, 'My first description')
+        self.assertEqual(job.meta.ms_filename, 'F123456.mzxml')
+        self.assertEqual(job.meta.state, 'STOPPED')
+        self.assertEqual(job.meta.parentjobid, oldjob.id)
 
 
 class JobNotFound(unittest.TestCase):
     def test_it(self):
         from magmaweb.job import JobNotFound
-        import uuid
         jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
-        e = JobNotFound(jobid)
+        e = JobNotFound('Job not found', jobid)
         self.assertEqual(e.jobid, jobid)
+        self.assertEqual(e.message, 'Job not found')
 
 
 class JobTestCase(unittest.TestCase):
     def setUp(self):
-        import uuid
         import tempfile
-        import os
-        self.jobid = uuid.uuid1()
-        # mock job session
-        self.session = initTestingDB()
+        self.parentjobid = uuid.UUID('22222222-2222-2222-2222-222222222222')
+        self.jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
+        self.created_at = datetime.datetime(2012, 11, 14, 10, 48, 26, 504478)
+        self.meta = mu.JobMeta(jobid=self.jobid,
+                            description="My desc",
+                            state='STOPPED',
+                            parentjobid=self.parentjobid,
+                            owner='bob',
+                            created_at=self.created_at,
+                            ms_filename='F1234.mzxml')
+        self.db = Mock(JobDb)
         self.jobdir = tempfile.mkdtemp()
         stderr = open(os.path.join(self.jobdir, 'stderr.txt'), 'w')
         stderr.write('Error log')
         stderr.close()
-        self.job = Job(self.jobid, self.session, self.jobdir)
+        self.job = Job(self.meta, self.jobdir, self.db)
 
     def tearDown(self):
         import shutil
         shutil.rmtree(self.jobdir)
 
     def test_construct(self):
-        self.assertEqual(self.job.id, self.jobid)
-        self.assertEqual(self.job.session, self.session)
+        self.assertEqual(self.job.db, self.db)
         self.assertEqual(self.job.dir, self.jobdir)
+
+    def test_id(self):
+        self.assertEqual(self.job.id, self.jobid)
+
+    def test_name(self):
+        self.assertEqual(self.job.__name__, str(self.jobid))
+
+    def test_get_description(self):
+        self.assertEqual(self.job.description, 'My desc')
+
+    def test_set_description(self):
+        self.job.description = 'My second description'
+
+        self.assertEqual(self.job.description, 'My second description')
+        self.assertEqual(self.job.meta.description, 'My second description')
+        self.assertEqual(self.job.db.runInfo().description,
+                         'My second description')
+
+    def test_set_description_withoutruninfo(self):
+        self.job.db.runInfo.return_value = None
+
+        self.job.description = 'My second description'
+
+        self.assertEqual(self.job.description, 'My second description')
+        self.assertEqual(self.job.meta.description, 'My second description')
+
+    def test_owner(self):
+        self.assertEqual(self.job.owner, 'bob')
+
+    def test_set_owner(self):
+        self.job.owner = 'ed'
+        self.assertEqual(self.job.owner, 'ed')
+
+    def test_stderr(self):
+        log = self.job.stderr()
+        self.assertIsInstance(log, file)
+        self.assertEqual(log.name, self.jobdir + '/stderr.txt')
+        self.assertEqual(log.read(), 'Error log')
+
+    def test_stderr_empty(self):
+        open_stub = Mock(side_effect=IOError('File not found'))
+        with patch('__builtin__.open', open_stub):
+            log = self.job.stderr()
+            self.assertEqual(log.read(), '')
+
+    def test_jobquery(self):
+        status_cb_url = 'http://example/status/{}.json'.format(self.job.id)
+        jobquery = self.job.jobquery(status_cb_url)
+        self.assertIsInstance(jobquery, JobQuery)
+        self.assertEqual(jobquery.id, self.job.id)
+        self.assertEqual(jobquery.dir, self.job.dir)
+
+    def test_state(self):
+        self.assertEquals(self.job.state, 'STOPPED')
+
+    def test_set_state(self):
+        self.job.state = 'RUNNING'
+
+        self.assertEquals(self.job.state, 'RUNNING')
+
+    def test_parent(self):
+        self.assertEquals(self.job.parent, self.parentjobid)
+
+    def test_set_parent(self):
+        jid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
+        self.job.parent = jid
+
+        self.assertEquals(self.job.parent, jid)
+
+    def test_created_at(self):
+        self.assertEqual(self.job.created_at, self.created_at)
+
+    def test_ms_filename(self):
+        self.assertEqual(self.job.ms_filename, 'F1234.mzxml')
+
+    def test_set_ms_filename(self):
+        self.job.ms_filename = 'F4567.mzxml'
+
+        self.assertEqual(self.job.ms_filename, 'F4567.mzxml')
+        self.assertEqual(self.job.meta.ms_filename, 'F4567.mzxml')
+        self.assertEqual(self.job.db.runInfo().ms_filename, 'F4567.mzxml')
+
+    def test_set_ms_filename_withoutruninfo(self):
+        self.job.db.runInfo.return_value = None
+
+        self.job.ms_filename = 'F4567.mzxml'
+
+        self.assertEqual(self.job.ms_filename, 'F4567.mzxml')
+        self.assertEqual(self.job.meta.ms_filename, 'F4567.mzxml')
+
+
+class JobDbTestCaseAbstract(unittest.TestCase):
+    def setUp(self):
+        # mock job session
+        self.session = initTestingDB()
+        self.job = JobDb(self.session)
+
+
+class JobDbTestCase(JobDbTestCaseAbstract):
+    def test_construct(self):
+        self.assertEqual(self.job.session, self.session)
 
     def test_runInfo(self):
         runInfo = self.job.runInfo()
@@ -541,6 +665,7 @@ class JobTestCase(unittest.TestCase):
 
         runInfo = self.job.runInfo()
 
+        # run with highest id is returned
         self.assertEqual(runInfo.description, 'My second description')
 
     def test_maxMSLevel(self):
@@ -593,25 +718,8 @@ class JobTestCase(unittest.TestCase):
                                  }
         self.assertEqual(self.job.chromatogram(), expected_chromatogram)
 
-    def test_stderr(self):
-        log = self.job.stderr()
-        self.assertIsInstance(log, file)
-        self.assertEqual(log.name, self.jobdir + '/stderr.txt')
-        self.assertEqual(log.read(), 'Error log')
-
     def test_metabolitesTotalCount(self):
         self.assertEqual(self.job.metabolitesTotalCount(), 2)
-
-    def test_jobquery(self):
-        jobquery = self.job.jobquery()
-        self.assertIsInstance(jobquery, JobQuery)
-        self.assertEqual(jobquery.id, self.job.id)
-        self.assertEqual(jobquery.dir, self.job.dir)
-
-    def test_set_description(self):
-        self.job.description('My second description')
-        self.assertEqual(self.job.runInfo().description,
-                         'My second description')
 
     def test_assign_metabolite2peak(self):
         metid = 72
@@ -662,14 +770,11 @@ class JobTestCase(unittest.TestCase):
         self.assertIsNone(q.filter(Peak.mz == mz).scalar())
 
 
-class JobEmptyDatasetTestCase(unittest.TestCase):
+class JobDbEmptyDatasetTestCase(unittest.TestCase):
     def setUp(self):
-        import uuid
-        self.jobid = uuid.uuid1()
         # mock job session
         self.session = initTestingDB(dataset=None)
-        self.jobdir = '/somedir'
-        self.job = Job(self.jobid, self.session, self.jobdir)
+        self.job = JobDb(self.session)
 
     def test_runInfo(self):
         runInfo = self.job.runInfo()
@@ -685,26 +790,11 @@ class JobEmptyDatasetTestCase(unittest.TestCase):
                                                    'cutoff': None
                                                    })
 
-    def test_stderr(self):
-        open_stub = Mock(side_effect=IOError('File not found'))
-        with patch('__builtin__.open', open_stub):
-            log = self.job.stderr()
-            self.assertEqual(log.read(), '')
-
     def test_metabolitesTotalCount(self):
         self.assertEqual(self.job.metabolitesTotalCount(), 0)
 
-    def test_set_description(self):
-        desc = 'My second description'
-        self.job.description(desc)
-        self.assertEqual(self.job.runInfo().description, desc)
 
-
-class JobMetabolitesTestCase(unittest.TestCase):
-    def setUp(self):
-        import uuid
-        self.job = Job(uuid.uuid1(), initTestingDB(), '/tmp')
-
+class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
     def test_default(self):
         response = self.job.metabolites()
         self.assertEquals(
@@ -887,11 +977,7 @@ class JobMetabolitesTestCase(unittest.TestCase):
             self.job.metabolites(sorts=sorts)
 
 
-class JobMetabolites2csvTestCase(unittest.TestCase):
-    def setUp(self):
-        import uuid
-        self.job = Job(uuid.uuid1(), initTestingDB(), '/tmp')
-
+class JobDbMetabolites2csvTestCase(JobDbTestCaseAbstract):
     def test_it(self):
         csvfile = self.job.metabolites2csv(self.job.metabolites()['rows'])
         import csv
@@ -964,11 +1050,7 @@ class JobMetabolites2csvTestCase(unittest.TestCase):
         )
 
 
-class JobMetabolites2sdfTestCase(unittest.TestCase):
-    def setUp(self):
-        import uuid
-        self.job = Job(uuid.uuid1(), initTestingDB(), '/tmp')
-
+class JobMetabolites2sdfTestCase(JobDbTestCaseAbstract):
     def test_it(self):
         sdffile = self.job.metabolites2sdf(self.job.metabolites()['rows'])
 
@@ -1091,11 +1173,7 @@ $$$$
         self.assertMultiLineEqual(sdffile, expected_sdf)
 
 
-class JobScansWithMetabolitesTestCase(unittest.TestCase):
-    def setUp(self):
-        import uuid
-        self.job = Job(uuid.uuid1(), initTestingDB(), '/tmp')
-
+class JobScansWithMetabolitesTestCase(JobDbTestCaseAbstract):
     def test_metid(self):
         response = self.job.scansWithMetabolites(metid=72)
         self.assertEqual(response, [{
@@ -1181,11 +1259,7 @@ class JobScansWithMetabolitesTestCase(unittest.TestCase):
         ])
 
 
-class JobMSpectraTestCase(unittest.TestCase):
-    def setUp(self):
-        import uuid
-        self.job = Job(uuid.uuid1(), initTestingDB(), '/tmp')
-
+class JobMSpectraTestCase(JobDbTestCaseAbstract):
     def test_scanonly(self):
         self.assertEqual(
             self.job.mspectra(641),
@@ -1263,11 +1337,7 @@ class JobMSpectraTestCase(unittest.TestCase):
         )
 
 
-class JobFragmentsTestCase(unittest.TestCase):
-    def setUp(self):
-        import uuid
-        self.job = Job(uuid.uuid1(), initTestingDB(), '/tmp')
-
+class JobFragmentsTestCase(JobDbTestCaseAbstract):
     def test_metabolitewithoutfragments(self):
         self.maxDiff = None
         response = self.job.fragments(metid=72, scanid=641, node='root')
@@ -1390,12 +1460,8 @@ class JobFragmentsTestCase(unittest.TestCase):
 
 
 class JobWithAllPeaksTestCase(unittest.TestCase):
-
     def setUp(self):
-        import uuid
-        self.job = Job(uuid.uuid1(),
-                       initTestingDB(dataset='useallpeaks'),
-                       '/tmp')
+        self.job = JobDb(initTestingDB(dataset='useallpeaks'))
 
     def test_default(self):
         response = self.job.metabolites()
@@ -1523,6 +1589,24 @@ class JobQueryTestCase(unittest.TestCase):
         jq = JobQuery('x', '/y')
         self.assertEquals(jq.escape("'"), '&#39;')
 
+    def test_defaults(self):
+        expected = dict(
+                        n_reaction_steps=2,
+                        metabolism_types=['phase1', 'phase2'],
+                        ionisation_mode=1,
+                        skip_fragmentation=False,
+                        ms_intensity_cutoff=1000000.0,
+                        msms_intensity_cutoff=0.1,
+                        mz_precision=0.001,
+                        use_all_peaks=False,
+                        abs_peak_cutoff=1000,
+                        rel_peak_cutoff=0.01,
+                        max_ms_level=10,
+                        precursor_mz_precision=0.005,
+                        max_broken_bonds=4
+                        )
+        self.assertDictEqual(expected, JobQuery.defaults())
+
 
 class JobQueryFileTestCase(unittest.TestCase):
     def test_valid(self):
@@ -1555,7 +1639,6 @@ class JobQueryFileTestCase(unittest.TestCase):
 
 class JobQueryActionTestCase(unittest.TestCase):
     def setUp(self):
-        import uuid
         import tempfile
         self.jobid = uuid.uuid1()
         self.jobdir = tempfile.mkdtemp()

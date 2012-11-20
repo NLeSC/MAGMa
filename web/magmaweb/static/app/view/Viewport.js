@@ -21,18 +21,19 @@ Ext.define('Esc.magmaweb.view.Viewport', {
           },
           items: [{
               xtype: 'buttongroup',
-              columns: 2,
+              columns: 3,
               items: [{
                   text: 'Restart',
-                  action: 'restart',
-                  tooltip: 'Upload a new dataset'
-              },{
+                  tooltip: 'Upload a new dataset',
+              	  href: '../start',
+              	  hrefTarget: '_self'
+              }, {
                   text: 'Annotate',
                   tooltip: 'Annotate all structures',
                   id: 'annotateaction',
                   iconCls: 'icon-annot',
                   disabled: true
-              },{
+              }, {
                   text: 'Help',
                   tooltip: 'Goto help pages',
                   disabled: true
@@ -40,6 +41,19 @@ Ext.define('Esc.magmaweb.view.Viewport', {
                   text: 'Information',
                   tooltip: 'Information about input parameters',
                   action: 'information'
+              }, {
+                  text: 'Workspace',
+              	  tooltip: 'My settings and jobs',
+              	  href: '../workspace',
+              	  hrefTarget: '_self'
+              }, {
+                  text: 'Logout',
+              	  href: '../logout',
+              	  hrefTarget: '_self'
+              }, {
+                  text: 'Login',
+                  href: "../login",
+                  hrefTarget: '_self'
               }]
           }, {
             xtype:'tbspacer',
@@ -54,7 +68,7 @@ Ext.define('Esc.magmaweb.view.Viewport', {
           }, {
             xtype: 'component',
             cls: 'x-logo',
-            html: '<a href="http://www.esciencecenter.nl"></a>'              
+            html: '<a href="http://www.esciencecenter.nl"></a>'
           }]
       }, {
           // master side
