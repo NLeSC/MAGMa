@@ -49,6 +49,8 @@ port = 6543
 #workers = 4
 #accesslog = logs/access.log
 #errorlog = logs/error.log
+# uploading can take longer than default 30s
+#timeout = 180
 
 [composite:main]
 use = egg:Paste#urlmap

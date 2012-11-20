@@ -80,7 +80,7 @@ server {
             proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header        X-Forwarded-Proto $scheme;
 
-            client_max_body_size    10m;
+            client_max_body_size    1000m;
             client_body_buffer_size 128k;
             proxy_connect_timeout   60s;
             proxy_send_timeout      90s;
@@ -117,7 +117,7 @@ Change /magma sectio in /etc/nginx/sites-enabled/default to:
             proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header        X-Forwarded-Proto $scheme;
 
-            client_max_body_size    10m;
+            client_max_body_size    1000m;
             client_body_buffer_size 128k;
             include uwsgi_params;
             uwsgi_pass unix:/tmp/magma.uwsgi.sock;
