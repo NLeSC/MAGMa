@@ -7,9 +7,11 @@ from sqlalchemy import String
 from sqlalchemy import ForeignKey
 from sqlalchemy import DateTime
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import validates
 from sqlalchemy.types import TypeDecorator
 from zope.sqlalchemy import ZopeTransactionExtension
 from pyramid.httpexceptions import HTTPNotFound
@@ -70,25 +72,30 @@ class User(Base):
         self.displayname = displayname
         self.email = email
         if password is not None:
-            self._set_password(password)
+            self.password = password
 
-    def _set_password(self, clear_password):
+    @validates('password')
+    def _hash_password(self, key, clear_password):
         salt = bcrypt.gensalt(12)
-        self.password = bcrypt.hashpw(clear_password, salt)
+        return bcrypt.hashpw(clear_password, salt)
 
     def validate_password(self, clear_password):
+        """Validates unencrypted password 'clear_password' matches
+
+        Returns True when matches or False when not
+        """
         return bcrypt.hashpw(clear_password, self.password) == self.password
 
     def __repr__(self):
         return '<User({!r}, {!r}, {!r})>'.format(self.userid,
-                                                self.displayname,
-                                                self.email)
+                                                 self.displayname,
+                                                 self.email)
 
     def __eq__(self, other):
         return (self.userid == other.userid and
-            self.displayname == other.displayname and
-            self.email == other.email and
-            self.password == other.password)
+                self.displayname == other.displayname and
+                self.email == other.email and
+                self.password == other.password)
 
     @classmethod
     def by_id(cls, userid):
@@ -115,9 +122,9 @@ class JobMeta(Base):
                             backref=backref('parent', remote_side=[jobid]))
 
     def __init__(self, jobid, owner,
-                  description=u'', parentjobid=None,
-                  state=u'STOPPED', ms_filename='',
-                  created_at=None):
+                 description=u'', parentjobid=None,
+                 state=u'STOPPED', ms_filename='',
+                 created_at=None):
         self.jobid = jobid
         self.owner = owner
         self.description = description
