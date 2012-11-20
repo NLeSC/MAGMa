@@ -7,8 +7,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.txt')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
-requires = [
-            'pyramid',
+requires = ['pyramid',
             'SQLAlchemy',
             'pyramid_tm',
             'pyramid_multiauth',
@@ -20,8 +19,7 @@ requires = [
             'Paste'
             ]
 
-tests_require = [
-                 'WebTest',
+tests_require = ['WebTest',
                  'mock'
                  ]
 
@@ -32,8 +30,7 @@ setup(name='MAGMaWeb',
       version='0.0',
       description='MAGMaWeb',
       long_description=README + '\n\n' + CHANGES,
-      classifiers=[
-                   "Programming Language :: Python",
+      classifiers=["Programming Language :: Python",
                    "Framework :: Pylons",
                    "Topic :: Internet :: WWW/HTTP",
                    "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",

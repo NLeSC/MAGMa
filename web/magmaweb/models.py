@@ -17,6 +17,7 @@ from sqlalchemy.schema import ForeignKeyConstraint
 
 Base = declarative_base()
 
+
 class ReactionSequence(TypeDecorator):
     """List of reactions.
 
@@ -26,12 +27,12 @@ class ReactionSequence(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         if value is not None and not isinstance(value, basestring):
-           value = '\n'.join(value)
+            value = '\n'.join(value)
 
         return value
 
     def process_result_value(self, value, dialect):
-        if value=="":
+        if value == "":
             return []
 
         if value is not None:

@@ -44,8 +44,9 @@ class RpcViews(object):
         Annotation is performed if current job has ms data
         """
         job = self.new_job()
-        jobquery = job.jobquery(self._status_url()).add_structures(self.request.POST,
-                                                 job.db.maxMSLevel() > 0)
+        jobquery = job.jobquery(self._status_url())
+        has_scans = job.db.maxMSLevel() > 0
+        jobquery = jobquery.add_structures(self.request.POST, has_scans)
         self.submit_query(jobquery)
         return {'success': True, 'jobid': str(job.id)}
 
@@ -60,8 +61,8 @@ class RpcViews(object):
         job = self.new_job()
         job.ms_filename = self.request.POST['ms_data_file'].filename
         has_metabolites = job.db.metabolitesTotalCount() > 0
-        jobquery = job.jobquery(self._status_url()).add_ms_data(self.request.POST,
-                                              has_metabolites)
+        jobquery = job.jobquery(self._status_url())
+        jobquery = jobquery.add_ms_data(self.request.POST, has_metabolites)
         self.submit_query(jobquery)
         return {'success': True, 'jobid': str(job.id)}
 
@@ -72,8 +73,9 @@ class RpcViews(object):
         Annotation is performed if current job has ms data
         """
         job = self.new_job()
-        jobquery = job.jobquery(self._status_url()).metabolize(self.request.POST,
-                                             job.db.maxMSLevel() > 0)
+        jobquery = job.jobquery(self._status_url())
+        has_scans = job.db.maxMSLevel() > 0
+        jobquery = jobquery.metabolize(self.request.POST, has_scans)
         self.submit_query(jobquery)
         return {'success': True, 'jobid': str(job.id)}
 
@@ -86,8 +88,9 @@ class RpcViews(object):
         Annotation is performed if current job has ms data
         """
         job = self.new_job()
-        jobquery = job.jobquery(self._status_url()).metabolize_one(self.request.POST,
-                                                 job.db.maxMSLevel() > 0)
+        has_scans = job.db.maxMSLevel() > 0
+        jobquery = job.jobquery(self._status_url())
+        jobquery = jobquery.metabolize_one(self.request.POST, has_scans)
         self.submit_query(jobquery)
         return {'success': True, 'jobid': str(job.id)}
 

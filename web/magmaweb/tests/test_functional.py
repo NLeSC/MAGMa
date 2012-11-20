@@ -12,8 +12,7 @@ from test_job import populateTestingDB
 class FunctionalTests(unittest.TestCase):
     def setUp(self):
         self.root_dir = tempfile.mkdtemp()
-        self.settings = {
-                         'jobfactory.root_dir': self.root_dir,
+        self.settings = {'jobfactory.root_dir': self.root_dir,
                          'mako.directories': 'magmaweb:templates',
                          'extjsroot': 'ext',
                          'sqlalchemy.url': 'sqlite:///:memory:',
@@ -61,6 +60,10 @@ class FunctionalTests(unittest.TestCase):
         res_url = '/results/' + str(jobid)
         res_url += '/metabolites.json?limit=10&start=0'
         res = self.testapp.get(res_url, status=200)
+        url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url1 += '?cid=289">CID: 289</a>'
+        url2 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url2 += '?cid=152432">CID: 152432</a>'
         self.assertEqual(json.loads(res.body), {
             'totalUnfiltered': 2,
             'total': 2,
@@ -68,8 +71,8 @@ class FunctionalTests(unittest.TestCase):
                 'rt': 933.317,
                 'id': 641
             }, {
-               'rt': 1254.15,
-               'id': 870
+                'rt': 1254.15,
+                'id': 870
             }],
             'rows': [{
                 'metid': 72,
@@ -85,7 +88,7 @@ class FunctionalTests(unittest.TestCase):
                 'smiles': u'Oc1ccccc1O',
                 'mim': 110.03677, 'logp':1.231,
                 'assigned': False,
-                'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
+                'reference': url1
             }, {
                 'isquery': True, 'level': 0, 'metid': 352,
                 'mol': "Molfile of dihydroxyphenyl-valerolactone",
@@ -98,6 +101,6 @@ class FunctionalTests(unittest.TestCase):
                 'smiles': "O=C1OC(Cc2ccc(O)c(O)c2)CC1",
                 'mim': 208.07355, 'logp':2.763,
                 'assigned': False,
-                'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=152432">CID: 152432</a>',
+                'reference': url2
             }]
         })

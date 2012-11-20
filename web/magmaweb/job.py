@@ -77,8 +77,13 @@ class JobQuery(object):
                 )
             return cstruct
 
-    def __init__(self, id, dir, script='', prestaged=None,
-                  status_callback_url=None):
+    def __init__(self,
+                 id,
+                 dir,
+                 script='',
+                 prestaged=None,
+                 status_callback_url=None,
+                 ):
         """Contruct JobQuery
 
         Params:
@@ -121,8 +126,7 @@ class JobQuery(object):
                                        name='ms_intensity_cutoff'))
         schema.add(colander.SchemaNode(colander.Float(),
                                        name='msms_intensity_cutoff'))
-        schema.add(colander.SchemaNode(
-                                       colander.Integer(),
+        schema.add(colander.SchemaNode(colander.Integer(),
                                        validator=colander.OneOf([-1, 1]),
                                        name='ionisation_mode'))
         schema.add(colander.SchemaNode(colander.Integer(),
@@ -377,9 +381,9 @@ class JobQuery(object):
         script += "-s '{n_reaction_steps}' -m '{metabolism_types}' {{db}}"
         metabolism_types = ','.join(params['metabolism_types'])
         script_substitutions = {
-             'metid': self.escape(params['metid']),
-             'n_reaction_steps': self.escape(params['n_reaction_steps']),
-             'metabolism_types': self.escape(metabolism_types)
+            'metid': self.escape(params['metid']),
+            'n_reaction_steps': self.escape(params['n_reaction_steps']),
+            'metabolism_types': self.escape(metabolism_types)
         }
         self.script += script.format(**script_substitutions)
 
@@ -420,12 +424,12 @@ class JobQuery(object):
         ms_ic = params['ms_intensity_cutoff']
         msms_ic = params['msms_intensity_cutoff']
         script_substitutions = {
-               'precursor_mz_precision': self.escape(pmzp),
-               'mz_precision': self.escape(params['mz_precision']),
-               'ms_intensity_cutoff': self.escape(ms_ic),
-               'msms_intensity_cutoff': self.escape(msms_ic),
-               'ionisation_mode': self.escape(params['ionisation_mode']),
-               'max_broken_bonds': self.escape(params['max_broken_bonds'])
+            'precursor_mz_precision': self.escape(pmzp),
+            'mz_precision': self.escape(params['mz_precision']),
+            'ms_intensity_cutoff': self.escape(ms_ic),
+            'msms_intensity_cutoff': self.escape(msms_ic),
+            'ionisation_mode': self.escape(params['ionisation_mode']),
+            'max_broken_bonds': self.escape(params['max_broken_bonds'])
         }
         script = script.format(**script_substitutions)
 
@@ -462,29 +466,32 @@ class JobQuery(object):
     def defaults(cls):
         """Returns dictionary with default params"""
         return dict(
-                    n_reaction_steps=2,
-                    metabolism_types=['phase1', 'phase2'],
-                    ionisation_mode=1,
-                    skip_fragmentation=False,
-                    ms_intensity_cutoff=1000000.0,
-                    msms_intensity_cutoff=0.1,
-                    mz_precision=0.001,
-                    use_all_peaks=False,
-                    abs_peak_cutoff=1000,
-                    rel_peak_cutoff=0.01,
-                    max_ms_level=10,
-                    precursor_mz_precision=0.005,
-                    max_broken_bonds=4
-                    )
+            n_reaction_steps=2,
+            metabolism_types=['phase1', 'phase2'],
+            ionisation_mode=1,
+            skip_fragmentation=False,
+            ms_intensity_cutoff=1000000.0,
+            msms_intensity_cutoff=0.1,
+            mz_precision=0.001,
+            use_all_peaks=False,
+            abs_peak_cutoff=1000,
+            rel_peak_cutoff=0.01,
+            max_ms_level=10,
+            precursor_mz_precision=0.005,
+            max_broken_bonds=4)
 
 
 class JobFactory(object):
     """Factory which can create jobs """
-    def __init__(
-                  self, root_dir,
-                  init_script='', tarball=None, script_fn='script.sh',
-                  db_fn='results.db', state_fn='job.state',
-                  submit_url='http://localhost:9998', time_max=30):
+    def __init__(self,
+                 root_dir,
+                 init_script='',
+                 tarball=None,
+                 script_fn='script.sh',
+                 db_fn='results.db',
+                 state_fn='job.state',
+                 submit_url='http://localhost:9998',
+                 time_max=30):
         """
         root_dir
             Directory in which jobs are created, retrieved
@@ -619,7 +626,9 @@ class JobFactory(object):
         return Job(jobmeta, jdir, db)
 
     def _copyFile(self, src, jid):
-        """Copy content of file object 'src' to result db of job with identifier 'jid'."""
+        """Copy content of file object 'src' to
+        result db of job with identifier 'jid'.
+        """
         src.seek(0)  # start from beginning
         dst = open(self.id2db(jid), 'wb')
         shutil.copyfileobj(src, dst, 2 << 16)
@@ -667,8 +676,7 @@ class JobFactory(object):
         returns job identifier of job submitted to jobmanager
         (not the same as job.id).
         """
-        request = urllib2.Request(
-                                  self.submit_url,
+        request = urllib2.Request(self.submit_url,
                                   json.dumps(body),
                                   {'Content-Type': 'application/json'})
         # log what is send to job manager
@@ -693,16 +701,16 @@ class JobFactory(object):
         script.close()
 
         body = {
-               'jobdir': query.dir + '/',
-               'executable': '/bin/sh',
-               'prestaged': [self.script_fn, self.db_fn],
-               'poststaged': [self.db_fn],
-               'stderr': 'stderr.txt',
-               'stdout': 'stdout.txt',
-               'time_max': self.time_max,
-               'arguments': [self.script_fn],
-               'status_callback_url': query.status_callback_url
-               }
+            'jobdir': query.dir + '/',
+            'executable': '/bin/sh',
+            'prestaged': [self.script_fn, self.db_fn],
+            'poststaged': [self.db_fn],
+            'stderr': 'stderr.txt',
+            'stdout': 'stdout.txt',
+            'time_max': self.time_max,
+            'arguments': [self.script_fn],
+            'status_callback_url': query.status_callback_url
+        }
         body['prestaged'].extend(query.prestaged)
 
         if (self.tarball is not None):
@@ -754,7 +762,9 @@ class Job(object):
 
     @property
     def __name__(self):
-        """Same as id and as lookup key using :class:magmaweb.user.JobIdFactory"""
+        """Same as id and as lookup key
+        using :class:magmaweb.user.JobIdFactory
+        """
         return str(self.id)
 
     def jobquery(self, status_callback_url):
@@ -826,7 +836,9 @@ class Job(object):
 
     @ms_filename.setter
     def ms_filename(self, ms_filename):
-        """Sets Filename of MS datafile in JobMeta and JobDb.runInfo(0 if present"""
+        """Sets Filename of MS datafile in
+        JobMeta and JobDb.runInfo(0 if present
+        """
         self.meta.ms_filename = ms_filename
         run = self.db.runInfo()
         if run is not None:
@@ -911,8 +923,9 @@ class JobDb(object):
         if (scanid is not None):
             # TODO: add score column + order by score
             q = q.add_columns(fragal.score, fragal.deltappm)
-            q = q.join(fragal.metabolite).filter(
-                fragal.parentfragid == 0).filter(fragal.scanid == scanid)
+            q = q.join(fragal.metabolite)
+            q = q.filter(fragal.parentfragid == 0)
+            q = q.filter(fragal.scanid == scanid)
 
         # add assigned column
         assigned = func.count('*').label('assigned')
@@ -938,7 +951,7 @@ class JobDb(object):
                     raise ScanRequiredError()
             else:
                 # generic filters
-                col = Metabolite.__dict__[filter['field']]  #@UndefinedVariable @IgnorePep8
+                col = Metabolite.__dict__[filter['field']]
             q = self.extjsgridfilter(q, col, filter)
 
         total = q.count()
@@ -957,7 +970,7 @@ class JobDb(object):
                 else:
                     raise ScanRequiredError()
             else:
-                col2 = Metabolite.__dict__[col['property']]  #@UndefinedVariable @IgnorePep8
+                col2 = Metabolite.__dict__[col['property']]
             if (col['direction'] == 'DESC'):
                 q = q.order_by(desc(col2))
             elif (col['direction'] == 'ASC'):
@@ -1004,10 +1017,10 @@ class JobDb(object):
         cols = cols or []
         csvstr = StringIO.StringIO()
         headers = [
-                   'origin', 'smiles', 'probability', 'reactionsequence',
-                   'nhits', 'molformula', 'mim', 'isquery', 'logp',
-                   'reference'
-                   ]
+            'origin', 'smiles', 'probability', 'reactionsequence',
+            'nhits', 'molformula', 'mim', 'isquery', 'logp',
+            'reference'
+        ]
         if ('score' in metabolites[0].keys()):
             headers.append('score')
 
@@ -1076,9 +1089,10 @@ class JobDb(object):
             fq = fq.filter(Fragment.metid == metid)
 
         for filter in filters:
-            if (filter['field'] == 'nhits'
-              and filter['comparison'] == 'gt'
-              and filter['value'] == 0):
+            has_no_hit_filter = (filter['field'] == 'nhits'
+                                 and filter['comparison'] == 'gt'
+                                 and filter['value'] == 0)
+            if has_no_hit_filter:
                 continue
             if (filter['field'] == 'score'):
                 fq = self.extjsgridfilter(fq, Fragment.score, filter)
@@ -1090,14 +1104,11 @@ class JobDb(object):
                                         Fragment.mz == Peak.mz))
                 fq = self.extjsgridfilter(fq, Peak.assigned_metid, filter)
             else:
-                fq = fq.join(
-                             Metabolite,
-                             Fragment.metabolite  #@UndefinedVariable @IgnorePep8
-                             )
-                fq = self.extjsgridfilter(
-                                          fq,
-                                          Metabolite.__dict__[filter['field']],  #@UndefinedVariable @IgnorePep8
-                                          filter)
+                fq = fq.join(Metabolite, Fragment.metabolite)
+                fq = self.extjsgridfilter(fq,
+                                          Metabolite.__dict__[filter['field']],
+                                          filter
+                                          )
 
         hits = []
         q = self.session.query(Scan.rt, Scan.scanid).filter_by(mslevel=1)
@@ -1159,15 +1170,9 @@ class JobDb(object):
 
         runInfo = self.runInfo()
         if (runInfo is not None):
-            return {
-                    'scans': scans,
-                    'cutoff': runInfo.ms_intensity_cutoff
-                    }
+            return {'scans': scans, 'cutoff': runInfo.ms_intensity_cutoff}
         else:
-            return {
-                    'scans': scans,
-                    'cutoff': None
-                    }
+            return {'scans': scans, 'cutoff': None}
 
     def mspectra(self, scanid, mslevel=None):
         """Returns dict with peaks of a scan
@@ -1196,22 +1201,23 @@ class JobDb(object):
         if (scan.mslevel == 1):
             cutoff = self.session.query(Run.ms_intensity_cutoff).scalar()
         else:
-            cutoff = self.session.query(
-                Scan.basepeakintensity * Run.msms_intensity_cutoff
-                ).filter(Scan.scanid == scanid).scalar()
+            rel_cutoff = Scan.basepeakintensity * Run.msms_intensity_cutoff
+            q = self.session.query(rel_cutoff)
+            cutoff = q.filter(Scan.scanid == scanid).scalar()
 
         peaks = []
         for peak in self.session.query(Peak).filter_by(scanid=scanid):
             peaks.append({
                 'mz': peak.mz,
                 'intensity': peak.intensity,
-                'assigned_metid': peak.assigned_metid
+                'assigned_metid': peak.assigned_metid,
             })
 
-        return {'peaks': peaks, 'cutoff': cutoff, 'mslevel': scan.mslevel,
-                'precursor': {
-                    'id': scan.precursorscanid, 'mz': scan.precursormz
-                    }
+        precursor = {'id': scan.precursorscanid, 'mz': scan.precursormz}
+        return {'peaks': peaks,
+                'cutoff': cutoff,
+                'mslevel': scan.mslevel,
+                'precursor': precursor,
                 }
 
     def fragments(self, scanid, metid, node):
@@ -1266,13 +1272,10 @@ class JobDb(object):
         # parent metabolite
         if (node == 'root'):
             structures = []
-            for row in q().filter(
-                                  Fragment.scanid == scanid
-                         ).filter(
-                                  Fragment.metid == metid
-                         ).filter(
-                                  Fragment.parentfragid == 0
-                         ):
+            pms = q().filter(Fragment.scanid == scanid)
+            pms = pms.filter(Fragment.metid == metid)
+            pms = pms.filter(Fragment.parentfragid == 0)
+            for row in pms:
                 structure = fragment2json(row)
 
                 qa = self.session.query(func.count('*')).\

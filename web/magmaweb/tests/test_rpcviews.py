@@ -1,15 +1,15 @@
 import unittest
 import uuid
 from pyramid import testing
-from mock import Mock, patch
+from mock import Mock
 from magmaweb.rpc import RpcViews
 from magmaweb.job import JobFactory, Job, JobDb, JobQuery
 from magmaweb.user import JobMeta, User
 
+
 class RpcViewsTestCase(unittest.TestCase):
     def setUp(self):
-        self.settings = {
-                         'jobfactory.root_dir': '/somedir',
+        self.settings = {'jobfactory.root_dir': '/somedir',
                          }
         self.config = testing.setUp(settings=self.settings)
         self.config.add_route('status.json', '/status/{jobid}.json')
@@ -30,6 +30,11 @@ class RpcViewsTestCase(unittest.TestCase):
 
     def tearDown(self):
         testing.tearDown()
+
+    def _assert_status_callback_url(self):
+        expected_cb_url = 'http://example.com/status/'
+        expected_cb_url += '3ad25048-26f6-11e1-851e-00012e260790.json'
+        self.job.jobquery.assert_called_with(expected_cb_url)
 
     def test_construct(self):
         request = testing.DummyRequest()
@@ -60,7 +65,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.jobquery.add_structures.assert_called_with(self.post, True)
         self.job.db.maxMSLevel.assert_called_with()
         self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with('http://example.com/status/3ad25048-26f6-11e1-851e-00012e260790.json')
+        self._assert_status_callback_url()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
@@ -78,7 +83,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.job.db.metabolitesTotalCount.assert_called_with()
         self.assertEqual(self.job.ms_filename, 'c:\bla\bla\F1234.mzxml')
         self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with('http://example.com/status/3ad25048-26f6-11e1-851e-00012e260790.json')
+        self._assert_status_callback_url()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
@@ -90,7 +95,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.jobquery.metabolize.assert_called_with(self.post, True)
         self.job.db.maxMSLevel.assert_called_with()
         self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with('http://example.com/status/3ad25048-26f6-11e1-851e-00012e260790.json')
+        self._assert_status_callback_url()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
@@ -102,7 +107,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.jobquery.metabolize_one.assert_called_with(self.post, True)
         self.job.db.maxMSLevel.assert_called_with()
         self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with('http://example.com/status/3ad25048-26f6-11e1-851e-00012e260790.json')
+        self._assert_status_callback_url()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
@@ -113,7 +118,7 @@ class RpcViewsTestCase(unittest.TestCase):
 
         self.jobquery.annotate.assert_called_with(self.post)
         self.rpc.new_job.assert_called_with()
-        self.job.jobquery.assert_called_with('http://example.com/status/3ad25048-26f6-11e1-851e-00012e260790.json')
+        self._assert_status_callback_url()
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
@@ -143,8 +148,7 @@ class RpcViewsTestCase(unittest.TestCase):
         from pyramid.httpexceptions import HTTPInternalServerError
         import json
         e = Mock(Invalid)
-        e.asdict.return_value = {
-                                 'query': 'Bad query field',
+        e.asdict.return_value = {'query': 'Bad query field',
                                  'format': 'Something wrong in form'
                                  }
         request = testing.DummyRequest()
@@ -156,8 +160,7 @@ class RpcViewsTestCase(unittest.TestCase):
 
         self.assertIsInstance(response, HTTPInternalServerError)
         expected = {'success': False,
-                    'errors': {
-                               'query': 'Bad query field',
+                    'errors': {'query': 'Bad query field',
                                'format': 'Something wrong in form'
                                }
                     }
@@ -170,9 +173,8 @@ class RpcViewsTestCase(unittest.TestCase):
 
         response = self.rpc.assign_metabolite2peak()
 
-        self.job.db.assign_metabolite2peak.assert_called_with(641,
-                                                           109.029563903808,
-                                                           72)
+        assigned_func = self.job.db.assign_metabolite2peak
+        assigned_func.assert_called_with(641, 109.029563903808, 72)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_unassign_metabolite2peak(self):
@@ -181,6 +183,6 @@ class RpcViewsTestCase(unittest.TestCase):
 
         response = self.rpc.unassign_metabolite2peak()
 
-        self.job.db.unassign_metabolite2peak.assert_called_with(641,
-                                                             109.029563903808)
+        unassign_func = self.job.db.unassign_metabolite2peak
+        unassign_func.assert_called_with(641, 109.029563903808)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
