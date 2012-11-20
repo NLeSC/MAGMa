@@ -152,20 +152,20 @@ class StructureEngine(object):
             )
         try:
             dupid = self.db_session.query(Metabolite).filter_by(smiles=inchikey).one()
-            if dupid.probability < prob:
-                self.db_session.delete(dupid)
-                metab.metid=dupid.metid
-                self.db_session.add(metab)
-                sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - old one removed\n')
-                # TODO remove any fragments related to this structure as well
-            else:
-                sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - kept old one\n')
-                metab = dupid
+#            if dupid.probability < prob:
+#                self.db_session.delete(dupid)
+#                metab.metid=dupid.metid
+#                self.db_session.add(metab)
+#                sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - old one removed\n')
+#                # TODO remove any fragments related to this structure as well
+#            else:
+            sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - kept old one\n')
+            return
         except NoResultFound:
             self.db_session.add(metab)
             #sys.stderr.write('Added: '+name+'\n')
-        self.db_session.flush()
-        return metab.metid
+            self.db_session.flush()
+            return metab.metid
 
     def add_structure_tmp(self,mol,name,prob,level,sequence,isquery):
         m=Chem.MolFromMolBlock(mol)
@@ -554,8 +554,12 @@ class AnnotateEngine(object):
             print str(ql)+','+str(qh)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
 
-    def search_structures(self,metids=None,ncpus=1):
+    def search_structures(self,metids=None,ncpus=1,fast=False):
         logging.warn('Searching structures')
+        if fast:
+            fragmentation_module='magma.fragmentation_cy'
+        else:
+            fragmentation_module='magma.fragmentation_py'
         if metids==None:
             structures = self.db_session.query(Metabolite).all()
         else:  # split metids in chunks of 500 to avoid error in db_session.query
@@ -597,20 +601,17 @@ class AnnotateEngine(object):
                               self.precision,
                               self.mz_precision_abs,
                               self.use_all_peaks,
-                              self.ionisation_mode
+                              self.ionisation_mode,
+                              fast
                               ),(),(
-                              "numpy",
-                              "jpype",
-                              "magma.rdkit_engine", # Use rdkit_engine
-                              # "magma.cdk_engine",   # Use cdk_engine
                               "magma.types",
-                              "magma.fragmentation"
+                              fragmentation_module
                               )
                            )))
         for structure,job in jobs:
             raw_result=job(raw_result=True)
             hits,sout = pickle.loads(raw_result)
-            #print sout
+            # print sout
             sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
             structure.nhits=len(hits)
             self.db_session.add(structure)
@@ -691,9 +692,13 @@ class DataAnalysisEngine(object):
                     print '> <'+column+'>\n'+str(molecule.__getattribute__(column))+'\n'
             print '$$$$'
 
-def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode):
+def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast):
     # Chem=magma.cdk_engine.engine()      # Use cdk_engine
     Chem=magma.rdkit_engine             # Use rdkit_engine
+    if fast:
+        Fragmentation=magma.fragmentation_cy
+    else:
+        Fragmentation=magma.fragmentation_py
 
     Fragmented=False
     weigh_scores=False
@@ -725,11 +730,11 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
                     weight=1
                 total_count+=weight
                 #besthit=fragment_engine.find_hit(childpeak,fragment)
-                besthit=gethit(peak,0,None,0,0,0)
+                besthit=gethit(childpeak,0,None,0,0,0)
                 mz_neutral=childpeak.mz+ionisation_mode*0.0005486 # m/z value of the neutral form of the fragment (mass of electron added/removed)
                 for childfrag,childscore,childbbreaks,childmass,childH in fragment_engine.find_fragments(mz_neutral,fragment,precision,mz_precision_abs):
                     if childfrag & fragment == childfrag:
-                        childhit=gethit(childpeak,childfrag,childscore*(peak.intensity**0.5),childbbreaks,childmass,childH)
+                        childhit=gethit(childpeak,childfrag,childscore*(childpeak.intensity**0.5),childbbreaks,childmass,childH)
                         if besthit.score==None or besthit.score > childhit.score or \
                                (besthit.score == childhit.score and abs(besthit.deltaH) > abs(childhit.deltaH)) or \
                                fragment_engine.score_fragment_rel2parent(besthit.fragment,fragment) > fragment_engine.score_fragment_rel2parent(childhit.fragment,fragment):
@@ -746,7 +751,7 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
 
     def add_fragment_data_to_hit(hit):
         if hit.fragment != 0:
-            hit.atomstring,hit.atomlist,hit.inchikey=fragment_engine.get_fragment_info(hit.fragment)
+            hit.atomstring,hit.atomlist=fragment_engine.get_fragment_info(hit.fragment)
             #except:
             #    exit('failed inchi for: '+atomstring+'--'+str(hit.fragment))
             if len(hit.besthits)>0:
@@ -764,14 +769,16 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
                 if not Fragmented:
                     #sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+' '+str(structure.reactionsequence)+'\n')
                     #sys.stderr.write('Mim: '+str(structure.mim)+'\n')
-                    fragment_engine=magma.fragmentation.FragmentEngine(structure,max_broken_bonds,max_small_losses)
+                    fragment_engine=Fragmentation.FragmentEngine(structure,max_broken_bonds,max_small_losses)
                     #fragment_engine=GrowingEngine(mol)
-                    fragment_engine.generate_fragments()
+                    if fragment_engine.accepted():
+                        fragment_engine.generate_fragments()
                     #sys.stderr.write('N fragments kept: '+str(len(fragment_engine.fragments))+"\n")
                     Fragmented=True
-                hit=gethit(peak,(1<<fragment_engine.natoms)-1,0,0,structure.mim,-deltaH)
-                add_fragment_data_to_hit(hit)
-                hits.append(hit)
+                if fragment_engine.accepted():
+                    hit=gethit(peak,(1<<fragment_engine.get_natoms())-1,0,0,structure.mim,-deltaH)
+                    add_fragment_data_to_hit(hit)
+                    hits.append(hit)
     return hits
 
 
