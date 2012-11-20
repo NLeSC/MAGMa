@@ -644,5 +644,31 @@ describe('Metabolites', function() {
             expect(store.on).toHaveBeenCalled();
         });
     });
+
+    it('onLaunch', function() {
+    	spyOn(ctrl, 'applyRole');
+    	var mocklist = {
+    			filters: {
+    				createFilters: function() {}
+    			},
+    			setPageSize: function() {}
+    	};
+     	spyOn(ctrl, 'getMetaboliteList').andReturn(mocklist);
+
+    	ctrl.onLaunch();
+
+    	expect(ctrl.applyRole).toHaveBeenCalledWith();
+    	expect(ctrl.getMetaboliteList).toHaveBeenCalledWith();
+    });
+
+    it('cantrun', function() {
+  	  ctrl.application.canRun = false;
+      assignbut = jasmine.createSpyObj('abut', [ 'hideCommandsColumn']);
+      spyOn(ctrl,'getMetaboliteList').andReturn(assignbut);
+
+  	  ctrl.applyRole();
+
+  	  expect(assignbut.hideCommandsColumn).toHaveBeenCalledWith();
+    });
   });
 });

@@ -80,7 +80,7 @@ server {
             proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header        X-Forwarded-Proto $scheme;
 
-            client_max_body_size    10m;
+            client_max_body_size    1000m;
             client_body_buffer_size 128k;
             proxy_connect_timeout   60s;
             proxy_send_timeout      90s;
@@ -117,7 +117,7 @@ Change /magma sectio in /etc/nginx/sites-enabled/default to:
             proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header        X-Forwarded-Proto $scheme;
 
-            client_max_body_size    10m;
+            client_max_body_size    1000m;
             client_body_buffer_size 128k;
             include uwsgi_params;
             uwsgi_pass unix:/tmp/magma.uwsgi.sock;
@@ -143,7 +143,7 @@ Python documentation generation with
   make html
 
 Javascript documentation generation with
-  jsduck magmaweb/static/extjs-4.1.0/src magmaweb/static/extjs-4.1.0/examples/ux magmaweb/static/d3/d3.v2.js magmaweb/static/esc magmaweb/static/app --builtin-classes --output jsdoc --images magmaweb/static/extjs-4.1.0/docs/images
+  jsduck magmaweb/static/ext-4.1.1a/src magmaweb/static/ext-4.1.1a/examples/ux magmaweb/static/d3/d3.v2.js magmaweb/static/esc magmaweb/static/app --builtin-classes --output jsdoc --images magmaweb/static/ext-4.1.1a/docs/images
 or minimal
   jsduck magmaweb/static/esc magmaweb/static/app --output jsdoc
 
@@ -223,6 +223,46 @@ Build magmaweb.results.jsb3
 
 sencha build -v -d static/app -p magmaweb.results.jsb3
 # in results.mak uncomment resultsApp-all.js
+
+User management
+---------------
+
+Users can be added/edited from python prompt.
+
+Start with:
+python
+from transaction import commit
+from sqlalchemy import create_engine
+from magmaweb.user import init_user_db, User
+engine = create_engine('sqlite:///data/users.db')
+init_user_db(engine)
+
+Add user
+========
+
+user = User(u'stefanv2', u'Stefan Verhoeven',
+            u's.verhoeven@esciencecenter.nl', 'mypassword')
+User.add(user)
+commit()
+
+Fetch user
+==========
+
+user = User.by_id('stefanv2')
+
+Update user
+===========
+
+user.displayname = 'Stefan second account'
+User.add(user)
+commit()
+
+Change password
+===============
+
+user.password = 'mypw'
+User.add(user)
+commit()
 
 SQL cookbook
 ------------

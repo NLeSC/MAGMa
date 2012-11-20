@@ -22,5 +22,9 @@ Database models
 Job
 ---
 
+.. automodule:: magmaweb.user
+    :members:
+
 .. automodule:: magmaweb.job
     :members:
+

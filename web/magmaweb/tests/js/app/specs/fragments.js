@@ -574,5 +574,33 @@ describe('Fragments', function() {
             Ext.util.Observable.releaseCapture(ctrl.application);
         });
      });
+
+    it('onLaunch', function() {
+    	spyOn(ctrl, 'applyRole');
+
+    	ctrl.onLaunch();
+
+    	expect(ctrl.applyRole).toHaveBeenCalledWith();
+    });
+
+    it('canrun', function() {
+  	  ctrl.application.canRun = true;
+      assignbut = jasmine.createSpyObj('abut', [ 'hide']);
+      spyOn(ctrl,'getAssignStruct2PeakButton').andReturn(assignbut);
+
+  	  ctrl.applyRole();
+
+  	  expect(assignbut.hide).not.toHaveBeenCalledWith();
+    });
+
+    it('cantrun', function() {
+  	  ctrl.application.canRun = false;
+      assignbut = jasmine.createSpyObj('abut', [ 'hide']);
+      spyOn(ctrl,'getAssignStruct2PeakButton').andReturn(assignbut);
+
+  	  ctrl.applyRole();
+
+  	  expect(assignbut.hide).toHaveBeenCalledWith();
+    });
   });
 });
