@@ -25,10 +25,14 @@ describe('Scans controller', function() {
   it('onLaunch', function() {
     spyOn(mocked_chromatogram, 'setLoading');
     spyOn(d3, 'json');
+    spyOn(ctrl, 'applyRole');
+
     ctrl.onLaunch();
+
     expect(ctrl.getChromatogram()).toBeDefined();
     expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(true);
     expect(d3.json).toHaveBeenCalledWith('data/chromatogram.json', jasmine.any(Function));
+    expect(ctrl.applyRole).toHaveBeenCalledWith();
   });
 
   describe('loadChromatogramCallback', function() {
@@ -436,5 +440,23 @@ describe('Scans controller', function() {
 
 		expect(mocked_chromatogram.setZoom).toHaveBeenCalledWith('z', true);
 	})
+  });
+
+  it('canrun', function() {
+	  ctrl.application.canRun = true;
+	  spyOn(ctrl.actionsMenu, 'hideUploadAction');
+
+	  ctrl.applyRole();
+
+	  expect(ctrl.actionsMenu.hideUploadAction).not.toHaveBeenCalledWith();
+  });
+
+  it('cantrun', function() {
+	  ctrl.application.canRun = false;
+	  spyOn(ctrl.actionsMenu, 'hideUploadAction');
+
+	  ctrl.applyRole();
+
+	  expect(ctrl.actionsMenu.hideUploadAction).toHaveBeenCalledWith();
   });
 });

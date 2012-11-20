@@ -20,6 +20,14 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
   singleExpand: true,
   rowLines: true,
   viewConfig: {
+    // animate is default true causing refresh event to be blocked
+    // we use refresh event to render molecules
+    // so after expanding a node the refresh was not fired causing all prev. rendered mols to disappear
+    // now we turn off animate, so refresh events are fired and mols can be rendered
+    animate: false,
+    blockRefresh: false,
+    deferEmptyText: false,
+    emptyText: 'Select a metabolite and scan, to show its fragments',
 	getRowClass: function(record) {
 		// Make transition between mslevel visible by giving even/odd mslevel different bg color
     	return record.get("mslevel") % 2 === 0 ? this.altRowCls : "";
@@ -47,16 +55,6 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
       }]
   }],
   requires: [ 'Esc.chemdoodle.Column', 'Ext.selection.CheckboxModel', 'Ext.grid.column.Number' ],
-  viewConfig: {
-    // animate is default true causing refresh event to be blocked
-    // we use refresh event to render molecules
-    // so after expanding a node the refresh was not fired causing all prev. rendered mols to disappear
-    // now we turn off animate, so refresh events are fired and mols can be rendered
-    animate: false,
-    blockRefresh: false,
-    deferEmptyText: false,
-    emptyText: 'Select a metabolite and scan, to show its fragments'
-  },
   initComponent: function() {
     console.log('Init fragment tree');
 

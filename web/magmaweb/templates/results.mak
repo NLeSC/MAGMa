@@ -93,7 +93,8 @@ line.mspeak {
   font-weight: bold;
   color: #333;
   text-decoration:none;
-  padding-left: 520px;
+  margin-left: auto;
+  margin-right: auto;
   padding-top: 3px; /* aligns app title with text in logo  */
 }
 
@@ -164,12 +165,17 @@ Ext.Loader.setConfig({
 <script type="text/javascript">
 
 Ext.require('Esc.magmaweb.resultsApp');
+<%!
+import json
+%>
 
 Ext.onReady(function() {
     Ext.create('Esc.magmaweb.resultsApp', {
       appFolder: "${request.static_url('magmaweb:static/app')}",
       maxmslevel: ${maxmslevel},
       jobid: '${jobid}',
+      canRun: ${json.dumps(canRun)|n},
+      is_user_authenticated: ${json.dumps(request.user is not None)},
       urls: {
         home: '${request.route_url('home')}',
         fragments: '${request.application_url}/results/${jobid}/fragments/{0}/{1}.json',
