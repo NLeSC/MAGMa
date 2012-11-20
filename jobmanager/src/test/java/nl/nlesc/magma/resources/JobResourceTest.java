@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.net.URI;
 import java.util.UUID;
 
 import junit.framework.TestCase;
@@ -27,48 +28,49 @@ import org.gridlab.gat.resources.ResourceBroker;
 import org.junit.Test;
 
 public class JobResourceTest extends TestCase {
-    JobResource resource;
-    ResourceBroker mockedbroker;
+	JobResource resource;
+	ResourceBroker mockedbroker;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        resource = new JobResource();
-        // mock getBroker() so no job is actually run
-        BrokerFactory mockedbrokerfactory = mock(BrokerFactory.class);
-        mockedbroker = mock(ResourceBroker.class);
-        when(mockedbrokerfactory.getBroker()).thenReturn(mockedbroker);
-        resource.setBroker(mockedbrokerfactory);
-    }
+	@Override
+	protected void setUp() throws Exception {
+		super.setUp();
+		resource = new JobResource();
+		// mock getBroker() so no job is actually run
+		BrokerFactory mockedbrokerfactory = mock(BrokerFactory.class);
+		mockedbroker = mock(ResourceBroker.class);
+		when(mockedbrokerfactory.getBroker()).thenReturn(mockedbroker);
+		resource.setBroker(mockedbrokerfactory);
+	}
 
-    @Override
-    protected void tearDown() throws Exception {
-        GAT.end();
-        super.tearDown();
-    }
+	@Override
+	protected void tearDown() throws Exception {
+		GAT.end();
+		super.tearDown();
+	}
 
-    @Test
-    public void testSubmitJob() throws Exception {
-        Job mockedjob = mock(Job.class);
-        when(mockedjob.getJobID()).thenReturn(12345);
-        when(
-                mockedbroker.submitJob(any(JobDescription.class),
-                        (MetricListener) anyObject(), anyString())).thenReturn(
-                mockedjob);
-        File jobdirfile = GAT.createFile(System.getProperty("java.io.tmpdir")
-                + "/" + UUID.randomUUID().toString());
-        jobdirfile.mkdir();
-        String[] args = { "1" };
-        String[] stage = {};
-        JobSubmitRequest in = new JobSubmitRequest(jobdirfile.getPath(),
-                "sleep", args, stage, stage, "stderr.txt", "stdout.txt");
+	@Test
+	public void testSubmitJob() throws Exception {
+		Job mockedjob = mock(Job.class);
+		when(mockedjob.getJobID()).thenReturn(12345);
+		when(
+				mockedbroker.submitJob(any(JobDescription.class),
+						(MetricListener) anyObject(), anyString())).thenReturn(
+				mockedjob);
+		File jobdirfile = GAT.createFile(System.getProperty("java.io.tmpdir")
+				+ "/" + UUID.randomUUID().toString());
+		jobdirfile.mkdir();
+		String[] args = { "1" };
+		String[] stage = {};
+		JobSubmitRequest in = new JobSubmitRequest(jobdirfile.getPath(),
+				"sleep", args, stage, stage, "stderr.txt", "stdout.txt",
+				new URI("http://example.com/status/12345.json"));
 
-        JobSubmitResponse out = resource.submitJob(in);
+		JobSubmitResponse out = resource.submitJob(in);
 
-        assertEquals("12345", out.jobid);
-        verify(mockedbroker).submitJob(any(JobDescription.class),
-                any(JobStateListener.class), eq("job.status"));
-        GAT.end();
-        jobdirfile.recursivelyDeleteDirectory();
-    }
+		assertEquals("12345", out.jobid);
+		verify(mockedbroker).submitJob(any(JobDescription.class),
+				any(JobStateListener.class), eq("job.status"));
+		GAT.end();
+		jobdirfile.recursivelyDeleteDirectory();
+	}
 }

@@ -48,6 +48,16 @@ Ext.define('Esc.magmaweb.resultsApp', {
      */
     jobid: null,
     /**
+     * Whether user has rights to run actions like add structures or assign a peak to a structure.
+     * @cfg {Boolean}
+     */
+    canRun: true,
+    /**
+     * Whether user is logged in, shows login or logout button.
+     * @cfg {Boolean}
+     */
+    is_authenticated_user: true,
+    /**
      * Endpoints/templates for contacting server.
      * @cfg {Object}
      */
@@ -112,14 +122,14 @@ Ext.define('Esc.magmaweb.resultsApp', {
   /**
    * Get url of rpc method
    * @param {String} method
-   * @return {Url}
+   * @return {String}
    */
   rpcUrl: function(method) {
     return this.urls.home+'rpc/'+this.jobid+'/'+method;
   },
   /**
    * Get url of runinfo json, used to set defaults in forms.
-   * @return {Url}
+   * @return {String}
    */
   runInfoUrl: function() {
     return this.urls.home+'results/'+this.jobid+'/runinfo.json';
@@ -128,7 +138,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
    * Get metabolites url based on format.
    *
    * @param {String} format Can be json, csv or sdf.
-   * @return {Url}
+   * @return {String}
    */
   metabolitesUrl: function(format) {
     return this.urls.home+'results/'+this.jobid+'/metabolites.'+format;
@@ -242,8 +252,29 @@ Ext.define('Esc.magmaweb.resultsApp', {
     Ext.ComponentQuery.query('component[action=information]')[0].setHandler(function() {
         me.infoWindow.show();
     });
-    Ext.ComponentQuery.query('component[action=restart]')[0].setHandler(function() {
-        window.location = me.urls.home;
-    });
+
+    this.applyRole();
+    this.user_authenticated(this.is_authenticated_user);
+  },
+  /**
+   * Apply role to user interface.
+   * Checks canRun and if false removes all action buttons.
+   * All controllers should apply roles to user themselves if required.
+   */
+  applyRole: function() {
+	  if (this.canRun) {
+		  return;
+	  }
+	  Ext.ComponentQuery.query('component[id=annotateaction]')[0].hide();
+  },
+  user_authenticated: function(toggle) {
+     if (toggle) {
+    	 // hide login
+    	 Ext.ComponentQuery.query('component[text=Login]')[0].hide();
+     } else {
+    	 // hide workspace+logout
+         Ext.ComponentQuery.query('component[text=Workspace]')[0].hide();
+         Ext.ComponentQuery.query('component[text=Logout]')[0].hide();
+     }
   }
 });

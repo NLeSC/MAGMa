@@ -40,7 +40,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
       ],
       forceSelection: true,
       triggerAction: 'all',
-      action: 'pagesize'
+      action: 'pagesizeCombo'
     }]
   }],
   initComponent: function() {
@@ -182,16 +182,24 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
     this.getFragmentDeltaPpmColumn().show();
   },
   /**
-   * @return {String} JSON encoded the filter data as query
+   * JSON encoded the filter data as query
+   * @return {String}
    */
   getFilterQuery: function() {
 	  var filter = this.getFilter();
 	  return filter.buildQuery(filter.getFilterData());
   },
   /**
-   * @return {Array} Array of dataindexes currently visible. In order they appear.
+   * Array of dataindexes currently visible. In order they appear.
+   * @return {Array}
    */
   getVisiblColumnIndices: function() {
 	  return this.getView().getHeaderCt().getVisibleGridColumns().map(function(v) {return v.dataIndex}).filter(function(v) { return v});
+  },
+  hideCommandsColumn: function() {
+	  this.getCommandsColumn().hide();
+  },
+  setPageSize: function(size) {
+	  Ext.ComponentQuery.query('component[action=pagesizeCombo]')[0].select(size);
   }
 });

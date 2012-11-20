@@ -107,7 +107,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   /**
    * Initializes MSpectra scan panels
    *
-   * @param {Ext.application.Application} app
+   * @param {Ext.app.Application} app
    */
   onLaunch: function(app) {
     var msspectrapanels = [];

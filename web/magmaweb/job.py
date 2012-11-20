@@ -4,6 +4,7 @@ import csv
 import StringIO
 import urllib2
 import json
+import shutil
 from cgi import FieldStorage
 import colander
 from sqlalchemy import create_engine, and_
@@ -13,6 +14,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import desc, asc, null
 from sqlalchemy.orm.exc import NoResultFound
 from magmaweb.models import Base, Metabolite, Scan, Peak, Fragment, Run
+import magmaweb.user
 
 
 class ScanRequiredError(Exception):
@@ -33,8 +35,8 @@ class FragmentNotFound(Exception):
 class JobNotFound(Exception):
     """Raised when a job with a identifier is not found"""
 
-    def __init__(self, jobid):
-        Exception.__init__(self)
+    def __init__(self, message, jobid):
+        Exception.__init__(self, message)
         self.jobid = jobid
 
 
@@ -75,7 +77,8 @@ class JobQuery(object):
                 )
             return cstruct
 
-    def __init__(self, id, dir, script='', prestaged=None):
+    def __init__(self, id, dir, script='', prestaged=None,
+                  status_callback_url=None):
         """Contruct JobQuery
 
         Params:
@@ -83,12 +86,14 @@ class JobQuery(object):
         - dir, job directory
         - script, script to run in job directory
         - prestaged, list of files to prestage
+        - status_callback_url, Url to PUT status of job to.
 
         """
         self.id = id
         self.dir = dir
         self.script = script
         self.prestaged = prestaged or []
+        self.status_callback_url = status_callback_url
 
     def __eq__(self, other):
         return (self.id == other.id and
@@ -453,6 +458,25 @@ class JobQuery(object):
         allin = self.add_ms_data(params).add_structures(params)
         return allin.metabolize(params).annotate(params)
 
+    @classmethod
+    def defaults(cls):
+        """Returns dictionary with default params"""
+        return dict(
+                    n_reaction_steps=2,
+                    metabolism_types=['phase1', 'phase2'],
+                    ionisation_mode=1,
+                    skip_fragmentation=False,
+                    ms_intensity_cutoff=1000000.0,
+                    msms_intensity_cutoff=0.1,
+                    mz_precision=0.001,
+                    use_all_peaks=False,
+                    abs_peak_cutoff=1000,
+                    rel_peak_cutoff=0.01,
+                    max_ms_level=10,
+                    precursor_mz_precision=0.005,
+                    max_broken_bonds=4
+                    )
+
 
 class JobFactory(object):
     """Factory which can create jobs """
@@ -499,67 +523,141 @@ class JobFactory(object):
         self.time_max = time_max
         self.init_script = init_script
 
-    def fromId(self, jobid):
-        """Finds job db in job root dir.
-        Returns a :class:`Job` instance
-
-        ``jobid``
-            Job identifier
-
-        Raises :class:`JobNotFound` exception when job is not found by jobid
-        """
-        session = self._makeJobSession(jobid)()
-        return Job(jobid, session, self.id2jobdir(jobid))
-
     def _makeJobSession(self, jobid):
         """ Create job db connection """
         engine = create_engine(self.id2url(jobid))
         try:
             engine.connect()
         except OperationalError:
-            raise JobNotFound(jobid)
+            raise JobNotFound("Data of job not found", jobid)
         return scoped_session(sessionmaker(bind=engine))
 
-    def _makeJobDir(self):
-        """ Create job dir and returns the job id"""
-        jobid = uuid.uuid4()
+    def fromId(self, jobid):
+        """Finds job db in job root dir.
+        Returns a :class:`Job` instance
 
-        # create job dir
-        os.makedirs(self.id2jobdir(jobid))
-        return jobid
+        ``jobid``
+            Job identifier as uuid
 
-    def fromDb(self, dbfile):
+        Raises :class:`JobNotFound` exception when job is not found by jobid
+        """
+        meta = self._getJobMeta(jobid)
+        session = self._makeJobSession(jobid)
+        db = JobDb(session)
+        jdir = self.id2jobdir(jobid)
+        return Job(meta, jdir, db)
+
+    def _makeJobDir(self, jobid):
+        jdir = self.id2jobdir(jobid)
+        os.makedirs(jdir)
+        return jdir
+
+    def _getJobMeta(self, jobid):
+        meta = magmaweb.user.JobMeta.by_id(jobid)
+        if meta is None:
+            raise JobNotFound("Job not found in database", jobid)
+        return meta
+
+    def _addJobMeta(self, jobmeta):
+        magmaweb.user.JobMeta.add(jobmeta)
+
+    def fromDb(self, dbfile, owner):
         """A job directory is created and the dbfile is copied into it
         Returns a Job instance
 
         ``dbfile``
             The sqlite result db
 
+        ``owner``
+            User id of owner
+
         Returns a :class:`Job` instance
         """
-        jobid = self._makeJobDir()
-        # copy dbfile into job dir
-        jobdb = open(self.id2db(jobid), 'wb')
-        dbfile.seek(0)
-        while 1:
-            data = dbfile.read(2 << 16)
-            if not data:
-                break
-            jobdb.write(data)
-        jobdb.close()
+        jobid = uuid.uuid4()
 
-        return self.fromId(jobid)
+        # create job dir
+        jdir = self._makeJobDir(jobid)
 
-    def fromScratch(self):
-        """ Returns :class:`Job` from scratch with empty results db """
-        jobid = self._makeJobDir()
-        session = self._makeJobSession(jobid)()
+        #copy dbfile into jobdir
+        self._copyFile(dbfile, jobid)
+
+        # session for job db
+        session = self._makeJobSession(jobid)
+        db = JobDb(session)
+        run = db.runInfo()
+
+        #register job in user db
+        jobmeta = magmaweb.user.JobMeta(jobid, owner,
+                                        description=run.description,
+                                        ms_filename=run.ms_filename)
+        self._addJobMeta(jobmeta)
+
+        return Job(jobmeta, jdir, db)
+
+    def fromScratch(self, owner):
+        """Job from scratch with empty results db
+
+        ``owner``
+            User id of owner
+
+        Returns a :class:`Job` instance
+        """
+        jobid = uuid.uuid4()
+
+        # create job dir
+        jdir = self._makeJobDir(jobid)
+
+        # session for job db
+        session = self._makeJobSession(jobid)
         Base.metadata.create_all(session.connection())
-        return Job(jobid, session, self.id2jobdir(jobid))
+        db = JobDb(session)
 
-    def cloneJob(self, job):
-        """ Returns new :class:`Job` which has copy of 'job' db. """
-        return self.fromDb(open(self.id2db(job.id)))
+        #register job in user db
+        jobmeta = magmaweb.user.JobMeta(jobid, owner)
+        self._addJobMeta(jobmeta)
+
+        return Job(jobmeta, jdir, db)
+
+    def _copyFile(self, src, jid):
+        """Copy content of file object 'src' to result db of job with identifier 'jid'."""
+        src.seek(0)  # start from beginning
+        dst = open(self.id2db(jid), 'wb')
+        shutil.copyfileobj(src, dst, 2 << 16)
+        dst.close()
+
+    def cloneJob(self, job, owner):
+        """Returns new Job which has copy of 'job's database.
+
+        ``job``
+            :class:Job job to clone
+
+        ``owner``
+            User id of owner
+
+        Returns a :class:`Job` instance
+        """
+        jobid = uuid.uuid4()
+
+        # create job dir
+        jdir = self._makeJobDir(jobid)
+
+        #copy db of old job into new jobdir
+        src = open(self.id2db(job.id))
+        self._copyFile(src, jobid)
+        src.close()
+
+        # session for job db
+        session = self._makeJobSession(jobid)
+        db = JobDb(session)
+
+        #register job in user db
+        jobmeta = magmaweb.user.JobMeta(jobid, owner,
+                                        description=job.description,
+                                        ms_filename=job.ms_filename,
+                                        parentjobid=job.id)
+        self._addJobMeta(jobmeta)
+
+        return Job(jobmeta, jdir, db)
 
     def submitJob2Manager(self, body):
         """Submits job query to jobmanager daemon
@@ -602,7 +700,8 @@ class JobFactory(object):
                'stderr': 'stderr.txt',
                'stdout': 'stdout.txt',
                'time_max': self.time_max,
-               'arguments': [self.script_fn]
+               'arguments': [self.script_fn],
+               'status_callback_url': query.status_callback_url
                }
         body['prestaged'].extend(query.prestaged)
 
@@ -613,53 +712,132 @@ class JobFactory(object):
 
         return query.id
 
-    def state(self, id):
-        """Returns state of job
+    def id2jobdir(self, jid):
+        """Returns job directory based on jid and root_dir """
+        return os.path.join(self.root_dir, str(jid))
 
-        See ibis org.gridlab.gat.resources.Job.JobState for possible states.
-        """
-        try:
-            jobstatefile = open(os.path.join(self.id2jobdir(id),
-                                             self.state_fn))
-            jobstate = jobstatefile.readline().strip()
-            jobstatefile.close()
-            return jobstate
-        except IOError:
-            return 'UNKNOWN'
+    def id2db(self, jid):
+        """Returns sqlite db of job with jid"""
+        return os.path.join(self.id2jobdir(jid), self.db_fn)
 
-    def id2jobdir(self, id):
-        """Returns job directory based on id and root_dir """
-        return os.path.join(self.root_dir, str(id))
-
-    def id2db(self, id):
-        """Returns sqlite db of job with id """
-        return os.path.join(self.id2jobdir(id), self.db_fn)
-
-    def id2url(self, id):
-        """Returns sqlalchemy url of sqlite db of job with id """
+    def id2url(self, jid):
+        """Returns sqlalchemy url of sqlite db of job with jid """
         # 3rd / is for username:pw@host which sqlite does not need
-        return 'sqlite:///' + self.id2db(id)
+        return 'sqlite:///' + self.id2db(jid)
 
 
 class Job(object):
     """Job contains results database of Magma calculation run"""
 
-    def __init__(self, id, session, dir):
+    def __init__(self, meta, dir, db=None):
         """
-        jobid
-            A UUID of the job
-        session
-            Sqlalchemy session to read/write to job db
+        meta
+            :class:magmaweb.user.JobMeta instance.
+            For owner, parent etc.
+
         dir
             Directory where input and output files reside
-        """
-        self.id = id
-        self.session = session
-        self.dir = dir
 
-    def jobquery(self):
-        """Returns :class:`JobQuery` """
-        return JobQuery(self.id, self.dir)
+        db
+            :class:JobDb instance
+        """
+        self.dir = dir
+        self.meta = meta
+
+        if db is not None:
+            self.db = db
+
+    @property
+    def id(self):
+        """Identifier of the job, is a :class:uuid.UUID"""
+        return self.meta.jobid
+
+    @property
+    def __name__(self):
+        """Same as id and as lookup key using :class:magmaweb.user.JobIdFactory"""
+        return str(self.id)
+
+    def jobquery(self, status_callback_url):
+        """Returns :class:`JobQuery`
+
+        'status_callback_url' is the url to PUT status of job to.
+        """
+        return JobQuery(self.id, self.dir, status_callback_url)
+
+    @property
+    def description(self):
+        """Description string of job"""
+        return self.meta.description
+
+    @description.setter
+    def description(self, description):
+        """Sets description in JobMeta and JobDb.runInfo() if present"""
+        self.meta.description = description
+        run = self.db.runInfo()
+        if run is not None:
+            run.description = description
+
+    @property
+    def parent(self):
+        """Identifier of parent job"""
+        return self.meta.parentjobid
+
+    @parent.setter
+    def parent(self, parent):
+        self.meta.parentjobid = parent
+
+    @property
+    def owner(self):
+        """User id which owns this job"""
+        return self.meta.owner
+
+    @owner.setter
+    def owner(self, userid):
+        self.meta.owner = userid
+
+    @property
+    def state(self):
+        """Returns state of job
+
+        See ibis org.gridlab.gat.resources.Job.JobState for possible states.
+        """
+        return self.meta.state
+
+    @state.setter
+    def state(self, newstate):
+        self.meta.state = newstate
+
+    def stderr(self):
+        """Returns stderr text file or empty file if stderr does not exist"""
+        try:
+            return open(os.path.join(self.dir, 'stderr.txt'), 'rb')
+        except IOError:
+            return StringIO.StringIO()
+
+    @property
+    def created_at(self):
+        """Datetime when job was created"""
+        return self.meta.created_at
+
+    @property
+    def ms_filename(self):
+        """Filename of MS datafile"""
+        return self.meta.ms_filename
+
+    @ms_filename.setter
+    def ms_filename(self, ms_filename):
+        """Sets Filename of MS datafile in JobMeta and JobDb.runInfo(0 if present"""
+        self.meta.ms_filename = ms_filename
+        run = self.db.runInfo()
+        if run is not None:
+            run.ms_filename = ms_filename
+
+
+class JobDb(object):
+    """Database of a job"""
+    def __init__(self, session):
+        """SQLAlchemy session which is connected to database of job"""
+        self.session = session
 
     def maxMSLevel(self):
         """Returns the maximum nr of MS levels """
@@ -668,19 +846,6 @@ class Job(object):
     def runInfo(self):
         """Returns last run info or None if there is no run info"""
         return self.session.query(Run).order_by(Run.runid.desc()).first()
-
-    def description(self, description):
-        """Sets description column in run table,
-        if there is no run row it is added
-
-        """
-        runInfo = self.runInfo()
-        if (runInfo is None):
-            runInfo = Run()
-
-        runInfo.description = description
-        self.session.add(runInfo)
-        self.session.commit()
 
     def metabolitesTotalCount(self):
         """Returns unfiltered and not paged count of metabolites"""
@@ -1132,13 +1297,6 @@ class Job(object):
             for row in q().filter(Fragment.parentfragid == node):
                 fragments.append(fragment2json(row))
             return fragments
-
-    def stderr(self):
-        """Returns stderr text file or empty file if stderr does not exist"""
-        try:
-            return open(os.path.join(self.dir, 'stderr.txt'), 'rb')
-        except IOError:
-            return StringIO.StringIO()
 
     def _peak(self, scanid, mz):
         mzoffset = 1e-6  # precision for comparing floating point values
