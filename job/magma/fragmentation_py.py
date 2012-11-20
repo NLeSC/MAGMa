@@ -189,4 +189,8 @@ class FragmentEngine(object):
             if ((1<<atom) & fragment):
                 atomstring+=','+str(atom)
                 atomlist.append(atom)
-        return atomstring,atomlist,Chem.FragmentToInchiKey(self.mol,atomlist)
+        return atomstring,atomlist # ,Chem.FragmentToInchiKey(self.mol,atomlist)
+
+    def get_natoms(self):
+        return self.natoms
+
