@@ -194,3 +194,5 @@ class FragmentEngine(object):
     def get_natoms(self):
         return self.natoms
 
+    def accepted(self):
+        return True
