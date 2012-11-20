@@ -183,10 +183,9 @@ class TestJobIdFactory(unittest.TestCase):
         self.config = testing.setUp()
         self.config.add_static_view('static', 'magmaweb:static')
         self.request = testing.DummyRequest()
-        self.request.registry.settings = {
-                                          'extjsroot': 'extjsroot',
+        self.request.registry.settings = {'extjsroot': 'extjsroot',
                                           'jobfactory.root_dir': '/somedir',
-        }
+                                          }
         init_user_db()
         self.session = user.DBSession()
         u = user.User('me', 'My', 'myself')

@@ -103,11 +103,10 @@ class Views(object):
                 return HTTPFound(location=came_from,
                                  headers=headers)
 
-        return dict(
-            came_from=came_from,
-            userid=userid,
-            password=password,
-            )
+        return dict(came_from=came_from,
+                    userid=userid,
+                    password=password,
+                    )
 
     @forbidden_view_config()
     def forbidden(self):
@@ -137,8 +136,13 @@ class JobViews(object):
         self.request = request
         self.job = job
 
-    @view_config(route_name='status', renderer='status.mak', permission='run')
-    @view_config(route_name='status.json', renderer='json', permission='run', request_method='GET')
+    @view_config(route_name='status',
+                 renderer='status.mak',
+                 permission='run')
+    @view_config(route_name='status.json',
+                 renderer='json',
+                 permission='run',
+                 request_method='GET')
     def job_status(self):
         """Returns status of a job
 
@@ -154,7 +158,7 @@ class JobViews(object):
         """
         jobid = self.job.id
         jobstate = self.job.state
-        return dict(status=jobstate, jobid=jobid)
+        return dict(status=jobstate, jobid=str(jobid))
 
     @view_config(route_name='status.json', renderer='json',
                  permission='monitor', request_method='PUT')
@@ -170,8 +174,7 @@ class JobViews(object):
         db = self.job.db
         # determine if Run buttons should be shown
         canRun = has_permission('run', self.job, self.request)
-        return dict(
-                    run=db.runInfo(),
+        return dict(run=db.runInfo(),
                     maxmslevel=db.maxMSLevel(),
                     jobid=self.job.id,
                     # coerce pyramid.security.Allowed|Denied to boolean
@@ -228,13 +231,13 @@ class JobViews(object):
                      "probability" : 0.248155,
                      "origin" : "5-(3,4)-dihydroxyphenyl-g-valerolactone (F)",
                      "score" : 3,
-                     "smiles" : "O=C(O)C1OC(Oc2c(O)cc(CC3OCCC3)cc2)C(O)C(O)C1O",
+                     "smiles" : "O=C(O)C1OC(Oc2c(O)cc(CC3OCCC3)...",
                      "level" : 1,
                      "isquery" : false,
                      "molformula" : "C17H22O9",
                      "logp" : -0.615300000000001,
                      "mim" : 370.1263823051,
-                     "reactionsequence" : "O-glucuronidation_(aromatic_hydroxyl)"
+                     "reactionsequence" : "O-glucuronidation_..."
                   },
                   {
                      "mol" : " molblock ...",
@@ -249,7 +252,7 @@ class JobViews(object):
                      "molformula" : "C17H22O9",
                      "logp" : -0.615300000000001,
                      "mim" : 370.1263823051,
-                     "reactionsequence" : "O-glucuronidation_(aromatic_hydroxyl)"
+                     "reactionsequence" : "O-glucuronidation_..."
                   }
                ]
             }

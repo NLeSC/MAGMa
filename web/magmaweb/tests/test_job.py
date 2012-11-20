@@ -36,6 +36,10 @@ def populateTestingDB(session):
     session
         session connection to db
     """
+    url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+    url1 += '?cid=289">CID: 289</a>'
+    url2 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+    url2 += '?cid=152432">CID: 152432</a>'
     session.add(Run(
         n_reaction_steps=2, metabolism_types='phase1,phase2',
         ionisation_mode=-1, skip_fragmentation=True,
@@ -50,7 +54,7 @@ def populateTestingDB(session):
         reactionsequence=['PARENT'], smiles='Oc1ccccc1O',
         molformula='C6H6O2', isquery=True, nhits=1,
         origin='pyrocatechol', mim=110.03677, logp=1.231,
-        reference='<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
+        reference=url1
     ))
     session.add(Scan(
         scanid=641, mslevel=1, rt=933.317, lowmz=90.3916, highmz=1197.78,
@@ -82,7 +86,7 @@ def populateTestingDB(session):
         origin="dihydroxyphenyl-valerolactone",
         probability=1.0, reactionsequence="PARENT\nCHILD\n",
         smiles="O=C1OC(Cc2ccc(O)c(O)c2)CC1",
-        reference='<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=152432">CID: 152432</a>',
+        reference=url2,
         mim=208.07355, logp=2.763, nhits=1
     ))
     session.add_all([Scan(
@@ -263,8 +267,7 @@ class JobFactoryFactoryTestCase(unittest.TestCase):
         self.assertEqual(factory.tarball, None)
 
     def test_local(self):
-        settings = {
-                    'jobfactory.root_dir': '/somedir',
+        settings = {'jobfactory.root_dir': '/somedir',
                     'jobfactory.init_script': '. /somedir/env/bin/activate'
                     }
         factory = make_job_factory(settings)
@@ -273,8 +276,7 @@ class JobFactoryFactoryTestCase(unittest.TestCase):
         self.assertEqual(factory.tarball, None)
 
     def test_remote(self):
-        settings = {
-                    'jobfactory.root_dir': '/somedir',
+        settings = {'jobfactory.root_dir': '/somedir',
                     'jobfactory.init_script': 'tar -zxf Magma.tar.gz;',
                     'jobfactory.tarball': '/somepath/Magma.tar.gz'
                     }
@@ -400,11 +402,9 @@ class JobFactoryTestCase(unittest.TestCase):
         exp_script += "magma add_structures -t smiles "
         exp_script += "structures.dat results.db\n"
         self.assertMultiLineEqual(job_script, exp_script)
-        jobmanager_query = {
-                            'jobdir': jobquery.dir + '/',
+        jobmanager_query = {'jobdir': jobquery.dir + '/',
                             'executable': "/bin/sh",
-                            'prestaged': [
-                                          self.factory.script_fn,
+                            'prestaged': [self.factory.script_fn,
                                           'results.db',
                                           'structures.dat'
                                           ],
@@ -428,11 +428,9 @@ class JobFactoryTestCase(unittest.TestCase):
         jobid = self.factory.submitQuery(jobquery)
 
         self.assertEqual(jobid, jobquery.id)
-        jobmanager_query = {
-                            'jobdir': jobquery.dir + '/',
+        jobmanager_query = {'jobdir': jobquery.dir + '/',
                             'executable': "/bin/sh",
-                            'prestaged': [
-                                          self.factory.script_fn,
+                            'prestaged': [self.factory.script_fn,
                                           'results.db',
                                           # tarball is staged as well
                                           'Magma-1.1.tar.gz'
@@ -510,12 +508,12 @@ class JobTestCase(unittest.TestCase):
         self.jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
         self.created_at = datetime.datetime(2012, 11, 14, 10, 48, 26, 504478)
         self.meta = mu.JobMeta(jobid=self.jobid,
-                            description="My desc",
-                            state='STOPPED',
-                            parentjobid=self.parentjobid,
-                            owner='bob',
-                            created_at=self.created_at,
-                            ms_filename='F1234.mzxml')
+                               description="My desc",
+                               state='STOPPED',
+                               parentjobid=self.parentjobid,
+                               owner='bob',
+                               created_at=self.created_at,
+                               ms_filename='F1234.mzxml')
         self.db = Mock(JobDb)
         self.jobdir = tempfile.mkdtemp()
         stderr = open(os.path.join(self.jobdir, 'stderr.txt'), 'w')
@@ -690,14 +688,12 @@ class JobDbTestCase(JobDbTestCaseAbstract):
         }])
 
     def test_chromatogram(self):
-        expected_chromatogram = {
-                                 'scans': [
-                                          {'id': 641, 'rt': 933.317,
-                                           'intensity': 807577.0, 'ap': 0},
-                                          {'id': 870, 'rt': 1254.15,
-                                           'intensity': 1972180.0, 'ap': 0}
-                                          ],
-                                 'cutoff': 200000.0
+        expected_chromatogram = {'scans': [{'id': 641, 'rt': 933.317,
+                                            'intensity': 807577.0, 'ap': 0},
+                                           {'id': 870, 'rt': 1254.15,
+                                            'intensity': 1972180.0, 'ap': 0},
+                                           ],
+                                 'cutoff': 200000.0,
                                  }
         self.assertEqual(self.job.chromatogram(), expected_chromatogram)
 
@@ -707,14 +703,12 @@ class JobDbTestCase(JobDbTestCaseAbstract):
         mz = 109.0295639038086
         self.job.assign_metabolite2peak(scanid, mz, metid)
 
-        expected_chromatogram = {
-                                 'scans': [
-                                          {'id': 641, 'rt': 933.317,
-                                           'intensity': 807577.0, 'ap': 1},
-                                          {'id': 870, 'rt': 1254.15,
-                                           'intensity': 1972180.0, 'ap': 0}
-                                          ],
-                                 'cutoff': 200000.0
+        expected_chromatogram = {'scans': [{'id': 641, 'rt': 933.317,
+                                            'intensity': 807577.0, 'ap': 1},
+                                           {'id': 870, 'rt': 1254.15,
+                                            'intensity': 1972180.0, 'ap': 0},
+                                           ],
+                                 'cutoff': 200000.0,
                                  }
         self.assertEqual(self.job.chromatogram(), expected_chromatogram)
 
@@ -785,10 +779,8 @@ class JobDbEmptyDatasetTestCase(unittest.TestCase):
         self.assertEqual(maxmslevel, 0)
 
     def test_chromatogram(self):
-        self.assertEqual(self.job.chromatogram(), {
-                                                   'scans': [],
-                                                   'cutoff': None
-                                                   })
+        expected_chromatogram = {'scans': [], 'cutoff': None}
+        self.assertEqual(self.job.chromatogram(), expected_chromatogram)
 
     def test_metabolitesTotalCount(self):
         self.assertEqual(self.job.metabolitesTotalCount(), 0)
@@ -797,6 +789,10 @@ class JobDbEmptyDatasetTestCase(unittest.TestCase):
 class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
     def test_default(self):
         response = self.job.metabolites()
+        url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url1 += '?cid=289">CID: 289</a>'
+        url2 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url2 += '?cid=152432">CID: 152432</a>'
         self.assertEquals(
             response,
             {
@@ -815,7 +811,7 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
                     'smiles': u'Oc1ccccc1O',
                     'mim': 110.03677, 'logp':1.231,
                     'assigned': False,
-                    'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
+                    'reference': url1
                 }, {
                     'isquery': True, 'level': 0, 'metid': 352,
                     'mol': u"Molfile of dihydroxyphenyl-valerolactone",
@@ -823,11 +819,12 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
                     'nhits': None,
                     'nhits': 1,
                     'origin': u"dihydroxyphenyl-valerolactone",
-                    'probability': 1, 'reactionsequence': [u"PARENT", u"CHILD"],
+                    'probability': 1,
+                    'reactionsequence': [u"PARENT", u"CHILD"],
                     'smiles': u"O=C1OC(Cc2ccc(O)c(O)c2)CC1",
                     'mim': 208.07355, 'logp':2.763,
                     'assigned': False,
-                    'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=152432">CID: 152432</a>'
+                    'reference': url2
                 }]
             }
         )
@@ -983,30 +980,35 @@ class JobDbMetabolites2csvTestCase(JobDbTestCaseAbstract):
         import csv
         import StringIO
         expected_csvfile = StringIO.StringIO()
-        csvwriter = csv.DictWriter(expected_csvfile, [
-                                                  'origin', 'smiles',
-                                                  'probability',
-                                                  'reactionsequence',
-                                                  'nhits', 'molformula',
-                                                  'mim',
-                                                  'isquery', 'logp',
-                                                  'reference'
-                                                  ])
+        cols = ['origin', 'smiles', 'probability', 'reactionsequence',
+                'nhits', 'molformula', 'mim', 'isquery', 'logp', 'reference']
+        csvwriter = csv.DictWriter(expected_csvfile, cols)
         csvwriter.writeheader()
-        csvwriter.writerow({
-                            'origin': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
-                            'probability': 1.0, 'reactionsequence': 'PARENT',
-                            'nhits': 1, 'molformula': 'C6H6O2',
-                            'isquery': True, 'mim': 110.03677, 'logp': 1.231,
-                            'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
+        url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url1 += '?cid=289">CID: 289</a>'
+        url2 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url2 += '?cid=152432">CID: 152432</a>'
+        csvwriter.writerow({'origin': 'pyrocatechol',
+                            'smiles': 'Oc1ccccc1O',
+                            'probability': 1.0,
+                            'reactionsequence': 'PARENT',
+                            'nhits': 1,
+                            'molformula': 'C6H6O2',
+                            'isquery': True,
+                            'mim': 110.03677,
+                            'logp': 1.231,
+                            'reference': url1,
                             })
-        csvwriter.writerow({
-                            'origin': 'dihydroxyphenyl-valerolactone',
+        csvwriter.writerow({'origin': 'dihydroxyphenyl-valerolactone',
                             'smiles': 'O=C1OC(Cc2ccc(O)c(O)c2)CC1',
-                            'probability': 1.0, 'reactionsequence': 'PARENT|CHILD',
-                            'nhits': 1, 'molformula': 'C11H12O4',
-                            'isquery': True, 'mim': 208.07355, 'logp': 2.763,
-                            'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=152432">CID: 152432</a>',
+                            'probability': 1.0,
+                            'reactionsequence': 'PARENT|CHILD',
+                            'nhits': 1,
+                            'molformula': 'C11H12O4',
+                            'isquery': True,
+                            'mim': 208.07355,
+                            'logp': 2.763,
+                            'reference': url2,
                             })
         self.assertMultiLineEqual(csvfile.getvalue(),
                                   expected_csvfile.getvalue())
@@ -1017,22 +1019,19 @@ class JobDbMetabolites2csvTestCase(JobDbTestCaseAbstract):
         import csv
         import StringIO
         expected_csvfile = StringIO.StringIO()
-        csvwriter = csv.DictWriter(expected_csvfile, [
-                                                  'origin', 'smiles',
-                                                  'probability',
-                                                  'reactionsequence',
-                                                  'nhits', 'molformula', 'mim',
-                                                  'isquery', 'logp',
-                                                  'reference', 'score'
-                                                  ])
+        cols = ['origin', 'smiles', 'probability', 'reactionsequence',
+                'nhits', 'molformula', 'mim', 'isquery', 'logp', 'reference',
+                'score']
+        csvwriter = csv.DictWriter(expected_csvfile, cols)
         csvwriter.writeheader()
-        csvwriter.writerow({
-                            'origin': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
+        url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url1 += '?cid=289">CID: 289</a>'
+        csvwriter.writerow({'origin': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
                             'probability': 1.0, 'reactionsequence': 'PARENT',
                             'nhits': 1, 'molformula': 'C6H6O2',
                             'isquery': True, 'score': 200.0, 'mim': 110.03677,
                             'logp': 1.231,
-                            'reference': '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>'
+                            'reference': url1
                             })
         self.assertMultiLineEqual(csvfile.getvalue(),
                                   expected_csvfile.getvalue())
@@ -1053,6 +1052,10 @@ class JobDbMetabolites2csvTestCase(JobDbTestCaseAbstract):
 class JobMetabolites2sdfTestCase(JobDbTestCaseAbstract):
     def test_it(self):
         sdffile = self.job.metabolites2sdf(self.job.metabolites()['rows'])
+        url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url1 += '?cid=289">CID: 289</a>'
+        url2 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url2 += '?cid=152432">CID: 152432</a>'
 
         expected_sdf = """Molfile> <origin>
 pyrocatechol
@@ -1079,7 +1082,7 @@ C6H6O2
 1.231
 
 > <reference>
-<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>
+{url1}
 
 $$$$
 Molfile of dihydroxyphenyl-valerolactone> <origin>
@@ -1108,10 +1111,10 @@ C11H12O4
 2.763
 
 > <reference>
-<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=152432">CID: 152432</a>
+{url2}
 
 $$$$
-"""
+""".format(url1=url1, url2=url2)
 
         self.assertMultiLineEqual(sdffile, expected_sdf)
 
@@ -1119,7 +1122,8 @@ $$$$
         """Include score prop"""
         mets = self.job.metabolites(scanid=641)['rows']
         sdffile = self.job.metabolites2sdf(mets)
-
+        url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url1 += '?cid=289">CID: 289</a>'
         expected_sdf = """Molfile> <origin>
 pyrocatechol
 
@@ -1145,13 +1149,13 @@ C6H6O2
 1.231
 
 > <reference>
-<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=289">CID: 289</a>
+{url1}
 
 > <score>
 200.0
 
 $$$$
-"""
+""".format(url1=url1)
 
         self.assertMultiLineEqual(sdffile, expected_sdf)
 
@@ -1590,8 +1594,7 @@ class JobQueryTestCase(unittest.TestCase):
         self.assertEquals(jq.escape("'"), '&#39;')
 
     def test_defaults(self):
-        expected = dict(
-                        n_reaction_steps=2,
+        expected = dict(n_reaction_steps=2,
                         metabolism_types=['phase1', 'phase2'],
                         ionisation_mode=1,
                         skip_fragmentation=False,
@@ -1660,12 +1663,11 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
 
         sf = 'structures.dat'
         script = "{magma} add_structures -t 'smiles' structures.dat {db}\n"
-        expected_query = JobQuery(
-                          id=self.jobid,
-                          dir=self.jobdir,
-                          prestaged=[sf],
-                          script=script
-                          )
+        expected_query = JobQuery(id=self.jobid,
+                                  dir=self.jobdir,
+                                  prestaged=[sf],
+                                  script=script
+                                  )
         self.assertEqual(query, expected_query)
         self.assertMultiLineEqual(params['structures'], self.fetch_file(sf))
 
@@ -1682,19 +1684,17 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_structures(params)
 
         script = "{magma} add_structures -t 'smiles' structures.dat {db}\n"
-        expected_query = JobQuery(**{
-                          'id': self.jobid,
-                          'dir': self.jobdir,
-                          'prestaged': ['structures.dat'],
-                          'script': script
-                          })
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': ['structures.dat'],
+                                     'script': script
+                                     })
         self.assertEqual(query, expected_query)
         self.assertMultiLineEqual('foo', self.fetch_file('structures.dat'))
 
     def test_with_metabolize(self):
         from webob.multidict import MultiDict
-        params = MultiDict(
-                           structure_format='smiles',
+        params = MultiDict(structure_format='smiles',
                            structures='CCO Ethanol',
                            metabolize='on',
                            n_reaction_steps=2,
@@ -1707,17 +1707,15 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         sf = 'structures.dat'
         script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
         script += "{magma} metabolize -s '2' -m 'phase1,phase2' -j - {db}\n"
-        expected_query = JobQuery(**{
-                          'id': self.jobid,
-                          'dir': self.jobdir,
-                          'prestaged': [sf],
-                          'script': script
-                          })
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': [sf],
+                                     'script': script
+                                     })
         self.assertEqual(query, expected_query)
 
     def test_with_annotate(self):
-        params = {
-                  'structure_format': 'smiles',
+        params = {'structure_format': 'smiles',
                   'structures': 'CCO Ethanol',
                   'precursor_mz_precision': 0.005,
                   'mz_precision': 0.001,
@@ -1732,18 +1730,16 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
         script += "{magma} annotate -p '0.001' -c '200000.0' -d '0.1' -i '1'"
         script += " -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
-        expected_query = JobQuery(**{
-                          'id': self.jobid,
-                          'dir': self.jobdir,
-                          'prestaged': [sf],
-                          'script': script
-                          })
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': [sf],
+                                     'script': script
+                                     })
         self.assertEqual(query, expected_query)
 
     def test_with_metabolize_and_annotate(self):
         from webob.multidict import MultiDict
-        params = MultiDict(
-                           structure_format='smiles',
+        params = MultiDict(structure_format='smiles',
                            structures='CCO Ethanol',
                            metabolize='on',
                            n_reaction_steps=2,
@@ -1762,17 +1758,15 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         script += "{magma} metabolize -s '2' -m 'phase2' -j - {db} |"
         script += "{magma} annotate -p '0.001' -c '200000.0' -d '0.1' -i '1'"
         script += " -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
-        expected_query = JobQuery(**{
-                          'id': self.jobid,
-                          'dir': self.jobdir,
-                          'prestaged': [sf],
-                          'script': script
-                          })
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': [sf],
+                                     'script': script
+                                     })
         self.assertEqual(query, expected_query)
 
     def test_without_structures(self):
-        params = {
-                  'structure_format': 'smiles',
+        params = {'structure_format': 'smiles',
                   'structures_file': '',
                   'structures': ''
                   }
@@ -1793,11 +1787,10 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         sfile.flush()
         sfield = FieldStorage()
         sfield.file = sfile
-        params = {
-                  'structure_format': 'smiles',
+        params = {'structure_format': 'smiles',
                   'structures_file': sfield,
                   'structures': 'bar'
-        }
+                  }
 
         self.jobquery.add_structures(params)
         # File is kept and string is ignored
@@ -1814,8 +1807,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         msfile.flush()
         msfield = FieldStorage()
         msfield.file = msfile
-        params = {
-                  'ms_data_format': 'mzxml',
+        params = {'ms_data_format': 'mzxml',
                   'ms_data_file': msfield,
                   'max_ms_level': 3,
                   'abs_peak_cutoff': 1000,
@@ -1826,12 +1818,11 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
         script += " -l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
-        expected_query = JobQuery(**{
-                          'id': self.jobid,
-                          'dir': self.jobdir,
-                          'prestaged': ['ms_data.dat'],
-                          'script': script
-                          })
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': ['ms_data.dat'],
+                                     'script': script
+                                     })
         self.assertEqual(query, expected_query)
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
 
@@ -1843,8 +1834,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         msfile.flush()
         msfield = FieldStorage()
         msfield.file = msfile
-        params = {
-                  'ms_data_format': 'mzxml',
+        params = {'ms_data_format': 'mzxml',
                   'ms_data_file': msfield,
                   'max_ms_level': 3,
                   'abs_peak_cutoff': 1000,
@@ -1863,12 +1853,11 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         script += "-l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
         script += "{magma} annotate -p '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' {db}\n"
-        expected_query = JobQuery(**{
-                          'id': self.jobid,
-                          'dir': self.jobdir,
-                          'prestaged': ['ms_data.dat'],
-                          'script': script
-                          })
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': ['ms_data.dat'],
+                                     'script': script
+                                     })
         self.assertEqual(query, expected_query)
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
 
@@ -1877,26 +1866,21 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 
     def test_it(self):
         from webob.multidict import MultiDict
-        params = MultiDict(
-                           n_reaction_steps=2,
-                           metabolism_types='phase1'
-                           )
+        params = MultiDict(n_reaction_steps=2, metabolism_types='phase1')
 
         query = self.jobquery.metabolize(params)
 
         script = "{magma} metabolize -s '2' -m 'phase1' {db}\n"
-        expected_query = JobQuery(**{
-                          'id': self.jobid,
-                          'dir': self.jobdir,
-                          'prestaged': [],
-                          'script': script
-                          })
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': [],
+                                     'script': script
+                                     })
         self.assertEqual(query, expected_query)
 
     def test_with_annotate(self):
         from webob.multidict import MultiDict
-        params = MultiDict([
-                            ('n_reaction_steps', 2),
+        params = MultiDict([('n_reaction_steps', 2),
                             ('metabolism_types', 'phase1'),
                             ('metabolism_types', 'phase2'),
                             ('precursor_mz_precision', 0.005),
@@ -1911,12 +1895,11 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
         script = "{magma} metabolize -s '2' -m 'phase1,phase2' {db} |"
         script += "{magma} annotate -p '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
-        expected_query = JobQuery(**{
-                          'id': self.jobid,
-                          'dir': self.jobdir,
-                          'prestaged': [],
-                          'script': script
-                          })
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': [],
+                                     'script': script
+                                     })
         self.assertEqual(query, expected_query)
 
 
@@ -1924,38 +1907,35 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
     def test_it(self):
         from webob.multidict import MultiDict
-        params = MultiDict(
-                  metid=123,
-                  n_reaction_steps=2,
-                  metabolism_types='phase1'
-                  )
+        params = MultiDict(metid=123,
+                           n_reaction_steps=2,
+                           metabolism_types='phase1'
+                           )
         params.add('metabolism_types', 'phase2')
 
         query = self.jobquery.metabolize_one(params)
 
         script = "echo '123' | {magma} metabolize -j - -s '2'"
         script += " -m 'phase1,phase2' {db}\n"
-        expected_query = JobQuery(**{
-                          'id': self.jobid,
-                          'dir': self.jobdir,
-                          'prestaged': [],
-                          'script': script
-                          })
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': [],
+                                     'script': script
+                                     })
         self.assertEqual(query, expected_query)
 
     def test_with_annotate(self):
         from webob.multidict import MultiDict
-        params = MultiDict(
-                  metid=123,
-                  n_reaction_steps=2,
-                  metabolism_types='phase1',
-                  precursor_mz_precision=0.005,
-                  mz_precision=0.001,
-                  ms_intensity_cutoff=200000,
-                  msms_intensity_cutoff=0.1,
-                  ionisation_mode=1,
-                  max_broken_bonds=4
-                  )
+        params = MultiDict(metid=123,
+                           n_reaction_steps=2,
+                           metabolism_types='phase1',
+                           precursor_mz_precision=0.005,
+                           mz_precision=0.001,
+                           ms_intensity_cutoff=200000,
+                           msms_intensity_cutoff=0.1,
+                           ionisation_mode=1,
+                           max_broken_bonds=4
+                           )
 
         query = self.jobquery.metabolize_one(params, True)
 
@@ -1963,20 +1943,18 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
         script += "-m 'phase1' {db} |"
         script += "{magma} annotate -p '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
-        expected_query = JobQuery(**{
-                          'id': self.jobid,
-                          'dir': self.jobdir,
-                          'prestaged': [],
-                          'script': script
-                          })
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': [],
+                                     'script': script
+                                     })
         self.assertEqual(query, expected_query)
 
 
 class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
     def test_it(self):
-        params = {
-                  'precursor_mz_precision': 0.005,
+        params = {'precursor_mz_precision': 0.005,
                   'mz_precision': 0.001,
                   'ms_intensity_cutoff': 200000,
                   'msms_intensity_cutoff': 0.1,
@@ -1988,17 +1966,15 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
         script = "{magma} annotate -p '0.001' -c '200000.0' -d '0.1' -i '1'"
         script += " -b '4' --precursor_mz_precision '0.005' {db}\n"
-        expected_query = JobQuery(**{
-                          'id': self.jobid,
-                          'dir': self.jobdir,
-                          'prestaged': [],
-                          'script': script
-                          })
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': [],
+                                     'script': script
+                                     })
         self.assertEqual(query, expected_query)
 
     def test_all_peaks_skip(self):
-        params = {
-                  'precursor_mz_precision': 0.005,
+        params = {'precursor_mz_precision': 0.005,
                   'mz_precision': 0.001,
                   'ms_intensity_cutoff': 200000,
                   'msms_intensity_cutoff': 0.1,
@@ -2011,17 +1987,15 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
         script = "{magma} annotate -p '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' -u {db}\n"
-        expected_query = JobQuery(**{
-                          'id': self.jobid,
-                          'dir': self.jobdir,
-                          'prestaged': [],
-                          'script': script
-                          })
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': [],
+                                     'script': script
+                                     })
         self.assertEqual(query, expected_query)
 
     def test_no_fragmentation(self):
-        params = {
-                  'precursor_mz_precision': 0.005,
+        params = {'precursor_mz_precision': 0.005,
                   'mz_precision': 0.001,
                   'ms_intensity_cutoff': 200000,
                   'msms_intensity_cutoff': 0.1,
@@ -2034,12 +2008,11 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
         script = "{magma} annotate -p '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' -f {db}\n"
-        expected_query = JobQuery(**{
-                          'id': self.jobid,
-                          'dir': self.jobdir,
-                          'prestaged': [],
-                          'script': script
-                          })
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': [],
+                                     'script': script
+                                     })
         self.assertEqual(query, expected_query)
 
 
@@ -2055,8 +2028,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         msfield = FieldStorage()
         msfield.file = ms_data_file
         from webob.multidict import MultiDict
-        params = MultiDict(
-                           n_reaction_steps=2,
+        params = MultiDict(n_reaction_steps=2,
                            ionisation_mode=1,
                            ms_intensity_cutoff=200000,
                            msms_intensity_cutoff=0.1,
@@ -2089,12 +2061,12 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         expected_script += " {db}\n"
 
-        expected_query = JobQuery(**{
-                          'id': self.jobid,
-                          'dir': self.jobdir,
-                          'prestaged': ['ms_data.dat', 'structures.dat'],
-                          'script': expected_script
-                          })
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': ['ms_data.dat',
+                                                   'structures.dat'],
+                                     'script': expected_script
+                                     })
         self.assertEqual(query, expected_query)
         self.assertMultiLineEqual(params['structures'],
                                   self.fetch_file('structures.dat'))
