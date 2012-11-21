@@ -125,8 +125,11 @@ class StructureEngine(object):
               (atom.GetNumImplicitHs()+atom.GetNumExplicitHs()))
         return mim
 
-    def add_structure(self,molblock,name,prob,level,sequence,isquery,mass_filter=9999,mim=None,inchikey=None,molform=None,reference=None):
+    def add_structure(self,molblock,name,prob,level,sequence,isquery,mass_filter=9999,mim=None,inchikey=None,molform=None,reference=None,logP=None,check_duplicates=False):
+        #if inchikey==None or mim==None or molform==None or logP==None:
+        print molblock
         mol=Chem.MolFromMolBlock(molblock)
+        exit()
         if inchikey == None:
             inchikey=Chem.MolToInchiKey(mol)[:14]
             # inchikey=Chem.MolToSmiles(mol)
@@ -134,6 +137,8 @@ class StructureEngine(object):
             mim,molform=Chem.GetFormulaProps(mol)
         if mim > mass_filter:
             return
+        if logP == None:
+            logP = Chem.LogP(mol)
         # mim=self.calc_mim(mol)
         metab=Metabolite(
             mol=unicode(molblock, 'utf-8', 'xmlcharrefreplace'),
@@ -147,11 +152,9 @@ class StructureEngine(object):
             nhits=0,
             mim=mim,
             reference=reference,
-            logp=Chem.LogP(mol)
-            #logp=Chem.Crippen.MolLogP(m)
+            logp=logP
             )
-        try:
-            dupid = self.db_session.query(Metabolite).filter_by(smiles=inchikey).one()
+        if check_duplicates and len(self.db_session.query(Metabolite).filter_by(smiles=inchikey).all())>0:
 #            if dupid.probability < prob:
 #                self.db_session.delete(dupid)
 #                metab.metid=dupid.metid
@@ -161,7 +164,7 @@ class StructureEngine(object):
 #            else:
             sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - kept old one\n')
             return
-        except NoResultFound:
+        else:
             self.db_session.add(metab)
             #sys.stderr.write('Added: '+name+'\n')
             self.db_session.flush()
@@ -514,16 +517,14 @@ class AnnotateEngine(object):
                     print str(mass)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
 
-    def get_pubchem_candidates(self):
+    def get_pubchem_candidates(self,fast):
         dbfilename = '/media/PubChem/Pubchem_MAGMa.db'
-        # dbfilename = '/home/ridderl/PRI/test_out.db'
         conn = sqlite3.connect(dbfilename)
         conn.text_factory=str
         c = conn.cursor()
-        db_candidates={}
-        # First a dictionary is created with candidate molecules based on all level1 peaks
-        # In this way duplicates originating from repeated detection of the same component
-        # are removed before attempting to add the candidates to the database
+        struct_engine = StructureEngine(self.db_session,"",0)
+
+        # build sorted list of query masses
         masses=[]
         for scan in self.scans:
             for peak in scan.peaks:
@@ -531,28 +532,43 @@ class AnnotateEngine(object):
                 if not ((not self.use_all_peaks) and peak.childscan==None):
                     masses.append(mass)
         masses.sort()
+        # build non-overlapping set of queries around these masses
         queries=[[0,0]]
         for mass in masses:
             ql,qh=int(1e6*mass/self.precision),int(1e6*mass*self.precision)
-            if queries[-1][0] <= ql <= queries[-1][1] and (qh-queries[-1][0]) < 1e6:
+            if queries[-1][0] <= ql <= queries[-1][1]:
                 queries[-1][1]=qh
             else:
                 queries.append([ql,qh])
+
+        # in case of an empty database, no check for existing duplicates needed
+        check_duplicates = (self.db_session.query(Metabolite.metid).count() > 0)
+        print 'check: ',check_duplicates,fast
+
+        # All candidates are stored in dbsession, resulting metids are returned
+        metids=set([])
         for ql,qh in queries:
-            result = c.execute('SELECT * FROM molecules WHERE refscore > 2 AND mim BETWEEN ? AND ?' , (ql,qh))
-            # result = c.execute('SELECT * FROM connectivities JOIN isomers ON isomers.cid = (SELECT cid FROM isomers WHERE isomers.conn_id = connectivities.id LIMIT 1) WHERE connectivities.mim BETWEEN ? AND ?', 
-            #                             (mass/self.precision,mass*self.precision))
-            for (cid,mim,molblock,inchikey,molform,name,refscore) in result:
-                db_candidates[cid]={'mim':float(mim/1e6),
-                                   'mol':zlib.decompress(molblock),
-                                   'inchikey':inchikey,
-                                   'molform':molform,
-                                   'cid':cid,
-                                   'name':name,
-                                   'refscore':refscore
-                                   }
-            print str(ql)+','+str(qh)+' --> '+str(len(db_candidates))+' candidates'
-        return db_candidates
+            result = c.execute('SELECT * FROM molecules WHERE refscore > 10 AND mim BETWEEN ? AND ?' , (ql,qh))
+            for (cid,mim,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
+                if natoms<=64 or not fast:    # fast calculations are based on 64 long int, larger molecules are not allowed
+                    metid=struct_engine.add_structure(molblock=zlib.decompress(molblock),
+                                   name=name+' ('+str(cid)+')',
+                                   mim=float(mim/1e6),
+                                   molform=molform,
+                                   inchikey=inchikey,
+                                   prob=refscore,
+                                   level=1,
+                                   sequence="",
+                                   isquery=1,
+                                   reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
+                                             str(cid)+'">'+str(cid)+' (PubChem)</a>',
+                                   logP=float(logp/10),
+                                   check_duplicates=check_duplicates
+                                   )
+                    metids.add(metid)
+            print str(ql)+','+str(qh)+' --> '+str(len(metids))+' candidates'
+        self.db_session.commit()
+        return metids
 
     def search_structures(self,metids=None,ncpus=1,fast=False):
         logging.warn('Searching structures')
@@ -611,7 +627,7 @@ class AnnotateEngine(object):
         for structure,job in jobs:
             raw_result=job(raw_result=True)
             hits,sout = pickle.loads(raw_result)
-            # print sout
+            print sout
             sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
             structure.nhits=len(hits)
             self.db_session.add(structure)
