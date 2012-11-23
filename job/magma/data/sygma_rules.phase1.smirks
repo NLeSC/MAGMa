@@ -43,6 +43,10 @@
 #        - added: oxidative decarboxylation
 # v2.3   - March 2010: oxidation_to_quinone improved, i.e. check for a hydrogen
 #          atom on reacting N (could previously result in e.g. =N=)
+# V3.0   - Feb 2012: added het-O-demethylation
+#        - added glucuronidation of N-OH
+# V3.1   - Oct 2012: split of double bond reduction (benzylic double bonds
+#          have increased probability)
 ###################################################################################
 
 # *** PHASE 1 ***
@@ -81,6 +85,7 @@
 # -- O-dealkylation --
 #
 [#6;!$(C=O):1][O:2][CH3]>>[#6:1][O:2]	0.276885	O-demethylation	# 224/809
+[*;!#6;!$(*=O):1][O:2][CH3]>>[*:1][O:2]	0.2	het-O-demethylation	# 6/30
 #
 [C;!$(C(O)~[!#6]);!$([CH3]):1][O;!$(O1CC1):2][C;X4;!$(C(O)~[!#6]);H1,H2:3]>>[C:1][O:2].O[C:3]	0.106464	O-dealkylation_(aliphatic)	# 28/263
 [c:1][O:2][C;X4;!$(C(O)~[!#6]);H1,H2:3]>>[c:1][O:2].O[C:3]	0.0962963	O-dealkylation_(aromatic)	# 65/675
@@ -134,7 +139,9 @@
 [c:1][C:2](=[O:3])[c:4]>>[c:1][C:2](-[O:3])[c:4]	0.0387597	carbonyl_reduction_(both_sides_next_to_aromatic_carbon)	# 5/129
 [C:1][CH1:2]=[O:3]>>[C:1][C:2]-[O:3]	0.0882353	aldehyde_reduction_(aliphatic)	# 3/34
 [c:1][CH1:2]=[O:3]>>[c:1][C:2]-[O:3]	0.2	aldehyde_reduction_(aromatic)	# 2/10
-[C;$(C[OH1]),$(C=O):1][C:2]=[C:3]>>[C:1][C:2]-[C:3]	0.0783875	double_bond_reduction	# 70/893
+# [C;$(C[OH1]),$(C=O):1][C:2]=[C:3]>>[C:1][C:2]-[C:3]	0.0783875	double_bond_reduction	# 70/893
+[C;$(C[OH1]),$(C=O):1][C:2]=[C;!$(Cc):3]>>[C:1][C:2]-[C:3]	0.0708556	double_bond_reduction	# 53/748
+[C;$(C[OH1]),$(C=O):1][C:2]=[C;$(Cc):3]>>[C:1][C:2]-[C:3]	0.114865	double_bond_reduction_(benzylic)	# 17/148
 
 # -- aldehyde oxidation --
 [C:1][CH1:2]=[O:3]>>[C:1][C:2](O)=[O:3]	0.5	aldehyde_oxidation_(aliphatic)	# 17/34
