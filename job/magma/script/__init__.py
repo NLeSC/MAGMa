@@ -226,27 +226,7 @@ class MagmaCommand(object):
                     pass
             annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
         if args.structure_database == 'pubchem':
-            struct_engine = magma_session.get_structure_engine()
-            candidates=annotate_engine.get_pubchem_candidates()
-            metids=set([])
-            for id in candidates:
-                #try:
-                    cid=str(candidates[id]['cid'])
-                    metids.add(struct_engine.add_structure(molblock=candidates[id]['mol'],
-                                       name=candidates[id]['name']+' ('+cid+')',
-                                       mim=candidates[id]['mim'],
-                                       molform=candidates[id]['molform'],
-                                       inchikey=candidates[id]['inchikey'],
-                                       prob=candidates[id]['refscore'],
-                                       level=1,
-                                       sequence="",
-                                       isquery=1,
-                                       reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
-                                                 cid+'">'+cid+' (PubChem)</a>'
-                                       )
-                               )
-                #except:
-                #    logging.warn('Could not parse compound: ' + str(candidates[id]['cid']))
+            metids=annotate_engine.get_pubchem_candidates(args.fast)
             annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
         magma_session.commit()
             # annotate_engine.search_some_structures(metids)
