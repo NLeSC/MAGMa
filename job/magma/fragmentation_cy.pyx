@@ -37,7 +37,7 @@ ctypedef struct bond_breaks_score_pair:
 
 cdef class FragmentEngine(object):
 
-    cdef unsigned long long new_fragment,template_fragment,frag
+    cdef unsigned long long new_fragment,template_fragment
     cdef int max_broken_bonds,max_small_losses,natoms
     cdef bonded_atom[64] bonded_atoms
     cdef float[64] atom_masses
@@ -49,7 +49,12 @@ cdef class FragmentEngine(object):
     cdef numpy.ndarray fragment_masses,fragments,bondbreaks,scores
     #cdef rdkit_mol mol
     
+    
     def __init__(self,structure,max_broken_bonds,max_small_losses):
+        cdef unsigned long long bond,frag
+        cdef float bondscore
+        cdef int x,a1,a2
+        
         mol=Chem.MolFromMolBlock(str(structure.mol))
         self.natoms=Chem.natoms(mol)  # number of atoms in the molecule
         if self.natoms<=64:
@@ -68,8 +73,8 @@ cdef class FragmentEngine(object):
             self.bondbreaks=numpy.array([0])
             self.scores=numpy.array([0.0])
             # self.avg_score=None
-            frag=(1<<self.natoms)-1
-    
+            frag=(1ULL<<self.natoms)-1
+            
             for x in range(self.natoms):
                 self.bonded_atoms[x].nbonds=0
                 self.atom_masses[x]=Chem.GetExtendedAtomMass(mol,x)
@@ -81,7 +86,7 @@ cdef class FragmentEngine(object):
                 self.bonded_atoms[a1].nbonds+=1
                 self.bonded_atoms[a2].atoms[self.bonded_atoms[a2].nbonds]=a1
                 self.bonded_atoms[a2].nbonds+=1
-                bond = (1<<a1) | (1<<a2)
+                bond = (1ULL<<a1) | (1ULL<<a2)
                 bondscore = typew[Chem.GetBondType(mol,x)]*heterow[Chem.GetAtomSymbol(mol,a1) != 'C' or Chem.GetAtomSymbol(mol,a2) != 'C']
                 self.bonds[x]=bond
                 self.bondscore[x]=bondscore
@@ -97,7 +102,7 @@ cdef class FragmentEngine(object):
         cdef unsigned long long atombit
         for a in range(self.bonded_atoms[atom].nbonds):
             bonded_a=self.bonded_atoms[atom].atoms[a]
-            atombit=1<<bonded_a
+            atombit=1ULL<<bonded_a
             if atombit & self.template_fragment and not atombit & self.new_fragment:
                 self.new_fragment = self.new_fragment | atombit
                 self.extend(bonded_a)
@@ -111,23 +116,23 @@ cdef class FragmentEngine(object):
         for step in range(self.max_broken_bonds):                    # perform fragmentation for nstep steps
             for fragment in self.current_fragments:   # loop of all fragments to be fragmented
                 for atom in range(self.natoms):       # loop of all atoms
-                    if (1<<atom) & fragment:            # in the fragment
-                        self.template_fragment=fragment^(1<<atom) # remove the atom
+                    if (1ULL<<atom) & fragment:            # in the fragment
+                        self.template_fragment=fragment^(1ULL<<atom) # remove the atom
                         list_ext_atoms=set([])
                         extended_fragments=set([])
                         for a in range(self.bonded_atoms[atom].nbonds):              # find all its bonded atoms
                             bonded_a=self.bonded_atoms[atom].atoms[a]
-                            if (1<<bonded_a) & self.template_fragment:        # present in the fragment
+                            if (1ULL<<bonded_a) & self.template_fragment:        # present in the fragment
                                 list_ext_atoms.add(bonded_a)
                         if len(list_ext_atoms)==1:                         # in case of one bonded atom, the new fragment
                             extended_fragments.add(self.template_fragment) # is the remainder of the old fragment
                         else:
                             for a in list_ext_atoms:                # otherwise extend all atoms
                                 for frag in extended_fragments:     # except when deleted atom is in a ring
-                                    if (1<<a) & frag:               # -> previous extended fragment contains
+                                    if (1ULL<<a) & frag:               # -> previous extended fragment contains
                                         break                       #    already the ext_atom, calculate fragment only once
                                 else:
-                                    self.new_fragment=1<<a          # extend atom
+                                    self.new_fragment=1ULL<<a          # extend atom
                                     self.extend(a)
                                     extended_fragments.add(self.new_fragment)
                         for frag in extended_fragments:
@@ -143,8 +148,8 @@ cdef class FragmentEngine(object):
         for step in range(self.max_small_losses):                    # number of OH losses
             for fragment in self.current_fragments:   # loop of all fragments on which to apply neutral loss rules
                 for atom in self.neutral_loss_atoms:       # loop of all atoms
-                    if (1<<atom) & fragment:            # in the fragment
-                        frag=fragment^(1<<atom)
+                    if (1ULL<<atom) & fragment:            # in the fragment
+                        frag=fragment^(1ULL<<atom)
                         if frag not in self.total_fragments:   # add extended fragments if not yet present
                             self.total_fragments.add(frag)     # to the collection
                             bbsp=self.score_fragment(frag)
@@ -192,11 +197,11 @@ cdef class FragmentEngine(object):
         cdef int atom
         cdef float fragment_mass=0.0
         for atom in range(self.natoms):
-            if fragment & (1<<atom):
+            if fragment & (1ULL<<atom):
                 fragment_mass+=self.atom_masses[atom]
         return fragment_mass
 
-    def add_fragment(self,fragment,fragmentmass,score,bondbreaks):
+    def add_fragment(self,unsigned long long fragment,float fragmentmass,score,int bondbreaks):
         self.fragment_masses = numpy.vstack((self.fragment_masses,
                        numpy.hstack((numpy.zeros(self.max_broken_bonds+self.max_small_losses-bondbreaks),
                                   numpy.arange(-bondbreaks-1,bondbreaks+2)*Hmass+fragmentmass,
@@ -235,7 +240,7 @@ cdef class FragmentEngine(object):
         atomstring=""
         atomlist=[]
         for atom in range(self.natoms):
-            if ((1<<atom) & fragment):
+            if ((1ULL<<atom) & fragment):
                 atomstring+=','+str(atom)
                 atomlist.append(atom)
         return atomstring,atomlist

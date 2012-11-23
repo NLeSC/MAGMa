@@ -126,10 +126,8 @@ class StructureEngine(object):
         return mim
 
     def add_structure(self,molblock,name,prob,level,sequence,isquery,mass_filter=9999,mim=None,inchikey=None,molform=None,reference=None,logP=None,check_duplicates=False):
-        #if inchikey==None or mim==None or molform==None or logP==None:
-        print molblock
-        mol=Chem.MolFromMolBlock(molblock)
-        exit()
+        if inchikey==None or mim==None or molform==None or logP==None:
+            mol=Chem.MolFromMolBlock(molblock)
         if inchikey == None:
             inchikey=Chem.MolToInchiKey(mol)[:14]
             # inchikey=Chem.MolToSmiles(mol)
@@ -562,7 +560,7 @@ class AnnotateEngine(object):
                                    isquery=1,
                                    reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
                                              str(cid)+'">'+str(cid)+' (PubChem)</a>',
-                                   logP=float(logp/10),
+                                   logP=float(logp)/10.0,
                                    check_duplicates=check_duplicates
                                    )
                     metids.add(metid)
@@ -627,7 +625,7 @@ class AnnotateEngine(object):
         for structure,job in jobs:
             raw_result=job(raw_result=True)
             hits,sout = pickle.loads(raw_result)
-            print sout
+            #print sout
             sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
             structure.nhits=len(hits)
             self.db_session.add(structure)
