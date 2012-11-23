@@ -523,17 +523,17 @@ class AnnotateEngine(object):
         struct_engine = StructureEngine(self.db_session,"",0)
 
         # build sorted list of query masses
-        masses=[]
+        mzs=[]
         for scan in self.scans:
             for peak in scan.peaks:
-                mass=peak.mz-self.ionisation_mode*Hmass
                 if not ((not self.use_all_peaks) and peak.childscan==None):
-                    masses.append(mass)
-        masses.sort()
+                    mzs.append(peak.mz)
+        mzs.sort()
         # build non-overlapping set of queries around these masses
         queries=[[0,0]]
-        for mass in masses:
-            ql,qh=int(1e6*mass/self.precision),int(1e6*mass*self.precision)
+        for mz in mzs:
+            ql=int(1e6*(mz/self.precision-self.ionisation_mode*(Hmass-0.0005486)))
+            qh=int(1e6*(mz*self.precision-self.ionisation_mode*(Hmass-0.0005486)))
             if queries[-1][0] <= ql <= queries[-1][1]:
                 queries[-1][1]=qh
             else:
@@ -721,7 +721,7 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
     def massmatch(peak,mim,low,high):
         for x in range(low,high+1):
             #if self.mz-me.mz_precision < mim+x*Hmass < self.mz+me.mz_precision:
-            if peak.mz/precision < mim+x*Hmass-ionisation_mode*0.0005486 < peak.mz*precision:
+            if peak.mz/precision <= mim+x*Hmass-ionisation_mode*0.0005486 <= peak.mz*precision:
                 return x
         else:
             return False
