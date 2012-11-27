@@ -515,9 +515,18 @@ class AnnotateEngine(object):
                     print str(mass)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
 
-    def get_pubchem_candidates(self,fast,dbfilename=None):
-        if dbfilename==None:
+    def get_pubchem_candidates(self,fast,dbfilename='',min_refscore='',max_mz=''):
+        where=''
+        if dbfilename=='':
             dbfilename='/media/PubChem/Pubchem_MAGMa.db'
+        if min_refscore!='':
+            where += ' AND refscore >= '+min_refscore
+        if fast:
+            where += ' AND natoms <= 64' # fast calculations are based on 64 long int, larger molecules are not allowed
+        if max_mz=='':
+            max_mz='9999'
+        mmz=float(max_mz)
+        
         conn = sqlite3.connect(dbfilename)
         conn.text_factory=str
         c = conn.cursor()
@@ -527,7 +536,7 @@ class AnnotateEngine(object):
         mzs=[]
         for scan in self.scans:
             for peak in scan.peaks:
-                if not ((not self.use_all_peaks) and peak.childscan==None):
+                if not ((not self.use_all_peaks) and peak.childscan==None) and peak.mz <= mmz:
                     mzs.append(peak.mz)
         mzs.sort()
         # build non-overlapping set of queries around these masses
@@ -547,24 +556,23 @@ class AnnotateEngine(object):
         # All candidates are stored in dbsession, resulting metids are returned
         metids=set([])
         for ql,qh in queries:
-            result = c.execute('SELECT * FROM molecules WHERE refscore > 10 AND mim BETWEEN ? AND ?' , (ql,qh))
+            result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ? %s' % where, (ql,qh))
             for (cid,mim,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
-                if natoms<=64 or not fast:    # fast calculations are based on 64 long int, larger molecules are not allowed
-                    metid=struct_engine.add_structure(molblock=zlib.decompress(molblock),
-                                   name=name+' ('+str(cid)+')',
-                                   mim=float(mim/1e6),
-                                   molform=molform,
-                                   inchikey=inchikey,
-                                   prob=refscore,
-                                   level=1,
-                                   sequence="",
-                                   isquery=1,
-                                   reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
-                                             str(cid)+'">'+str(cid)+' (PubChem)</a>',
-                                   logP=float(logp)/10.0,
-                                   check_duplicates=check_duplicates
-                                   )
-                    metids.add(metid)
+                metid=struct_engine.add_structure(molblock=zlib.decompress(molblock),
+                               name=name+' ('+str(cid)+')',
+                               mim=float(mim/1e6),
+                               molform=molform,
+                               inchikey=inchikey,
+                               prob=refscore,
+                               level=1,
+                               sequence="",
+                               isquery=1,
+                               reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
+                                         str(cid)+'">'+str(cid)+' (PubChem)</a>',
+                               logP=float(logp)/10.0,
+                               check_duplicates=check_duplicates
+                               )
+                metids.add(metid)
             print str(ql)+','+str(qh)+' --> '+str(len(metids))+' candidates'
         self.db_session.commit()
         return metids

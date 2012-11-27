@@ -91,9 +91,9 @@ class MagmaCommand(object):
         sc.add_argument('--skip_fragmentation', help="Skip substructure annotation of fragment peaks (default: %(default)s)", action="store_true")
         sc.add_argument('-f', '--fast', help="Quick calculations for molecules up to 64 atoms (default: %(default)s)", action="store_true")
         sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["chebi","pubchem"])
+        sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,min_refscore,max_mim (default: %(default)s)",default=",,",type=str)
         sc.add_argument('--ncpus', help="Number of parallel cpus to use for annotation (default: %(default)s)", default=1,type=int)
         sc.add_argument('--scans', help="Search in specified scans (default: %(default)s)", default="all",type=str)
-        sc.add_argument('--dbfile', help="Specify structure database file (default: %(default)s)",default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
 
@@ -227,7 +227,11 @@ class MagmaCommand(object):
                     pass
             annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
         if args.structure_database == 'pubchem':
-            metids=annotate_engine.get_pubchem_candidates(args.fast,args.dbfile)
+            db_opts=['','','']
+            db_options=args.db_options.split(',')
+            for x in range(len(db_options)):
+                db_opts[x]=db_options[x]
+            metids=annotate_engine.get_pubchem_candidates(args.fast,db_opts[0],db_opts[1],db_opts[2])
             annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
         magma_session.commit()
             # annotate_engine.search_some_structures(metids)
