@@ -93,6 +93,7 @@ class MagmaCommand(object):
         sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["chebi","pubchem"])
         sc.add_argument('--ncpus', help="Number of parallel cpus to use for annotation (default: %(default)s)", default=1,type=int)
         sc.add_argument('--scans', help="Search in specified scans (default: %(default)s)", default="all",type=str)
+        sc.add_argument('--dbfile', help="Specify structure database file (default: %(default)s)",default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
 
@@ -226,7 +227,7 @@ class MagmaCommand(object):
                     pass
             annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
         if args.structure_database == 'pubchem':
-            metids=annotate_engine.get_pubchem_candidates(args.fast)
+            metids=annotate_engine.get_pubchem_candidates(args.fast,args.dbfile)
             annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
         magma_session.commit()
             # annotate_engine.search_some_structures(metids)

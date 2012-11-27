@@ -515,8 +515,9 @@ class AnnotateEngine(object):
                     print str(mass)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
 
-    def get_pubchem_candidates(self,fast):
-        dbfilename = '/media/PubChem/Pubchem_MAGMa.db'
+    def get_pubchem_candidates(self,fast,dbfilename=None):
+        if dbfilename==None:
+            dbfilename='/media/PubChem/Pubchem_MAGMa.db'
         conn = sqlite3.connect(dbfilename)
         conn.text_factory=str
         c = conn.cursor()
