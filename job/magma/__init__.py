@@ -14,6 +14,7 @@ from models import Base, Metabolite, Scan, Peak, Fragment, Run
 import pp
 import cPickle as pickle
 import types
+import pars
 import rdkit_engine as Chem     # Use rdkit_engine
 # import cdk_engine               # Use cdk_engine
 # Chem=cdk_engine.engine()
@@ -26,35 +27,8 @@ generate 2D conformation for those
 generate smiles
 """
 
-missingfragmentpenalty=10
 max_small_losses=1
 
-mims={1:1.0078250321,\
-      6:12.0000000,\
-      7:14.0030740052,\
-      8:15.9949146221,\
-      9:18.99840320,\
-      15:30.97376151,\
-      16:31.97207069,\
-      17:34.96885271,\
-      35:78.9183376,\
-      53:126.904468}
-
-Hmass=mims[1]     # Mass of hydrogen atom
-# precision=1.000005 # =5 ppm precision to identify masses
-#precision=0.001 # 0.001 m/z precision to identify masses
-#Nbonds = 4         # Allowed number of bond breaks TODO move to class
-#MSfilter = 2e5    # Intensity cutoff (absolute) to select ions
-#MSMSfilter = 0.01 # Intensity cutoff (relative to basePeakIntensity) to select fragment peaks
-#MSfilter = 1e6    # Intensity cutoff (absolute) to select ions
-#MSMSfilter = 0.5 # Intensity cutoff (relative to basePeakIntensity) to select fragment peaks
-#MSfilter = 0.0    # Intensity cutoff (absolute) to select ions
-#MSMSfilter = 0.05 # Intensity cutoff (relative to basePeakIntensity) to select fragment peaks
-#pp = 0.005          # precision for matching precursor mz
-#useFragments=True # Assign fragment data
-#ionisation = -1  # positive ionisation mode TODO move to class
-#useMSMSonly=True # TODO move to class
-#maxMSlevel = 2 # TODO move to class
 
 class MagmaSession(object):
     def __init__(self,db_name,description=""):
@@ -118,15 +92,9 @@ class StructureEngine(object):
         self.metabolism_types=rundata.metabolism_types.split(',')
         self.n_reaction_steps=rundata.n_reaction_steps
 
-    def calc_mim(self,mol):
-        mim=0
-        for atom in range(mol.getAtomCount()):
-            mim+=(mims[atom.GetAtomicNum()]+Hmass*\
-              (atom.GetNumImplicitHs()+atom.GetNumExplicitHs()))
-        return mim
-
-    def add_structure(self,molblock,name,prob,level,sequence,isquery,mass_filter=9999,mim=None,inchikey=None,molform=None,reference=None):
-        mol=Chem.MolFromMolBlock(molblock)
+    def add_structure(self,molblock,name,prob,level,sequence,isquery,mass_filter=9999,mim=None,inchikey=None,molform=None,reference=None,logP=None,check_duplicates=False):
+        if inchikey==None or mim==None or molform==None or logP==None:
+            mol=Chem.MolFromMolBlock(molblock)
         if inchikey == None:
             inchikey=Chem.MolToInchiKey(mol)[:14]
             # inchikey=Chem.MolToSmiles(mol)
@@ -134,6 +102,8 @@ class StructureEngine(object):
             mim,molform=Chem.GetFormulaProps(mol)
         if mim > mass_filter:
             return
+        if logP == None:
+            logP = Chem.LogP(mol)
         # mim=self.calc_mim(mol)
         metab=Metabolite(
             mol=unicode(molblock, 'utf-8', 'xmlcharrefreplace'),
@@ -147,11 +117,9 @@ class StructureEngine(object):
             nhits=0,
             mim=mim,
             reference=reference,
-            logp=Chem.LogP(mol)
-            #logp=Chem.Crippen.MolLogP(m)
+            logp=logP
             )
-        try:
-            dupid = self.db_session.query(Metabolite).filter_by(smiles=inchikey).one()
+        if check_duplicates and len(self.db_session.query(Metabolite).filter_by(smiles=inchikey).all())>0:
 #            if dupid.probability < prob:
 #                self.db_session.delete(dupid)
 #                metab.metid=dupid.metid
@@ -161,7 +129,7 @@ class StructureEngine(object):
 #            else:
             sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - kept old one\n')
             return
-        except NoResultFound:
+        else:
             self.db_session.add(metab)
             #sys.stderr.write('Added: '+name+'\n')
             self.db_session.flush()
@@ -456,7 +424,7 @@ class AnnotateEngine(object):
             cutoff=dbscan.basepeakintensity*self.msms_intensity_cutoff
         dbpeaks=self.db_session.query(Peak).filter(Peak.scanid==scan.scanid).filter(Peak.intensity>=cutoff).all()
         for dbpeak in dbpeaks:
-            scan.peaks.append(types.PeakType(dbpeak.mz,dbpeak.intensity,scan.scanid,missingfragmentpenalty*(dbpeak.intensity**0.5)))
+            scan.peaks.append(types.PeakType(dbpeak.mz,dbpeak.intensity,scan.scanid,pars.missingfragmentpenalty*(dbpeak.intensity**0.5)))
         dbchildscans=self.db_session.query(Scan).filter(Scan.precursorscanid==scan.scanid).all()
         for dbchildscan in dbchildscans:
             # find the highest peak that qualifies as precursor peak for the child spectrum
@@ -506,7 +474,7 @@ class AnnotateEngine(object):
         # are removed before attempting to add the candidates to the database
         for scan in self.scans:
             for peak in scan.peaks:
-                mass=peak.mz-self.ionisation_mode*Hmass
+                mass=peak.mz-self.ionisation_mode*pars.Hmass
                 if not ((not self.use_all_peaks) and peak.childscan==None):
                     result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass/self.precision,mass*self.precision))
                     for (id,mim,molblock,chebi_name) in result:
@@ -514,45 +482,68 @@ class AnnotateEngine(object):
                     print str(mass)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
 
-    def get_pubchem_candidates(self):
-        dbfilename = '/media/PubChem/Pubchem_MAGMa.db'
-        # dbfilename = '/home/ridderl/PRI/test_out.db'
+    def get_pubchem_candidates(self,fast,dbfilename='',min_refscore='',max_mz=''):
+        where=''
+        if dbfilename=='':
+            dbfilename='/media/PubChem/Pubchem_MAGMa.db'
+        if min_refscore!='':
+            where += ' AND refscore >= '+min_refscore
+        if fast:
+            where += ' AND natoms <= 64' # fast calculations are based on 64 long int, larger molecules are not allowed
+        if max_mz=='':
+            max_mz='9999'
+        mmz=float(max_mz)
+        
         conn = sqlite3.connect(dbfilename)
         conn.text_factory=str
         c = conn.cursor()
-        db_candidates={}
-        # First a dictionary is created with candidate molecules based on all level1 peaks
-        # In this way duplicates originating from repeated detection of the same component
-        # are removed before attempting to add the candidates to the database
-        masses=[]
+        struct_engine = StructureEngine(self.db_session,"",0)
+
+        # build sorted list of query masses
+        mzs=[]
         for scan in self.scans:
             for peak in scan.peaks:
-                mass=peak.mz-self.ionisation_mode*Hmass
-                if not ((not self.use_all_peaks) and peak.childscan==None):
-                    masses.append(mass)
-        masses.sort()
+                if not ((not self.use_all_peaks) and peak.childscan==None) and peak.mz <= mmz:
+                    mzs.append(peak.mz)
+        mzs.sort()
+        # build non-overlapping set of queries around these masses
         queries=[[0,0]]
-        for mass in masses:
-            ql,qh=int(1e6*mass/self.precision),int(1e6*mass*self.precision)
-            if queries[-1][0] <= ql <= queries[-1][1] and (qh-queries[-1][0]) < 1e6:
+        for mz in mzs:
+            ql=int(1e6*(mz/self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass)))
+            qh=int(1e6*(mz*self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass)))
+            if queries[-1][0] <= ql <= queries[-1][1]:
                 queries[-1][1]=qh
             else:
                 queries.append([ql,qh])
+
+        # in case of an empty database, no check for existing duplicates needed
+        check_duplicates = (self.db_session.query(Metabolite.metid).count() > 0)
+        print 'check: ',check_duplicates,fast
+
+        # All candidates are stored in dbsession, resulting metids are returned
+        metids=set([])
         for ql,qh in queries:
-            result = c.execute('SELECT * FROM molecules WHERE refscore > 2 AND mim BETWEEN ? AND ?' , (ql,qh))
-            # result = c.execute('SELECT * FROM connectivities JOIN isomers ON isomers.cid = (SELECT cid FROM isomers WHERE isomers.conn_id = connectivities.id LIMIT 1) WHERE connectivities.mim BETWEEN ? AND ?', 
-            #                             (mass/self.precision,mass*self.precision))
-            for (cid,mim,molblock,inchikey,molform,name,refscore) in result:
-                db_candidates[cid]={'mim':float(mim/1e6),
-                                   'mol':zlib.decompress(molblock),
-                                   'inchikey':inchikey,
-                                   'molform':molform,
-                                   'cid':cid,
-                                   'name':name,
-                                   'refscore':refscore
-                                   }
-            print str(ql)+','+str(qh)+' --> '+str(len(db_candidates))+' candidates'
-        return db_candidates
+            result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ? %s' % where, (ql,qh))
+            for (cid,mim,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
+                print natoms
+                metid=struct_engine.add_structure(molblock=zlib.decompress(molblock),
+                               name=name+' ('+str(cid)+')',
+                               mim=float(mim/1e6),
+                               molform=molform,
+                               inchikey=inchikey,
+                               prob=refscore,
+                               level=1,
+                               sequence="",
+                               isquery=1,
+                               reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
+                                         str(cid)+'">'+str(cid)+' (PubChem)</a>',
+                               logP=float(logp)/10.0,
+                               check_duplicates=check_duplicates
+                               )
+                metids.add(metid)
+            print str(ql)+','+str(qh)+' --> '+str(len(metids))+' candidates'
+        self.db_session.commit()
+        return metids
 
     def search_structures(self,metids=None,ncpus=1,fast=False):
         logging.warn('Searching structures')
@@ -579,7 +570,7 @@ class AnnotateEngine(object):
         jobs=[]
         for structure in structures:
             # collect all peaks with masses within 3 Da range
-            int_mass=int(round(structure.mim+self.ionisation_mode*Hmass))
+            int_mass=int(round(structure.mim+self.ionisation_mode*pars.Hmass))
             try:
                 peaks=self.indexed_peaks[int_mass]
             except:
@@ -605,13 +596,14 @@ class AnnotateEngine(object):
                               fast
                               ),(),(
                               "magma.types",
+                              "magma.pars",
                               fragmentation_module
                               )
                            )))
         for structure,job in jobs:
             raw_result=job(raw_result=True)
             hits,sout = pickle.loads(raw_result)
-            # print sout
+            #print sout
             sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
             structure.nhits=len(hits)
             self.db_session.add(structure)
@@ -632,7 +624,7 @@ class AnnotateEngine(object):
         deltappm=None
         if score != None:
             score=score/hit.intensity_weight
-            deltappm=(hit.mz+hit.deltaH*Hmass-hit.mass+self.ionisation_mode*0.0005486)/hit.mz*1e6
+            deltappm=(hit.mz+hit.deltaH*pars.Hmass-hit.mass+self.ionisation_mode*pars.elmass)/hit.mz*1e6
         # print atomlist, Chem.FragmentSmiles(mol,atomlist)
         self.db_session.add(Fragment(
             metid=metid,
@@ -695,19 +687,16 @@ class DataAnalysisEngine(object):
 def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast):
     # Chem=magma.cdk_engine.engine()      # Use cdk_engine
     Chem=magma.rdkit_engine             # Use rdkit_engine
+    pars=magma.pars
     if fast:
         Fragmentation=magma.fragmentation_cy
     else:
         Fragmentation=magma.fragmentation_py
 
-    Fragmented=False
-    weigh_scores=False
-    Hmass=1.0078250321
-
     def massmatch(peak,mim,low,high):
         for x in range(low,high+1):
             #if self.mz-me.mz_precision < mim+x*Hmass < self.mz+me.mz_precision:
-            if peak.mz/precision < mim+x*Hmass-ionisation_mode*0.0005486 < peak.mz*precision:
+            if peak.mz/precision <= mim+x*pars.Hmass-ionisation_mode*pars.elmass <= peak.mz*precision:
                 return x
         else:
             return False
@@ -720,18 +709,11 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
             hit=magma.types.HitType(peak,fragment,score,bondbreaks,mass,deltaH)
         if fragment>0 and peak.childscan!=None and len(peak.childscan.peaks) > 0: # fragment=0 means it is a missing fragment
             n_child_peaks=len(peak.childscan.peaks)
-            # self.score = self.score/(n_child_peaks+1) + self.findhits(peak.childscan,self.fragment)*n_child_peaks/(n_child_peaks+1)
             total_score=0.0
             total_count=0.0
             for childpeak in peak.childscan.peaks:
-                if weigh_scores:
-                    weight=(childpeak.intensity**0.5) # *(peak.mz**3)
-                else:
-                    weight=1
-                total_count+=weight
-                #besthit=fragment_engine.find_hit(childpeak,fragment)
                 besthit=gethit(childpeak,0,None,0,0,0)
-                mz_neutral=childpeak.mz+ionisation_mode*0.0005486 # m/z value of the neutral form of the fragment (mass of electron added/removed)
+                mz_neutral=childpeak.mz+ionisation_mode*pars.elmass # m/z value of the neutral form of the fragment (mass of electron added/removed)
                 for childfrag,childscore,childbbreaks,childmass,childH in fragment_engine.find_fragments(mz_neutral,fragment,precision,mz_precision_abs):
                     if childfrag & fragment == childfrag:
                         childhit=gethit(childpeak,childfrag,childscore*(childpeak.intensity**0.5),childbbreaks,childmass,childH)
@@ -760,6 +742,7 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
                         add_fragment_data_to_hit(childhit)
 
 # for peak in self.db_session.query(Peak).filter(Scan.mslevel)==1.filter(Peak.intensity>MSfilter)
+    Fragmented=False
     hits=[]
     for peak in peaks:
         if not ((not use_all_peaks) and peak.childscan==None):
