@@ -264,6 +264,26 @@ user.password = 'mypw'
 User.add(user)
 commit()
 
+Add job
+=======
+
+Jobs started from the web-interface will be registered. 
+Otherwise the job has to be registered manually.
+
+from magmaweb.user import JobMeta
+job = JobMeta('00000000-eeee-0000-eeee-000000000000', 'stefanv2', description=u'Same as run[0].description', ms_filename='Same as run[0].ms_filename')
+JobMeta.add(job)
+commit()
+
+Alter owner of job
+==================
+
+job = JobMeta.by_id('00000000-eeee-0000-eeee-000000000000')
+job.owner = 'someone'
+Job.add(job)
+commit()
+
+
 SQL cookbook
 ------------
 
