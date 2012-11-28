@@ -29,12 +29,12 @@ cdef class FragmentEngine(object):
     #cdef rdkit_mol mol
     
     
-    def __init__(self,structure,max_broken_bonds,max_small_losses):
+    def __init__(self,mol,max_broken_bonds,max_small_losses):
         cdef unsigned long long bond,frag
         cdef float bondscore
         cdef int x,a1,a2
         
-        mol=Chem.MolFromMolBlock(str(structure.mol))
+        mol=Chem.MolFromMolBlock(str(mol))
         self.natoms=Chem.natoms(mol)  # number of atoms in the molecule
         if self.natoms<=64:
             self.max_broken_bonds=max_broken_bonds

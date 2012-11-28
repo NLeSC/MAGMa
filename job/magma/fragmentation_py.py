@@ -4,8 +4,8 @@ import pars
 
 
 class FragmentEngine(object):
-    def __init__(self,structure,max_broken_bonds,max_small_losses):
-        self.mol=Chem.MolFromMolBlock(str(structure.mol))
+    def __init__(self,mol,max_broken_bonds,max_small_losses):
+        self.mol=Chem.MolFromMolBlock(str(mol))
         self.max_broken_bonds=max_broken_bonds
         self.max_small_losses=max_small_losses
         self.natoms=Chem.natoms(self.mol)  # number of atoms in the molecule
@@ -131,7 +131,6 @@ class FragmentEngine(object):
         self.fragment_info.append([fragment,score,bondbreaks])
     
     def convert_fragments_table(self):
-        print len(self.fragment_masses),len(self.fragment_info),(self.max_broken_bonds+self.max_small_losses)*2+3
         self.fragment_masses_np=numpy.array(self.fragment_masses).reshape(len(self.fragment_info),(self.max_broken_bonds+self.max_small_losses)*2+3)
 
     def calc_avg_score(self):

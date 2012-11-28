@@ -525,7 +525,6 @@ class AnnotateEngine(object):
         for ql,qh in queries:
             result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ? %s' % where, (ql,qh))
             for (cid,mim,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
-                print natoms
                 metid=struct_engine.add_structure(molblock=zlib.decompress(molblock),
                                name=name+' ('+str(cid)+')',
                                mim=float(mim/1e6),
@@ -585,7 +584,9 @@ class AnnotateEngine(object):
                 pass
             if len(peaks)>0:
                 jobs.append((structure,
-                   job_server.submit(search_structure,(structure,
+                   job_server.submit(search_structure,(structure.mol,
+                              structure.mim,
+                              structure.molformula,
                               peaks,
                               self.max_broken_bonds,
                               max_small_losses,
@@ -684,7 +685,7 @@ class DataAnalysisEngine(object):
                     print '> <'+column+'>\n'+str(molecule.__getattribute__(column))+'\n'
             print '$$$$'
 
-def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast):
+def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_small_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast):
     # Chem=magma.cdk_engine.engine()      # Use cdk_engine
     Chem=magma.rdkit_engine             # Use rdkit_engine
     pars=magma.pars
@@ -746,20 +747,20 @@ def search_structure(structure,peaks,max_broken_bonds,max_small_losses,precision
     hits=[]
     for peak in peaks:
         if not ((not use_all_peaks) and peak.childscan==None):
-            protonation=ionisation_mode-(structure.molformula.find('+')>=0)*1
-            deltaH=massmatch(peak,structure.mim,protonation,protonation)
+            protonation=ionisation_mode-(molformula.find('+')>=0)*1
+            deltaH=massmatch(peak,mim,protonation,protonation)
             if type(deltaH)==int:
                 if not Fragmented:
                     #sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+' '+str(structure.reactionsequence)+'\n')
                     #sys.stderr.write('Mim: '+str(structure.mim)+'\n')
-                    fragment_engine=Fragmentation.FragmentEngine(structure,max_broken_bonds,max_small_losses)
+                    fragment_engine=Fragmentation.FragmentEngine(mol,max_broken_bonds,max_small_losses)
                     #fragment_engine=GrowingEngine(mol)
                     if fragment_engine.accepted():
                         fragment_engine.generate_fragments()
                     #sys.stderr.write('N fragments kept: '+str(len(fragment_engine.fragments))+"\n")
                     Fragmented=True
                 if fragment_engine.accepted():
-                    hit=gethit(peak,(1<<fragment_engine.get_natoms())-1,0,0,structure.mim,-deltaH)
+                    hit=gethit(peak,(1<<fragment_engine.get_natoms())-1,0,0,mim,-deltaH)
                     add_fragment_data_to_hit(hit)
                     hits.append(hit)
     return hits
