@@ -1,29 +1,6 @@
 import rdkit_engine as Chem
 import numpy
-
-
-typew={"AROMATIC":3.0,\
-       "DOUBLE":2.0,\
-       "TRIPLE":3.0,\
-       "SINGLE":1.0}
-global missingfragmentpenalty
-ringw={False:1,True:1}
-heterow={False:2,True:1}
-missingfragmentpenalty=10
-
-
-mims={1:1.0078250321,\
-      6:12.0000000,\
-      7:14.0030740052,\
-      8:15.9949146221,\
-      9:18.99840320,\
-      15:30.97376151,\
-      16:31.97207069,\
-      17:34.96885271,\
-      35:78.9183376,\
-      53:126.904468}
-
-Hmass=mims[1]     # Mass of hydrogen atom
+import pars
 
 
 class FragmentEngine(object):
@@ -54,7 +31,7 @@ class FragmentEngine(object):
             self.bonded_atoms[a1].append(a2)
             self.bonded_atoms[a2].append(a1)
             bond = 1<<a1 | 1<<a2
-            bondscore = typew[Chem.GetBondType(self.mol,x)]*heterow[Chem.GetAtomSymbol(self.mol,a1) != 'C' or Chem.GetAtomSymbol(self.mol,a2) != 'C']
+            bondscore = pars.typew[Chem.GetBondType(self.mol,x)]*pars.heterow[Chem.GetAtomSymbol(self.mol,a1) != 'C' or Chem.GetAtomSymbol(self.mol,a2) != 'C']
             self.bonds.add(bond)
             self.bondscore[bond]=bondscore
             
@@ -98,7 +75,7 @@ class FragmentEngine(object):
                             if frag not in self.all_fragments:   # add extended fragments if not yet present
                                 self.all_fragments.add(frag)     # to the collection
                                 bondbreaks,score=self.score_fragment(frag)
-                                if bondbreaks<=self.max_broken_bonds and score < (missingfragmentpenalty+5):
+                                if bondbreaks<=self.max_broken_bonds and score < (pars.missingfragmentpenalty+5):
                                     self.new_fragments.add(frag)
                                     self.total_fragments.add(frag)
                                     self.add_fragment(frag,self.calc_fragment_mass(frag),score,bondbreaks)
@@ -112,7 +89,7 @@ class FragmentEngine(object):
                         if frag not in self.total_fragments:   # add extended fragments if not yet present
                             self.total_fragments.add(frag)     # to the collection
                             bondbreaks,score=self.score_fragment(frag)
-                            if score < (missingfragmentpenalty+5):
+                            if score < (pars.missingfragmentpenalty+5):
                                 self.new_fragments.add(frag)
                                 self.add_fragment(frag,self.calc_fragment_mass(frag),score,bondbreaks)
             self.current_fragments=self.new_fragments
@@ -149,7 +126,7 @@ class FragmentEngine(object):
 
     def add_fragment(self, fragment, fragmentmass, score, bondbreaks):
         self.fragment_masses+=((self.max_broken_bonds+self.max_small_losses-bondbreaks)*[0]+\
-                                  list(numpy.arange(-bondbreaks-1,bondbreaks+2)*Hmass+fragmentmass)+\
+                                  list(numpy.arange(-bondbreaks-1,bondbreaks+2)*pars.Hmass+fragmentmass)+\
                                   (self.max_broken_bonds+self.max_small_losses-bondbreaks)*[0])
         self.fragment_info.append([fragment,score,bondbreaks])
     
