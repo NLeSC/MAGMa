@@ -333,46 +333,6 @@ class MsDataEngine(object):
             self.db_session.add(Peak(scanid=scanid+1,mz=peak[0],intensity=peak[1]))
         self.db_session.commit()
 
-#class ScanType(object):
-#    def __init__(self,scanid,mslevel):
-#        self.peaks=[]
-#        self.scanid=scanid
-#        self.mslevel=mslevel
-#    
-#class PeakType(object):
-#    def __init__(self,mz,intensity,scanid,missing_fragment_score):
-#        self.mz=mz
-#        self.intensity=intensity
-#        self.scan=scanid
-#        self.childscan=None
-#        self.missing_fragment_score=missing_fragment_score
-#
-##    def massmatch_rel(self,mim,low,high):
-##        for x in range(low,high+1):
-##            # if self.mz/me.precision < mim+x*Hmass < self.mz*me.precision:
-##            if self.mz/1.000005 < mim+x*Hmass < self.mz*1.000005:
-##            # if mim/precision < self.mz-x*Hmass < mim*precision:
-##                return x
-##        else:
-##            return False
-#
-#class HitType(object):
-#    def __init__(self,peak,fragment,score,bondbreaks,mass,deltaH):
-#        self.mz = peak.mz
-#        self.intensity = peak.intensity
-#        self.intensity_weight = peak.missing_fragment_score / missingfragmentpenalty
-#        self.scan = peak.scan
-#        self.fragment = fragment
-#        self.score = score
-#        self.breaks = bondbreaks
-#        self.mass = mass
-#        self.deltaH = deltaH
-#        self.bonds = []
-#        self.allbonds = 0
-#        self.besthits=[]
-#        self.atomstring=''
-#        self.atomlist=[]
-#        #print "childscan",peak.childscan
 
 class AnnotateEngine(object):
     def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,
@@ -463,6 +423,26 @@ class AnnotateEngine(object):
                     if int_mass not in self.indexed_peaks:
                         self.indexed_peaks[int_mass]=set([])
                     self.indexed_peaks[int_mass].add(peak)
+
+    def write_tree(self,scanid):
+        for scan in self.scans:
+            if scan.scanid==scanid:
+                for peak in scan.peaks:
+                    if not ((not self.use_all_peaks) and peak.childscan==None):
+                        self.write_peak(peak)
+
+    def write_peak(self,peak):
+        peak_string=str(peak.mz)+':'+str(peak.intensity)
+        if peak.childscan!=None:
+            peak_string+=' ('
+            n=0
+            for childpeak in peak.childscan.peaks:
+                if n>0:
+                    peak_string+=", "
+                peak_string+=self.write_peak(childpeak)
+                n
+            peak_string+=')'
+        return peak_string
 
     def get_chebi_candidates(self):
         dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
