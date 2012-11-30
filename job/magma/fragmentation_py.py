@@ -19,7 +19,6 @@ class FragmentEngine(object):
         self.fragment_masses=((max_broken_bonds+max_small_losses)*2+3)*[0]
         self.fragment_info=[[0,0,0]]
         self.avg_score=None
-        frag=(1<<self.natoms)-1
 
         for x in range(self.natoms):
             self.bonded_atoms.append([])
@@ -34,12 +33,6 @@ class FragmentEngine(object):
             bondscore = pars.typew[Chem.GetBondType(self.mol,x)]*pars.heterow[Chem.GetAtomSymbol(self.mol,a1) != 'C' or Chem.GetAtomSymbol(self.mol,a2) != 'C']
             self.bonds.add(bond)
             self.bondscore[bond]=bondscore
-            
-        self.all_fragments=set([frag])
-        self.total_fragments=set([frag])
-        self.current_fragments=set([frag])
-        self.new_fragments=set([frag])
-        self.add_fragment(frag,self.calc_fragment_mass(frag),0,0)
     
     def extend(self,atom):
         for a in self.bonded_atoms[atom]:
@@ -49,9 +42,16 @@ class FragmentEngine(object):
                 self.extend(a)
 
     def generate_fragments(self):
+        frag=(1<<self.natoms)-1
+        all_fragments=set([frag])
+        total_fragments=set([frag])
+        current_fragments=set([frag])
+        new_fragments=set([frag])
+        self.add_fragment(frag,self.calc_fragment_mass(frag),0,0)
+        
         # generate fragments
         for step in range(self.max_broken_bonds):                    # perform fragmentation for nstep steps
-            for fragment in self.current_fragments:   # loop of all fragments to be fragmented
+            for fragment in current_fragments:   # loop of all fragments to be fragmented
                 for atom in range(self.natoms):       # loop of all atoms
                     if (1<<atom) & fragment:            # in the fragment
                         self.template_fragment=fragment^(1<<atom) # remove the atom
@@ -72,31 +72,27 @@ class FragmentEngine(object):
                                     self.extend(a)
                                     extended_fragments.add(self.new_fragment)
                         for frag in extended_fragments:
-                            if frag not in self.all_fragments:   # add extended fragments if not yet present
-                                self.all_fragments.add(frag)     # to the collection
+                            if frag not in all_fragments:   # add extended fragments if not yet present
+                                all_fragments.add(frag)     # to the collection
                                 bondbreaks,score=self.score_fragment(frag)
                                 if bondbreaks<=self.max_broken_bonds and score < (pars.missingfragmentpenalty+5):
-                                    self.new_fragments.add(frag)
-                                    self.total_fragments.add(frag)
+                                    new_fragments.add(frag)
+                                    total_fragments.add(frag)
                                     self.add_fragment(frag,self.calc_fragment_mass(frag),score,bondbreaks)
-            self.current_fragments=self.new_fragments
-            self.new_fragments=set([])
+            current_fragments=new_fragments
+            new_fragments=set([])
         for step in range(self.max_small_losses):                    # number of OH losses
-            for fragment in self.current_fragments:   # loop of all fragments on which to apply neutral loss rules
-                for atom in self.neutral_loss_atoms:       # loop of all atoms
-                    if (1<<atom) & fragment:            # in the fragment
-                        frag=fragment^(1<<atom)
-                        if frag not in self.total_fragments:   # add extended fragments if not yet present
-                            self.total_fragments.add(frag)     # to the collection
-                            bondbreaks,score=self.score_fragment(frag)
-                            if score < (pars.missingfragmentpenalty+5):
-                                self.new_fragments.add(frag)
-                                self.add_fragment(frag,self.calc_fragment_mass(frag),score,bondbreaks)
-            self.current_fragments=self.new_fragments
-            self.new_fragments=set([])
-
-        # calculate masses and scores for fragments
-        # first items fragment_masses and fragment_info represent the complete molecule
+            for fi in self.fragment_info:                           # loop of all fragments
+                if fi[2]==self.max_broken_bonds+step:               # on which to apply neutral loss rules
+                    fragment=fi[0]
+                    for atom in self.neutral_loss_atoms:       # loop of all atoms
+                        if (1<<atom) & fragment:            # in the fragment
+                            frag=fragment^(1<<atom)
+                            if frag not in total_fragments:   # add extended fragments if not yet present
+                                total_fragments.add(frag)     # to the collection
+                                bondbreaks,score=self.score_fragment(frag)
+                                if score < (pars.missingfragmentpenalty+5):
+                                    self.add_fragment(frag,self.calc_fragment_mass(frag),score,bondbreaks)
         self.convert_fragments_table()
 
     def score_fragment(self,fragment):
