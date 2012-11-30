@@ -20,7 +20,6 @@ cdef class FragmentEngine(object):
     cdef bonded_atom[64] bonded_atoms
     cdef float[64] atom_masses
     cdef list neutral_loss_atoms
-    cdef set all_fragments,total_fragments,current_fragments,new_fragments
     cdef int nbonds
     cdef unsigned long long[128] bonds
     cdef float[128] bondscore
@@ -30,7 +29,7 @@ cdef class FragmentEngine(object):
     
     
     def __init__(self,mol,max_broken_bonds,max_small_losses):
-        cdef unsigned long long bond,frag
+        cdef unsigned long long bond
         cdef float bondscore
         cdef int x,a1,a2
         
@@ -50,7 +49,6 @@ cdef class FragmentEngine(object):
             self.fragment_masses=((max_broken_bonds+max_small_losses)*2+3)*[0]
             self.fragment_info=[[0,0,0]]
             # self.avg_score=None
-            frag=(1ULL<<self.natoms)-1
             
             for x in range(self.natoms):
                 self.bonded_atoms[x].nbonds=0
@@ -68,12 +66,6 @@ cdef class FragmentEngine(object):
                 self.bonds[x]=bond
                 self.bondscore[x]=bondscore
                 
-            self.all_fragments=set([frag])
-            self.total_fragments=set([frag])
-            self.current_fragments=set([frag])
-            self.new_fragments=set([frag])
-            self.add_fragment(frag,self.calc_fragment_mass(frag),0,0)
-    
     cdef void extend(self,int atom):
         cdef int a,bonded_a
         cdef unsigned long long atombit
@@ -85,13 +77,20 @@ cdef class FragmentEngine(object):
                 self.extend(bonded_a)
 
     def generate_fragments(self):
-        # generate fragments
         cdef unsigned long long fragment,frag
         cdef int atom,a,bonded_a
         cdef bond_breaks_score_pair bbsp
+        cdef set all_fragments,total_fragments,current_fragments,new_fragments
+        frag=(1ULL<<self.natoms)-1
+        all_fragments=set([frag])
+        total_fragments=set([frag])
+        current_fragments=set([frag])
+        new_fragments=set([frag])
+        self.add_fragment(frag,self.calc_fragment_mass(frag),0,0)
+        # generate fragments
 
         for step in range(self.max_broken_bonds):                    # perform fragmentation for nstep steps
-            for fragment in self.current_fragments:   # loop of all fragments to be fragmented
+            for fragment in current_fragments:   # loop of all fragments to be fragmented
                 for atom in range(self.natoms):       # loop of all atoms
                     if (1ULL<<atom) & fragment:            # in the fragment
                         self.template_fragment=fragment^(1ULL<<atom) # remove the atom
@@ -113,34 +112,28 @@ cdef class FragmentEngine(object):
                                     self.extend(a)
                                     extended_fragments.add(self.new_fragment)
                         for frag in extended_fragments:
-                            if frag not in self.all_fragments:   # add extended fragments if not yet present
-                                self.all_fragments.add(frag)     # to the collection
+                            if frag not in all_fragments:   # add extended fragments if not yet present
+                                all_fragments.add(frag)     # to the collection
                                 bbsp=self.score_fragment(frag)
                                 if bbsp.breaks<=self.max_broken_bonds and bbsp.score < (pars.missingfragmentpenalty+5):
-                                    self.new_fragments.add(frag)
-                                    self.total_fragments.add(frag)
+                                    new_fragments.add(frag)
+                                    total_fragments.add(frag)
                                     self.add_fragment(frag,self.calc_fragment_mass(frag),bbsp.score,bbsp.breaks)
-            self.current_fragments=self.new_fragments
-            self.new_fragments=set([])
+            current_fragments=new_fragments
+            new_fragments=set([])
         for step in range(self.max_small_losses):                    # number of OH losses
-            for fragment in self.current_fragments:   # loop of all fragments on which to apply neutral loss rules
-                for atom in self.neutral_loss_atoms:       # loop of all atoms
-                    if (1ULL<<atom) & fragment:            # in the fragment
-                        frag=fragment^(1ULL<<atom)
-                        if frag not in self.total_fragments:   # add extended fragments if not yet present
-                            self.total_fragments.add(frag)     # to the collection
-                            bbsp=self.score_fragment(frag)
-                            if bbsp.score < (pars.missingfragmentpenalty+5):
-                                self.new_fragments.add(frag)
-                                self.add_fragment(frag,self.calc_fragment_mass(frag),bbsp.score,bbsp.breaks)
-            self.current_fragments=self.new_fragments
-            self.new_fragments=set([])
-        # print 'Fragments generated -->',len(self.fragment_info)
+            for fi in self.fragment_info:                           # loop of all fragments
+                if fi[2]==self.max_broken_bonds+step:               # on which to apply neutral loss rules
+                    fragment=fi[0]
+                    for atom in self.neutral_loss_atoms:       # loop of all atoms
+                        if (1<<atom) & fragment:            # in the fragment
+                            frag=fragment^(1ULL<<atom)
+                            if frag not in total_fragments:   # add extended fragments if not yet present
+                                total_fragments.add(frag)     # to the collection
+                                bbsp=self.score_fragment(frag)
+                                if bbsp.score < (pars.missingfragmentpenalty+5):
+                                    self.add_fragment(frag,self.calc_fragment_mass(frag),bbsp.score,bbsp.breaks)
         self.convert_fragments_table()
-
-        # calculate masses and scores for fragments
-        # first items fragment_masses and fragment_info represent the complete molecule
-        # self.calc_avg_score()
 
     cdef bond_breaks_score_pair score_fragment(self,unsigned long long fragment):
         cdef int b,bondbreaks
