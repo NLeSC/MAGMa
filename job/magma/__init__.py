@@ -472,6 +472,7 @@ class AnnotateEngine(object):
                     if int_mass not in self.indexed_peaks:
                         self.indexed_peaks[int_mass]=set([])
                     self.indexed_peaks[int_mass].add(peak)
+                    print self.write_peak(peak)
 
     def write_tree(self,scanid):
         for scan in self.scans:
@@ -481,7 +482,7 @@ class AnnotateEngine(object):
                         self.write_peak(peak)
 
     def write_peak(self,peak):
-        peak_string=str(peak.mz)+':'+str(peak.intensity)
+        peak_string="%.6f: %i" % (peak.mz,peak.intensity)
         if peak.childscan!=None:
             peak_string+=' ('
             n=0
@@ -489,7 +490,7 @@ class AnnotateEngine(object):
                 if n>0:
                     peak_string+=", "
                 peak_string+=self.write_peak(childpeak)
-                n
+                n+=1
             peak_string+=')'
         return peak_string
 
