@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys,base64,subprocess,StringIO,time
+import sys,base64,subprocess,StringIO,time,re
 import sqlite3,struct,zlib,gzip,copy
 import pkg_resources
 import numpy
@@ -333,6 +333,55 @@ class MsDataEngine(object):
             self.db_session.add(Peak(scanid=scanid+1,mz=peak[0],intensity=peak[1]))
         self.db_session.commit()
 
+    def store_manual_tree(self,manual_tree):
+        tree_string=open(manual_tree).read()
+        tree_list=re.split('([\,\(\)])',tree_string.replace(" ","").replace("\n",""))
+        print tree_list
+        self.global_scanid = 1
+        self.store_manual_subtree(tree_list,0,0,0,1)
+    
+    def store_manual_subtree(self,tree_list,precursor_scanid,precursor_mz,precursor_intensity,mslevel):
+        lowmz=None
+        highmz=None
+        basepeakmz=None
+        basepeakintensity=None
+        scanid=self.global_scanid
+        npeaks=0
+        while len(tree_list)>0 and tree_list[0]!=')':
+            #print tree_list[0]
+            if tree_list[0].find(':')>=0:
+                mz,intensity=tree_list.pop(0).split(':')
+                self.db_session.add(Peak(scanid=scanid,mz=mz,intensity=intensity))
+                npeaks+=1
+                if lowmz==None or mz<lowmz:
+                    lowmz=mz
+                if highmz==None or mz>highmz:
+                    highmz=mz
+                if basepeakintensity==None or intensity>basepeakintensity:
+                    basepeakmz=mz
+                    basepeakintensity=intensity
+            if tree_list[0]=='(':
+                tree_list.pop(0)
+                self.global_scanid+=1
+                self.store_manual_subtree(tree_list,scanid,mz,intensity,mslevel+1)
+            if tree_list[0]==',' or tree_list[0]=='':
+                tree_list.pop(0)
+        if npeaks>0:
+            self.db_session.add(Scan(
+                scanid=scanid,
+                mslevel=mslevel,
+                lowmz=lowmz,
+                highmz=highmz,
+                basepeakmz=basepeakmz,
+                basepeakintensity=basepeakintensity,
+                precursorscanid=precursor_scanid,
+                precursormz=precursor_mz,
+                precursorintensity=precursor_intensity
+                ))
+        self.db_session.commit()
+        if len(tree_list)>0:
+            tree_list.pop(0)
+            
 
 class AnnotateEngine(object):
     def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,
