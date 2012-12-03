@@ -157,6 +157,7 @@ class ViewsTestCase(AbstractViewsTestCase):
 
     def test_workspace(self):
         import uuid
+        self.config.add_route('results', '/results/{jobid}')
         request = testing.DummyRequest()
         request.user = User('bob', 'Bob Example', 'bob@example.com')
         created_at = datetime.datetime(2012, 11, 14, 10, 48, 26, 504478)
@@ -168,7 +169,10 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         response = views.workspace()
 
+        id1 = '11111111-1111-1111-1111-111111111111'
+        url1 = 'http://example.com/results/' + id1
         expected_jobs = [{'id': '11111111-1111-1111-1111-111111111111',
+                          'url': url1,
                           'description': 'My job',
                           'ms_filename': 'F1234.mzxml',
                           'created_at': '2012-11-14 10:48:26.504478'}]
