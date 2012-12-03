@@ -98,15 +98,11 @@ Ext.onReady(function() {
       text: 'Description', dataIndex: 'description',
       width: 600
     }, {
-      text: 'ms_filename', dataIndex: 'ms_filename'
+      text: 'MS filename', dataIndex: 'ms_filename'
     }, {
-      text: 'created_at', dataIndex: 'created_at'
-    }],
-    listeners: {
-      select: function(rm, r) {
-      	window.location = r.data.url;
-      }
-    }
+      text: 'Created at', dataIndex: 'created_at', width: 120,
+      xtype: 'datecolumn', format: "Y-m-d H:i:s"
+    }]
   });
 
   var header = {
@@ -168,35 +164,5 @@ Ext.onReady(function() {
 </script>
 </head>
 <body>
-<div id="welcome" class="x-hidden">
-<h1>Workspace</h1>
-    <h2>User settings</h2>
-    <form>
-    <div>
-        <label for="userid">User id</label>
-        <input name="userid" disabled value="${request.user.userid}"></input>
-        </div><div>
-        <label for="displayname">Display Name</label>
-        <input name="displayname" value="${request.user.displayname}" size=50></input>
-        </div><div>
-        <label for="email">Email</label>
-        <input name="email" value="${request.user.email}" size=50></input>
-        </div>
-        <button>Update</button>
-    </form>
-    <h2>Jobs</h2>
-    <table>
-<thead><tr><th>ID</th><th>Description</th><th>MS filename</th><th>Created at</th></tr></thead>
-<tbody>
-        % for job in jobs:
-        <tr><td><a href="${request.route_url('results',jobid=job['id'])}">${job['id']}</a></td><td><a href="${request.route_url('results',jobid=job['id'])}">${job['description']}</a></td>
-        <td>${job['ms_filename']}</td><td>${job['created_at']}</td>
-        </tr>
-        % endfor
-    </tbody></table>
-
-    <hr></hr>
-    <a href="${request.route_url('home')}">Home</a>
-    </div>
 </body>
 </html>
