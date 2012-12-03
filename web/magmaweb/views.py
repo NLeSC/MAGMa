@@ -76,6 +76,8 @@ class Views(object):
         owner = self.request.user
         for jobmeta in owner.jobs:
             jobs.append({'id': str(jobmeta.jobid),
+                         'url': self.request.route_url('results',
+                                                       jobid=jobmeta.jobid),
                          'description': jobmeta.description,
                          'ms_filename': jobmeta.ms_filename,
                          'created_at': str(jobmeta.created_at)})
