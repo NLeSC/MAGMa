@@ -168,9 +168,9 @@ Ext.require('Esc.magmaweb.resultsApp');
 <%!
 import json
 %>
-
+var app;
 Ext.onReady(function() {
-    Ext.create('Esc.magmaweb.resultsApp', {
+    app = Ext.create('Esc.magmaweb.resultsApp', {
       appFolder: "${request.static_url('magmaweb:static/app')}",
       maxmslevel: ${maxmslevel},
       jobid: '${jobid}',
