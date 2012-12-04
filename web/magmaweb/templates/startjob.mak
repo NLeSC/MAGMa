@@ -18,7 +18,7 @@
 	src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.8.7.custom.min.js')}"></script>
 <script type="text/javascript"
 	src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/ChemDoodleWeb-sketcher.js')}"></script>
-<script type="text/javascript" src="${request.extjsroot}/ext-all.js"></script>
+<script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
 <style type="text/css">
 .x-logo a {
   font-size: 40px;
@@ -58,7 +58,17 @@ Ext.Loader.setConfig({
   }
 });
 
+</script>
+## Comment out below for development or when running sencha build, every class is loaded when commented out
+<script type="text/javascript" src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script>
+<script type="text/javascript">
+
 Ext.require([
+  'Ext.form.Panel',
+  'Ext.container.ButtonGroup',
+  'Ext.toolbar.Spacer',
+  'Ext.container.Viewport',
+  'Ext.layout.container.Border',
   'Esc.magmaweb.view.scan.UploadFieldSet',
   'Esc.magmaweb.view.metabolite.AddFieldSet',
   'Esc.magmaweb.view.metabolite.MetabolizeFieldSet',
@@ -78,8 +88,10 @@ Ext.onReady(function() {
         contentEl: 'welcome',
         border: false
     }, {
+    	title: 'Molecules',
         xtype : 'addstructurefieldset'
     }, {
+    	title: 'MS Data',
         xtype : 'uploadmsdatafieldset'
     }, {
         xtype : 'metabolizefieldset',
@@ -132,6 +144,15 @@ Ext.onReady(function() {
       url: '${request.route_url('defaults.json')}',
       method: 'GET',
       waitMsg: 'Fetching defaults'
+  });
+  // hook up example action
+  var example_button = form.down('component[action=loadmsdataexample]');
+  example_button.addListener('click', function() {
+	  form.load({
+	      url: '${request.route_url('defaults.json', _query={'selection': 'example'})}',
+	      method: 'GET',
+	      waitMsg: 'Fetching example settings'
+	  });
   });
 
   var header = {

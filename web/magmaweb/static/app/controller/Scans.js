@@ -65,6 +65,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       },
       'scanuploadform component[action=uploadmsdatacancel]': {
         click: this.showChromatogram
+      },
+      'scanuploadform component[action=loadmsdataexample]': {
+        click: this.loadExample
       }
     });
 
@@ -377,5 +380,20 @@ Ext.define('Esc.magmaweb.controller.Scans', {
 	  }
 	  this.actionsMenu.hideUploadAction();
 	  // TODO change tooltip of gears tool
+  },
+  /**
+   * In MS Data upload forms loads the example data set.
+   */
+  loadExample: function() {
+	  var form = this.getUploadForm().getForm()
+	  var example_url = this.application.runInfoUrl()+'?selection=example';
+	  form.load({
+		  url: example_url,
+	      method: 'GET',
+	      waitMsg: 'Fetching example settings',
+	      failure: function(form, action) {
+              Ext.Error.raise(action.response.responseText);
+          }
+	  });
   }
 });
