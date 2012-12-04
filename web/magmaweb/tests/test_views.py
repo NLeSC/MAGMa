@@ -178,28 +178,27 @@ class ViewsTestCase(AbstractViewsTestCase):
                           'created_at': '2012-11-14 10:48:26.504478'}]
         self.assertEqual(response, {'jobs': expected_jobs})
 
-    def test_defaultsjson(self):
+    @patch('magmaweb.views.JobQuery')
+    def test_defaultsjson(self, jq):
         request = testing.DummyRequest()
         views = Views(request)
+        jq.defaults.return_value = 'foo'
+
         response = views.defaults()
 
-        self.assertEqual(response, {'success': True,
-                                    'data': dict(n_reaction_steps=2,
-                                                 metabolism_types=['phase1',
-                                                                   'phase2'],
-                                                 ionisation_mode=1,
-                                                 skip_fragmentation=False,
-                                                 ms_intensity_cutoff=1000000.0,
-                                                 msms_intensity_cutoff=0.1,
-                                                 mz_precision=0.001,
-                                                 use_all_peaks=False,
-                                                 abs_peak_cutoff=1000,
-                                                 rel_peak_cutoff=0.01,
-                                                 max_ms_level=10,
-                                                 precursor_mz_precision=0.005,
-                                                 max_broken_bonds=4
-                                                 )
-                                    })
+        jq.defaults.assert_called_with(None)
+        self.assertDictEqual(response, {'success': True, 'data': 'foo'})
+
+    @patch('magmaweb.views.JobQuery')
+    def test_examplejson(self, jq):
+        request = testing.DummyRequest(params={'selection': 'example'})
+        views = Views(request)
+        jq.defaults.return_value = 'foo'
+
+        response = views.defaults()
+
+        jq.defaults.assert_called_with('example')
+        self.assertDictEqual(response, {'success': True, 'data': 'foo'})
 
     def test_login_get_from_loginpage(self):
         self.config.add_route('home', '/')

@@ -481,4 +481,22 @@ describe('Scans controller', function() {
 
 	  expect(ctrl.actionsMenu.hideUploadAction).toHaveBeenCalledWith();
   });
+
+  it('loadExample', function() {
+	  spyOn(ctrl.application, 'runInfoUrl').andReturn('http://example.com/defaults.json');
+      var form = { load: function() {} };
+      spyOn(form, 'load');
+      var panel = { getForm: function() { return form; } };
+      spyOn(ctrl, 'getUploadForm').andReturn(panel);
+
+	  ctrl.loadExample();
+
+	  var expected = {
+	      url: 'http://example.com/defaults.json?selection=example',
+	      method: 'GET',
+	      waitMsg: 'Fetching example settings',
+	      failure: jasmine.any(Function)
+	  };
+	  expect(form.load).toHaveBeenCalledWith(expected);
+  });
 });

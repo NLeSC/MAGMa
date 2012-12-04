@@ -4,26 +4,53 @@
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
-    extend: 'Ext.container.Container',
+	extend : 'Ext.form.FieldSet',
     alias: 'widget.uploadmsdatafieldset',
     requires: [
          'Ext.form.field.ComboBox',
          'Ext.form.field.Number',
          'Ext.form.field.File',
-         'Ext.form.FieldSet'
+         'Ext.container.Container'
     ],
     items: [{
         xtype: 'combo',
-        store: [['mzxml','mzXML']],
+        store: [['mzxml','mzXML'], ['tree', 'Tree']],
         allowBlank: false,
+        fieldLabel: 'Format',
         name: 'ms_data_format',
-        value: 'mzxml'
+        value: 'tree'
+    }, {
+        xtype : 'textarea',
+        name : 'ms_data',
+        id: 'ms_data_area',
+        emptyText : 'Enter MS data in Tree format or mzXML',
+        height : 200,
+        width : 500
+    }, {
+        xtype : 'displayfield',
+        value : 'or'
     }, {
         name: 'ms_data_file',
         xtype: 'filefield',
+
         allowBlank: false,
         emptyText: 'Upload MS/MS data file',
         width: 300
+    }, {
+        xtype : 'displayfield',
+        value : 'or'
+    }, {
+    	xtype: 'container',
+    	layout: 'hbox',
+    	items: [{
+        	xtype: 'button',
+	    	text: 'Load example',
+	    	action: 'loadmsdataexample'
+	    }, {
+            xtype : 'displayfield',
+	        flex: 1,
+	        value : '&nbsp;<a href="help/example">Information on example</a>'
+    	}]
     },{
         xtype: 'fieldset',
         title: 'MS data options',

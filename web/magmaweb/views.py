@@ -33,8 +33,9 @@ class Views(object):
                  permission='view')
     def defaults(self):
         """ Returns defaults settings to run a job"""
+        selection = self.request.params.get('selection')
         return {'success': True,
-                'data': JobQuery.defaults()}
+                'data': JobQuery.defaults(selection)}
 
     @view_config(route_name='home', renderer='jsonhtml', request_method='POST')
     def allinone(self):
