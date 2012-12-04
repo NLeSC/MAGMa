@@ -40,6 +40,8 @@ describe('Scans controller', function() {
         spyOn(mocked_chromatogram, 'setLoading');
         spyOn(mocked_chromatogram, 'setData');
         spyOn(ctrl, 'resetScans');
+        var mocked_panel = jasmine.createSpyObj('panel', ['hide']);
+  	    spyOn(ctrl, 'getChromatogramPanel').andReturn(mocked_panel);
         var f = { callback: function() {} };
         spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
         Ext.util.Observable.capture(ctrl.application, f.callback);
@@ -51,7 +53,7 @@ describe('Scans controller', function() {
         expect(mocked_chromatogram.cutoff).toEqual(1000);
         expect(mocked_chromatogram.setData).toHaveBeenCalledWith([1,2,3,4]);
         expect(ctrl.resetScans).toHaveBeenCalled();
-
+        expect(mocked_panel.hide).not.toHaveBeenCalledWith();
         expect(f.callback).toHaveBeenCalledWith('chromatogramload', jasmine.any(Object));
         Ext.util.Observable.releaseCapture(ctrl.application);
       });
@@ -61,6 +63,8 @@ describe('Scans controller', function() {
           spyOn(mocked_chromatogram, 'setLoading');
           spyOn(mocked_chromatogram, 'setData');
           spyOn(ctrl, 'resetScans');
+          var mocked_panel = jasmine.createSpyObj('panel', ['hide']);
+    	  spyOn(ctrl, 'getChromatogramPanel').andReturn(mocked_panel);
           var f = { callback: function() {} };
           spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
           Ext.util.Observable.capture(ctrl.application, f.callback);
@@ -72,7 +76,7 @@ describe('Scans controller', function() {
           expect(mocked_chromatogram.cutoff).toEqual(1000);
           expect(mocked_chromatogram.setData).toHaveBeenCalledWith([1,2,3,4]);
           expect(ctrl.resetScans).toHaveBeenCalled();
-
+          expect(mocked_panel.hide).not.toHaveBeenCalledWith();
           expect(f.callback).toHaveBeenCalledWith('chromatogramload', jasmine.any(Object));
           Ext.util.Observable.releaseCapture(ctrl.application);
       });
@@ -86,6 +90,24 @@ describe('Scans controller', function() {
             msg: 'Failed to load chromatogram from server',
             sourceMethod : 'loadChromatogramCallback', sourceClass : 'Esc.magmaweb.controller.Scans'
         });
+      });
+
+      it('when has a single scan then hide chromatogram', function() {
+          spyOn(mocked_chromatogram, 'setLoading');
+          spyOn(mocked_chromatogram, 'setData');
+          spyOn(ctrl, 'resetScans');
+    	  var mocked_panel = jasmine.createSpyObj('panel', ['hide']);
+    	  spyOn(ctrl, 'getChromatogramPanel').andReturn(mocked_panel);
+          var f = { callback: function() {} };
+          spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+          Ext.util.Observable.capture(ctrl.application, f.callback);
+
+          var data = { scans:[1], cutoff:null };
+          ctrl.loadChromatogramCallback(data);
+
+          expect(mocked_panel.hide).toHaveBeenCalledWith();
+          expect(f.callback).toHaveBeenCalledWith('chromatogramload', jasmine.any(Object));
+          Ext.util.Observable.releaseCapture(ctrl.application);
       });
   });
 
