@@ -1,3 +1,7 @@
+"""Module for authentication, authorization.
+
+Contains db schema for users and jobs.
+"""
 import uuid
 import datetime
 import bcrypt
@@ -24,11 +28,10 @@ DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 
 Base = declarative_base()
 
-
 def init_user_db(engine, create=True, fill=True):
     """Binds engine with DBSession and Mappings.
 
-    'engine' is a :class:sqlalchemy.engine.base.Engine .
+    'engine' is a :class:`sqlalchemy.engine.base.Engine`.
     Set 'create' to False to skip createing tables.
     Set 'fill' to False to skipp adding 'jobmanager' user.
     """
@@ -99,12 +102,12 @@ class User(Base):
 
     @classmethod
     def by_id(cls, userid):
-        """Fetch :class:User by `userid`"""
+        """Fetch :class:`User` by `userid`"""
         return DBSession().query(cls).get(userid)
 
     @classmethod
     def add(cls, user):
-        """Adds :class:User to db"""
+        """Adds :class:`User` to db"""
         DBSession().add(user)
 
 
@@ -138,12 +141,12 @@ class JobMeta(Base):
 
     @classmethod
     def by_id(cls, jobid):
-        """Fetch :class:JobMeta by `jobid`"""
+        """Fetch :class:`JobMeta` by `jobid`"""
         return DBSession().query(cls).get(jobid)
 
     @classmethod
     def add(cls, jobmeta):
-        """Adds :class:JobMeta to db"""
+        """Adds :class:`JobMeta` to db"""
         DBSession().add(jobmeta)
 
 
@@ -169,7 +172,7 @@ class RootFactory(object):
         self.request.extjsroot = self.request.static_url(extjsroot)
 
     def user(self):
-        """Adds :class:User as request.user
+        """Adds :class:`User` as request.user
 
         Returns None when there is no authenticatied userid or
         if user is not found in user db
@@ -187,7 +190,7 @@ class RootFactory(object):
 
 
 class JobIdFactory(RootFactory):
-    """Context factory which creates :class:magmaweb.job.Job
+    """Context factory which creates :class:`magmaweb.job.Job`
     as context of request
     """
     def __init__(self, request):

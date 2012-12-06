@@ -42,7 +42,9 @@ jobfactory.init_script = . /home/stefanv/workspace/MAGMaJob/env2/bin/activate
 use = egg:waitress#main
 host = 0.0.0.0
 port = 6543
+
 # toggle gunicorn as server
+#[server:main]
 #use = egg:gunicorn#main
 #host = 0.0.0.0
 #port = 6543
@@ -58,6 +60,13 @@ use = egg:Paste#urlmap
 
 [filter:gzip]
 use = egg:Paste#gzip
+
+[uwsgi]
+socket = /tmp/magma.uwsgi.sock
+master = true
+processes = 4
+chmod = 666
+enable-threads = true
 
 # Begin logging configuration
 

@@ -1,3 +1,5 @@
+"""Module for job submission and job data alteration/retrieval
+"""
 import uuid
 import os
 import csv
@@ -316,6 +318,7 @@ class JobQuery(object):
 
         If ``has_ms_data`` is True then
             :meth:`~magmaweb.job.JobQuery.annotate` will be called.
+
         If ``from_subset`` is True then metids are read from stdin
         """
         schema = colander.SchemaNode(colander.Mapping())
@@ -638,7 +641,7 @@ class JobFactory(object):
         """Returns new Job which has copy of 'job's database.
 
         ``job``
-            :class:Job job to clone
+            :class:`Job` job to clone
 
         ``owner``
             User id of owner
@@ -740,14 +743,14 @@ class Job(object):
     def __init__(self, meta, dir, db=None):
         """
         meta
-            :class:magmaweb.user.JobMeta instance.
+            :class:`magmaweb.user.JobMeta` instance.
             For owner, parent etc.
 
         dir
             Directory where input and output files reside
 
         db
-            :class:JobDb instance
+            :class:`JobDb` instance
         """
         self.dir = dir
         self.meta = meta
@@ -757,13 +760,13 @@ class Job(object):
 
     @property
     def id(self):
-        """Identifier of the job, is a :class:uuid.UUID"""
+        """Identifier of the job, is a :class:`uuid.UUID`"""
         return self.meta.jobid
 
     @property
     def __name__(self):
         """Same as id and as lookup key
-        using :class:magmaweb.user.JobIdFactory
+        using :class:`magmaweb.user.JobIdFactory`
         """
         return str(self.id)
 
@@ -1142,13 +1145,13 @@ class JobDb(object):
         return chromatogram
 
     def chromatogram(self):
-        """Returns dict with scans key with list of dicts with
-         - id
-         - rt
-         - basepeakintensity
-        keys for each lvl1 scan
+        """Returns dict with `cutoff` key with ms_intensity_cutoff and
+        `scans` key which is a list of all lvl1 scans.
 
-        and cutoff key with ms_intensity_cutoff
+        Each scan is a dict with:
+            * id, scan identifier
+            * rt, retention time
+            * intensity
         """
         scans = []
 
@@ -1222,24 +1225,23 @@ class JobDb(object):
 
     def fragments(self, scanid, metid, node):
         """Returns fragments of a metabolite on a scan.
+
         When node is not set then returns metabolites and its lvl2 fragments.
+
         When node is set then returns children fragments as list
-            which have ``node`` as parent fragment.
+        which have ``node`` as parent fragment.
 
         Can be used in a Extjs.data.TreeStore if jsonified.
 
-        ``scanid``
-            Fragments on scan with this identifier
+        Parameters:
 
-        ``metid``
-            Fragments of metabolite with this identifier
-
-        ``node``
-            The fragment identifier to fetch children fragments for.
+        * ``scanid``, Fragments on scan with this identifier
+        * ``metid``, Fragments of metabolite with this identifier
+        * ``node``, The fragment identifier to fetch children fragments for.
             Use 'root' for root node.
 
         Raises FragmentNotFound when no fragment is found
-            with the given scanid/metid combination
+        with the given scanid/metid combination
         """
         def q():
             return self.session.query(Fragment,

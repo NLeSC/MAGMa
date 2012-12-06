@@ -1,3 +1,4 @@
+"""Module with remote procedure calls views for the magma web application"""
 import urllib2
 import json
 from pyramid.view import view_config, view_defaults
