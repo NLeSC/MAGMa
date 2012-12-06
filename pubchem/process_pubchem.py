@@ -112,6 +112,9 @@ while not ready:
       while line != 'M  END\n' and line != '':
          line=sdfile.readline()
          record.append(line)
+         if line[:6]=='M  ISO':
+             skip=True
+             print 'Skipped isotopically labeled:',record[0][:-1]
       while line != "$$$$\n" and line != "":
          line=sdfile.readline()
          if line == "> <PUBCHEM_MONOISOTOPIC_WEIGHT>\n":
