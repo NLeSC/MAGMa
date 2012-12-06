@@ -60,7 +60,9 @@ Otherwise the job has to be registered manually.
 .. code-block:: python
 
    from magmaweb.user import JobMeta
-   job = JobMeta('00000000-eeee-0000-eeee-000000000000', 'stefanv2', description=u'Same as run[0].description', ms_filename='Same as run[0].ms_filename')
+   job = JobMeta('00000000-eeee-0000-eeee-000000000000', 'stefanv2',
+                 description=u'Same as run[0].description',
+                 ms_filename='Same as run[0].ms_filename')
    JobMeta.add(job)
    commit()
 

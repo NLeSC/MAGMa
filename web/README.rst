@@ -4,8 +4,8 @@ By Stefan Verhoeven, Lars Ridder and Marijn Sanders.
 
 MAGMaWeb is the web application to start new MAGMa calculations and view the results.
 
-It's a web application with the server-side written in Python using the Pyramid web framework
-and the client-side is written in ExtJS.
+It's a web application with the server-side written in `Python <http://www.python.org>`_ using the `Pyramid web framework <http://www.pylonsproject.org>`_
+and the client-side is written in `ExtJS <http://www.sencha.com/products/extjs>`_.
 
 Development installation
 ========================
@@ -33,7 +33,7 @@ Goto http://localhost:6543/magma
 Production installation
 =======================
 
-Additional to the `Development installation`_ to make application more robust/faster.
+Additional to the `Development installation`_ to make application more complete/robust/faster.
 
 * `Minimize js`_
 * Configure reverse http proxy webserver like `nginx`_ to host static content
@@ -44,7 +44,12 @@ Additional to the `Development installation`_ to make application more robust/fa
 nginx
 -----
 
-sudo apt-get install nginx-full
+`nginx web server <http://www.nginx.org>`_ is an open source Web server and a reverse proxy server for HTTP,
+ SMTP, POP3 and IMAP protocols, with a strong focus on high concurrency, performance and low memory usage.
+
+.. code-block:: bash
+
+   sudo apt-get install nginx-full
 
 Edit /etc/nginx/sites-enabled/default to:
 
@@ -84,7 +89,7 @@ Edit /etc/nginx/sites-enabled/default to:
 gunicorn
 --------
 
-`Gunicorn <http://gunicorn.org/>`_ is a Python WSGI HTTP Server for UNIX.
+`Gunicorn wsgi server <http://gunicorn.org/>`_ is a Python WSGI HTTP Server for UNIX.
 
 Edit `development.ini` file by commenting out the `server:main` section with `waitress`.
 And remove comment in-front of the `server:main` section with `gunicorn`.
@@ -99,7 +104,7 @@ Then start gunicorn with:
 uWSGI
 -----
 
-`uWSGI <http://projects.unbit.it/uwsgi/>`_  is a fast,
+`uWSGI wsgi server<http://projects.unbit.it/uwsgi/>`_  is a fast,
 self-healing and developer/sysadmin-friendly application container server coded in pure C.
 
 The `HttpUwsgiModule <http://wiki.nginx.org/HttpUwsgiModule>`_ is required.
@@ -233,6 +238,7 @@ Python documentation generation with
 
 .. code-block:: bash
 
+   pip install sphinx
    cd docs
    make html
 
