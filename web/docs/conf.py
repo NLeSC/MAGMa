@@ -26,7 +26,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(__file__, "..", "..")))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx', 'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.viewcode']
+extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.intersphinx',
+              'sphinx.ext.todo',
+              'sphinx.ext.coverage',
+              'sphinx.ext.viewcode']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -244,4 +248,8 @@ texinfo_documents = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/': None}
+intersphinx_mapping = {'http://docs.python.org/': None,
+                       'colander': ('http://python.readthedocs.org/en/latest/', None),
+                       'pyramid': ('http://pyramid.readthedocs.org/en/latest/', None),
+                       'sqlalchemy': ('http://sqlalchemy.readthedocs.org/en/latest/', None),
+                       }
