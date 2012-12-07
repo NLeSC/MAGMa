@@ -42,12 +42,6 @@ public class JobResourceTest extends TestCase {
 		resource.setBroker(mockedbrokerfactory);
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
-		GAT.end();
-		super.tearDown();
-	}
-
 	@Test
 	public void testSubmitJob() throws Exception {
 		Job mockedjob = mock(Job.class);
@@ -70,7 +64,6 @@ public class JobResourceTest extends TestCase {
 		assertEquals("12345", out.jobid);
 		verify(mockedbroker).submitJob(any(JobDescription.class),
 				any(JobStateListener.class), eq("job.status"));
-		GAT.end();
 		jobdirfile.recursivelyDeleteDirectory();
 	}
 }
