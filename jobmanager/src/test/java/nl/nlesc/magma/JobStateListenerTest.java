@@ -29,11 +29,6 @@ public class JobStateListenerTest extends TestCase {
 		status_cb_url = new URI("http://example.com/status/" + jobid + ".json");
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
-		super.tearDown();
-	}
-
 	@Test
 	public void testJobStateListener() throws IOException {
 		JobStateListener listener = new JobStateListener(status_cb_url);

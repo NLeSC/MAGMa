@@ -35,7 +35,7 @@ Production installation
 
 Additional to the `Development installation`_ to make application more complete/robust/faster.
 
-* `Minimize js`_
+* `Minimize javscript`_
 * Configure reverse http proxy webserver like `nginx`_ to host static content
 * Use a faster wsgi python server like `gunicorn`_ or `uWSGI`_
 * Install :ref:`job manager <manager>` or `docs/manager.rst <docs/manager.rst>`_ to perform calculations
@@ -137,12 +137,12 @@ Then start uWSGI with:
    pip install uwsgi
    uwsgi -H env --ini-paste-logged development.ini
 
-Minimize js
------------
+Minimize javascript
+-------------------
 
 Install Sencha SDK tools by following instructions at http://www.sencha.com/products/sencha-cmd .
 
-Then concatenate and compress with:
+Then concatenate and compress javascript with:
 
 .. code-block:: bash
 
@@ -221,6 +221,9 @@ loader2jsb3.pl looks like:
 Running tests
 =============
 
+Python
+------
+
 Python tests can be run with:
 
 .. code-block:: bash
@@ -228,19 +231,29 @@ Python tests can be run with:
    pip install nose coverage
    nosetests
 
+Javascript
+----------
+
 The ExtJS tests can be run by hosting the `web` directory in a web server (like apache or nginx) and
 opening `magmaweb/tests/js/SpecRunner.html` and `magmaweb/tests/js/app/run-tests.html` in a web-browser.
 
 Generate documentation
 ======================
 
-Python documentation generation with
+Python
+------
+
+Generate Python documentation with
 
 .. code-block:: bash
 
    pip install sphinx
    cd docs
    make html
+   firefox _build/html/index.html
+
+Javascript
+----------
 
 Javascript documentation generation with JSDuck.
 See https://github.com/senchalabs/jsduck
@@ -250,3 +263,4 @@ See https://github.com/senchalabs/jsduck
    jsduck magmaweb/static/ext-4.1.1a/src magmaweb/static/ext-4.1.1a/examples/ux \
    magmaweb/static/d3/d3.v2.js magmaweb/static/esc magmaweb/static/app --builtin-classes \
    --output jsdoc --images magmaweb/static/ext-4.1.1a/docs/images
+   firefox jsdoc/index.html

@@ -1,6 +1,7 @@
 import os
 from setuptools import setup, find_packages
 from setuptools.extension import Extension
+import numpy as np
 
 here = os.path.abspath(os.path.dirname(__file__))
 try:
@@ -43,4 +44,5 @@ setup(
     },
     cmdclass=cmdclass,
     ext_modules=ext_modules,
+    include_dirs=[np.get_include()],
 )

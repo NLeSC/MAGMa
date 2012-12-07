@@ -1,18 +1,8 @@
-Requirements
-------------
-
-Besides maven dependencies requires:
-
-- JavaGAT jars in local maven repository, see pom.xml for commands
-- JavaGAT adaptors in lib/adaptors directory
-- Magma program tarball for runnning jobs on grid.sara.nl
-
-
 Wish list
----------
+=========
 
 Stage application on lfc
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 Now application tarball is submitted with each job.
 The tarball is uploaded from localhost to compute node via wms server using input sandbox.
@@ -24,7 +14,7 @@ Requires a new endpoint for registration of applications.
 Application script needs to be prefixed with tarball staging.
 
 Stage input/output data on lfc
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------
 
 Now data for job is passed via jdl sandboxes, which uses wms server as staging area.
 The sandbox is meant for small files (<20Mb).
@@ -37,11 +27,9 @@ When job is completed the output data needs to be copied from lfc location to lo
 Application script needs to be surrounded with input download and output upload.
 
 Use pilot job to reduce queue time
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------
 
 Time between job submission and execution using glite-wms-job-submit can be >30s.
 
 Using a pilot job we have reserved compute nodes waiting for jobs, reducing the overhead of glite scheduling.
 Pilot job will increase number of moving parts (manager, advert, pilot agent).
-
-

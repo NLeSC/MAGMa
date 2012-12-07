@@ -5,14 +5,12 @@ The eMetabolomics project is funded by the Netherlands eScience Center and is ca
 
 Homepage: http://www.emetabolomics.org
 
-MAGMa stands for **M**s **A**nnotation based on in silico **G**enerated **M**et**a**bolites. 
+MAGMa stands for Ms Annotation based on in silico Generated Metabolites.
 
-Subprojects:
+Sub projects:
 
-- Job - Runs MAGMa calculation
-- JobManager - Webservice to execute jobs
-- Web - Web application to start jobs and view results
-- emetabolomics_site - The www.emetabolomics.org website
+- emetabolomics_site - The http://www.emetabolomics.org website
+- job - Runs MAGMa calculation
+- jobmanager - Webservice to execute jobs
 - pubchem - Processing of pubchem database, used to find mass candidates
-
-
+- web - Web application to start jobs and view results
