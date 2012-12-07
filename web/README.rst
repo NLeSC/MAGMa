@@ -11,7 +11,7 @@ Development installation
 ========================
 
 1. Download ExtJs at http://sencha.com/products/extjs and unzip in `web/magmaweb/static`.
-2. Create users and register jobs see :ref:`User management <user>`.
+2. Create users and register jobs see :ref:`User management <user>` or `docs/user.rst <docs/user.rst>`_.
 3. Install MAGMa web and it's dependencies
 
 .. code-block:: bash
@@ -38,7 +38,7 @@ Additional to the `Development installation`_ to make application more complete/
 * `Minimize js`_
 * Configure reverse http proxy webserver like `nginx`_ to host static content
 * Use a faster wsgi python server like `gunicorn`_ or `uWSGI`_
-* Install :ref:`job manager <manager>` to perform calculations
+* Install :ref:`job manager <manager>` or `docs/manager.rst <docs/manager.rst>`_ to perform calculations
 * (Optionally) Make ExtJS installation smaller by removing it's `docs`, `builds` directories
 
 nginx
