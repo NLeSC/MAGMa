@@ -38,7 +38,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
         beforeselect: this.beforeSelect,
         metabolize: this.showMetabolizeStructureForm
       },
-      'metabolitelist component[action=pagesize]': {
+      'metabolitelist component[action=pagesizeCombo]': {
         select: this.onPageSizeChange
       },
       'metabolitepanel component[action=download]': {
