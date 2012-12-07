@@ -6,12 +6,17 @@
 Welcome to MAGMaWeb's documentation!
 ====================================
 
-Contents:
+.. include:: ../README.rst
+
+API
+===
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
-   api
+   Job Manager <manager>
+   User management <user>
+   API Documentation <api>
 
 Indices and tables
 ==================
