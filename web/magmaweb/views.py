@@ -1,3 +1,4 @@
+"""Module with views for the magma web application"""
 import json
 from pyramid.response import Response
 from pyramid.view import forbidden_view_config
@@ -287,7 +288,7 @@ class JobViews(object):
 
     @view_config(route_name='metabolites.csv')
     def metabolitescsv(self):
-        """Same as metabolitesjson(), but returns csv file
+        """Same as :func:`metabolitesjson`, but returns csv file
 
         Additional request.params:
           `cols`
@@ -307,7 +308,7 @@ class JobViews(object):
 
     @view_config(route_name='metabolites.sdf')
     def metabolitessdf(self):
-        """Same as metabolitesjson(), but returns sdf file
+        """Same as :func:`metabolitesjson`, but returns sdf file
 
         Additional request.params:
           `cols`

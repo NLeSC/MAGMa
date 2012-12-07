@@ -4,7 +4,7 @@ import sys
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.txt')).read()
+README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = ['pyramid',
@@ -37,8 +37,8 @@ setup(name='MAGMaWeb',
                    ],
       author='Stefan Verhoeven',
       author_email='s.verhoeven@esciencecenter.nl',
-      url='http://www.esciencecenter.nl',
-      keywords='web wsgi bfg pylons pyramid',
+      url='http://www.emetabolomics.org',
+      keywords='web wsgi bfg pylons pyramid cheminformatics',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
