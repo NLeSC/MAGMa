@@ -18,7 +18,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         allowBlank: false,
         fieldLabel: 'Format',
         name: 'ms_data_format',
-        value: 'tree'
+        value: 'mzxml'
     }, {
         xtype : 'textarea',
         name : 'ms_data',
@@ -44,7 +44,8 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
     	layout: 'hbox',
     	items: [{
         	xtype: 'button',
-	    	text: 'Load example',
+	    	text: 'Load chlorogenic acid example',
+			tooltip: 'Loads chlorogenic acid example ms data set and configuration which gives well annotated result',
 	    	action: 'loadmsdataexample'
 	    }, {
             xtype : 'displayfield',

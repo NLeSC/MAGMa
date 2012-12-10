@@ -154,6 +154,17 @@ Ext.onReady(function() {
 	      waitMsg: 'Fetching example settings'
 	  });
   });
+  // change settings when tree ms data format is chosen.
+  var ms_data_format_combo = form.down('component[name=ms_data_format]');
+  ms_data_format_combo.addListener('change', function(c, v) {
+	if (value == 'tree') {
+		form.setValues({
+		    'ms_intensity_cutoff': 0,
+		    'msms_intensity_cutoff': 0,
+		    'abs_peak_cutoff': 0
+		});
+	}
+  });
 
   var header = {
     border: false,
