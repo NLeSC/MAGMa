@@ -404,7 +404,7 @@ class JobQuery(object):
 
         * precursor_mz_precision
         * mz_precision
-		* mz_precsion_abs
+        * mz_precsion_abs
         * ms_intensity_cutoff
         * msms_intensity_cutoff
         * ionisation_mode
@@ -477,8 +477,8 @@ class JobQuery(object):
             skip_fragmentation=False,
             ms_intensity_cutoff=1000000.0,
             msms_intensity_cutoff=0.1,
-            mz_precision=5
-			mz_precsion_abs=0.001,
+            mz_precision=5.0,
+            mz_precision_abs=0.001,
             use_all_peaks=False,
             abs_peak_cutoff=1000,
             rel_peak_cutoff=0.01,
