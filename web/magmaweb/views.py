@@ -561,6 +561,8 @@ class JobViews(object):
                 runinfo['msms_intensity_cutoff'] = r.msms_intensity_cutoff
             if r.mz_precision:
                 runinfo['mz_precision'] = r.mz_precision
+            if r.mz_precision_abs:
+                runinfo['mz_precision_abs'] = r.mz_precision_abs
             if r.use_all_peaks:
                 runinfo['use_all_peaks'] = r.use_all_peaks
             if r.abs_peak_cutoff:
