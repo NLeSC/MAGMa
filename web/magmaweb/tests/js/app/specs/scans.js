@@ -1,6 +1,8 @@
 describe('Scans controller', function() {
   var ctrl = null;
   var mocked_chromatogram = null;
+  var mocked_form_panel = null;
+  var mocked_form = null;
 
   beforeEach(function() {
     if (!ctrl) {
@@ -20,6 +22,17 @@ describe('Scans controller', function() {
       setZoom: function() {}
     };
     spyOn(ctrl, 'getChromatogram').andReturn(mocked_chromatogram);
+	mocked_form = {
+		submit: function() {},
+		isValid: function() { return true; },
+		load: function() {}
+	};
+	mocked_form_panel = {
+		setDisabledAnnotateFieldset: function() {},
+		setDefaults: function() {},
+		getForm: function() { return mocked_form; }
+	};
+	spyOn(ctrl, 'getUploadForm').andReturn(mocked_form_panel);
   });
 
   it('onLaunch', function() {
@@ -383,19 +396,16 @@ describe('Scans controller', function() {
 
   it('showUploadForm', function() {
       ctrl.hasStructures = false;
-      var addform = {
-        setDisabledAnnotateFieldset: function() {},
-        loadDefaults: function() {}
-      };
-      spyOn(addform, 'setDisabledAnnotateFieldset');
-      spyOn(ctrl, 'getUploadForm').andReturn(addform);
+      spyOn(mocked_form_panel, 'setDisabledAnnotateFieldset');
+	  spyOn(mocked_form_panel, 'loadDefaults');
       var panel = { setActiveItem: function() {} };
       spyOn(panel, 'setActiveItem');
       spyOn(ctrl, 'getChromatogramPanel').andReturn(panel);
 
       ctrl.showUploadForm();
 
-      expect(addform.setDisabledAnnotateFieldset).toHaveBeenCalledWith(true);
+      expect(mocked_form_panel.setDisabledAnnotateFieldset).toHaveBeenCalledWith(true);
+	  expect(mocked_form_panel.loadDefaults).toHaveBeenCalledWith('data/runinfo.json');
       expect(panel.setActiveItem).toHaveBeenCalledWith(1);
   });
 
@@ -410,17 +420,13 @@ describe('Scans controller', function() {
   });
 
   it('uploadHandler', function() {
-      var form = {
-          isValid: function() { return true; },
-          submit: function() {}
-      };
-      spyOn(form, 'submit');
-      var panel = { getForm: function() { return form; } };
-      spyOn(ctrl, 'getUploadForm').andReturn(panel);
-
+	  spyOn(mocked_form, 'isValid');
+      spyOn(mocked_form, 'submit');
+	  
       ctrl.uploadHandler();
 
-      expect(form.submit).toHaveBeenCalledWith({
+	  expect(mocked_form.isValid).toHaveBeenCalledWith();
+      expect(mocked_form.submit).toHaveBeenCalledWith({
           url: '/rpc/'+Application.jobid+'/add_ms_data',
           submitEmptyText : false,
           waitMsg: jasmine.any(String),
@@ -484,10 +490,7 @@ describe('Scans controller', function() {
 
   it('loadExample', function() {
 	  spyOn(ctrl.application, 'runInfoUrl').andReturn('http://example.com/defaults.json');
-      var form = { load: function() {} };
-      spyOn(form, 'load');
-      var panel = { getForm: function() { return form; } };
-      spyOn(ctrl, 'getUploadForm').andReturn(panel);
+      spyOn(mocked_form, 'load');
 
 	  ctrl.loadExample();
 
@@ -497,6 +500,29 @@ describe('Scans controller', function() {
 	      waitMsg: 'Fetching example settings',
 	      failure: jasmine.any(Function)
 	  };
-	  expect(form.load).toHaveBeenCalledWith(expected);
+	  expect(mocked_form.load).toHaveBeenCalledWith(expected);
+  });
+  
+  describe('changeMsDataFormat', function() {
+	it('tree', function() {
+		spyOn(mocked_form, 'setValues');
+		
+		ctrl.changeMsDataFormat(null, 'tree');
+		
+		filter_off = {
+			'ms_intensity_cutoff': 0,
+		    'msms_intensity_cutoff': 0,
+		    'abs_peak_cutoff': 0
+		};
+		expect(mocked_form.setValues).toHaveBeenCalledWith(filter_off);
+	});
+	
+	it('non-tree', function() {
+		spyOn(mocked_form, 'setValues');
+		
+		ctrl.changeMsDataFormat(null, 'mzxml');
+		
+		expect(mocked_form.setValues).not.toHaveBeenCalled();
+	});
   });
 });
