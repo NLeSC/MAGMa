@@ -123,6 +123,8 @@ class JobQuery(object):
         schema.add(colander.SchemaNode(colander.Float(),
                                        name='mz_precision'))
         schema.add(colander.SchemaNode(colander.Float(),
+                                       name='mz_precision_abs'))
+        schema.add(colander.SchemaNode(colander.Float(),
                                        name='ms_intensity_cutoff'))
         schema.add(colander.SchemaNode(colander.Float(),
                                        name='msms_intensity_cutoff'))
@@ -402,6 +404,7 @@ class JobQuery(object):
 
         * precursor_mz_precision
         * mz_precision
+        * mz_precsion_abs
         * ms_intensity_cutoff
         * msms_intensity_cutoff
         * ionisation_mode
@@ -416,9 +419,10 @@ class JobQuery(object):
         self._addAnnotateSchema(schema)
         params = schema.deserialize(params)
 
-        script = "{{magma}} annotate -p '{mz_precision}'"
-        script += " -c '{ms_intensity_cutoff}' -d '{msms_intensity_cutoff}' "
-        script += "-i '{ionisation_mode}' -b '{max_broken_bonds}'"
+        script = "{{magma}} annotate"
+        script += " -p '{mz_precision}' -q '{mz_precision_abs}'"
+        script += " -c '{ms_intensity_cutoff}' -d '{msms_intensity_cutoff}'"
+        script += " -i '{ionisation_mode}' -b '{max_broken_bonds}'"
         script += " --precursor_mz_precision '{precursor_mz_precision}' "
         pmzp = params['precursor_mz_precision']
         ms_ic = params['ms_intensity_cutoff']
@@ -426,6 +430,7 @@ class JobQuery(object):
         script_substitutions = {
             'precursor_mz_precision': self.escape(pmzp),
             'mz_precision': self.escape(params['mz_precision']),
+            'mz_precision_abs': self.escape(params['mz_precision_abs']),
             'ms_intensity_cutoff': self.escape(ms_ic),
             'msms_intensity_cutoff': self.escape(msms_ic),
             'ionisation_mode': self.escape(params['ionisation_mode']),
@@ -472,7 +477,8 @@ class JobQuery(object):
             skip_fragmentation=False,
             ms_intensity_cutoff=1000000.0,
             msms_intensity_cutoff=0.1,
-            mz_precision=0.001,
+            mz_precision=5.0,
+            mz_precision_abs=0.001,
             use_all_peaks=False,
             abs_peak_cutoff=1000,
             rel_peak_cutoff=0.01,
