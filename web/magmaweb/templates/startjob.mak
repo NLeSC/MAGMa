@@ -156,9 +156,9 @@ Ext.onReady(function() {
   });
   // change settings when tree ms data format is chosen.
   var ms_data_format_combo = form.down('component[name=ms_data_format]');
-  ms_data_format_combo.addListener('change', function(c, v) {
+  ms_data_format_combo.addListener('change', function(field, value) {
 	if (value == 'tree') {
-		form.setValues({
+		form.getForm().setValues({
 		    'ms_intensity_cutoff': 0,
 		    'msms_intensity_cutoff': 0,
 		    'abs_peak_cutoff': 0

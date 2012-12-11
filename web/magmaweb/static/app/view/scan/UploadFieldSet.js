@@ -32,8 +32,6 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
     }, {
         name: 'ms_data_file',
         xtype: 'filefield',
-
-        allowBlank: false,
         emptyText: 'Upload MS/MS data file',
         width: 300
     }, {
