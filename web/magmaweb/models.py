@@ -189,8 +189,10 @@ class Run(Base):
     ms_intensity_cutoff = Column(Float)
     # Ratio of basepeak intensity
     msms_intensity_cutoff = Column(Float)
-    # precision for matching a metabolite mim to m/z of a peak
+    # precision for matching a metabolite mim to m/z of a peak (in ppm)
     mz_precision = Column(Float)
+    # precision for matching a metabolite mim to m/z of a peak (in Da)
+    mz_precision_abs = Column(Float)
     # precision for matching precursor mz with peak mz in parent scan
     precursor_mz_precision = Column(Float)
     use_all_peaks = Column(Boolean)
