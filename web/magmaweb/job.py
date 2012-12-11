@@ -40,6 +40,10 @@ class JobNotFound(Exception):
         self.jobid = jobid
 
 
+class JobSubmissionError(IOError):
+    """Raised when a job fails to be submitted"""
+
+
 def make_job_factory(params):
     """Returns :class:`JobFactory` instance based on ``params`` dict
 
@@ -821,10 +825,10 @@ class JobFactory(object):
 
         try:
             self.submitJob2Manager(body)
-        except urllib2.URLError as e:
+        except urllib2.URLError:
             jobmeta.state = 'SUBMISSION_ERROR'
             self._addJobMeta(jobmeta)
-            raise e
+            raise JobSubmissionError()
 
         jobmeta.state = 'INITIAL'
         self._addJobMeta(jobmeta)
