@@ -40,6 +40,10 @@ class JobNotFound(Exception):
         self.jobid = jobid
 
 
+class JobSubmissionError(IOError):
+    """Raised when a job fails to be submitted"""
+
+
 def make_job_factory(params):
     """Returns :class:`JobFactory` instance based on ``params`` dict
 
@@ -108,10 +112,10 @@ class JobQuery(object):
 
     def __repr__(self):
         """Return a printable representation."""
-        return "JobQuery({!r}, {!r}, {!r}, {!r})".format(self.id,
-                                                         self.dir,
-                                                         self.script,
-                                                         self.prestaged)
+        s = "JobQuery({!r}, {!r}, script={!r}, "
+        s += "prestaged={!r}, status_callback_url={!r})"
+        return s.format(self.id, self.dir, self.script,
+                        self.prestaged, self.status_callback_url)
 
     def escape(self, string):
         """ Replaces single quote with its html escape sequence"""
@@ -250,7 +254,8 @@ class JobQuery(object):
         ``params`` is a dict from which the following keys are used:
 
         * ms_data_format
-        * ms_data_file
+        * ms_data, string with MS data
+        * ms_data_file, file-like object with MS data
         * max_ms_level
         * abs_peak_cutoff
         * rel_peak_cutoff
@@ -258,13 +263,40 @@ class JobQuery(object):
         If ``has_metabolites`` is True then
             :meth:`~magmaweb.job.JobQuery.annotate` will be called.
 
+        If both ``ms_data`` and ``ms_data_file`` is filled then
+            ``ms_data`` is ignored.
         """
-        schema = colander.SchemaNode(colander.Mapping())
+        def textarea_or_file(node, value):
+            """Validator that either textarea or file upload is filled"""
+            if not(not value['ms_data'] is colander.null or
+                   not value['ms_data_file'] is colander.null):
+                error = 'Either ms_data or ms_data_file must be set'
+                exception = colander.Invalid(node)
+                exception.add(colander.Invalid(msdata_stringSchema, error))
+                exception.add(colander.Invalid(msdata_fileSchema, error))
+                raise exception
+
+        schema = colander.SchemaNode(colander.Mapping(),
+                                     validator=textarea_or_file)
+
+        valid_formats = colander.OneOf(['mzxml', 'tree'])
         schema.add(colander.SchemaNode(colander.String(),
-                                       validator=colander.OneOf(['mzxml']),
+                                       validator=valid_formats,
                                        name='ms_data_format'
                                        ))
-        schema.add(colander.SchemaNode(self.File(), name='ms_data_file'))
+
+        filled = colander.Length(min=1)
+        msdata_stringSchema = colander.SchemaNode(colander.String(),
+                                               validator=filled,
+                                               missing=colander.null,
+                                               name='ms_data')
+        schema.add(msdata_stringSchema)
+
+        msdata_fileSchema = colander.SchemaNode(self.File(),
+                                                missing=colander.null,
+                                                name='ms_data_file')
+        schema.add(msdata_fileSchema)
+
         schema.add(colander.SchemaNode(colander.Integer(),
                                        validator=colander.Range(min=0),
                                        name='max_ms_level'))
@@ -279,14 +311,17 @@ class JobQuery(object):
         params = schema.deserialize(params)
 
         msfile = file(os.path.join(self.dir, 'ms_data.dat'), 'w')
-        msf = params['ms_data_file'].file
-        msf.seek(0)
-        while 1:
-            data = msf.read(2 << 16)
-            if not data:
-                break
-            msfile.write(data)
-        msf.close()
+        if not params['ms_data_file'] is colander.null:
+            msf = params['ms_data_file'].file
+            msf.seek(0)
+            while 1:
+                data = msf.read(2 << 16)
+                if not data:
+                    break
+                msfile.write(data)
+            msf.close()
+        else:
+            msfile.write(params['ms_data'])
         msfile.close()
 
         script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}' "
@@ -468,8 +503,14 @@ class JobQuery(object):
         return allin.metabolize(params).annotate(params)
 
     @classmethod
-    def defaults(cls):
-        """Returns dictionary with default params"""
+    def defaults(cls, selection=None):
+        """Returns dictionary with default params
+
+        If selection=='example' then params for example are returned.
+        """
+        if selection == 'example':
+            return cls._example()
+
         return dict(
             n_reaction_steps=2,
             metabolism_types=['phase1', 'phase2'],
@@ -485,6 +526,60 @@ class JobQuery(object):
             max_ms_level=10,
             precursor_mz_precision=0.005,
             max_broken_bonds=4)
+
+    @classmethod
+    def _example(cls):
+        """Returns dictionary with params for example MS data set"""
+        example_tree = [
+            '353.087494: 69989984 (',
+            '    191.055756: 54674544 (',
+            '        85.029587: 2596121,',
+            '        93.034615: 1720164,',
+            '        109.029442: 917026,',
+            '        111.045067: 1104891 (',
+            '            81.034691: 28070,',
+            '            83.014069: 7618,',
+            '            83.050339: 25471,',
+            '            93.034599: 36300,',
+            '            96.021790: 8453',
+            '            ),',
+            '        127.039917: 2890439 (',
+            '            57.034718: 16911,',
+            '            81.034706: 41459,',
+            '            83.050301: 35131,',
+            '            85.029533: 236887,',
+            '            99.045074: 73742,',
+            '            109.029404: 78094',
+            '            ),',
+            '        171.029587: 905226,',
+            '        173.045212: 2285841 (',
+            '            71.013992: 27805,',
+            '            93.034569: 393710,',
+            '            111.008629: 26219,',
+            '            111.045029: 339595,',
+            '            137.024292: 27668,',
+            '            155.034653: 145773',
+            '            ),',
+            '        191.055725: 17000514',
+            '        ),',
+            '    353.087097: 4146696',
+            '    )'
+        ]
+        return dict(
+            ms_data="\n".join(example_tree),
+            ms_data_format='tree',
+            ionisation_mode=-1,
+            skip_fragmentation=False,
+            ms_intensity_cutoff=0,
+            msms_intensity_cutoff=0,
+            mz_precision=5,
+            mz_precision_abs=0,
+            use_all_peaks=False,
+            abs_peak_cutoff=1000,
+            rel_peak_cutoff=0.01,
+            max_ms_level=10,
+            precursor_mz_precision=0.005,
+            max_broken_bonds=3)
 
 
 class JobFactory(object):
@@ -689,10 +784,13 @@ class JobFactory(object):
         import logging
         logger = logging.getLogger('magmaweb')
         logger.info(request.data)
+        logger.info('to jobmanager at {}'.format(self.submit_url))
         return urllib2.urlopen(request)
 
     def submitQuery(self, query):
         """Writes job script to job dir and submits job to job manager
+        Changes the job state to 'INITIAL' or
+        'SUBMISSION_ERROR' if job submission fails.
 
         query is a :class:`JobQuery` object
 
@@ -700,7 +798,8 @@ class JobFactory(object):
         """
 
         # write job script into job dir
-        script = open(os.path.join(query.dir, self.script_fn), 'w')
+        script_fn = os.path.join(query.dir, self.script_fn)
+        script = open(script_fn, 'w')
         script.write(self.init_script)
         script.write("\n")  # hard to add newline in ini file so add it here
         script.write(query.script.format(db=self.db_fn, magma='magma'))
@@ -722,7 +821,17 @@ class JobFactory(object):
         if (self.tarball is not None):
             body['prestaged'].append(self.tarball)
 
-        self.submitJob2Manager(body)
+        jobmeta = self._getJobMeta(query.id)
+
+        try:
+            self.submitJob2Manager(body)
+        except urllib2.URLError:
+            jobmeta.state = 'SUBMISSION_ERROR'
+            self._addJobMeta(jobmeta)
+            raise JobSubmissionError()
+
+        jobmeta.state = 'INITIAL'
+        self._addJobMeta(jobmeta)
 
         return query.id
 
@@ -778,7 +887,8 @@ class Job(object):
 
         'status_callback_url' is the url to PUT status of job to.
         """
-        return JobQuery(self.id, self.dir, status_callback_url)
+        return JobQuery(self.id, self.dir,
+                        status_callback_url=status_callback_url)
 
     @property
     def description(self):

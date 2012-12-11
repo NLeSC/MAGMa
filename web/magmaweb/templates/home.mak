@@ -4,7 +4,7 @@
 <title>MAGMa - Ms Annotation based on in silico Generated Metabolites</title>
 <link rel="stylesheet"
     href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
-<script type="text/javascript" src="${request.extjsroot}/ext-all.js"></script>
+<script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
 <style type="text/css">
 .x-logo a {
   font-size: 40px;
@@ -44,7 +44,16 @@ Ext.Loader.setConfig({
   }
 });
 
+</script>
+## Comment out below for development or when running sencha build, every class is loaded when commented out
+<script type="text/javascript" src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script>
+<script type="text/javascript">
+
 Ext.require([
+  'Ext.container.ButtonGroup',
+  'Ext.toolbar.Spacer',
+  'Ext.container.Viewport',
+  'Ext.layout.container.Border',
   'Esc.magmaweb.view.scan.UploadFieldSet',
   'Esc.magmaweb.view.metabolite.AddFieldSet',
   'Esc.magmaweb.view.metabolite.MetabolizeFieldSet',
