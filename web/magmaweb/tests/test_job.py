@@ -416,6 +416,7 @@ class JobFactoryTestCase(unittest.TestCase):
                             'status_callback_url': status_cb_url
                             }
         self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
+        self.assertEqual(job.state, 'INITIAL')
 
     def test_submitQuery_with_tarball(self):
         self.factory.tarball = 'Magma-1.1.tar.gz'
@@ -443,6 +444,22 @@ class JobFactoryTestCase(unittest.TestCase):
                             'status_callback_url': status_cb_url
                             }
         self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
+        self.assertEqual(job.state, 'INITIAL')
+
+    def test_submitQuery_no_jobmanager(self):
+        from urllib2 import URLError
+        from magmaweb.job import JobSubmissionError
+        exc = URLError('[Errno 111] Connection refused')
+        self.factory.submitJob2Manager = Mock(side_effect=exc)
+        job = self.factory.fromScratch('bob')
+        jobquery = JobQuery(job.id, job.dir, "", [])
+        status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
+        jobquery.status_callback_url = status_cb_url
+
+        with self.assertRaises(JobSubmissionError):
+            self.factory.submitQuery(jobquery)
+
+        self.assertEqual(job.state, 'SUBMISSION_ERROR')
 
     @patch('urllib2.urlopen')
     def test_submitJob2Manager(self, ua):
@@ -1587,8 +1604,11 @@ class JobQueryTestCase(unittest.TestCase):
         self.assertNotEqual(job1, self.jobquery)
 
     def test_repr(self):
-        jq = JobQuery('x', 'y', 'z', [123])
-        self.assertEqual(jq.__repr__(), "JobQuery('x', 'y', 'z', [123])")
+        jq = JobQuery('x', 'y', script='z', prestaged=[123],
+                      status_callback_url='foo')
+        s = "JobQuery('x', 'y', script='z', prestaged=[123], "
+        s += "status_callback_url='foo')"
+        self.assertEqual(jq.__repr__(), s)
 
     def test_escape_single_quote(self):
         jq = JobQuery('x', '/y')
@@ -1611,6 +1631,59 @@ class JobQueryTestCase(unittest.TestCase):
                         max_broken_bonds=4
                         )
         self.assertDictEqual(expected, JobQuery.defaults())
+
+    def test_defaults_example(self):
+        example_tree = [
+            '353.087494: 69989984 (',
+            '    191.055756: 54674544 (',
+            '        85.029587: 2596121,',
+            '        93.034615: 1720164,',
+            '        109.029442: 917026,',
+            '        111.045067: 1104891 (',
+            '            81.034691: 28070,',
+            '            83.014069: 7618,',
+            '            83.050339: 25471,',
+            '            93.034599: 36300,',
+            '            96.021790: 8453',
+            '            ),',
+            '        127.039917: 2890439 (',
+            '            57.034718: 16911,',
+            '            81.034706: 41459,',
+            '            83.050301: 35131,',
+            '            85.029533: 236887,',
+            '            99.045074: 73742,',
+            '            109.029404: 78094',
+            '            ),',
+            '        171.029587: 905226,',
+            '        173.045212: 2285841 (',
+            '            71.013992: 27805,',
+            '            93.034569: 393710,',
+            '            111.008629: 26219,',
+            '            111.045029: 339595,',
+            '            137.024292: 27668,',
+            '            155.034653: 145773',
+            '            ),',
+            '        191.055725: 17000514',
+            '        ),',
+            '    353.087097: 4146696',
+            '    )'
+        ]
+        expected = dict(
+            ms_data="\n".join(example_tree),
+            ms_data_format='tree',
+            ionisation_mode=-1,
+            skip_fragmentation=False,
+            ms_intensity_cutoff=0,
+            msms_intensity_cutoff=0,
+            mz_precision=5,
+            mz_precision_abs=0,
+            use_all_peaks=False,
+            abs_peak_cutoff=1000,
+            rel_peak_cutoff=0.01,
+            max_ms_level=10,
+            precursor_mz_precision=0.005,
+            max_broken_bonds=3)
+        self.assertDictEqual(expected, JobQuery.defaults('example'))
 
 
 class JobQueryFileTestCase(unittest.TestCase):
@@ -1783,7 +1856,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         expected = {'structures': s, 'structures_file': sf}
         self.assertDictEqual(e.exception.asdict(), expected)
 
-    def test_with_string_and_file(self):
+    def test_with_structure_as_string_and_file(self):
         import tempfile
         from cgi import FieldStorage
         sfile = tempfile.TemporaryFile()
@@ -1803,7 +1876,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
 
 class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
 
-    def test_it(self):
+    def test_ms_data_as_file(self):
         import tempfile
         from cgi import FieldStorage
         msfile = tempfile.TemporaryFile()
@@ -1828,6 +1901,61 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                                      'script': script
                                      })
         self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
+
+    def test_ms_data_as_string(self):
+        params = {'ms_data_format': 'mzxml',
+                  'ms_data': 'foo',
+                  'max_ms_level': 3,
+                  'abs_peak_cutoff': 1000,
+                  'rel_peak_cutoff': 0.01
+                  }
+
+        query = self.jobquery.add_ms_data(params)
+
+        script = "{magma} read_ms_data --ms_data_format 'mzxml'"
+        script += " -l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': ['ms_data.dat'],
+                                     'script': script
+                                     })
+        self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
+
+    def test_without_ms_data(self):
+        params = {'ms_data_format': 'mzxml',
+                  'max_ms_level': 3,
+                  'abs_peak_cutoff': 1000,
+                  'rel_peak_cutoff': 0.01
+                  }
+        from colander import Invalid
+        with self.assertRaises(Invalid) as e:
+            self.jobquery.add_ms_data(params, False)
+
+        s = 'Either ms_data or ms_data_file must be set'
+        expected = {'ms_data': s, 'ms_data_file': s}
+        self.assertDictEqual(e.exception.asdict(), expected)
+
+    def test_with_ms_data_as_string_and_file(self):
+        import tempfile
+        from cgi import FieldStorage
+        msfile = tempfile.TemporaryFile()
+        msfile.write('foo')
+        msfile.flush()
+        msfield = FieldStorage()
+        msfield.file = msfile
+        params = {'ms_data_format': 'mzxml',
+                  'ms_data_file': msfield,
+                  'ms_data': 'bar',
+                  'max_ms_level': 3,
+                  'abs_peak_cutoff': 1000,
+                  'rel_peak_cutoff': 0.01
+                  }
+
+        self.jobquery.add_ms_data(params)
+
+        # File is kept and string is ignored
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
 
     def test_with_annotate(self):
@@ -1858,6 +1986,33 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         script += "-l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' {db}\n"
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': ['ms_data.dat'],
+                                     'script': script
+                                     })
+        self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
+
+    def test_with_tree_format(self):
+        import tempfile
+        from cgi import FieldStorage
+        msfile = tempfile.TemporaryFile()
+        msfile.write('foo')
+        msfile.flush()
+        msfield = FieldStorage()
+        msfield.file = msfile
+        params = {'ms_data_format': 'tree',
+                  'ms_data_file': msfield,
+                  'max_ms_level': 3,
+                  'abs_peak_cutoff': 1000,
+                  'rel_peak_cutoff': 0.01
+                  }
+
+        query = self.jobquery.add_ms_data(params)
+
+        script = "{magma} read_ms_data --ms_data_format 'tree'"
+        script += " -l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
         expected_query = JobQuery(**{'id': self.jobid,
                                      'dir': self.jobdir,
                                      'prestaged': ['ms_data.dat'],

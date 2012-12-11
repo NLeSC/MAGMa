@@ -65,7 +65,13 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       },
       'scanuploadform component[action=uploadmsdatacancel]': {
         click: this.showChromatogram
-      }
+      },
+      'scanuploadform component[action=loadmsdataexample]': {
+        click: this.loadExample
+      },
+	  'scanuploadform component[name=ms_data_format]': {
+	    change: this.changeMsDataFormat
+	  }
     });
 
     this.application.on('metaboliteload', this.setScansOfMetabolites, this);
@@ -377,5 +383,35 @@ Ext.define('Esc.magmaweb.controller.Scans', {
 	  }
 	  this.actionsMenu.hideUploadAction();
 	  // TODO change tooltip of gears tool
+  },
+  /**
+   * In MS Data upload forms loads the example data set.
+   */
+  loadExample: function() {
+	  var form = this.getUploadForm().getForm();
+	  var example_url = this.application.runInfoUrl()+'?selection=example';
+	  form.load({
+		  url: example_url,
+	      method: 'GET',
+	      waitMsg: 'Fetching example settings',
+	      failure: function(form, action) {
+              Ext.Error.raise(action.response.responseText);
+          }
+	  });
+  },
+  /**
+   * Called when MS data format is changed.
+   * When the 'tree' format is chosen the filtering is disabled.
+   * When a non-'tree' format is chosen filtering is left intact.
+   */
+  changeMsDataFormat: function(field, value) {
+      var form = this.getUploadForm().getForm();
+	  if (value == 'tree') {
+		  form.setValues({
+		      'ms_intensity_cutoff': 0,
+		      'msms_intensity_cutoff': 0,
+		      'abs_peak_cutoff': 0
+		  });
+	  }
   }
 });
