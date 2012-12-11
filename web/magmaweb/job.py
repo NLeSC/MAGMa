@@ -42,6 +42,10 @@ class JobNotFound(Exception):
         self.jobid = jobid
 
 
+class JobSubmissionError(IOError):
+    """Raised when a job fails to be submitted"""
+
+
 def make_job_factory(params):
     """Returns :class:`JobFactory` instance based on ``params`` dict
 
@@ -110,10 +114,10 @@ class JobQuery(object):
 
     def __repr__(self):
         """Return a printable representation."""
-        return "JobQuery({!r}, {!r}, {!r}, {!r})".format(self.id,
-                                                         self.dir,
-                                                         self.script,
-                                                         self.prestaged)
+        s = "JobQuery({!r}, {!r}, script={!r}, "
+        s += "prestaged={!r}, status_callback_url={!r})"
+        return s.format(self.id, self.dir, self.script,
+                        self.prestaged, self.status_callback_url)
 
     def escape(self, string):
         """ Replaces single quote with its html escape sequence"""
@@ -783,10 +787,13 @@ class JobFactory(object):
         import logging
         logger = logging.getLogger('magmaweb')
         logger.info(request.data)
+        logger.info('to jobmanager at {}'.format(self.submit_url))
         return urllib2.urlopen(request)
 
     def submitQuery(self, query):
         """Writes job script to job dir and submits job to job manager
+        Changes the job state to 'INITIAL' or
+        'SUBMISSION_ERROR' if job submission fails.
 
         query is a :class:`JobQuery` object
 
@@ -794,7 +801,8 @@ class JobFactory(object):
         """
 
         # write job script into job dir
-        script = open(os.path.join(query.dir, self.script_fn), 'w')
+        script_fn = os.path.join(query.dir, self.script_fn)
+        script = open(script_fn, 'w')
         script.write(self.init_script)
         script.write("\n")  # hard to add newline in ini file so add it here
         script.write(query.script.format(db=self.db_fn, magma='magma'))
@@ -816,7 +824,17 @@ class JobFactory(object):
         if (self.tarball is not None):
             body['prestaged'].append(self.tarball)
 
-        self.submitJob2Manager(body)
+        jobmeta = self._getJobMeta(query.id)
+
+        try:
+            self.submitJob2Manager(body)
+        except urllib2.URLError:
+            jobmeta.state = 'SUBMISSION_ERROR'
+            self._addJobMeta(jobmeta)
+            raise JobSubmissionError()
+
+        jobmeta.state = 'INITIAL'
+        self._addJobMeta(jobmeta)
 
         return query.id
 
@@ -872,7 +890,8 @@ class Job(object):
 
         'status_callback_url' is the url to PUT status of job to.
         """
-        return JobQuery(self.id, self.dir, status_callback_url)
+        return JobQuery(self.id, self.dir,
+                        status_callback_url=status_callback_url)
 
     @property
     def description(self):

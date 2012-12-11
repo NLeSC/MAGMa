@@ -146,8 +146,13 @@ class JobMeta(Base):
 
     @classmethod
     def add(cls, jobmeta):
-        """Adds :class:`JobMeta` to db"""
-        DBSession().add(jobmeta)
+        """Adds :class:JobMeta to db"""
+        session = DBSession()
+        session.add(jobmeta)
+        # commit is normally done at the end of request handling
+        # Exceptions cause transactions to be aborted
+        # so force commit here
+        session.flush()
 
 
 class RootFactory(object):
