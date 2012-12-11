@@ -416,6 +416,7 @@ class JobFactoryTestCase(unittest.TestCase):
                             'status_callback_url': status_cb_url
                             }
         self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
+        self.assertEqual(job.state, 'INITIAL')
 
     def test_submitQuery_with_tarball(self):
         self.factory.tarball = 'Magma-1.1.tar.gz'
@@ -443,6 +444,22 @@ class JobFactoryTestCase(unittest.TestCase):
                             'status_callback_url': status_cb_url
                             }
         self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
+        self.assertEqual(job.state, 'INITIAL')
+
+    def test_submitQuery_no_jobmanager(self):
+        from urllib2 import URLError
+        from magmaweb.job import JobSubmissionError
+        exc = URLError('[Errno 111] Connection refused')
+        self.factory.submitJob2Manager = Mock(side_effect=exc)
+        job = self.factory.fromScratch('bob')
+        jobquery = JobQuery(job.id, job.dir, "", [])
+        status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
+        jobquery.status_callback_url = status_cb_url
+
+        with self.assertRaises(JobSubmissionError):
+            self.factory.submitQuery(jobquery)
+
+        self.assertEqual(job.state, 'SUBMISSION_ERROR')
 
     @patch('urllib2.urlopen')
     def test_submitJob2Manager(self, ua):
@@ -1587,8 +1604,11 @@ class JobQueryTestCase(unittest.TestCase):
         self.assertNotEqual(job1, self.jobquery)
 
     def test_repr(self):
-        jq = JobQuery('x', 'y', 'z', [123])
-        self.assertEqual(jq.__repr__(), "JobQuery('x', 'y', 'z', [123])")
+        jq = JobQuery('x', 'y', script='z', prestaged=[123],
+                      status_callback_url='foo')
+        s = "JobQuery('x', 'y', script='z', prestaged=[123], "
+        s += "status_callback_url='foo')"
+        self.assertEqual(jq.__repr__(), s)
 
     def test_escape_single_quote(self):
         jq = JobQuery('x', '/y')

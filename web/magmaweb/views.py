@@ -4,13 +4,18 @@ from pyramid.response import Response
 from pyramid.view import forbidden_view_config
 from pyramid.view import view_config
 from pyramid.view import view_defaults
-from pyramid.httpexceptions import HTTPNotFound, HTTPFound
+from pyramid.httpexceptions import HTTPNotFound
+from pyramid.httpexceptions import HTTPFound
+from pyramid.httpexceptions import HTTPInternalServerError
 from pyramid.security import has_permission
 from pyramid.security import remember
 from pyramid.security import forget
 from pyramid.security import NO_PERMISSION_REQUIRED
+from colander import Invalid
 from magmaweb.job import make_job_factory
-from magmaweb.job import Job, JobQuery
+from magmaweb.job import Job
+from magmaweb.job import JobQuery
+from magmaweb.job import JobSubmissionError
 from magmaweb.user import User
 
 
@@ -38,14 +43,24 @@ class Views(object):
         return {'success': True,
                 'data': JobQuery.defaults(selection)}
 
-    @view_config(route_name='home', renderer='jsonhtml', request_method='POST')
+    @view_config(route_name='home', renderer='jsonhtml',
+                 request_method='POST', permission='view')
     def allinone(self):
         owner = self.request.user.userid
         job = self.job_factory.fromScratch(owner)
-        job.ms_filename = self.request.POST['ms_data_file'].filename
+        try:
+            job.ms_filename = self.request.POST['ms_data_file'].filename
+        except AttributeError:
+            job.ms_filename = 'Uploaded as text'
         status_url = self.request.route_url('status.json', jobid=job.id)
-        jobquery = job.jobquery(status_url).allinone(self.request.POST)
-        self.job_factory.submitQuery(jobquery)
+        jobquery = job.jobquery(status_url)
+        jobquery = jobquery.allinone(self.request.POST)
+        try:
+            self.job_factory.submitQuery(jobquery)
+        except JobSubmissionError:
+            body = {'success': False, 'msg': 'Unable to submit query'}
+            raise HTTPInternalServerError(body=json.dumps(body))
+
         return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='uploaddb', renderer='uploaddb.mak',
@@ -69,6 +84,14 @@ class Views(object):
         job = self.job_factory.fromScratch(owner)
         results = self.request.route_url('results', jobid=job.id)
         return HTTPFound(location=results)
+
+    @view_config(context=Invalid)
+    def failed_validation(self):
+        """Catches colander.Invalid exceptions
+        and returns a ExtJS form submission response
+        """
+        body = {'success': False, 'errors': self.request.exception.asdict()}
+        return HTTPInternalServerError(body=json.dumps(body))
 
     @view_config(route_name='workspace',
                  permission='view',

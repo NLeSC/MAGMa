@@ -18,7 +18,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         allowBlank: false,
         fieldLabel: 'Format',
         name: 'ms_data_format',
-        value: 'tree'
+        value: 'mzxml'
     }, {
         xtype : 'textarea',
         name : 'ms_data',
@@ -32,8 +32,6 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
     }, {
         name: 'ms_data_file',
         xtype: 'filefield',
-
-        allowBlank: false,
         emptyText: 'Upload MS/MS data file',
         width: 300
     }, {
@@ -44,7 +42,8 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
     	layout: 'hbox',
     	items: [{
         	xtype: 'button',
-	    	text: 'Load example',
+	    	text: 'Load chlorogenic acid example',
+			tooltip: 'Loads chlorogenic acid example ms data set and configuration which gives well annotated result',
 	    	action: 'loadmsdataexample'
 	    }, {
             xtype : 'displayfield',
@@ -65,10 +64,16 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
             minValue: 1,
             maxValue: 15,
             decimalPrecision: 0
-        },{
+        }, {
             xtype: 'numberfield',
             name: 'abs_peak_cutoff',
             fieldLabel: 'Absolute intensity threshold for storing peaks in database',
+            allowBlank: false,
+            decimalPrecision: 5
+        }, {
+            xtype: 'numberfield',
+            name: 'rel_peak_cutoff',
+            fieldLabel: 'Fraction of basepeak intensity threshold for storing peaks in database',
             allowBlank: false,
             decimalPrecision: 5
         }]
