@@ -47,7 +47,7 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         self.assertEqual(response, {})
 
-    def test_allinone(self):
+    def test_allinone_with_ms_data_as_file(self):
         from cgi import FieldStorage
         ms_file = FieldStorage()
         ms_file.filename = 'c:\bla\bla\F1234.mzxml'
@@ -68,6 +68,26 @@ class ViewsTestCase(AbstractViewsTestCase):
         views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
         self.assertEqual(job.ms_filename, 'c:\bla\bla\F1234.mzxml')
+        job.jobquery.assert_called_with('http://example.com/status/foo.json')
+
+    def test_allinone_with_ms_data_as_text(self):
+        post = {'ms_data': 'somexml', 'ms_data_file': ''}
+        request = testing.DummyRequest(post=post)
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+        job = self.fake_job()
+        jobquery = Mock(JobQuery)
+        job.jobquery.return_value = jobquery
+        views = Views(request)
+        views.job_factory = Mock(JobFactory)
+        views.job_factory.fromScratch = Mock(return_value=job)
+
+        response = views.allinone()
+
+        views.job_factory.fromScratch.assert_called_with('bob')
+        jobquery.allinone.assert_called_with(post)
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
+        self.assertEqual(response, {'success': True, 'jobid': 'foo'})
+        self.assertEqual(job.ms_filename, 'Uploaded as text')
         job.jobquery.assert_called_with('http://example.com/status/foo.json')
 
     def test_uploaddb_get(self):

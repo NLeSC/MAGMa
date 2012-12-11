@@ -41,7 +41,10 @@ class Views(object):
     def allinone(self):
         owner = self.request.user.userid
         job = self.job_factory.fromScratch(owner)
-        job.ms_filename = self.request.POST['ms_data_file'].filename
+        try:
+            job.ms_filename = self.request.POST['ms_data_file'].filename
+        except AttributeError:
+            job.ms_filename = 'Uploaded as text'
         status_url = self.request.route_url('status.json', jobid=job.id)
         jobquery = job.jobquery(status_url).allinone(self.request.POST)
         self.job_factory.submitQuery(jobquery)
