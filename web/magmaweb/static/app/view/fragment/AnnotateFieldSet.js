@@ -39,7 +39,13 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
     }, {
         xtype : 'numberfield',
         name : 'mz_precision',
-        fieldLabel : 'Mass precision for matching calculated masses with peaks',
+        fieldLabel : 'Mass precision (ppm) for matching calculated masses with peaks',
+        allowBlank : false,
+        decimalPrecision : 5
+    }, {
+        xtype : 'numberfield',
+        name : 'mz_precision_abs',
+        fieldLabel : 'Mass precision (Da) for matching calculated masses with peaks',
         allowBlank : false,
         decimalPrecision : 5
     },{
