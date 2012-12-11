@@ -91,7 +91,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         job.jobquery.assert_called_with('http://example.com/status/foo.json')
 
     def test_allinone_no_jobmanager(self):
-        from urllib2 import URLError
+        from magmaweb.job import JobSubmissionError
         from pyramid.httpexceptions import HTTPInternalServerError
         import json
         post = {'ms_data': 'somexml', 'ms_data_file': ''}
@@ -103,7 +103,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         views = Views(request)
         views.job_factory = Mock(JobFactory)
         views.job_factory.fromScratch = Mock(return_value=job)
-        q = Mock(side_effect=URLError('[Errno 111] Connection refused'))
+        q = Mock(side_effect=JobSubmissionError())
         views.job_factory.submitQuery = q
 
         with self.assertRaises(HTTPInternalServerError) as e:

@@ -448,6 +448,7 @@ class JobFactoryTestCase(unittest.TestCase):
 
     def test_submitQuery_no_jobmanager(self):
         from urllib2 import URLError
+        from magmaweb.job import JobSubmissionError
         exc = URLError('[Errno 111] Connection refused')
         self.factory.submitJob2Manager = Mock(side_effect=exc)
         job = self.factory.fromScratch('bob')
@@ -455,7 +456,7 @@ class JobFactoryTestCase(unittest.TestCase):
         status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
         jobquery.status_callback_url = status_cb_url
 
-        with self.assertRaises(URLError):
+        with self.assertRaises(JobSubmissionError):
             self.factory.submitQuery(jobquery)
 
         self.assertEqual(job.state, 'SUBMISSION_ERROR')

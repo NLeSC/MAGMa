@@ -1,8 +1,9 @@
-import urllib2
 import json
 from pyramid.view import view_config, view_defaults
 from pyramid.httpexceptions import HTTPInternalServerError
-from magmaweb.job import make_job_factory, Job
+from magmaweb.job import make_job_factory
+from magmaweb.job import Job
+from magmaweb.job import JobSubmissionError
 
 
 @view_defaults(permission='run', context=Job)
@@ -28,7 +29,7 @@ class RpcViews(object):
         """
         try:
             self.job_factory.submitQuery(query)
-        except urllib2.URLError:
+        except JobSubmissionError:
             body = {'success': False, 'msg': 'Unable to submit query'}
             raise HTTPInternalServerError(body=json.dumps(body))
 

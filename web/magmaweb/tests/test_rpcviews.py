@@ -131,11 +131,11 @@ class RpcViewsTestCase(unittest.TestCase):
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_submit_query_withoutjobmanager(self):
-        from urllib2 import URLError
+        from magmaweb.job import JobSubmissionError
         from pyramid.httpexceptions import HTTPInternalServerError
         import json
 
-        q = Mock(side_effect=URLError('[Errno 111] Connection refused'))
+        q = Mock(side_effect=JobSubmissionError())
         self.rpc.job_factory.submitQuery = q
         with self.assertRaises(HTTPInternalServerError) as e:
             self.rpc.submit_query({})

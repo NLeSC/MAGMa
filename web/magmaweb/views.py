@@ -1,5 +1,4 @@
 import json
-from urllib2 import URLError
 from pyramid.response import Response
 from pyramid.view import forbidden_view_config
 from pyramid.view import view_config
@@ -13,7 +12,9 @@ from pyramid.security import forget
 from pyramid.security import NO_PERMISSION_REQUIRED
 from colander import Invalid
 from magmaweb.job import make_job_factory
-from magmaweb.job import Job, JobQuery
+from magmaweb.job import Job
+from magmaweb.job import JobQuery
+from magmaweb.job import JobSubmissionError
 from magmaweb.user import User
 
 
@@ -55,7 +56,7 @@ class Views(object):
         jobquery = jobquery.allinone(self.request.POST)
         try:
             self.job_factory.submitQuery(jobquery)
-        except URLError:
+        except JobSubmissionError:
             body = {'success': False, 'msg': 'Unable to submit query'}
             raise HTTPInternalServerError(body=json.dumps(body))
 
