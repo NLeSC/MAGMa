@@ -23,7 +23,7 @@ def main(global_config, **settings):
     # TODO Make jobmanager_ipadr a setting
     jobmanager_ipadr = "127.0.*.*"
     authn_policy2 = IPAuthenticationPolicy(jobmanager_ipadr, "jobmanager",
-                                           ["monitor"], '127.0.0.1')
+                                           [], '127.0.0.1')
     authn_policy = MultiAuthenticationPolicy([authn_policy1, authn_policy2])
     config.set_authentication_policy(authn_policy)
     config.set_authorization_policy(ACLAuthorizationPolicy())

@@ -59,6 +59,7 @@ public class JobStateListener implements MetricListener {
 			put.setHeader("Accept", "application/json");
 			put.setHeader("Content-type", "text/plain; charset=UTF-8");
 			httpclient.execute(put);
+			put.releaseConnection();
 		} catch (ClientProtocolException e) {
 			logger.info("Unable to write job state to status callback url");
 		} catch (IOException e) {

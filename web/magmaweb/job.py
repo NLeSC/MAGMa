@@ -826,15 +826,15 @@ class JobFactory(object):
 
         jobmeta = self._getJobMeta(query.id)
 
+        jobmeta.state = 'INITIAL'
+        self._addJobMeta(jobmeta)
+
         try:
             self.submitJob2Manager(body)
         except urllib2.URLError:
             jobmeta.state = 'SUBMISSION_ERROR'
             self._addJobMeta(jobmeta)
             raise JobSubmissionError()
-
-        jobmeta.state = 'INITIAL'
-        self._addJobMeta(jobmeta)
 
         return query.id
 
