@@ -143,29 +143,6 @@ class RpcViewsTestCase(unittest.TestCase):
         expected_json = {'success': False, 'msg': 'Unable to submit query'}
         self.assertEquals(json.loads(e.exception.body), expected_json)
 
-    def test_failed_validation(self):
-        from colander import Invalid
-        from pyramid.httpexceptions import HTTPInternalServerError
-        import json
-        e = Mock(Invalid)
-        e.asdict.return_value = {'query': 'Bad query field',
-                                 'format': 'Something wrong in form'
-                                 }
-        request = testing.DummyRequest()
-        # use alternate view callable argument convention
-        # because exception is passed as context
-        rpc = RpcViews(e, request)
-
-        response = rpc.failed_validation()
-
-        self.assertIsInstance(response, HTTPInternalServerError)
-        expected = {'success': False,
-                    'errors': {'query': 'Bad query field',
-                               'format': 'Something wrong in form'
-                               }
-                    }
-        self.assertEqual(json.loads(response.body), expected)
-
     def test_assign_metabolite2peak(self):
         self.rpc.request.POST = {'scanid': 641,
                                  'mz': 109.029563903808,

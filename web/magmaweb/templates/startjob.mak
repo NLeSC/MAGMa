@@ -127,6 +127,14 @@ Ext.onReady(function() {
                       window.location = '${request.application_url}/status/'+o.result.jobid;
                   },
                   failure: function(form, action) {
+                	  if ('msg' in action.result) {
+	                	  Ext.Msg.show({
+	                		  title: 'Something went wrong submitting job',
+	                		  msg: action.result.msg,
+	                		  icon: Ext.MessageBox.ERROR,
+	                		  buttons: Ext.MessageBox.OK,
+	                	  });
+                	  }
                       console.log(action.failureType);
                       console.log(action.result);
                   }

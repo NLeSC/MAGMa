@@ -64,10 +64,16 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
             minValue: 1,
             maxValue: 15,
             decimalPrecision: 0
-        },{
+        }, {
             xtype: 'numberfield',
             name: 'abs_peak_cutoff',
             fieldLabel: 'Absolute intensity threshold for storing peaks in database',
+            allowBlank: false,
+            decimalPrecision: 5
+        }, {
+            xtype: 'numberfield',
+            name: 'rel_peak_cutoff',
+            fieldLabel: 'Fraction of basepeak intensity threshold for storing peaks in database',
             allowBlank: false,
             decimalPrecision: 5
         }]

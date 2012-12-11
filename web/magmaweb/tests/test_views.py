@@ -90,6 +90,31 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(job.ms_filename, 'Uploaded as text')
         job.jobquery.assert_called_with('http://example.com/status/foo.json')
 
+    def test_allinone_no_jobmanager(self):
+        from urllib2 import URLError
+        from pyramid.httpexceptions import HTTPInternalServerError
+        import json
+        post = {'ms_data': 'somexml', 'ms_data_file': ''}
+        request = testing.DummyRequest(post=post)
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+        job = self.fake_job()
+        jobquery = Mock(JobQuery)
+        job.jobquery.return_value = jobquery
+        views = Views(request)
+        views.job_factory = Mock(JobFactory)
+        views.job_factory.fromScratch = Mock(return_value=job)
+        q = Mock(side_effect=URLError('[Errno 111] Connection refused'))
+        views.job_factory.submitQuery = q
+
+        with self.assertRaises(HTTPInternalServerError) as e:
+            views.allinone()
+
+        expected_json = {'success': False, 'msg': 'Unable to submit query'}
+        self.assertEquals(json.loads(e.exception.body), expected_json)
+        views.job_factory.fromScratch.assert_called_with('bob')
+        jobquery.allinone.assert_called_with(post)
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
+
     def test_uploaddb_get(self):
         request = testing.DummyRequest()
         views = Views(request)
@@ -128,6 +153,30 @@ class ViewsTestCase(AbstractViewsTestCase):
         views.job_factory.fromScratch.assert_called_with('bob')
         self.assertEqual(response.location, 'http://example.com/results/foo')
 
+    def test_failed_validation(self):
+        from colander import Invalid
+        from pyramid.httpexceptions import HTTPInternalServerError
+        import json
+        e = Mock(Invalid)
+        e.asdict.return_value = {'query': 'Bad query field',
+                                 'format': 'Something wrong in form'
+                                 }
+        request = testing.DummyRequest()
+        request.exception = e
+        # use alternate view callable argument convention
+        # because exception is passed as context
+        views = Views(request)
+
+        response = views.failed_validation()
+
+        self.assertIsInstance(response, HTTPInternalServerError)
+        expected = {'success': False,
+                    'errors': {'query': 'Bad query field',
+                               'format': 'Something wrong in form'
+                               }
+                    }
+        self.assertEqual(json.loads(response.body), expected)
+
     def test_results_cantrun(self):
         request = testing.DummyRequest()
         views = JobViews(self.fake_job(), request)
@@ -140,40 +189,6 @@ class ViewsTestCase(AbstractViewsTestCase):
                                         # no authorization -> allows all
                                         canRun=True
                                         ))
-
-    @patch('magmaweb.views.has_permission')
-    def test_resuls_canrun(self, has_permission):
-        from pyramid.security import Allowed
-        has_permission.return_value = Allowed('Faked allowed')
-        request = testing.DummyRequest()
-        job = self.fake_job()
-        views = JobViews(job, request)
-
-        response = views.results()
-
-        self.assertEqual(response, dict(jobid='foo',
-                                        run='bla',
-                                        maxmslevel=3,
-                                        canRun=True
-                                        ))
-        has_permission.assert_called_with('run', job, request)
-
-    @patch('magmaweb.views.has_permission')
-    def test_resuls_cantrun(self, has_permission):
-        from pyramid.security import Denied
-        has_permission.return_value = Denied('Faked denied')
-        request = testing.DummyRequest()
-        job = self.fake_job()
-        views = JobViews(job, request)
-
-        response = views.results()
-
-        self.assertEqual(response, dict(jobid='foo',
-                                        run='bla',
-                                        maxmslevel=3,
-                                        canRun=False
-                                        ))
-        has_permission.assert_called_with('run', job, request)
 
     def test_workspace(self):
         import uuid
@@ -353,6 +368,41 @@ class ViewsTestCase(AbstractViewsTestCase):
 
 class JobViewsTestCase(AbstractViewsTestCase):
     """ Test case for magmaweb.views.JobViews"""
+
+    @patch('magmaweb.views.has_permission')
+    def test_resuls_canrun(self, has_permission):
+        from pyramid.security import Allowed
+        has_permission.return_value = Allowed('Faked allowed')
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        views = JobViews(job, request)
+
+        response = views.results()
+
+        self.assertEqual(response, dict(jobid='foo',
+                                        run='bla',
+                                        maxmslevel=3,
+                                        canRun=True
+                                        ))
+        has_permission.assert_called_with('run', job, request)
+
+    @patch('magmaweb.views.has_permission')
+    def test_resuls_cantrun(self, has_permission):
+        from pyramid.security import Denied
+        has_permission.return_value = Denied('Faked denied')
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        views = JobViews(job, request)
+
+        response = views.results()
+
+        self.assertEqual(response, dict(jobid='foo',
+                                        run='bla',
+                                        maxmslevel=3,
+                                        canRun=False
+                                        ))
+        has_permission.assert_called_with('run', job, request)
+
     def test_jobstatus(self):
         request = testing.DummyRequest()
         job = self.fake_job()
