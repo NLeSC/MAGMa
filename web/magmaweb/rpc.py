@@ -2,7 +2,6 @@ import urllib2
 import json
 from pyramid.view import view_config, view_defaults
 from pyramid.httpexceptions import HTTPInternalServerError
-import colander
 from magmaweb.job import make_job_factory, Job
 
 
@@ -113,14 +112,6 @@ class RpcViews(object):
         job = self.job
         job.description = self.request.POST['description']
         return {'success': True, 'jobid': str(job.id)}
-
-    @view_config(context=colander.Invalid)
-    def failed_validation(self):
-        """Catches colander.Invalid exceptions
-        and returns a ExtJS form submission response
-        """
-        body = {'success': False, 'errors': self.job.asdict()}
-        return HTTPInternalServerError(body=json.dumps(body))
 
     @view_config(route_name='rpc.assign', renderer='json')
     def assign_metabolite2peak(self):
