@@ -193,7 +193,7 @@ class JobViews(object):
         jobid = self.job.id
         jobstate = self.request.body
         self.job.state = jobstate
-        return dict(status=jobstate, jobid=jobid)
+        return dict(status=jobstate, jobid=str(jobid))
 
     @view_config(route_name='results', renderer='results.mak')
     def results(self):

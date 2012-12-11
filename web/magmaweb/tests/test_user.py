@@ -211,7 +211,8 @@ class TestJobIdFactory(unittest.TestCase):
         jif.job_factory.fromId.assert_called_once_with(job_id)
         self.assertEqual(job, mjob)
         self.assertEqual(job.__parent__, jif)
-        self.assertEqual(job.__acl__, [(Allow, 'bob', 'run')])
+        self.assertEqual(job.__acl__, [(Allow, 'bob', 'run'),
+                                       (Allow, 'jobmanager', 'monitor')])
 
     def test_getJobNotFound(self):
         from magmaweb.job import JobNotFound

@@ -28,6 +28,7 @@ DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 
 Base = declarative_base()
 
+
 def init_user_db(engine, create=True, fill=True):
     """Binds engine with DBSession and Mappings.
 
@@ -209,7 +210,8 @@ class JobIdFactory(RootFactory):
             # this is not the parent job where this job is derived from
             job.__parent__ = self
             # owner may run calculations
-            job.__acl__ = [(Allow, job.owner, 'run')]
+            job.__acl__ = [(Allow, job.owner, 'run'),
+                           (Allow, 'jobmanager', 'monitor')]
         except JobNotFound:
             # TODO to fetch job state job's db can be absent
             raise HTTPNotFound()

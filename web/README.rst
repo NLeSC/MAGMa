@@ -79,7 +79,7 @@ Edit /etc/nginx/sites-enabled/default to:
        }
 
        location /magma/static/ {
-           alias       /home/stefanv/workspace/MAGMaWeb/magmaweb/static/;
+           alias       /home/stefanv/workspace/MAGMa/web/magmaweb/static/;
            expires     30d;
            add_header  Cache-Control public;
            access_log  off;
