@@ -22,6 +22,7 @@
  */
 Ext.define('Esc.magmaweb.resultsApp', {
   name: 'Esc.magmaweb',
+  appFolder: Ext.Loader.getPath('Esc.magmaweb'),
   extend:'Ext.app.Application',
   constructor: function(config) {
     console.log('Construct app');
