@@ -47,7 +47,7 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         self.assertEqual(response, {})
 
-    def test_allinone(self):
+    def test_allinone_with_ms_data_as_file(self):
         from cgi import FieldStorage
         ms_file = FieldStorage()
         ms_file.filename = 'c:\bla\bla\F1234.mzxml'
@@ -69,6 +69,51 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
         self.assertEqual(job.ms_filename, 'c:\bla\bla\F1234.mzxml')
         job.jobquery.assert_called_with('http://example.com/status/foo.json')
+
+    def test_allinone_with_ms_data_as_text(self):
+        post = {'ms_data': 'somexml', 'ms_data_file': ''}
+        request = testing.DummyRequest(post=post)
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+        job = self.fake_job()
+        jobquery = Mock(JobQuery)
+        job.jobquery.return_value = jobquery
+        views = Views(request)
+        views.job_factory = Mock(JobFactory)
+        views.job_factory.fromScratch = Mock(return_value=job)
+
+        response = views.allinone()
+
+        views.job_factory.fromScratch.assert_called_with('bob')
+        jobquery.allinone.assert_called_with(post)
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
+        self.assertEqual(response, {'success': True, 'jobid': 'foo'})
+        self.assertEqual(job.ms_filename, 'Uploaded as text')
+        job.jobquery.assert_called_with('http://example.com/status/foo.json')
+
+    def test_allinone_no_jobmanager(self):
+        from magmaweb.job import JobSubmissionError
+        from pyramid.httpexceptions import HTTPInternalServerError
+        import json
+        post = {'ms_data': 'somexml', 'ms_data_file': ''}
+        request = testing.DummyRequest(post=post)
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+        job = self.fake_job()
+        jobquery = Mock(JobQuery)
+        job.jobquery.return_value = jobquery
+        views = Views(request)
+        views.job_factory = Mock(JobFactory)
+        views.job_factory.fromScratch = Mock(return_value=job)
+        q = Mock(side_effect=JobSubmissionError())
+        views.job_factory.submitQuery = q
+
+        with self.assertRaises(HTTPInternalServerError) as e:
+            views.allinone()
+
+        expected_json = {'success': False, 'msg': 'Unable to submit query'}
+        self.assertEquals(json.loads(e.exception.body), expected_json)
+        views.job_factory.fromScratch.assert_called_with('bob')
+        jobquery.allinone.assert_called_with(post)
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
 
     def test_uploaddb_get(self):
         request = testing.DummyRequest()
@@ -108,6 +153,30 @@ class ViewsTestCase(AbstractViewsTestCase):
         views.job_factory.fromScratch.assert_called_with('bob')
         self.assertEqual(response.location, 'http://example.com/results/foo')
 
+    def test_failed_validation(self):
+        from colander import Invalid
+        from pyramid.httpexceptions import HTTPInternalServerError
+        import json
+        e = Mock(Invalid)
+        e.asdict.return_value = {'query': 'Bad query field',
+                                 'format': 'Something wrong in form'
+                                 }
+        request = testing.DummyRequest()
+        request.exception = e
+        # use alternate view callable argument convention
+        # because exception is passed as context
+        views = Views(request)
+
+        response = views.failed_validation()
+
+        self.assertIsInstance(response, HTTPInternalServerError)
+        expected = {'success': False,
+                    'errors': {'query': 'Bad query field',
+                               'format': 'Something wrong in form'
+                               }
+                    }
+        self.assertEqual(json.loads(response.body), expected)
+
     def test_results_cantrun(self):
         request = testing.DummyRequest()
         views = JobViews(self.fake_job(), request)
@@ -120,40 +189,6 @@ class ViewsTestCase(AbstractViewsTestCase):
                                         # no authorization -> allows all
                                         canRun=True
                                         ))
-
-    @patch('magmaweb.views.has_permission')
-    def test_resuls_canrun(self, has_permission):
-        from pyramid.security import Allowed
-        has_permission.return_value = Allowed('Faked allowed')
-        request = testing.DummyRequest()
-        job = self.fake_job()
-        views = JobViews(job, request)
-
-        response = views.results()
-
-        self.assertEqual(response, dict(jobid='foo',
-                                        run='bla',
-                                        maxmslevel=3,
-                                        canRun=True
-                                        ))
-        has_permission.assert_called_with('run', job, request)
-
-    @patch('magmaweb.views.has_permission')
-    def test_resuls_cantrun(self, has_permission):
-        from pyramid.security import Denied
-        has_permission.return_value = Denied('Faked denied')
-        request = testing.DummyRequest()
-        job = self.fake_job()
-        views = JobViews(job, request)
-
-        response = views.results()
-
-        self.assertEqual(response, dict(jobid='foo',
-                                        run='bla',
-                                        maxmslevel=3,
-                                        canRun=False
-                                        ))
-        has_permission.assert_called_with('run', job, request)
 
     def test_workspace(self):
         import uuid
@@ -178,28 +213,27 @@ class ViewsTestCase(AbstractViewsTestCase):
                           'created_at': '2012-11-14 10:48:26.504478'}]
         self.assertEqual(response, {'jobs': expected_jobs})
 
-    def test_defaultsjson(self):
+    @patch('magmaweb.views.JobQuery')
+    def test_defaultsjson(self, jq):
         request = testing.DummyRequest()
         views = Views(request)
+        jq.defaults.return_value = 'foo'
+
         response = views.defaults()
 
-        self.assertEqual(response, {'success': True,
-                                    'data': dict(n_reaction_steps=2,
-                                                 metabolism_types=['phase1',
-                                                                   'phase2'],
-                                                 ionisation_mode=1,
-                                                 skip_fragmentation=False,
-                                                 ms_intensity_cutoff=1000000.0,
-                                                 msms_intensity_cutoff=0.1,
-                                                 mz_precision=0.001,
-                                                 use_all_peaks=False,
-                                                 abs_peak_cutoff=1000,
-                                                 rel_peak_cutoff=0.01,
-                                                 max_ms_level=10,
-                                                 precursor_mz_precision=0.005,
-                                                 max_broken_bonds=4
-                                                 )
-                                    })
+        jq.defaults.assert_called_with(None)
+        self.assertDictEqual(response, {'success': True, 'data': 'foo'})
+
+    @patch('magmaweb.views.JobQuery')
+    def test_examplejson(self, jq):
+        request = testing.DummyRequest(params={'selection': 'example'})
+        views = Views(request)
+        jq.defaults.return_value = 'foo'
+
+        response = views.defaults()
+
+        jq.defaults.assert_called_with('example')
+        self.assertDictEqual(response, {'success': True, 'data': 'foo'})
 
     def test_login_get_from_loginpage(self):
         self.config.add_route('home', '/')
@@ -334,6 +368,41 @@ class ViewsTestCase(AbstractViewsTestCase):
 
 class JobViewsTestCase(AbstractViewsTestCase):
     """ Test case for magmaweb.views.JobViews"""
+
+    @patch('magmaweb.views.has_permission')
+    def test_resuls_canrun(self, has_permission):
+        from pyramid.security import Allowed
+        has_permission.return_value = Allowed('Faked allowed')
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        views = JobViews(job, request)
+
+        response = views.results()
+
+        self.assertEqual(response, dict(jobid='foo',
+                                        run='bla',
+                                        maxmslevel=3,
+                                        canRun=True
+                                        ))
+        has_permission.assert_called_with('run', job, request)
+
+    @patch('magmaweb.views.has_permission')
+    def test_resuls_cantrun(self, has_permission):
+        from pyramid.security import Denied
+        has_permission.return_value = Denied('Faked denied')
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        views = JobViews(job, request)
+
+        response = views.results()
+
+        self.assertEqual(response, dict(jobid='foo',
+                                        run='bla',
+                                        maxmslevel=3,
+                                        canRun=False
+                                        ))
+        has_permission.assert_called_with('run', job, request)
+
     def test_jobstatus(self):
         request = testing.DummyRequest()
         job = self.fake_job()
@@ -639,7 +708,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
             n_reaction_steps=2, metabolism_types='phase1,phase2',
             ionisation_mode=-1, skip_fragmentation=True,
             ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
-            mz_precision=0.01, use_all_peaks=True,
+            mz_precision=4.0, mz_precision_abs=0.002, use_all_peaks=True,
             ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
             rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=0.01,
             max_broken_bonds=4, description='My first description'
@@ -656,7 +725,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  skip_fragmentation=True,
                                                  ms_intensity_cutoff=200000.0,
                                                  msms_intensity_cutoff=0.5,
-                                                 mz_precision=0.01,
+                                                 mz_precision=4.0,
+                                                 mz_precision_abs=0.002,
                                                  use_all_peaks=True,
                                                  abs_peak_cutoff=1000,
                                                  rel_peak_cutoff=0.001,
@@ -687,7 +757,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  skip_fragmentation=False,
                                                  ms_intensity_cutoff=1000000.0,
                                                  msms_intensity_cutoff=0.1,
-                                                 mz_precision=0.001,
+                                                 mz_precision=5.0,
+                                                 mz_precision_abs=0.001,
                                                  use_all_peaks=False,
                                                  abs_peak_cutoff=1100,
                                                  rel_peak_cutoff=0.012,
@@ -713,7 +784,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  skip_fragmentation=False,
                                                  ms_intensity_cutoff=1000000.0,
                                                  msms_intensity_cutoff=0.1,
-                                                 mz_precision=0.001,
+                                                 mz_precision=5.0,
+                                                 mz_precision_abs=0.001,
                                                  use_all_peaks=False,
                                                  abs_peak_cutoff=1000,
                                                  rel_peak_cutoff=0.01,
