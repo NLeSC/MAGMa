@@ -4,15 +4,16 @@ Ext.Loader.setConfig({
   paths: {
     'Esc.magmaweb': '../../../static/app',
     'Esc': '../../../static/esc',
-    'Ext.ux': '../../../static/ext-4.1.1a/examples/ux'
+    'Ext.ux': '../../../static/extjs-4.2.0/examples/ux'
   }
 });
+
+Ext.require('Esc.magmaweb.resultsApp');
 
 var Application = null;
 
 Ext.onReady(function() {
   Application = Ext.create('Esc.magmaweb.resultsApp', {
-      appFolder: "../../../static/app",
       maxmslevel: 3,
       jobid: '3ad25048-26f6-11e1-851e-00012e260790',
       urls: {
@@ -33,8 +34,6 @@ Ext.onReady(function() {
       // use test files for metabolites in data/
       metabolitesUrl: function(format) {
           return 'data/metabolites.'+format;
-      },
-      // do not create views, all tests mock views
-      autoCreateViewport: false
+      }
   });
 });
