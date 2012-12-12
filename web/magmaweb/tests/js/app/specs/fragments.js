@@ -372,7 +372,8 @@ describe('Fragments', function() {
                 precursor_mz_precision: '0.001',
                 ms_intensity_cutoff: '200000',
                 msms_intensity_cutoff: '0.1',
-                mz_precision: '0.001'
+                mz_precision: '5',
+                mz_precision_abs: '0.001'
             });
         });
         expect(ctrl.annotateForm.isVisible()).toBeTruthy();
