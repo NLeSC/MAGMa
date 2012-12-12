@@ -143,7 +143,7 @@ Python documentation generation with
   make html
 
 Javascript documentation generation with
-  jsduck magmaweb/static/ext-4.1.1a/src magmaweb/static/ext-4.1.1a/examples/ux magmaweb/static/d3/d3.v2.js magmaweb/static/esc magmaweb/static/app --builtin-classes --output jsdoc --images magmaweb/static/ext-4.1.1a/docs/images
+  jsduck magmaweb/static/extjs-4.2.0/src magmaweb/static/extjs-4.2.0/examples/ux magmaweb/static/d3/d3.v2.js magmaweb/static/esc magmaweb/static/app --builtin-classes --output jsdoc --images magmaweb/static/extjs-4.2.0/docs/images
 or minimal
   jsduck magmaweb/static/esc magmaweb/static/app --output jsdoc
 
@@ -175,8 +175,8 @@ use warnings;
 use JSON;
 
 my %paths = (
-   'Ext' => 'static/ext-4.1.1a/src',
-   'Ux'  => 'static/ext-4.1.1a/examples/ux',
+   'Ext' => 'static/extjs-4.2.0/src',
+   'Ux'  => 'static/extjs-4.2.0/examples/ux',
    'Esc' => 'static/esc',
    'App' => 'static/app'
 );
