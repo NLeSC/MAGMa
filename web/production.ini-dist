@@ -20,7 +20,7 @@ cookie.path = /magma
 sqlalchemy.url = sqlite:///%(here)s/data/users.db
 
 # In magmaweb/static/ which ExtJS directory to use
-extjsroot = ext-4.1.1a
+extjsroot = extjs-4.2.0
 
 jobfactory.root_dir = %(here)s/data/jobs
 # url to which job request is submitted
