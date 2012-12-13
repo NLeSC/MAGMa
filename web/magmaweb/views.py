@@ -591,8 +591,6 @@ class JobViews(object):
                 runinfo['use_all_peaks'] = r.use_all_peaks
             if r.abs_peak_cutoff:
                 runinfo['abs_peak_cutoff'] = r.abs_peak_cutoff
-            if r.rel_peak_cutoff:
-                runinfo['rel_peak_cutoff'] = r.rel_peak_cutoff
             if r.max_ms_level:
                 runinfo['max_ms_level'] = r.max_ms_level
             if r.precursor_mz_precision:

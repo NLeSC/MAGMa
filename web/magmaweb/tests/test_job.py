@@ -46,7 +46,7 @@ def populateTestingDB(session):
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
         mz_precision=10, mz_precision_abs=0.002, use_all_peaks=True,
         ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
-        rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=10,
+        max_ms_level=3, precursor_mz_precision=10,
         max_broken_bonds=4, description='My first description'
     ))
     session.add(Metabolite(
@@ -148,7 +148,7 @@ def populateWithUseAllPeaks(session):
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
         mz_precision=10, mz_precision_abs=0.002, use_all_peaks=False,
         ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
-        rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=10,
+        max_ms_level=3, precursor_mz_precision=10,
         max_broken_bonds=4, description='My second description'
     ))
     session.add(Metabolite(
@@ -654,7 +654,6 @@ class JobDbTestCase(JobDbTestCaseAbstract):
 
         self.assertEqual(runInfo.ms_filename, 'F123456.mzxml')
         self.assertEqual(runInfo.abs_peak_cutoff, 1000)
-        self.assertEqual(runInfo.rel_peak_cutoff, 0.001)
         self.assertEqual(runInfo.max_ms_level, 3)
         self.assertEqual(runInfo.precursor_mz_precision, 10)
 
@@ -675,7 +674,7 @@ class JobDbTestCase(JobDbTestCaseAbstract):
             ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
             mz_precision=10, mz_precision_abs=0.002, use_all_peaks=True,
             ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
-            rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=10,
+            max_ms_level=3, precursor_mz_precision=10,
             max_broken_bonds=4, description='My second description'
         ))
 
@@ -1625,7 +1624,6 @@ class JobQueryTestCase(unittest.TestCase):
                         mz_precision_abs=0.001,
                         use_all_peaks=False,
                         abs_peak_cutoff=1000,
-                        rel_peak_cutoff=0.01,
                         max_ms_level=10,
                         precursor_mz_precision=0.005,
                         max_broken_bonds=4
@@ -1679,7 +1677,6 @@ class JobQueryTestCase(unittest.TestCase):
             mz_precision_abs=0,
             use_all_peaks=False,
             abs_peak_cutoff=1000,
-            rel_peak_cutoff=0.01,
             max_ms_level=10,
             precursor_mz_precision=0.005,
             max_broken_bonds=3)
@@ -1888,13 +1885,12 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                   'ms_data_file': msfield,
                   'max_ms_level': 3,
                   'abs_peak_cutoff': 1000,
-                  'rel_peak_cutoff': 0.01
                   }
 
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
+        script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
         expected_query = JobQuery(**{'id': self.jobid,
                                      'dir': self.jobdir,
                                      'prestaged': ['ms_data.dat'],
@@ -1908,13 +1904,12 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                   'ms_data': 'foo',
                   'max_ms_level': 3,
                   'abs_peak_cutoff': 1000,
-                  'rel_peak_cutoff': 0.01
                   }
 
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
+        script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
         expected_query = JobQuery(**{'id': self.jobid,
                                      'dir': self.jobdir,
                                      'prestaged': ['ms_data.dat'],
@@ -1927,7 +1922,6 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         params = {'ms_data_format': 'mzxml',
                   'max_ms_level': 3,
                   'abs_peak_cutoff': 1000,
-                  'rel_peak_cutoff': 0.01
                   }
         from colander import Invalid
         with self.assertRaises(Invalid) as e:
@@ -1950,7 +1944,6 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                   'ms_data': 'bar',
                   'max_ms_level': 3,
                   'abs_peak_cutoff': 1000,
-                  'rel_peak_cutoff': 0.01
                   }
 
         self.jobquery.add_ms_data(params)
@@ -1970,7 +1963,6 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                   'ms_data_file': msfield,
                   'max_ms_level': 3,
                   'abs_peak_cutoff': 1000,
-                  'rel_peak_cutoff': 0.01,
                   'precursor_mz_precision': 0.005,
                   'mz_precision': 5.0,
                   'mz_precision_abs': 0.001,
@@ -1983,7 +1975,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params, True)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml' "
-        script += "-l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
+        script += "-l '3' -a '1000.0' ms_data.dat {db}\n"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' {db}\n"
         expected_query = JobQuery(**{'id': self.jobid,
@@ -2006,13 +1998,12 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                   'ms_data_file': msfield,
                   'max_ms_level': 3,
                   'abs_peak_cutoff': 1000,
-                  'rel_peak_cutoff': 0.01
                   }
 
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'tree'"
-        script += " -l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
+        script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
         expected_query = JobQuery(**{'id': self.jobid,
                                      'dir': self.jobdir,
                                      'prestaged': ['ms_data.dat'],
@@ -2198,7 +2189,6 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
                            ms_intensity_cutoff=200000,
                            msms_intensity_cutoff=0.1,
                            abs_peak_cutoff=1000,
-                           rel_peak_cutoff=0.01,
                            precursor_mz_precision=0.005,
                            max_broken_bonds=4,
                            mz_precision=5.0,
@@ -2208,14 +2198,14 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
                            structures='C1CCCC1 comp1',
                            ms_data_file=msfield,
                            structure_format='smiles',
-                           ms_data_format='mzxml'
+                           ms_data_format='mzxml',
                            )
         params.add('metabolism_types', 'phase2')
 
         query = self.jobquery.allinone(params)
 
         expected_script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        expected_script += " -l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
+        expected_script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
 
         expected_script += "{magma} add_structures -t 'smiles'"
         expected_script += " structures.dat {db}\n"
