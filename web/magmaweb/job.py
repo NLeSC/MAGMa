@@ -258,7 +258,6 @@ class JobQuery(object):
         * ms_data_file, file-like object with MS data
         * max_ms_level
         * abs_peak_cutoff
-        * rel_peak_cutoff
 
         If ``has_metabolites`` is True then
             :meth:`~magmaweb.job.JobQuery.annotate` will be called.
@@ -303,9 +302,6 @@ class JobQuery(object):
         schema.add(colander.SchemaNode(colander.Float(),
                                        validator=colander.Range(min=0),
                                        name='abs_peak_cutoff'))
-        schema.add(colander.SchemaNode(colander.Float(),
-                                       validator=colander.Range(0, 1),
-                                       name='rel_peak_cutoff'))
         if has_metabolites:
             self._addAnnotateSchema(schema)
         params = schema.deserialize(params)
@@ -326,13 +322,12 @@ class JobQuery(object):
 
         script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}' "
         script += "-l '{max_ms_level}' "
-        script += "-a '{abs_peak_cutoff}' -r '{rel_peak_cutoff}' "
+        script += "-a '{abs_peak_cutoff}' "
         script += "ms_data.dat {{db}}\n"
         script__substitution = {
             'ms_data_format': self.escape(params['ms_data_format']),
             'max_ms_level': self.escape(params['max_ms_level']),
-            'abs_peak_cutoff': self.escape(params['abs_peak_cutoff']),
-            'rel_peak_cutoff': self.escape(params['rel_peak_cutoff'])
+            'abs_peak_cutoff': self.escape(params['abs_peak_cutoff'])
         }
         self.script += script.format(**script__substitution)
 
@@ -522,7 +517,6 @@ class JobQuery(object):
             mz_precision_abs=0.001,
             use_all_peaks=False,
             abs_peak_cutoff=1000,
-            rel_peak_cutoff=0.01,
             max_ms_level=10,
             precursor_mz_precision=0.005,
             max_broken_bonds=4)
@@ -576,7 +570,6 @@ class JobQuery(object):
             mz_precision_abs=0,
             use_all_peaks=False,
             abs_peak_cutoff=1000,
-            rel_peak_cutoff=0.01,
             max_ms_level=10,
             precursor_mz_precision=0.005,
             max_broken_bonds=3)
