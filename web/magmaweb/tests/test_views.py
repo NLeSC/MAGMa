@@ -710,7 +710,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
             ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
             mz_precision=4.0, mz_precision_abs=0.002, use_all_peaks=True,
             ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
-            rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=0.01,
+            max_ms_level=3, precursor_mz_precision=0.01,
             max_broken_bonds=4, description='My first description'
         )
         views = JobViews(job, request)
@@ -729,7 +729,6 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  mz_precision_abs=0.002,
                                                  use_all_peaks=True,
                                                  abs_peak_cutoff=1000,
-                                                 rel_peak_cutoff=0.001,
                                                  max_ms_level=3,
                                                  precursor_mz_precision=0.01,
                                                  max_broken_bonds=4
@@ -741,10 +740,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
         request = testing.DummyRequest()
         job = self.fake_job()
         from magmaweb.models import Run
-        job.db.runInfo.return_value = Run(
-            abs_peak_cutoff=1100,
-            rel_peak_cutoff=0.012
-        )
+        job.db.runInfo.return_value = Run(abs_peak_cutoff=1100)
         views = JobViews(job, request)
 
         response = views.runinfojson()
@@ -761,7 +757,6 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  mz_precision_abs=0.001,
                                                  use_all_peaks=False,
                                                  abs_peak_cutoff=1100,
-                                                 rel_peak_cutoff=0.012,
                                                  max_ms_level=10,
                                                  precursor_mz_precision=0.005,
                                                  max_broken_bonds=4
@@ -788,7 +783,6 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  mz_precision_abs=0.001,
                                                  use_all_peaks=False,
                                                  abs_peak_cutoff=1000,
-                                                 rel_peak_cutoff=0.01,
                                                  max_ms_level=10,
                                                  precursor_mz_precision=0.005,
                                                  max_broken_bonds=4
