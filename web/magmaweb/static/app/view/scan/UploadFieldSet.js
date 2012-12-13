@@ -70,12 +70,6 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
             fieldLabel: 'Absolute intensity threshold for storing peaks in database',
             allowBlank: false,
             decimalPrecision: 5
-        }, {
-            xtype: 'numberfield',
-            name: 'rel_peak_cutoff',
-            fieldLabel: 'Fraction of basepeak intensity threshold for storing peaks in database',
-            allowBlank: false,
-            decimalPrecision: 5
         }]
     }]
 });
