@@ -174,8 +174,6 @@ class Run(Base):
     ms_filename = Column(Unicode)
     # abs intensity threshold for storing peaks in database
     abs_peak_cutoff = Column(Float)
-    # fraction of basepeak intensity threshold for storing peaks in database
-    rel_peak_cutoff = Column(Float)
     # maximum ms level to be included in the analysis
     max_ms_level = Column(Integer)
 
