@@ -497,8 +497,16 @@ class JobQuery(object):
         :meth:`~magmaweb.job.JobQuery.annotate` for params.
 
         """
+        # only metabolize when params['metabolize'] exists
+        metabolize = False
+        if 'metabolize' in params:
+            metabolize = True
+            del(params['metabolize'])
+
         allin = self.add_ms_data(params).add_structures(params)
-        return allin.metabolize(params).annotate(params)
+        if metabolize:
+            allin = allin.metabolize(params)
+        return allin.annotate(params)
 
     @classmethod
     def defaults(cls, selection=None):

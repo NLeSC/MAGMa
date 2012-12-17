@@ -2174,7 +2174,62 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
 class JobQueryAllInOneTestCase(JobQueryActionTestCase):
 
-    def test_it(self):
+    def test_with_metabolize(self):
+        self.maxDiff = 100000
+        import tempfile
+        from cgi import FieldStorage
+        ms_data_file = tempfile.NamedTemporaryFile()
+        ms_data_file.write('foo')
+        ms_data_file.flush()
+        msfield = FieldStorage()
+        msfield.file = ms_data_file
+        from webob.multidict import MultiDict
+        params = MultiDict(n_reaction_steps=2,
+                           ionisation_mode=1,
+                           ms_intensity_cutoff=200000,
+                           msms_intensity_cutoff=0.1,
+                           abs_peak_cutoff=1000,
+                           precursor_mz_precision=0.005,
+                           max_broken_bonds=4,
+                           mz_precision=5.0,
+                           mz_precision_abs=0.001,
+                           metabolize='on',
+                           metabolism_types='phase1',
+                           max_ms_level=3,
+                           structures='C1CCCC1 comp1',
+                           ms_data_file=msfield,
+                           structure_format='smiles',
+                           ms_data_format='mzxml',
+                           )
+        params.add('metabolism_types', 'phase2')
+
+        query = self.jobquery.allinone(params)
+
+        expected_script = "{magma} read_ms_data --ms_data_format 'mzxml'"
+        expected_script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
+
+        expected_script += "{magma} add_structures -t 'smiles'"
+        expected_script += " structures.dat {db}\n"
+
+        expected_script += "{magma} metabolize -s '2' -m 'phase1,phase2'"
+        expected_script += " {db}\n"
+
+        expected_script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
+        expected_script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
+        expected_script += " {db}\n"
+
+        expected_query = JobQuery(**{'id': self.jobid,
+                                     'dir': self.jobdir,
+                                     'prestaged': ['ms_data.dat',
+                                                   'structures.dat'],
+                                     'script': expected_script
+                                     })
+        self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual(params['structures'],
+                                  self.fetch_file('structures.dat'))
+        self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
+
+    def test_without_metabolize(self):
         self.maxDiff = 100000
         import tempfile
         from cgi import FieldStorage
@@ -2209,9 +2264,6 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
 
         expected_script += "{magma} add_structures -t 'smiles'"
         expected_script += " structures.dat {db}\n"
-
-        expected_script += "{magma} metabolize -s '2' -m 'phase1,phase2'"
-        expected_script += " {db}\n"
 
         expected_script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
         expected_script += " -i '1' -b '4' --precursor_mz_precision '0.005'"

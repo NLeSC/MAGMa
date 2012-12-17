@@ -95,6 +95,8 @@ Ext.onReady(function() {
         xtype : 'uploadmsdatafieldset'
     }, {
         xtype : 'metabolizefieldset',
+        checkboxToggle: true,
+        checkboxName: 'metabolize',
         collapsed : true,
         collapsible : true
     }, {
