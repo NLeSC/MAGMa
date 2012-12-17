@@ -157,11 +157,16 @@ Ext.onReady(function() {
     }]
   };
 
+  var access_token = Ext.create('Ext.button.Button', {
+  	text: 'Generate access token for web services',
+  	href: '${request.route_url('access_token')}'
+  });
+
   Ext.create('Ext.container.Viewport', {
     layout: 'border',
     items: [header, {
     	region: 'center',
-    	items: [form, job_grid],
+    	items: [form, access_token, job_grid, access_token],
         border: false,
     	bodyPadding: 5,
 	    defaults: { bodyPadding: 5 },

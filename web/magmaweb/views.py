@@ -1,5 +1,6 @@
 """Module with views for the magma web application"""
 import json
+import time
 from pyramid.response import Response
 from pyramid.view import forbidden_view_config
 from pyramid.view import view_config
@@ -11,6 +12,8 @@ from pyramid.security import has_permission
 from pyramid.security import remember
 from pyramid.security import forget
 from pyramid.security import NO_PERMISSION_REQUIRED
+from pyramid.interfaces import IAuthenticationPolicy
+from pyramid_macauth import MACAuthenticationPolicy
 from colander import Invalid
 from magmaweb.job import make_job_factory
 from magmaweb.job import Job
@@ -52,6 +55,9 @@ class Views(object):
             job.ms_filename = self.request.POST['ms_data_file'].filename
         except AttributeError:
             job.ms_filename = 'Uploaded as text'
+        import logging
+        logger = logging.getLogger('magmaweb')
+        logger.info(self.request.POST)
         status_url = self.request.route_url('status.json', jobid=job.id)
         jobquery = job.jobquery(status_url)
         jobquery = jobquery.allinone(self.request.POST)
@@ -109,6 +115,26 @@ class Views(object):
 
         return {'jobs': jobs}
 
+    @view_config(route_name='access_token', renderer='json', permission='view')
+    def access_token(self):
+        """Issue a MAC-Type Access Token"""
+        # Get a reference to the MACAuthenticationPolicy plugin.
+        policy = self.request.registry.getUtility(IAuthenticationPolicy)
+        policy = policy.get_policy(MACAuthenticationPolicy)
+
+        # Generate a new id and secret key for the current user.
+        user = self.request.user.userid
+        expires_in = self.request.registry.settings['access_token.expires_in']
+        expires = time.time() + float(expires_in)
+        id, key = policy.encode_mac_id(self.request, user, expires=expires)
+
+        self.request.response.cache_control = "no-store"
+        return {"acesss_token": id,
+                "mac_key": key,
+                "expires_in": expires_in,
+                "token_type": "mac",
+                "mac_algorithm": "hmac-sha-1"}
+
     @view_config(route_name='login', renderer='login.mak',
                  permission=NO_PERMISSION_REQUIRED)
     def login(self):
@@ -135,7 +161,7 @@ class Views(object):
                     password=password,
                     )
 
-    @forbidden_view_config()
+#    @forbidden_view_config()
     def forbidden(self):
         """Redirect to login if not logged in or give forbidden exception"""
         if self.request.user is None:
@@ -188,7 +214,8 @@ class JobViews(object):
         return dict(status=jobstate, jobid=str(jobid))
 
     @view_config(route_name='status.json', renderer='json',
-                 permission='monitor', request_method='PUT')
+                 permission='monitor',
+                 request_method='PUT')
     def set_job_status(self):
         jobid = self.job.id
         jobstate = self.request.body
