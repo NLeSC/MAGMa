@@ -41,10 +41,8 @@ def init_user_db(engine, create=True, fill=True):
     if create:
         Base.metadata.create_all(engine)
     if fill:
-        # create jobmanager account
-        DBSession.add(User('jobmananger', 'Job Manager daemon',
-                           's.verhoeven@esciencecenter.nl'))
         # TODO register all found jobs
+        pass
 
 
 class UUIDType(TypeDecorator):
@@ -109,7 +107,9 @@ class User(Base):
     @classmethod
     def add(cls, user):
         """Adds :class:`User` to db"""
-        DBSession().add(user)
+        session = DBSession()
+        session.add(user)
+        session.flush()
 
 
 class JobMeta(Base):
@@ -210,8 +210,10 @@ class JobIdFactory(RootFactory):
             # this is not the parent job where this job is derived from
             job.__parent__ = self
             # owner may run calculations
+            monitor_user = self.request.registry.settings['monitor_user']
             job.__acl__ = [(Allow, job.owner, 'run'),
-                           (Allow, 'jobmanager', 'monitor')]
+                           # monitor user may monitor this job
+                           (Allow, monitor_user, 'monitor')]
         except JobNotFound:
             # TODO to fetch job state job's db can be absent
             raise HTTPNotFound()

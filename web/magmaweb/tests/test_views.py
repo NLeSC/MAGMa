@@ -10,6 +10,7 @@ from magmaweb.user import User, JobMeta
 class AbstractViewsTestCase(unittest.TestCase):
     def setUp(self):
         self.settings = {'jobfactory.root_dir': '/somedir',
+                         'access_token.expires_in': 360,
                          }
         self.config = testing.setUp(settings=self.settings)
         self.config.add_route('status.json', '/status/{jobid}.json')
@@ -364,6 +365,35 @@ class ViewsTestCase(AbstractViewsTestCase):
         loc = 'http://example.com/login?'
         loc += 'came_from=http%3A%2F%2Fexample.com%2F'
         self.assertEqual(response.location, loc)
+
+    @patch('magmaweb.views.time.time')
+    def test_access_token(self, time):
+        time.return_value = 1355000000.000000
+        request = testing.DummyRequest()
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+
+        # mock auth
+        from pyramid.authorization import ACLAuthorizationPolicy
+        from pyramid_macauth import MACAuthenticationPolicy
+        from pyramid_multiauth import MultiAuthenticationPolicy
+        self.config.set_authorization_policy(ACLAuthorizationPolicy())
+        policy = Mock(MACAuthenticationPolicy)
+        policy.encode_mac_id.return_value = 'id', 'key'
+        mpolicy = MultiAuthenticationPolicy([policy])
+        self.config.set_authentication_policy(mpolicy)
+
+        views = Views(request)
+
+        response = views.access_token()
+
+        expected_response = {"acesss_token": 'id',
+                             "mac_key": 'key',
+                             "expires_in": 360,
+                             "token_type": "mac",
+                             "mac_algorithm": "hmac-sha-1"}
+        self.assertDictEqual(response, expected_response)
+        self.assertEqual(request.response.headers['Cache-Control'], "no-store")
+        policy.encode_mac_id.assert_called_with(request, 'bob', expires=1355000360)
 
 
 class JobViewsTestCase(AbstractViewsTestCase):

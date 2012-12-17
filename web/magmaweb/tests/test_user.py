@@ -185,6 +185,7 @@ class TestJobIdFactory(unittest.TestCase):
         self.request = testing.DummyRequest()
         self.request.registry.settings = {'extjsroot': 'extjsroot',
                                           'jobfactory.root_dir': '/somedir',
+                                          'monitor_user': 'jobmanager',
                                           }
         init_user_db()
         self.session = user.DBSession()

@@ -17,7 +17,8 @@ class FunctionalTests(unittest.TestCase):
                          'extjsroot': 'ext',
                          'sqlalchemy.url': 'sqlite:///:memory:',
                          'cookie.secret': 'aepeeV6aizaiph5Ae0Reimeequuluwoh',
-                         'cookie.path': '/magma'
+                         'cookie.path': '/magma',
+                         'monitor_user': 'jobmanager',
                          }
         # add REMOTE_ADDR to prevent ip auth
         # treating requests as coming from localhost
