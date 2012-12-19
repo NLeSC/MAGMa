@@ -2,6 +2,12 @@ package nl.esciencecenter.magma.core;
 
 import java.net.URI;
 
+import org.gridlab.gat.GAT;
+import org.gridlab.gat.GATObjectCreationException;
+import org.gridlab.gat.io.File;
+import org.gridlab.gat.resources.JobDescription;
+import org.gridlab.gat.resources.SoftwareDescription;
+
 /**
  * Request which can be converted to JobDescription which can be submitted using
  * JavaGAT.
@@ -90,5 +96,42 @@ public class JobSubmitRequest {
 	 */
 	public JobSubmitRequest() {
 		super();
+	}
+
+	/**
+	 * Convert requested jobsubmission to JobDescription which can be submitted
+	 *
+	 * @return JobDescription
+	 * @throws GATObjectCreationException
+	 */
+	public JobDescription getJobDescription() throws GATObjectCreationException {
+		SoftwareDescription sd = new SoftwareDescription();
+		sd.setExecutable(executable);
+		sd.setArguments(arguments);
+		sd.setStderr(GAT.createFile(jobdir + stderr));
+		sd.setStdout(GAT.createFile(jobdir + stdout));
+		if (time_max > 0) {
+			sd.addAttribute("time.max", time_max);
+		}
+		if (memory_min > 0) {
+			sd.addAttribute("memory.min", memory_min);
+		}
+		if (memory_max > 0) {
+			sd.addAttribute("memory.max", memory_max);
+		}
+		for (String prestage : prestaged) {
+			File prestagefile = GAT.createFile(prestage);
+			if (!prestagefile.isAbsolute()) {
+				prestagefile = GAT.createFile(jobdir + prestage);
+			}
+			sd.addPreStagedFile(prestagefile);
+		}
+		for (String poststage : poststaged) {
+			File poststagefile = GAT.createFile(poststage);
+			sd.addPostStagedFile(poststagefile,
+					GAT.createFile(jobdir + poststage));
+		}
+
+		return new JobDescription(sd);
 	}
 }

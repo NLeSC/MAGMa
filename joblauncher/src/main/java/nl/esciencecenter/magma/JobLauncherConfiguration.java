@@ -1,10 +1,12 @@
 package nl.esciencecenter.magma;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 import org.hibernate.validator.constraints.NotEmpty;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.yammer.dropwizard.client.HttpClientConfiguration;
 import com.yammer.dropwizard.config.Configuration;
 
 public class JobLauncherConfiguration extends Configuration {
@@ -21,9 +23,18 @@ public class JobLauncherConfiguration extends Configuration {
 	private String mac_key;
 
 	@Valid
-	@NotEmpty
+    @NotNull
 	@JsonProperty("gat")
 	private GATConfiguration gatConfiguration = new GATConfiguration();
+
+    @Valid
+    @NotNull
+    @JsonProperty
+    private HttpClientConfiguration httpClient = new HttpClientConfiguration();
+
+    public HttpClientConfiguration getHttpClientConfiguration() {
+        return httpClient;
+    }
 
 	public GATConfiguration getGatConfiguration() {
 		return gatConfiguration;
