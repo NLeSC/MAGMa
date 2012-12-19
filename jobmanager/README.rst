@@ -93,6 +93,12 @@ After a while `output_file`, `stderr.txt` and `stdout.txt` file appear in `myjob
 "http://localhost/job/myjob/status" will have several PUT HTTP requests send to it.
 The PUT requestes contain job statuses like PRE_STAGING, RUNNING, POST_STAGING, STOPPED.
 
+Callback authentication
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The status callbacks uses MAC Access Authentication.
+The MAC key indentifier and MAC key must be obtained from the provider.
+
 Documentation
 -------------
 

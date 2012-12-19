@@ -46,6 +46,7 @@ public class Main {
         System.out.println("Starting grizzly...");
         ResourceConfig rc = new PackagesResourceConfig(
                 "nl.nlesc.magma.resources");
+
         return GrizzlyServerFactory.createHttpServer(BASE_URI, rc);
     }
 
