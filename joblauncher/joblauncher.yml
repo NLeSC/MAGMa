@@ -1,0 +1,7 @@
+mac_id: my mac id
+mac_key: my mac key
+mac_algorithm: my mac algo
+gat:
+  brokerURI: localq://localhost
+  preferences:
+    localq.max.concurrent.jobs: 1

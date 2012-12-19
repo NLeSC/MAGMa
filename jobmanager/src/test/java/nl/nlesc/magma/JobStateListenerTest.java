@@ -7,7 +7,6 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.UUID;
 
 import junit.framework.TestCase;
 
@@ -15,7 +14,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPut;
 import org.gridlab.gat.monitoring.MetricEvent;
 import org.gridlab.gat.resources.Job.JobState;
-import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 public class JobStateListenerTest extends TestCase {
@@ -25,17 +23,15 @@ public class JobStateListenerTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		jobid = UUID.randomUUID().toString();
+		jobid = "3c40e3fe-a9ae-46d3-8ec7-358815cc2f13";
 		status_cb_url = new URI("http://example.com/status/" + jobid + ".json");
 	}
 
-	@Test
 	public void testJobStateListener() throws IOException {
 		JobStateListener listener = new JobStateListener(status_cb_url);
 		assertEquals(status_cb_url, listener.getStatusCallbackUrl());
 	}
 
-	@Test
 	public void testProcessMetricEvent() throws IOException {
 		HttpClient ua = mock(HttpClient.class);
 		JobStateListener listener = new JobStateListener(status_cb_url, ua);
@@ -49,14 +45,18 @@ public class JobStateListenerTest extends TestCase {
 		listener.processMetricEvent(event);
 
 		verify(ua).execute(httpRequest.capture());
-		assertEquals(httpRequest.getValue().getMethod(), "PUT");
-		assertEquals(httpRequest.getValue().getURI(), status_cb_url);
-		assertEquals(getRequestBody(httpRequest), JobState.STOPPED.toString());
+		HttpPut r = httpRequest.getValue();
+		assertEquals(r.getMethod(), "PUT");
+		assertEquals(r.getURI().toString(),
+				"http://example.com/status/3c40e3fe-a9ae-46d3-8ec7-358815cc2f13.json");
+		// TODO test mac credentials more deeply
+		assertFalse(r.getFirstHeader("Authorization").getValue().isEmpty());
+
+		assertEquals(getRequestBody(r), JobState.STOPPED.toString());
 	}
 
-	private String getRequestBody(ArgumentCaptor<HttpPut> httpRequest)
-			throws IOException {
-		InputStream input = httpRequest.getValue().getEntity().getContent();
+	private String getRequestBody(HttpPut httpRequest) throws IOException {
+		InputStream input = httpRequest.getEntity().getContent();
 		StringBuilder builder = new StringBuilder();
 
 		int data = input.read();
