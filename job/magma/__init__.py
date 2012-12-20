@@ -218,7 +218,7 @@ class StructureEngine(object):
         for parentid, in parentids:
             metids.extend(self.metabolize(parentid,metabolism,nsteps))
         return set(metids)
-    
+
     def retrieve_structures(self,mass):
         dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
         conn = sqlite3.connect(dbfilename)
@@ -236,14 +236,14 @@ class MsDataEngine(object):
             rundata = Run()
         if rundata.abs_peak_cutoff == None:
             rundata.abs_peak_cutoff=abs_peak_cutoff
-        if rundata.rel_peak_cutoff == None:
-            rundata.rel_peak_cutoff=rel_peak_cutoff
+#        if rundata.rel_peak_cutoff == None:
+#            rundata.rel_peak_cutoff=rel_peak_cutoff
         if rundata.max_ms_level == None:
             rundata.max_ms_level=max_ms_level
         self.db_session.add(rundata)
         self.db_session.commit()
         self.abs_peak_cutoff=rundata.abs_peak_cutoff
-        self.rel_peak_cutoff=rundata.rel_peak_cutoff
+#        self.rel_peak_cutoff=rundata.rel_peak_cutoff
         self.max_ms_level=rundata.max_ms_level
 
     def store_mzxml_file(self,mzxml_file):
@@ -339,7 +339,7 @@ class MsDataEngine(object):
         print tree_list
         self.global_scanid = 1
         self.store_manual_subtree(tree_list,0,0,0,1)
-    
+
     def store_manual_subtree(self,tree_list,precursor_scanid,precursor_mz,precursor_intensity,mslevel):
         lowmz=None
         highmz=None
@@ -381,7 +381,7 @@ class MsDataEngine(object):
         self.db_session.commit()
         if len(tree_list)>0:
             tree_list.pop(0)
-            
+
 
 class AnnotateEngine(object):
     def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,
@@ -454,7 +454,7 @@ class AnnotateEngine(object):
 #                    for childpeak in scan.peaks[-1].childscan.peaks:
 #                        scan.peaks[-1].missing_fragment_score+=childpeak.missing_fragment_score
         return scan
-    
+
     def build_spectra(self,scans='all'):
         logging.warn('Build spectra')
         if scans=='all':
@@ -523,7 +523,7 @@ class AnnotateEngine(object):
         if max_mz=='':
             max_mz='9999'
         mmz=float(max_mz)
-        
+
         conn = sqlite3.connect(dbfilename)
         conn.text_factory=str
         c = conn.cursor()
@@ -685,10 +685,10 @@ class DataAnalysisEngine(object):
             filter(Fragment.parentfragid==0).\
             filter(Fragment.scanid==scanid).\
             all()
-            
+
     def get_num_peaks(self,scanid):
         return self.db_session.query(Peak).filter(Peak.scanid==scanid).count()
-            
+
     def export_assigned_molecules(self,name):
         for metabolite,peak in self.db_session.query(Metabolite,Peak).filter(Metabolite.metid==Peak.assigned_metid):
             print metabolite.origin.splitlines()[0]

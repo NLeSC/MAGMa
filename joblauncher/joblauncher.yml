@@ -1,6 +1,9 @@
-mac_id: my mac id
-mac_key: my mac key
-mac_algorithm: my mac algo
+macs:
+  -
+    id: eyJzYWx0IjogIjU3MjY0NCIsICJleHBpcmVzIjogMTM4Njc3MjEwOC4yOTIyNTUsICJ1c2VyaWQiOiAiam9ibWFuYWdlciJ9KBJRMeTW2G9I6jlYwRj6j8koAek=
+    key: _B1YfcqEYpZxyTx_-411-QdBOSI=
+    algorithm: hmac-sha-1
+    scope: http://145.100.61.22
 gat:
   brokerURI: localq://localhost
   preferences:

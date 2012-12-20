@@ -1,4 +1,4 @@
-package nl.esciencecenter.magma.core;
+package nl.esciencecenter.magma.api;
 
 /**
  * Returned when job is submitted successfully.

@@ -110,7 +110,7 @@
 				</configuration>
 			</plugin>
 
-			<!-- To run ws as standalone use 'mvn package;java -jar target/target/joblauncher-0.0.1-SNAPSHOT.jar
+			<!-- To run ws as standalone use 'mvn package;java -Dgat.adaptor.path=${gat-adaptor-path} -jar target/target/joblauncher-0.0.1-SNAPSHOT.jar
 				server joblauncher.yml' -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
