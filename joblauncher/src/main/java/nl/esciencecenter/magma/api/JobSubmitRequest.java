@@ -1,4 +1,4 @@
-package nl.esciencecenter.magma.core;
+package nl.esciencecenter.magma.api;
 
 import java.net.URI;
 
@@ -89,6 +89,10 @@ public class JobSubmitRequest {
 		this.stderr = stderr;
 		this.stdout = stdout;
 		this.status_callback_url = status_callback_url;
+	}
+
+	public URI getStatus_callback_url() {
+		return status_callback_url;
 	}
 
 	/**
