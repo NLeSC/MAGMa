@@ -6,7 +6,6 @@ import java.util.Set;
 import org.gridlab.gat.GAT;
 import org.gridlab.gat.GATContext;
 import org.gridlab.gat.GATObjectCreationException;
-import org.gridlab.gat.Preferences;
 import org.gridlab.gat.URI;
 import org.gridlab.gat.resources.ResourceBroker;
 
@@ -16,21 +15,22 @@ public class GATManager implements Managed {
 	private final ResourceBroker broker;
 	private final GATContext context;
 
-	public GATManager(GATConfiguration configuration) throws GATObjectCreationException, URISyntaxException {
+	public GATManager(GATConfiguration configuration)
+			throws GATObjectCreationException, URISyntaxException {
 		context = GAT.getDefaultGATContext();
 
 		// copy over preferences from config to default GAT context
-    	Preferences prefs = new Preferences();
-    	Set<String> keys = configuration.getPreferences().keySet();
-    	for (String key : keys) {
-            context.addPreference(key, configuration.getPreferences().get(key));
-        }
+		Set<String> keys = configuration.getPreferences().keySet();
+		for (String key : keys) {
+			context.addPreference(key, configuration.getPreferences().get(key));
+		}
 
-		// TODO load SecurityContext from config, optionally interactive for passwords/passphrases
+		// TODO load SecurityContext from config, optionally interactive for
+		// passwords/passphrases
 
-    	// create default broker
+		// create default broker
 		URI brokerUri = new URI(configuration.getBrokerURI());
-		broker = GAT.createResourceBroker(prefs, brokerUri);
+		broker = GAT.createResourceBroker(brokerUri);
 
 		GAT.setDefaultGATContext(context);
 	}

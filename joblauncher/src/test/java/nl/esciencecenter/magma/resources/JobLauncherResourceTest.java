@@ -28,7 +28,7 @@ public class JobLauncherResourceTest {
 		URI cb_url = new URI("http://example.com");
 		when(request.getStatus_callback_url()).thenReturn(cb_url);
 		JobDescription jobdescription = mock(JobDescription.class);
-		when(request.getJobDescription()).thenReturn(jobdescription);
+		when(request.toJobDescription()).thenReturn(jobdescription);
 		ResourceBroker broker = mock(ResourceBroker.class);
 		Job job = mock(Job.class);
 		when(job.getJobID()).thenReturn(1234);

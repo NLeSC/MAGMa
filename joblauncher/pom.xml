@@ -36,12 +36,14 @@
 		<gat-version>2.1.3</gat-version>
 		<gat-adaptor-path>JavaGAT-${gat-version}/lib/adaptors</gat-adaptor-path>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<dropwizard.version>0.6.1</dropwizard.version>
+		<powermock.version>1.5</powermock.version>
 	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>com.yammer.dropwizard</groupId>
 			<artifactId>dropwizard-core</artifactId>
-			<version>0.6.1</version>
+			<version>${dropwizard.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.gridlab.gat</groupId>
@@ -82,13 +84,37 @@
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-all</artifactId>
-			<version>1.9.0</version>
+			<version>1.9.5</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.yammer.dropwizard</groupId>
 			<artifactId>dropwizard-client</artifactId>
-			<version>0.6.1</version>
+			<version>${dropwizard.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.hamcrest</groupId>
+			<artifactId>hamcrest-all</artifactId>
+			<version>1.3</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.yammer.dropwizard</groupId>
+			<artifactId>dropwizard-testing</artifactId>
+			<version>${dropwizard.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-module-junit4</artifactId>
+			<version>${powermock.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-api-mockito</artifactId>
+			<version>${powermock.version}</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	<build>
@@ -199,22 +225,6 @@
 							<groupId>org.apache.maven.plugins</groupId>
 							<artifactId>maven-project-info-reports-plugin</artifactId>
 							<version>2.6</version>
-							<reportSets>
-								<reportSet>
-									<reports>
-										<report>index</report>
-										<report>cim</report>
-										<report>issue-tracking</report>
-										<report>modules</report>
-										<report>plugin-management</report>
-										<report>plugins</report>
-										<report>project-team</report>
-										<report>scm</report>
-										<report>summary</report>
-										<report>help</report>
-									</reports>
-								</reportSet>
-							</reportSets>
 						</plugin>
 						<plugin>
 							<groupId>org.apache.maven.plugins</groupId>
@@ -309,3 +319,4 @@
 		</plugins>
 	</build>
 </project>
+

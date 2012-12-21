@@ -33,7 +33,7 @@ public class JobLauncherResource {
 		MetricListener listener = new JobStateListener(
 				request.getStatus_callback_url(), httpClient);
 
-		Job job = broker.submitJob(request.getJobDescription(), listener,
+		Job job = broker.submitJob(request.toJobDescription(), listener,
 				"job.status");
 
 		return new JobSubmitResponse(Integer.toString(job.getJobID()));

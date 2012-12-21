@@ -11,6 +11,8 @@ import org.apache.http.entity.StringEntity;
 import org.gridlab.gat.monitoring.MetricEvent;
 import org.gridlab.gat.monitoring.MetricListener;
 
+import com.google.common.base.Objects;
+
 public class JobStateListener implements MetricListener {
 
 	private URI status_callback_url;
@@ -42,13 +44,11 @@ public class JobStateListener implements MetricListener {
 	public boolean equals(Object obj) {
 		if (obj == null)
 			return false;
-		JobStateListener other = (JobStateListener) obj;
-		if (status_callback_url == null) {
-			if (other.status_callback_url != null)
-				return false;
-		} else if (!status_callback_url.equals(other.status_callback_url))
+		if (getClass() != obj.getClass())
 			return false;
-		return true;
+		JobStateListener other = (JobStateListener) obj;
+		return Objects.equal(this.status_callback_url, other.status_callback_url)
+				&& Objects.equal(this.httpclient, other.httpclient);
 	}
 
 }

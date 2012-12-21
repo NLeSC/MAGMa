@@ -10,6 +10,7 @@ import org.apache.http.auth.BasicUserPrincipal;
 import org.apache.http.auth.Credentials;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Objects;
 
 public class MacCredential implements Credentials {
 	@NotNull
@@ -27,6 +28,15 @@ public class MacCredential implements Credentials {
 	@JsonProperty
 	@NotNull
 	private URI scope = null;
+
+	public MacCredential(String id, String key, URI scope) {
+		this.id = id;
+		this.key = key;
+		this.scope = scope;
+	}
+
+	public MacCredential() {
+	}
 
 	public String getId() {
 		return id;
@@ -71,5 +81,18 @@ public class MacCredential implements Credentials {
 
 	public String getPassword() {
 		return key;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		MacCredential other = (MacCredential) obj;
+		return Objects.equal(this.id, other.id)
+				&& Objects.equal(this.key, other.key)
+				&& Objects.equal(this.algorithm, other.algorithm)
+				&& Objects.equal(this.scope, other.scope);
 	}
 }
