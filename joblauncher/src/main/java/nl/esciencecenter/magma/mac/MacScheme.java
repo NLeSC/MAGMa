@@ -1,8 +1,12 @@
 package nl.esciencecenter.magma.mac;
 
+import java.math.BigInteger;
 import java.net.URI;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Date;
+import java.util.Random;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -20,6 +24,8 @@ import org.apache.http.message.BasicHeader;
 public class MacScheme implements AuthScheme {
 	/** The name of this authorization scheme. */
 	public static final String SCHEME_NAME = "MAC";
+	private Date date = new Date();
+	private Random random = new SecureRandom();
 
 	public void processChallenge(Header header)
 			throws MalformedChallengeException {
@@ -54,7 +60,8 @@ public class MacScheme implements AuthScheme {
 		String nonce = getNonce();
 		String data = getNormalizedRequestString((HttpUriRequest) request,
 				nonce, timestamp);
-		String request_mac = calculateRFC2104HMAC(data, key, getAlgorithm(credentials));
+		String request_mac = calculateRFC2104HMAC(data, key,
+				getAlgorithm(credentials));
 
 		return new BasicHeader("Authorization", headerValue(id, timestamp,
 				nonce, request_mac));
@@ -69,19 +76,21 @@ public class MacScheme implements AuthScheme {
 		return headerValue;
 	}
 
-    /**
-     * Computes RFC 2104-compliant HMAC signature.
-     *
-     * @param data
-     *            The data to be signed.
-     * @param key
-     *            The signing key.
-     * @param algorithm MAC algorithm implemented by javax.crypto.MAC
-     * @return The Base64-encoded RFC 2104-compliant HMAC signature.
-     * @throws RuntimeException
-     *             when signature generation fails
-     */
-	private String calculateRFC2104HMAC(String data, String key, String algorithm) throws AuthenticationException {
+	/**
+	 * Computes RFC 2104-compliant HMAC signature.
+	 *
+	 * @param data
+	 *            The data to be signed.
+	 * @param key
+	 *            The signing key.
+	 * @param algorithm
+	 *            MAC algorithm implemented by javax.crypto.MAC
+	 * @return The Base64-encoded RFC 2104-compliant HMAC signature.
+	 * @throws RuntimeException
+	 *             when signature generation fails
+	 */
+	private String calculateRFC2104HMAC(String data, String key,
+			String algorithm) throws AuthenticationException {
 		try {
 			Mac mac = Mac.getInstance(algorithm);
 			SecretKeySpec macKey = new SecretKeySpec(key.getBytes(), "RAW");
@@ -92,8 +101,7 @@ public class MacScheme implements AuthScheme {
 			throw new AuthenticationException("Failed to generate HMAC: "
 					+ e.getMessage(), e);
 		} catch (NoSuchAlgorithmException e) {
-			throw new AuthenticationException(algorithm
-					+ " algorithm is not supported", e);
+			throw new AuthenticationException("Algorithm is not supported", e);
 		}
 	}
 
@@ -110,12 +118,27 @@ public class MacScheme implements AuthScheme {
 		return normalized_request_string;
 	}
 
+	public Random getRandom() {
+		return random;
+	}
+
+	public void setRandom(Random random) {
+		this.random = random;
+	}
+
 	private String getNonce() {
-		return java.util.UUID.randomUUID().toString();
+		return new BigInteger(130, random).toString(32);
+	}
+
+	public void setDate(java.util.Date date) {
+		this.date = date;
+	}
+
+	public Date getDate() {
+		return date;
 	}
 
 	private Long getTimestamp() {
-		java.util.Date date = new java.util.Date();
 		Long timestamp = date.getTime() / 1000;
 		return timestamp;
 	}
@@ -139,11 +162,8 @@ public class MacScheme implements AuthScheme {
 	}
 
 	private String getAlgorithm(Credentials credentials) {
-		if (credentials instanceof MacCredential) {
-			String standardAlgo = ((MacCredential) credentials).getAlgorithm();
-			return algorithmMapper(standardAlgo);
-		}
-		return "HmacSHA1";
+		String standardAlgo = ((MacCredential) credentials).getAlgorithm();
+		return algorithmMapper(standardAlgo);
 	}
 
 	public static String algorithmMapper(String standard) {
@@ -155,5 +175,14 @@ public class MacScheme implements AuthScheme {
 		}
 		// TODO implement registered extension algorithm
 		return java;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		return true;
 	}
 }

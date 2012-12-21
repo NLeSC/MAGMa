@@ -1,6 +1,9 @@
 package nl.esciencecenter.magma.api;
 
 import java.net.URI;
+import java.util.Arrays;
+
+import javax.validation.constraints.NotNull;
 
 import org.gridlab.gat.GAT;
 import org.gridlab.gat.GATObjectCreationException;
@@ -20,10 +23,12 @@ public class JobSubmitRequest {
 	 * Job directory where stderr/stdout/prestaged/poststaged file are relative
 	 * to and where job.state file is written. Must end with '/'
 	 */
+	@NotNull
 	public String jobdir;
 	/**
 	 * Path to executable on execution host
 	 */
+	@NotNull
 	public String executable;
 	/**
 	 * File name to write standard error to
@@ -108,7 +113,7 @@ public class JobSubmitRequest {
 	 * @return JobDescription
 	 * @throws GATObjectCreationException
 	 */
-	public JobDescription getJobDescription() throws GATObjectCreationException {
+	public JobDescription toJobDescription() throws GATObjectCreationException {
 		SoftwareDescription sd = new SoftwareDescription();
 		sd.setExecutable(executable);
 		sd.setArguments(arguments);
@@ -137,5 +142,65 @@ public class JobSubmitRequest {
 		}
 
 		return new JobDescription(sd);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		JobSubmitRequest other = (JobSubmitRequest) obj;
+		if (!Arrays.equals(arguments, other.arguments))
+			return false;
+		if (executable == null) {
+			if (other.executable != null)
+				return false;
+		} else if (!executable.equals(other.executable))
+			return false;
+		if (jobdir == null) {
+			if (other.jobdir != null)
+				return false;
+		} else if (!jobdir.equals(other.jobdir))
+			return false;
+		if (memory_max != other.memory_max)
+			return false;
+		if (memory_min != other.memory_min)
+			return false;
+		if (!Arrays.equals(poststaged, other.poststaged))
+			return false;
+		if (!Arrays.equals(prestaged, other.prestaged))
+			return false;
+		if (status_callback_url == null) {
+			if (other.status_callback_url != null)
+				return false;
+		} else if (!status_callback_url.equals(other.status_callback_url))
+			return false;
+		if (stderr == null) {
+			if (other.stderr != null)
+				return false;
+		} else if (!stderr.equals(other.stderr))
+			return false;
+		if (stdout == null) {
+			if (other.stdout != null)
+				return false;
+		} else if (!stdout.equals(other.stdout))
+			return false;
+		if (time_max != other.time_max)
+			return false;
+		return true;
+	}
+
+	@Override
+	public String toString() {
+		return "JobSubmitRequest [jobdir=" + jobdir + ", executable="
+				+ executable + ", stderr=" + stderr + ", stdout=" + stdout
+				+ ", arguments=" + Arrays.toString(arguments) + ", prestaged="
+				+ Arrays.toString(prestaged) + ", poststaged="
+				+ Arrays.toString(poststaged) + ", time_max=" + time_max
+				+ ", memory_min=" + memory_min + ", memory_max=" + memory_max
+				+ ", status_callback_url=" + status_callback_url + "]";
 	}
 }

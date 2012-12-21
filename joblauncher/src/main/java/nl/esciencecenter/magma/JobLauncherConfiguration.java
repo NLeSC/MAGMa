@@ -18,18 +18,30 @@ public class JobLauncherConfiguration extends Configuration {
 	private ImmutableList<MacCredential> macs = ImmutableList.of();
 
 	@Valid
-    @NotNull
+	@NotNull
 	@JsonProperty("gat")
 	private GATConfiguration gatConfiguration = new GATConfiguration();
 
-    @Valid
-    @NotNull
-    @JsonProperty
-    private HttpClientConfiguration httpClient = new HttpClientConfiguration();
+	@Valid
+	@NotNull
+	@JsonProperty
+	private HttpClientConfiguration httpClient = new HttpClientConfiguration();
 
-    public HttpClientConfiguration getHttpClientConfiguration() {
-        return httpClient;
-    }
+	public JobLauncherConfiguration(GATConfiguration gat,
+			ImmutableList<MacCredential> macs,
+			HttpClientConfiguration httpClient) {
+		this.gatConfiguration = gat;
+		this.macs = macs;
+		this.httpClient = httpClient;
+	}
+
+	public JobLauncherConfiguration() {
+
+	}
+
+	public HttpClientConfiguration getHttpClientConfiguration() {
+		return httpClient;
+	}
 
 	public GATConfiguration getGatConfiguration() {
 		return gatConfiguration;
@@ -37,9 +49,5 @@ public class JobLauncherConfiguration extends Configuration {
 
 	public ImmutableList<MacCredential> getMacs() {
 		return macs;
-	}
-
-	public void setMacs(ImmutableList<MacCredential> macs) {
-		this.macs = macs;
 	}
 }
