@@ -22,26 +22,26 @@ import org.junit.Test;
 
 public class JobLauncherResourceTest {
 
-	@Test
-	public void testLaunchJob() throws URISyntaxException, GATInvocationException, GATObjectCreationException {
-		JobSubmitRequest request = mock(JobSubmitRequest.class);
-		URI cb_url = new URI("http://example.com");
-		when(request.getStatus_callback_url()).thenReturn(cb_url);
-		JobDescription jobdescription = mock(JobDescription.class);
-		when(request.toJobDescription()).thenReturn(jobdescription);
-		ResourceBroker broker = mock(ResourceBroker.class);
-		Job job = mock(Job.class);
-		when(job.getJobID()).thenReturn(1234);
-		when(broker.submitJob(any(JobDescription.class), any(MetricListener.class), anyString())).thenReturn(job);
-		HttpClient httpClient = new DefaultHttpClient();
-		JobStateListener listener = new JobStateListener(cb_url, httpClient);
+    @Test
+    public void testLaunchJob() throws URISyntaxException, GATInvocationException, GATObjectCreationException {
+        JobSubmitRequest request = mock(JobSubmitRequest.class);
+        URI cb_url = new URI("http://example.com");
+        when(request.getStatus_callback_url()).thenReturn(cb_url);
+        JobDescription jobdescription = mock(JobDescription.class);
+        when(request.toJobDescription()).thenReturn(jobdescription);
+        ResourceBroker broker = mock(ResourceBroker.class);
+        Job job = mock(Job.class);
+        when(job.getJobID()).thenReturn(1234);
+        when(broker.submitJob(any(JobDescription.class), any(MetricListener.class), anyString())).thenReturn(job);
+        HttpClient httpClient = new DefaultHttpClient();
+        JobStateListener listener = new JobStateListener(cb_url, httpClient);
 
-		JobLauncherResource resource = new JobLauncherResource(broker, httpClient);
+        JobLauncherResource resource = new JobLauncherResource(broker, httpClient);
 
-		JobSubmitResponse response = resource.launchJob(request);
+        JobSubmitResponse response = resource.launchJob(request);
 
-		verify(broker).submitJob(any(JobDescription.class), eq(listener), eq("job.status"));
-		assertEquals(response.jobid, "1234");
-	}
+        verify(broker).submitJob(any(JobDescription.class), eq(listener), eq("job.status"));
+        assertEquals(response.jobid, "1234");
+    }
 
 }

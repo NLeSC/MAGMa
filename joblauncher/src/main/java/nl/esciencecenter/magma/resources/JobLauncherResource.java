@@ -16,26 +16,46 @@ import nl.esciencecenter.magma.api.JobSubmitRequest;
 import nl.esciencecenter.magma.api.JobSubmitResponse;
 import nl.esciencecenter.magma.gat.JobStateListener;
 
+/**
+ * Job Resource.
+ *
+ * @author verhoes
+ *
+ */
 @Path("/job")
 public class JobLauncherResource {
-	protected ResourceBroker broker;
-	protected HttpClient httpClient;
+    protected ResourceBroker broker;
+    protected HttpClient httpClient;
 
-	public JobLauncherResource(ResourceBroker broker, HttpClient httpClient) {
-		this.broker = broker;
-		this.httpClient = httpClient;
-	}
+    /**
+     * Constructor
+     *
+     * @param broker
+     * @param httpClient
+     */
+    public JobLauncherResource(ResourceBroker broker, HttpClient httpClient) {
+        this.broker = broker;
+        this.httpClient = httpClient;
+    }
 
-	@POST
-	@Timed
-	public JobSubmitResponse launchJob(JobSubmitRequest request)
-			throws GATInvocationException, GATObjectCreationException {
-		MetricListener listener = new JobStateListener(
-				request.getStatus_callback_url(), httpClient);
+    /**
+     * Launch a job based on a request.
+     *
+     * @param request
+     * @return
+     * @throws GATInvocationException
+     * @throws GATObjectCreationException
+     */
+    @POST
+    @Timed
+    public JobSubmitResponse launchJob(JobSubmitRequest request)
+            throws GATInvocationException, GATObjectCreationException {
+        MetricListener listener = new JobStateListener(
+                request.getStatus_callback_url(), httpClient);
 
-		Job job = broker.submitJob(request.toJobDescription(), listener,
-				"job.status");
+        Job job = broker.submitJob(request.toJobDescription(), listener,
+                "job.status");
 
-		return new JobSubmitResponse(Integer.toString(job.getJobID()));
-	}
+        return new JobSubmitResponse(Integer.toString(job.getJobID()));
+    }
 }

@@ -27,61 +27,61 @@ import com.yammer.dropwizard.config.Bootstrap;
 import com.yammer.dropwizard.config.Environment;
 
 public class JobLauncherService extends Service<JobLauncherConfiguration> {
-	protected final static Logger logger = LoggerFactory
-			.getLogger(JobStateListener.class);
+    protected final static Logger logger = LoggerFactory
+            .getLogger(JobStateListener.class);
 
-	public static void main(String[] args) throws Exception {
-		new JobLauncherService().run(args);
-	}
+    public static void main(String[] args) throws Exception {
+        new JobLauncherService().run(args);
+    }
 
-	@Override
-	public void initialize(Bootstrap<JobLauncherConfiguration> bootstrap) {
-		bootstrap.setName("joblauncher");
-	}
+    @Override
+    public void initialize(Bootstrap<JobLauncherConfiguration> bootstrap) {
+        bootstrap.setName("joblauncher");
+    }
 
-	@Override
-	public void run(JobLauncherConfiguration configuration,
-			Environment environment) throws Exception {
-		GATManager gatmanager = new GATManager(
-				configuration.getGatConfiguration());
-		environment.manage(gatmanager);
-		HttpClient httpClient = new HttpClientBuilder().using(
-				configuration.getHttpClientConfiguration()).build();
+    @Override
+    public void run(JobLauncherConfiguration configuration,
+            Environment environment) throws Exception {
+        GATManager gatmanager = new GATManager(
+                configuration.getGatConfiguration());
+        environment.manage(gatmanager);
+        HttpClient httpClient = new HttpClientBuilder().using(
+                configuration.getHttpClientConfiguration()).build();
 
-		httpClient = MacifyHttpClient((AbstractHttpClient) httpClient,
-				configuration.getMacs());
+        httpClient = macifyHttpClient((AbstractHttpClient) httpClient,
+                configuration.getMacs());
 
-		environment.addResource(new JobLauncherResource(gatmanager.getBroker(),
-				httpClient));
-		environment.addHealthCheck(new JobLauncherHealthCheck("joblauncher"));
-	}
+        environment.addResource(new JobLauncherResource(gatmanager.getBroker(),
+                httpClient));
+        environment.addHealthCheck(new JobLauncherHealthCheck("joblauncher"));
+    }
 
-	public static AbstractHttpClient MacifyHttpClient(
-			AbstractHttpClient httpClient, ImmutableList<MacCredential> macs) {
+    public static AbstractHttpClient macifyHttpClient(
+            AbstractHttpClient httpClient, ImmutableList<MacCredential> macs) {
 
-		// Add MAC scheme
-		httpClient.getAuthSchemes().register(MacScheme.SCHEME_NAME,
-				new MacSchemeFactory());
+        // Add MAC scheme
+        httpClient.getAuthSchemes().register(MacScheme.SCHEME_NAME,
+                new MacSchemeFactory());
 
-		// Add configured MAC id/key pairs.
-		CredentialsProvider credentialProvider = httpClient
-				.getCredentialsProvider();
-		for (MacCredential mac : macs) {
-			credentialProvider.setCredentials(mac.getAuthScope(), mac);
-		}
+        // Add configured MAC id/key pairs.
+        CredentialsProvider credentialProvider = httpClient
+                .getCredentialsProvider();
+        for (MacCredential mac : macs) {
+            credentialProvider.setCredentials(mac.getAuthScope(), mac);
+        }
 
-		// Add MAC scheme to ordered list of supported authentication schemes
-		// See HTTP authentication parameters chapter on
-		// http://hc.apache.org/httpcomponents-client-ga/tutorial/html/authentication.html
-		List<String> authSchemes = Collections
-				.unmodifiableList(Arrays.asList(new String[] {
-						MacScheme.SCHEME_NAME, AuthPolicy.SPNEGO,
-						AuthPolicy.KERBEROS, AuthPolicy.NTLM,
-						AuthPolicy.DIGEST, AuthPolicy.BASIC }));
-		httpClient.getParams().setParameter(AuthPNames.TARGET_AUTH_PREF,
-				authSchemes);
+        // Add MAC scheme to ordered list of supported authentication schemes
+        // See HTTP authentication parameters chapter on
+        // http://hc.apache.org/httpcomponents-client-ga/tutorial/html/authentication.html
+        List<String> authSchemes = Collections
+                .unmodifiableList(Arrays.asList(new String[] {
+                        MacScheme.SCHEME_NAME, AuthPolicy.SPNEGO,
+                        AuthPolicy.KERBEROS, AuthPolicy.NTLM,
+                        AuthPolicy.DIGEST, AuthPolicy.BASIC }));
+        httpClient.getParams().setParameter(AuthPNames.TARGET_AUTH_PREF,
+                authSchemes);
 
-		return httpClient;
-	}
+        return httpClient;
+    }
 
 }

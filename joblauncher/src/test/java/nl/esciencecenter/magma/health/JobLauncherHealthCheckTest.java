@@ -8,10 +8,10 @@ import com.yammer.metrics.core.HealthCheck.Result;
 
 public class JobLauncherHealthCheckTest {
 
-	@Test
-	public void testCheck() throws Exception {
-		JobLauncherHealthCheck hc = new JobLauncherHealthCheck("gat");
-		assertEquals(Result.healthy(), hc.check());
-	}
+    @Test
+    public void testCheck() throws Exception {
+        JobLauncherHealthCheck hc = new JobLauncherHealthCheck("gat");
+        assertEquals(Result.healthy(), hc.check());
+    }
 
 }

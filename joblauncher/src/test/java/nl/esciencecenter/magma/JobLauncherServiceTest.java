@@ -32,70 +32,70 @@ import nl.esciencecenter.magma.mac.MacScheme;
 import nl.esciencecenter.magma.resources.JobLauncherResource;
 
 public class JobLauncherServiceTest {
-	private final Environment environment = mock(Environment.class);
-	private final JobLauncherService service = new JobLauncherService();
+    private final Environment environment = mock(Environment.class);
+    private final JobLauncherService service = new JobLauncherService();
 
-	@Test
-	public void testInitialize() {
-		Bootstrap<JobLauncherConfiguration> bootstrap = new Bootstrap<JobLauncherConfiguration>(
-				service);
+    @Test
+    public void testInitialize() {
+        Bootstrap<JobLauncherConfiguration> bootstrap = new Bootstrap<JobLauncherConfiguration>(
+                service);
 
-		service.initialize(bootstrap);
+        service.initialize(bootstrap);
 
-		assertEquals("joblauncher", bootstrap.getName());
-	}
+        assertEquals("joblauncher", bootstrap.getName());
+    }
 
-	@Test
-	public void testRun() throws Exception {
-		JobLauncherConfiguration config = sampleConfiguration();
+    @Test
+    public void testRun() throws Exception {
+        JobLauncherConfiguration config = sampleConfiguration();
 
-		service.run(config, environment);
+        service.run(config, environment);
 
-		verify(environment).addResource(any(JobLauncherResource.class));
-		verify(environment).addHealthCheck(any(JobLauncherHealthCheck.class));
-		verify(environment).manage(any(GATManager.class));
+        verify(environment).addResource(any(JobLauncherResource.class));
+        verify(environment).addHealthCheck(any(JobLauncherHealthCheck.class));
+        verify(environment).manage(any(GATManager.class));
 
-		// TODO test injection of MAC Credentials into httpClient
-		// or fold injection into extented HttpClientBuilder
-	}
+        // TODO test injection of MAC Credentials into httpClient
+        // or fold injection into extented HttpClientBuilder
+    }
 
-	private JobLauncherConfiguration sampleConfiguration()
-			throws URISyntaxException {
-		ImmutableMap<String, Object> prefs = ImmutableMap.of(
-				"localq.max.concurrent.jobs", (Object) 1);
-		GATConfiguration gat = new GATConfiguration("localq://localhost", prefs);
-		ImmutableList<MacCredential> macs = ImmutableList.of(new MacCredential(
-				"id", "key", new URI("http://localhost")));
-		HttpClientConfiguration httpClient = new HttpClientConfiguration();
+    private JobLauncherConfiguration sampleConfiguration()
+            throws URISyntaxException {
+        ImmutableMap<String, Object> prefs = ImmutableMap.of(
+                "localq.max.concurrent.jobs", (Object) 1);
+        GATConfiguration gat = new GATConfiguration("localq://localhost", prefs);
+        ImmutableList<MacCredential> macs = ImmutableList.of(new MacCredential(
+                "id", "key", new URI("http://localhost")));
+        HttpClientConfiguration httpClient = new HttpClientConfiguration();
 
-		JobLauncherConfiguration config = new JobLauncherConfiguration(gat,
-				macs, httpClient);
-		return config;
-	}
+        JobLauncherConfiguration config = new JobLauncherConfiguration(gat,
+                macs, httpClient);
+        return config;
+    }
 
-	@Test
-	public void testMacifyHttpClient() throws URISyntaxException {
-		JobLauncherConfiguration config = sampleConfiguration();
-		DefaultHttpClient httpClient = new DefaultHttpClient();
+    @Test
+    public void testMacifyHttpClient() throws URISyntaxException {
+        JobLauncherConfiguration config = sampleConfiguration();
+        DefaultHttpClient httpClient = new DefaultHttpClient();
 
-		JobLauncherService.MacifyHttpClient(httpClient, config.getMacs());
+        JobLauncherService.macifyHttpClient(httpClient, config.getMacs());
 
-		assertTrue("MAC Registered auth scheme", httpClient.getAuthSchemes()
-				.getSchemeNames().contains("mac"));
+        assertTrue("MAC Registered auth scheme", httpClient.getAuthSchemes()
+                .getSchemeNames().contains("mac"));
 
-		MacCredential expected_creds = config.getMacs().get(0);
-		AuthScope authscope = expected_creds.getAuthScope();
-		Credentials creds = httpClient.getCredentialsProvider().getCredentials(
-				authscope);
-		assertEquals(expected_creds, creds);
+        MacCredential expected_creds = config.getMacs().get(0);
+        AuthScope authscope = expected_creds.getAuthScope();
+        Credentials creds = httpClient.getCredentialsProvider().getCredentials(
+                authscope);
+        assertEquals(expected_creds, creds);
 
-		List<String> authSchemes = Collections
-				.unmodifiableList(Arrays.asList(new String[] {
-						MacScheme.SCHEME_NAME, AuthPolicy.SPNEGO,
-						AuthPolicy.KERBEROS, AuthPolicy.NTLM,
-						AuthPolicy.DIGEST, AuthPolicy.BASIC }));
-		assertEquals(authSchemes,
-				httpClient.getParams()
-						.getParameter(AuthPNames.TARGET_AUTH_PREF));
-	}
+        List<String> authSchemes = Collections
+                .unmodifiableList(Arrays.asList(new String[] {
+                        MacScheme.SCHEME_NAME, AuthPolicy.SPNEGO,
+                        AuthPolicy.KERBEROS, AuthPolicy.NTLM,
+                        AuthPolicy.DIGEST, AuthPolicy.BASIC }));
+        assertEquals(authSchemes,
+                httpClient.getParams()
+                        .getParameter(AuthPNames.TARGET_AUTH_PREF));
+    }
 }
