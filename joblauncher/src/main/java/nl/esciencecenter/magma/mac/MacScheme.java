@@ -11,17 +11,27 @@ import java.util.Random;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import nl.esciencecenter.magma.gat.JobStateListener;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.Header;
 import org.apache.http.HttpRequest;
-import org.apache.http.auth.AuthScheme;
+import org.apache.http.auth.AUTH;
 import org.apache.http.auth.AuthenticationException;
+import org.apache.http.auth.ContextAwareAuthScheme;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.MalformedChallengeException;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.impl.client.RequestWrapper;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.protocol.HttpContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class MacScheme implements AuthScheme {
+public class MacScheme implements ContextAwareAuthScheme {
+	protected final static Logger logger = LoggerFactory
+			.getLogger(JobStateListener.class);
+
 	/** The name of this authorization scheme. */
 	public static final String SCHEME_NAME = "MAC";
 	private Date date = new Date();
@@ -52,18 +62,27 @@ public class MacScheme implements AuthScheme {
 		return true;
 	}
 
+	@Deprecated
 	public Header authenticate(Credentials credentials, HttpRequest request)
 			throws AuthenticationException {
+		return authenticate(credentials, request, null);
+	}
+
+	public Header authenticate(Credentials credentials, HttpRequest request,
+			HttpContext context) throws AuthenticationException {
 		String id = credentials.getUserPrincipal().getName();
 		String key = credentials.getPassword();
 		Long timestamp = getTimestamp();
 		String nonce = getNonce();
 		String data = getNormalizedRequestString((HttpUriRequest) request,
 				nonce, timestamp);
+
+		logger.warn(credentials.toString());
+
 		String request_mac = calculateRFC2104HMAC(data, key,
 				getAlgorithm(credentials));
 
-		return new BasicHeader("Authorization", headerValue(id, timestamp,
+		return new BasicHeader(AUTH.WWW_AUTH_RESP, headerValue(id, timestamp,
 				nonce, request_mac));
 	}
 
@@ -108,6 +127,12 @@ public class MacScheme implements AuthScheme {
 	private String getNormalizedRequestString(HttpUriRequest request,
 			String nonce, Long timestamp) {
 		URI uri = request.getURI();
+		// request can become wrapped, causing the request.getURI() to miss host
+		// and port
+		if (request instanceof RequestWrapper) {
+			uri = ((HttpUriRequest) ((RequestWrapper) request).getOriginal())
+					.getURI();
+		}
 		String normalized_request_string = timestamp + "\n";
 		normalized_request_string += nonce + "\n";
 		normalized_request_string += request.getMethod() + "\n";
@@ -167,10 +192,10 @@ public class MacScheme implements AuthScheme {
 	}
 
 	public static String algorithmMapper(String standard) {
-		String java = "";
-		if (standard == "hmac-sha-1") {
+		String java = standard;
+		if (standard.equals("hmac-sha-1")) {
 			java = "HmacSHA1";
-		} else if (standard == "hmac-sha-256") {
+		} else if (standard.equals("hmac-sha-256")) {
 			java = "HmacSHA256";
 		}
 		// TODO implement registered extension algorithm

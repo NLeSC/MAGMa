@@ -95,4 +95,10 @@ public class MacCredential implements Credentials {
 				&& Objects.equal(this.algorithm, other.algorithm)
 				&& Objects.equal(this.scope, other.scope);
 	}
+
+	@Override
+	public String toString() {
+		return "MacCredential [id=" + id + ", key=" + key + ", algorithm="
+				+ algorithm + ", scope=" + scope + "]";
+	}
 }
