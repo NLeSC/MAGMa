@@ -473,6 +473,7 @@ class JobFactoryTestCase(unittest.TestCase):
         self.assertEquals(req.get_data(), json.dumps(body))
         self.assertEquals(req.get_full_url(), self.factory.submit_url)
         self.assertEquals(req.get_header('Content-type'), 'application/json')
+        self.assertEquals(req.get_header('Accept'), 'application/json')
 
     def test_fromScratch(self):
         # mock/stub private methods which do external calls
