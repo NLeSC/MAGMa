@@ -126,54 +126,59 @@ class Views(object):
         user = self.request.user.userid
         expires_in = self.request.registry.settings['access_token.expires_in']
         expires = time.time() + float(expires_in)
-        id, key = policy.encode_mac_id(self.request, user, expires=expires)
+        mac_id, mac_key = policy.encode_mac_id(self.request, user,
+                                               expires=expires)
 
         self.request.response.cache_control = "no-store"
-        return {"acesss_token": id,
-                "mac_key": key,
+        return {"acesss_token": mac_id,
+                "mac_key": mac_key,
                 "expires_in": expires_in,
                 "token_type": "mac",
                 "mac_algorithm": "hmac-sha-1"}
 
     @view_config(route_name='login', renderer='login.mak',
                  permission=NO_PERMISSION_REQUIRED)
+    @forbidden_view_config(renderer='login.mak')
     def login(self):
-        login_url = self.request.route_url('login')
-        referrer = self.request.url
-        if referrer == login_url:
-            # never use the login form itself as came_from
-            referrer = self.request.route_url('home')
-        came_from = self.request.params.get('came_from', referrer)
-        userid = ''
-        password = ''
+        """Login page
 
-        if self.request.method == 'POST':
-            userid = self.request.POST['userid']
-            password = self.request.POST['password']
-            user = User.by_id(userid)
-            if user is not None and user.validate_password(password):
-                headers = remember(self.request, userid)
-                return HTTPFound(location=came_from,
-                                 headers=headers)
+        - Authenticated -> forbidden exception
+        - Unauthenticated
+        -- GET login page + MAC challenge
+        -- POST -> authenticated -> redirect came_from
+                                    or home if came_from=login
+        -- POST -> unauthenticated -> login page
 
-        return dict(came_from=came_from,
-                    userid=userid,
-                    password=password,
-                    )
-
-#    @forbidden_view_config()
-    def forbidden(self):
-        """Redirect to login if not logged in or give forbidden exception"""
-        if self.request.user is None:
+        """
+        if self.request.user is not None:
+            return self.request.exception
+        else:
+            login_url = self.request.route_url('login')
             referrer = self.request.url
-            if referrer == self.request.route_url('login'):
+            if referrer == login_url:
                 # never use the login form itself as came_from
                 referrer = self.request.route_url('home')
-            query = {'came_from': referrer}
-            location = self.request.route_url('login', _query=query)
-            return HTTPFound(location=location)
-        else:
-            return self.request.exception
+            came_from = self.request.params.get('came_from', referrer)
+            userid = ''
+            password = ''
+
+            if self.request.method == 'POST':
+                userid = self.request.POST['userid']
+                password = self.request.POST['password']
+                user = User.by_id(userid)
+                if user is not None and user.validate_password(password):
+                    headers = remember(self.request, userid)
+                    return HTTPFound(location=came_from,
+                                     headers=headers)
+            else:
+                self.request.response.status_int = 401
+                # Add MAC challenge
+                self.request.response.headers["WWW-Authenticate"] = "MAC"
+
+            return dict(came_from=came_from,
+                        userid=userid,
+                        password=password,
+                        )
 
     @view_config(route_name='logout', permission='view')
     def logout(self):
