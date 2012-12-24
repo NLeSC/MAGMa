@@ -52,7 +52,7 @@ class UUIDType(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is None:
             return None
-        return str(value)
+        return unicode(value)
 
     def process_result_value(self, value, dialect):
         if value is None:
