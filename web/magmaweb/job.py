@@ -783,7 +783,8 @@ class JobFactory(object):
         """
         request = urllib2.Request(self.submit_url,
                                   json.dumps(body),
-                                  {'Content-Type': 'application/json'})
+                                  {'Content-Type': 'application/json',
+                                   'Accept': 'application/json'})
         # log what is send to job manager
         import logging
         logger = logging.getLogger('magmaweb')

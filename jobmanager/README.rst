@@ -87,7 +87,7 @@ Then submit it
 
 .. code-block:: bash
 
-   curl -H "Content-Type: application/json" -X POST -d @query.json http://localhost:9998/job
+   curl -H "Content-Type: application/json" -H 'Accept: application/json' -X POST -d @query.json http://localhost:9998/job
 
 After a while `output_file`, `stderr.txt` and `stdout.txt` file appear in `myjob` directory.
 "http://localhost/job/myjob/status" will have several PUT HTTP requests send to it.
