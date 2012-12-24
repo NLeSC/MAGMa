@@ -9,13 +9,13 @@ import org.junit.Test;
 
 public class MacSchemeFactoryTest {
 
-	@Test
-	public void testNewInstance() {
-		MacSchemeFactory factory = new MacSchemeFactory();
-		HttpParams params = new BasicHttpParams();
-		AuthScheme scheme = factory.newInstance(params);
+    @Test
+    public void testNewInstance() {
+        MacSchemeFactory factory = new MacSchemeFactory();
+        HttpParams params = new BasicHttpParams();
+        AuthScheme scheme = factory.newInstance(params);
 
-		assertEquals(new MacScheme(), scheme);
-	}
+        assertEquals(new MacScheme(), scheme);
+    }
 
 }

@@ -30,57 +30,57 @@ import com.google.common.collect.ImmutableMap;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(GAT.class)
 public class GATManagerTest {
-	public GATManager sampleGATManager() throws GATObjectCreationException, URISyntaxException {
-		ImmutableMap<String, Object> prefs = ImmutableMap.of("localq.max.concurrent.jobs", (Object) 1);
-		GATConfiguration conf = new GATConfiguration("localq://localhost", prefs);
-		return new GATManager(conf);
-	}
+    public GATManager sampleGATManager() throws GATObjectCreationException, URISyntaxException {
+        ImmutableMap<String, Object> prefs = ImmutableMap.of("localq.max.concurrent.jobs", (Object) 1);
+        GATConfiguration conf = new GATConfiguration("localq://localhost", prefs);
+        return new GATManager(conf);
+    }
 
-	@Test
-	public void testGATManager() throws GATObjectCreationException, URISyntaxException {
-		GATContext context = new GATContext();
-		ResourceBroker broker = mock(ResourceBroker.class);
-		PowerMockito.mockStatic(GAT.class);
-		when(GAT.getDefaultGATContext()).thenReturn(context);
-		when(GAT.createResourceBroker(any(URI.class))).thenReturn(broker);
+    @Test
+    public void testGATManager() throws GATObjectCreationException, URISyntaxException {
+        GATContext context = new GATContext();
+        ResourceBroker broker = mock(ResourceBroker.class);
+        PowerMockito.mockStatic(GAT.class);
+        when(GAT.getDefaultGATContext()).thenReturn(context);
+        when(GAT.createResourceBroker(any(URI.class))).thenReturn(broker);
 
-		sampleGATManager();
+        sampleGATManager();
 
-		assertThat(context.getPreferences().get("localq.max.concurrent.jobs")).isEqualTo(1);
+        assertThat(context.getPreferences().get("localq.max.concurrent.jobs")).isEqualTo(1);
 
-		PowerMockito.verifyStatic();
-		GAT.getDefaultGATContext();
+        PowerMockito.verifyStatic();
+        GAT.getDefaultGATContext();
 
-		PowerMockito.verifyStatic();
-		GAT.createResourceBroker(new URI("localq://localhost"));
+        PowerMockito.verifyStatic();
+        GAT.createResourceBroker(new URI("localq://localhost"));
 
-		PowerMockito.verifyStatic();
-		GAT.setDefaultGATContext(context);
-	}
+        PowerMockito.verifyStatic();
+        GAT.setDefaultGATContext(context);
+    }
 
-	@Test
-	public void testStop() throws Exception {
-		PowerMockito.mockStatic(GAT.class);
-		GATContext context = new GATContext();
-		when(GAT.getDefaultGATContext()).thenReturn(context);
+    @Test
+    public void testStop() throws Exception {
+        PowerMockito.mockStatic(GAT.class);
+        GATContext context = new GATContext();
+        when(GAT.getDefaultGATContext()).thenReturn(context);
 
-		GATManager g = sampleGATManager();
-		g.stop();
+        GATManager g = sampleGATManager();
+        g.stop();
 
-		PowerMockito.verifyStatic();
-		GAT.end();
-	}
+        PowerMockito.verifyStatic();
+        GAT.end();
+    }
 
-	@Test
-	public void testGetBroker() throws GATObjectCreationException, URISyntaxException {
-		GATContext context = new GATContext();
-		ResourceBroker broker = mock(ResourceBroker.class);
-		PowerMockito.mockStatic(GAT.class);
-		when(GAT.getDefaultGATContext()).thenReturn(context);
-		when(GAT.createResourceBroker(any(URI.class))).thenReturn(broker);
+    @Test
+    public void testGetBroker() throws GATObjectCreationException, URISyntaxException {
+        GATContext context = new GATContext();
+        ResourceBroker broker = mock(ResourceBroker.class);
+        PowerMockito.mockStatic(GAT.class);
+        when(GAT.getDefaultGATContext()).thenReturn(context);
+        when(GAT.createResourceBroker(any(URI.class))).thenReturn(broker);
 
-		GATManager g = sampleGATManager();
+        GATManager g = sampleGATManager();
 
-		assertThat(g.getBroker()).isEqualTo(broker);
-	}
+        assertThat(g.getBroker()).isEqualTo(broker);
+    }
 }

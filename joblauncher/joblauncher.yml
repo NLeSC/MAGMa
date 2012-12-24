@@ -1,10 +1,14 @@
 macs:
   -
-    id: eyJzYWx0IjogIjU3MjY0NCIsICJleHBpcmVzIjogMTM4Njc3MjEwOC4yOTIyNTUsICJ1c2VyaWQiOiAiam9ibWFuYWdlciJ9KBJRMeTW2G9I6jlYwRj6j8koAek=
-    key: _B1YfcqEYpZxyTx_-411-QdBOSI=
+    id: eyJzYWx0IjogImIwN2JlZiIsICJleHBpcmVzIjogMTM4NzEwNjg2NC4wMzMwMTMsICJ1c2VyaWQiOiAiam9ibWFuYWdlciJ9MAagqaCQxnD-pCxCKaowmXz0rUU=
+    key: msr3vIHozDgO1thMYzh89pG8qg0=
     algorithm: hmac-sha-1
-    scope: http://145.100.61.22
+    scope: http://localhost
 gat:
   brokerURI: localq://localhost
   preferences:
     localq.max.concurrent.jobs: 1
+http:
+  port: 9998
+
+

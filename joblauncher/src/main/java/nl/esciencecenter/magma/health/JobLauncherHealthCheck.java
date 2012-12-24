@@ -4,14 +4,14 @@ import com.yammer.metrics.core.HealthCheck;
 
 public class JobLauncherHealthCheck extends HealthCheck {
 
-	public JobLauncherHealthCheck(String name) {
-		super(name);
-	}
+    public JobLauncherHealthCheck(String name) {
+        super(name);
+    }
 
-	@Override
-	protected Result check() throws Exception {
-		// TODO test if broker is ok
-		return Result.healthy();
-	}
+    @Override
+    protected Result check() throws Exception {
+        // TODO test if broker is ok
+        return Result.healthy();
+    }
 
 }

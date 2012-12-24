@@ -1,4 +1,4 @@
-jobmanager
+joblauncher
 ==========
 
 Web service to submit jobs via a JavaGAT supported broker.
@@ -36,19 +36,21 @@ Install
    mvn install:install-file -Dfile=lib/GAT-tests.jar -DartifactId=GAT-tests -Dversion=$GAT_VERSION -DgroupId=org.gridlab.gat -Dpackaging=jar -DgeneratePom=true
    mvn install:install-file -Dfile=lib/ibis-util-2.3-pre.jar -DartifactId=ibis-util -Dversion=2.3-pre -DgroupId=ibis -Dpackaging=jar -DgeneratePom=true
 
-3. Build uber-jar or execute from maven.
-3.1. Uber-jar, to start on other machine the `magmajobmanager-1.3-SNAPSHOT.jar` file and `adaptors` directory must be copied.
+3. Edit 'joblauncher.yml' to configure MAC id/key and JavaGAT broker. 
+
+4. Build uber-jar or execute from maven.
+4.1. Uber-jar, to start on other machine the `joblauncher-1.3-SNAPSHOT.jar` file and `adaptors` directory must be copied.
 
 .. code-block:: bash
 
    mvn package
-   java -Dgat.adaptor.path=JavaGAT-2.1.3/lib/adaptors -jar target/magmajobmanager-1.3-SNAPSHOT.jar
+   java -Dgat.adaptor.path=JavaGAT-2.1.3/lib/adaptors -jar target/joblauncher-1.3-SNAPSHOT.jar server joblauncher.yml
 
-3.2 Execute from maven
+4.2 Execute from maven
 
 .. code-block:: bash
 
-   mvn exec:java
+   mvn compile exec:java
 
 During start-up of the web-service you are request to give your password for Glite certificate.
 If you enter something it will use Glite to submit/run jobs.
