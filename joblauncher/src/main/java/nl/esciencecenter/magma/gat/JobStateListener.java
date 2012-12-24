@@ -10,11 +10,14 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.gridlab.gat.monitoring.MetricEvent;
 import org.gridlab.gat.monitoring.MetricListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
 
 public class JobStateListener implements MetricListener {
-
+	protected final static Logger logger = LoggerFactory
+			.getLogger(JobStateListener.class);
 	private URI status_callback_url;
 	private HttpClient httpclient;
 
@@ -30,11 +33,12 @@ public class JobStateListener implements MetricListener {
 		try {
 			put.setEntity(new StringEntity(state));
 			HttpResponse response = httpclient.execute(put);
+			logger.info("Send '" + state + "' to " + status_callback_url
+					+ " returned " + response.getStatusLine());
 		} catch (ClientProtocolException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.warn("Unable to write job state to status callback url", e);
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.warn("Unable to write job state to status callback url", e);
 		} finally {
 			put.releaseConnection();
 		}
@@ -47,7 +51,8 @@ public class JobStateListener implements MetricListener {
 		if (getClass() != obj.getClass())
 			return false;
 		JobStateListener other = (JobStateListener) obj;
-		return Objects.equal(this.status_callback_url, other.status_callback_url)
+		return Objects.equal(this.status_callback_url,
+				other.status_callback_url)
 				&& Objects.equal(this.httpclient, other.httpclient);
 	}
 

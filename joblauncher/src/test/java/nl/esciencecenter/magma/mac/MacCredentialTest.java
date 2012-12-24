@@ -110,4 +110,9 @@ public class MacCredentialTest {
 				cred.equals(new MacCredential("id2", "key", new URI(
 						"https://example.com")))).isFalse();
 	}
+
+	@Test
+	public void testToString() {
+		assertThat(cred.toString()).isEqualTo("MacCredential [id=id, key=key, algorithm=hmac-sha-1, scope=http://localhost]");
+	}
 }

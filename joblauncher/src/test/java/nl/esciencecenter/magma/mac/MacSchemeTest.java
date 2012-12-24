@@ -82,7 +82,7 @@ public class MacSchemeTest {
 		MacCredential credentials = new MacCredential(id, key, new URI(
 				"http://localhost"));
 		HttpGet request = new HttpGet("http://localhost");
-		Header header = scheme.authenticate(credentials, request);
+		Header header = scheme.authenticate(credentials, request, null);
 
 		String headerValue = "MAC id=\"eyJzYWx0IjogIjU3MjY0NCIsICJleHBpcmVzIjogMTM4Njc3MjEwOC4yOTIyNTUsICJ1c2VyaWQiOiAiam9ibWFuYWdlciJ9KBJRMeTW2G9I6jlYwRj6j8koAek=\",";
 		headerValue += "ts=\"0\",";
@@ -101,7 +101,7 @@ public class MacSchemeTest {
 		credentials.setAlgorithm("blowfish");
 		HttpGet request = new HttpGet("http://localhost");
 		try {
-			scheme.authenticate(credentials, request);
+			scheme.authenticate(credentials, request, null);
 			fail();
 		} catch (AuthenticationException e) {
 			assertEquals("Algorithm is not supported", e.getMessage());
@@ -130,7 +130,7 @@ public class MacSchemeTest {
 
 		assertEquals("HmacSHA256", MacScheme.algorithmMapper("hmac-sha-256"));
 
-		assertEquals("", MacScheme.algorithmMapper("bla"));
+		assertEquals("bla", MacScheme.algorithmMapper("bla"));
 	}
 
 	@Test
