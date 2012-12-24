@@ -240,6 +240,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.config.add_route('home', '/')
         self.config.add_route('login', '/login')
         request = testing.DummyRequest()
+        request.user = None
         request.url = 'http://example.com/login'
         views = Views(request)
 
@@ -250,11 +251,14 @@ class ViewsTestCase(AbstractViewsTestCase):
                              'password': ''
                              }
         self.assertDictEqual(response, expected_response)
+        self.assertEqual(request.response.headers['WWW-Authenticate'], 'MAC')
+        self.assertEqual(request.response.status_int, 401)
 
     def test_login_get(self):
         self.config.add_route('home', '/')
         self.config.add_route('login', '/login')
         request = testing.DummyRequest()
+        request.user = None
         request.url = 'http://example.com/startjob'
         views = Views(request)
 
@@ -265,6 +269,8 @@ class ViewsTestCase(AbstractViewsTestCase):
                              'password': ''
                              }
         self.assertDictEqual(response, expected_response)
+        self.assertEqual(request.response.headers['WWW-Authenticate'], 'MAC')
+        self.assertEqual(request.response.status_int, 401)
 
     @patch('magmaweb.views.remember')
     @patch('magmaweb.views.User')
@@ -278,6 +284,7 @@ class ViewsTestCase(AbstractViewsTestCase):
                 'password': 'mypw'}
         params = {'came_from': 'http://example.com/startjob'}
         request = testing.DummyRequest(post=post, params=params)
+        request.user = None
         views = Views(request)
 
         response = views.login()
@@ -298,6 +305,7 @@ class ViewsTestCase(AbstractViewsTestCase):
                 'password': 'mypw'}
         params = {'came_from': 'http://example.com/startjob'}
         request = testing.DummyRequest(post=post, params=params)
+        request.user = None
         views = Views(request)
 
         response = views.login()
@@ -309,6 +317,17 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertDictEqual(response, expected_response)
         u.validate_password.assert_called_with('mypw')
         self.assertFalse(remember.called)
+
+    def test_login_authenticated(self):
+        from pyramid.exceptions import Forbidden
+        request = testing.DummyRequest()
+        request.user = 'bob'
+        request.exception = Forbidden()
+        views = Views(request)
+
+        response = views.login()
+
+        self.assertIsInstance(response, Forbidden)
 
     @patch('magmaweb.views.forget')
     def test_logout(self, forget):
@@ -322,49 +341,6 @@ class ViewsTestCase(AbstractViewsTestCase):
         forget.assert_called_with(request)
         self.assertEqual(response.location, 'http://example.com/')
         self.assertDictContainsSubset({'forget': 'headers'}, response.headers)
-
-    def test_forbidden_authenticated(self):
-        from pyramid.exceptions import Forbidden
-        request = testing.DummyRequest()
-        request.user = 'bob'
-        request.exception = Forbidden()
-        views = Views(request)
-
-        response = views.forbidden()
-
-        self.assertIsInstance(response, Forbidden)
-
-    def test_forbidden_unauthenticated(self):
-        from pyramid.httpexceptions import HTTPFound
-        self.config.add_route('home', '/')
-        self.config.add_route('login', '/login')
-        request = testing.DummyRequest()
-        request.user = None
-        request.url = 'http://example.com/somepage'
-        views = Views(request)
-
-        response = views.forbidden()
-
-        self.assertIsInstance(response, HTTPFound)
-        loc = 'http://example.com/login?'
-        loc += 'came_from=http%3A%2F%2Fexample.com%2Fsomepage'
-        self.assertEqual(response.location, loc)
-
-    def test_forbidden_unauthenticated_from_loginpage(self):
-        from pyramid.httpexceptions import HTTPFound
-        self.config.add_route('home', '/')
-        self.config.add_route('login', '/login')
-        request = testing.DummyRequest()
-        request.user = None
-        request.url = 'http://example.com/login'
-        views = Views(request)
-
-        response = views.forbidden()
-
-        self.assertIsInstance(response, HTTPFound)
-        loc = 'http://example.com/login?'
-        loc += 'came_from=http%3A%2F%2Fexample.com%2F'
-        self.assertEqual(response.location, loc)
 
     @patch('magmaweb.views.time.time')
     def test_access_token(self, time):
@@ -393,7 +369,8 @@ class ViewsTestCase(AbstractViewsTestCase):
                              "mac_algorithm": "hmac-sha-1"}
         self.assertDictEqual(response, expected_response)
         self.assertEqual(request.response.headers['Cache-Control'], "no-store")
-        policy.encode_mac_id.assert_called_with(request, 'bob', expires=1355000360)
+        policy.encode_mac_id.assert_called_with(request, 'bob',
+                                                expires=1355000360)
 
 
 class JobViewsTestCase(AbstractViewsTestCase):
