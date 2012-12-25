@@ -14,7 +14,7 @@ API
 .. toctree::
    :maxdepth: 1
 
-   Job Manager <manager>
+   Job Launcher <launcher>
    User management <user>
    API Documentation <api>
 
