@@ -11,7 +11,7 @@ Subprojects:
 
 - emetabolomics_site - The http://www.emetabolomics.org website
 - job - Runs MAGMa calculation
-- jobmanager - Webservice to execute jobs
+- joblauncher - Webservice to execute jobs
 - pubchem - Processing of PubChem database, used to find mass candidates
 - web - Web application to start jobs and view results
 
@@ -20,4 +20,4 @@ Subproject interdependencies
 
 - The `emetabolomics_site` website can be used as starting pages for the `web` application.
 - The `job` calculation requires a pubchem lookup database which can be made using the `pubchem` application.
-- The `web` application starts `job` calculations via the `jobmanager` webservice.
+- The `web` application starts `job` calculations via the `joblauncher` webservice.

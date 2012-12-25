@@ -22,6 +22,6 @@ To get the subprojects as seperate projects into Eclipse do:
 12. Press 'Add source folder' and select project folder
 13. Install virtualenv python with packages required by job and web and run 'python setup.py develop' and setup python interpreter.
 14. Import Maven>'Existing Maven Projects'
-15. Set Root Directory to ~/git/MAGMa/jobmanager
-16. On 'jobmanager' project folder right click and select 'Team>Share project'
+15. Set Root Directory to ~/git/MAGMa/joblauncher
+16. On 'joblauncher' project folder right click and select 'Team>Share project'
 17. Select git select magma git repo
