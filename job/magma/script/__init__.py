@@ -215,7 +215,8 @@ class MagmaCommand(object):
         if args.metids == None:
             annotate_engine.search_structures(ncpus=args.ncpus,fast=args.fast)
         else:
-            annotate_engine.search_some_structures(args.metids,ncpus=args.ncpus,fast=args.fast)
+            metids=args.metids.split()
+            annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
         if args.structure_database == 'chebi':
             struct_engine = magma_session.get_structure_engine()
             candidates=annotate_engine.get_chebi_candidates()

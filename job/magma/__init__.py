@@ -565,7 +565,7 @@ class AnnotateEngine(object):
                                sequence="",
                                isquery=1,
                                reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
-                                         str(cid)+'">'+str(cid)+' (PubChem)</a>',
+                                         str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>',
                                logP=float(logp)/10.0,
                                check_duplicates=check_duplicates
                                )
@@ -580,15 +580,6 @@ class AnnotateEngine(object):
             fragmentation_module='magma.fragmentation_cy'
         else:
             fragmentation_module='magma.fragmentation_py'
-        if metids==None:
-            structures = self.db_session.query(Metabolite).all()
-        else:  # split metids in chunks of 500 to avoid error in db_session.query
-            structures = []
-            while len(metids)>0:
-                ids=set([])
-                while len(ids)<500 and len(metids)>0:
-                    ids.add(metids.pop())
-                structures = structures+self.db_session.query(Metabolite).filter(Metabolite.metid.in_(ids)).all()
         global fragid
         fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
         if fragid == None:
@@ -596,56 +587,69 @@ class AnnotateEngine(object):
         ppservers = ()
         logging.warn('calculating on '+str(ncpus)+' cpus !!!')
         job_server = pp.Server(ncpus, ppservers=ppservers)
-        jobs=[]
-        for structure in structures:
-            # collect all peaks with masses within 3 Da range
-            int_mass=int(round(structure.mim+self.ionisation_mode*pars.Hmass))
-            try:
-                peaks=self.indexed_peaks[int_mass]
-            except:
-                peaks=set([])
-            try:
-                peaks=peaks.union(self.indexed_peaks[int_mass-1])
-            except:
-                pass
-            try:
-                peaks=peaks.union(self.indexed_peaks[int_mass+1])
-            except:
-                pass
-            if len(peaks)>0:
-                jobs.append((structure,
-                   job_server.submit(search_structure,(structure.mol,
-                              structure.mim,
-                              structure.molformula,
-                              peaks,
-                              self.max_broken_bonds,
-                              max_small_losses,
-                              self.precision,
-                              self.mz_precision_abs,
-                              self.use_all_peaks,
-                              self.ionisation_mode,
-                              fast
-                              ),(),(
-                              "magma.types",
-                              "magma.pars",
-                              fragmentation_module
-                              )
-                           )))
-        for structure,job in jobs:
-            raw_result=job(raw_result=True)
-            hits,sout = pickle.loads(raw_result)
-            #print sout
-            sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
-            structure.nhits=len(hits)
-            self.db_session.add(structure)
-            for hit in hits:
-                sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
-                # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
-                sys.stderr.write('Score: '+str(hit.score)+'\n')
-                # outfile.write("\t"+str(hit.score/fragment_store.get_avg_score()))
-                self.store_hit(hit,structure.metid,0)
-            self.db_session.flush()
-        self.db_session.commit()
+        if metids==None:
+            metids=set([])
+            for metid, in self.db_session.query(Metabolite.metid).all():
+                metids.add(metid)
+            print metids
+        #else:  # split metids in chunks of 500 to avoid error in db_session.query
+        while len(metids)>0:
+            structures=[]
+            for i in range(10):
+                ids=set([])
+                while len(ids)<500 and len(metids)>0:
+                    ids.add(metids.pop())
+                structures = structures+self.db_session.query(Metabolite).filter(Metabolite.metid.in_(ids)).all()
+            jobs=[]
+            for structure in structures:
+                # collect all peaks with masses within 3 Da range
+                int_mass=int(round(structure.mim+self.ionisation_mode*pars.Hmass))
+                try:
+                    peaks=self.indexed_peaks[int_mass]
+                except:
+                    peaks=set([])
+                try:
+                    peaks=peaks.union(self.indexed_peaks[int_mass-1])
+                except:
+                    pass
+                try:
+                    peaks=peaks.union(self.indexed_peaks[int_mass+1])
+                except:
+                    pass
+                if len(peaks)>0:
+                    jobs.append((structure,
+                       job_server.submit(search_structure,(structure.mol,
+                                  structure.mim,
+                                  structure.molformula,
+                                  peaks,
+                                  self.max_broken_bonds,
+                                  max_small_losses,
+                                  self.precision,
+                                  self.mz_precision_abs,
+                                  self.use_all_peaks,
+                                  self.ionisation_mode,
+                                  fast
+                                  ),(),(
+                                  "magma.types",
+                                  "magma.pars",
+                                  fragmentation_module
+                                  )
+                               )))
+            for structure,job in jobs:
+                raw_result=job(raw_result=True)
+                hits,sout = pickle.loads(raw_result)
+                #print sout
+                sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
+                structure.nhits=len(hits)
+                self.db_session.add(structure)
+                for hit in hits:
+                    sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
+                    # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
+                    sys.stderr.write('Score: '+str(hit.score)+'\n')
+                    # outfile.write("\t"+str(hit.score/fragment_store.get_avg_score()))
+                    self.store_hit(hit,structure.metid,0)
+                self.db_session.flush()
+            self.db_session.commit()
 
     def store_hit(self,hit,metid,parentfragid):
         global fragid
