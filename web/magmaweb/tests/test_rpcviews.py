@@ -66,7 +66,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.job.db.maxMSLevel.assert_called_with()
         self.rpc.new_job.assert_called_with()
         self._assert_status_callback_url()
-        self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
+        self.rpc.job_factory.submitQuery.assert_called_with(self.jq, self.job)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_addmsdata(self):
@@ -84,7 +84,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.assertEqual(self.job.ms_filename, 'c:\bla\bla\F1234.mzxml')
         self.rpc.new_job.assert_called_with()
         self._assert_status_callback_url()
-        self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
+        self.rpc.job_factory.submitQuery.assert_called_with(self.jq, self.job)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_metabolize(self):
@@ -96,7 +96,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.job.db.maxMSLevel.assert_called_with()
         self.rpc.new_job.assert_called_with()
         self._assert_status_callback_url()
-        self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
+        self.rpc.job_factory.submitQuery.assert_called_with(self.jq, self.job)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_metabolize_one(self):
@@ -108,7 +108,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.job.db.maxMSLevel.assert_called_with()
         self.rpc.new_job.assert_called_with()
         self._assert_status_callback_url()
-        self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
+        self.rpc.job_factory.submitQuery.assert_called_with(self.jq, self.job)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_annotate(self):
@@ -119,7 +119,7 @@ class RpcViewsTestCase(unittest.TestCase):
         self.jobquery.annotate.assert_called_with(self.post)
         self.rpc.new_job.assert_called_with()
         self._assert_status_callback_url()
-        self.rpc.job_factory.submitQuery.assert_called_with(self.jq)
+        self.rpc.job_factory.submitQuery.assert_called_with(self.jq, self.job)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
     def test_set_description(self):
@@ -138,7 +138,7 @@ class RpcViewsTestCase(unittest.TestCase):
         q = Mock(side_effect=JobSubmissionError())
         self.rpc.job_factory.submitQuery = q
         with self.assertRaises(HTTPInternalServerError) as e:
-            self.rpc.submit_query({})
+            self.rpc.submit_query({}, {})
 
         expected_json = {'success': False, 'msg': 'Unable to submit query'}
         self.assertEquals(json.loads(e.exception.body), expected_json)

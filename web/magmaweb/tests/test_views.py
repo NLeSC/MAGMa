@@ -66,7 +66,7 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         views.job_factory.fromScratch.assert_called_with('bob')
         jobquery.allinone.assert_called_with(post)
-        views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(), job)
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
         self.assertEqual(job.ms_filename, 'c:\bla\bla\F1234.mzxml')
         job.jobquery.assert_called_with('http://example.com/status/foo.json')
@@ -86,7 +86,7 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         views.job_factory.fromScratch.assert_called_with('bob')
         jobquery.allinone.assert_called_with(post)
-        views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(), job)
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
         self.assertEqual(job.ms_filename, 'Uploaded as text')
         job.jobquery.assert_called_with('http://example.com/status/foo.json')
@@ -114,7 +114,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertEquals(json.loads(e.exception.body), expected_json)
         views.job_factory.fromScratch.assert_called_with('bob')
         jobquery.allinone.assert_called_with(post)
-        views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(), job)
 
     def test_uploaddb_get(self):
         request = testing.DummyRequest()

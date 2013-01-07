@@ -62,7 +62,7 @@ class Views(object):
         jobquery = job.jobquery(status_url)
         jobquery = jobquery.allinone(self.request.POST)
         try:
-            self.job_factory.submitQuery(jobquery)
+            self.job_factory.submitQuery(jobquery, job)
         except JobSubmissionError:
             body = {'success': False, 'msg': 'Unable to submit query'}
             raise HTTPInternalServerError(body=json.dumps(body))
