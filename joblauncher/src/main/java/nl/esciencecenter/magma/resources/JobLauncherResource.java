@@ -24,8 +24,14 @@ import nl.esciencecenter.magma.gat.JobStateListener;
  */
 @Path("/job")
 public class JobLauncherResource {
-    protected ResourceBroker broker;
-    protected HttpClient httpClient;
+    /**
+     * Broker to submit jobs with
+     */
+    private final ResourceBroker broker;
+    /**
+     * Http client to perform status callbacks with
+     */
+    private final HttpClient httpClient;
 
     /**
      * Constructor
@@ -41,8 +47,8 @@ public class JobLauncherResource {
     /**
      * Launch a job based on a request.
      *
-     * @param request
-     * @return
+     * @param request A job submission request
+     * @return a job submission response
      * @throws GATInvocationException
      * @throws GATObjectCreationException
      */

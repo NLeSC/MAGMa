@@ -18,15 +18,24 @@ import com.yammer.dropwizard.config.Configuration;
  *
  */
 public class JobLauncherConfiguration extends Configuration {
+    /**
+     * List of mac credentials used to perform authentication
+     * when using http client on their scope.
+     */
     @NotNull
     @JsonProperty
     private ImmutableList<MacCredential> macs = ImmutableList.of();
+
 
     @Valid
     @NotNull
     @JsonProperty("gat")
     private GATConfiguration gatConfiguration = new GATConfiguration();
 
+    /**
+     * Http client used to PUT state changes of jobs
+     * the launcher is monitoring to the status callback url of the job
+     */
     @Valid
     @NotNull
     @JsonProperty

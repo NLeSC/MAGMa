@@ -23,8 +23,7 @@ public class GATManager implements Managed {
 
     /**
      * Sets preferences in GAT context
-     * and
-     * initializes a broker.
+     * and initializes a broker.
      *
      * @param configuration
      * @throws GATObjectCreationException

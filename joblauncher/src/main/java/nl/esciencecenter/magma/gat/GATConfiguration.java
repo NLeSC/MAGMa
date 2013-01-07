@@ -6,11 +6,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 
+/**
+ * JavaGAT configuration
+ *
+ * @author verhoes
+ *
+ */
 public class GATConfiguration {
+    /**
+     * Broker URI used to submit jobs
+     */
     @NotEmpty
     @JsonProperty
     private String brokerURI;
 
+    /**
+     * JavaGAT preferences, these could also be put javagat.properties file,
+     * but I like broker together with it's preferences
+     */
     @JsonProperty
     private ImmutableMap<String, Object> preferences = ImmutableMap.of();
 

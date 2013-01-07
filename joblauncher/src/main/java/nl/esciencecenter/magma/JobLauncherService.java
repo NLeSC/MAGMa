@@ -26,10 +26,22 @@ import com.yammer.dropwizard.client.HttpClientBuilder;
 import com.yammer.dropwizard.config.Bootstrap;
 import com.yammer.dropwizard.config.Environment;
 
+/**
+ * Service to submit jobs using a JavaGAT broker.
+ *
+ * @author verhoes
+ *
+ */
 public class JobLauncherService extends Service<JobLauncherConfiguration> {
-    protected final static Logger logger = LoggerFactory
+    protected static final Logger logger = LoggerFactory
             .getLogger(JobStateListener.class);
 
+    /**
+     * Entry point
+     *
+     * @param args CLI arguments
+     * @throws Exception
+     */
     public static void main(String[] args) throws Exception {
         new JobLauncherService().run(args);
     }
@@ -56,6 +68,17 @@ public class JobLauncherService extends Service<JobLauncherConfiguration> {
         environment.addHealthCheck(new JobLauncherHealthCheck("joblauncher"));
     }
 
+    /**
+     * Adds MAC Access Authentication scheme to http client
+     * and registers list of MAC credentials with http client.
+     *
+     * Http client will use MAC Access Authentication when
+     * url is in scope of given MAC credentials.
+     *
+     * @param httpClient
+     * @param macs
+     * @return
+     */
     public static AbstractHttpClient macifyHttpClient(
             AbstractHttpClient httpClient, ImmutableList<MacCredential> macs) {
 
