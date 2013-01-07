@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class MacScheme implements ContextAwareAuthScheme {
-    protected final static Logger logger = LoggerFactory
+    protected static final Logger logger = LoggerFactory
             .getLogger(JobStateListener.class);
 
     /** The name of this authorization scheme. */
@@ -87,6 +87,7 @@ public class MacScheme implements ContextAwareAuthScheme {
      * Generates normalized request string and encrypt is using a secret key
      *
      * @return MAC Authentication header
+     * @throws AuthenticationException when signature generation fails
      */
     public Header authenticate(Credentials credentials, HttpRequest request,
             HttpContext context) throws AuthenticationException {
@@ -123,7 +124,7 @@ public class MacScheme implements ContextAwareAuthScheme {
      * @param algorithm
      *            MAC algorithm implemented by javax.crypto.MAC
      * @return The Base64-encoded RFC 2104-compliant HMAC signature.
-     * @throws RuntimeException
+     * @throws AuthenticationException
      *             when signature generation fails
      */
     private String calculateRFC2104HMAC(String data, String key,

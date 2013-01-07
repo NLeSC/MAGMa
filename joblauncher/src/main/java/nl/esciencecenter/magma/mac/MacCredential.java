@@ -19,18 +19,32 @@ import com.google.common.base.Objects;
  *
  */
 public class MacCredential implements Credentials {
+    /**
+     * The MAC id
+     */
     @NotNull
     @JsonProperty
     private String id = null;
 
+    /**
+     * The MAC key
+     */
     @NotNull
     @JsonProperty
     private String key = null;
 
+    /**
+     * Algorithm used to sign requests
+     */
     @JsonProperty
     @NotNull
     private String algorithm = "hmac-sha-1";
 
+    /**
+     * When scope is part of url used by http client
+     * then MAC Access Authentication will be used
+     * with this.id, this.key and this.algorithm
+     */
     @JsonProperty
     @NotNull
     private URI scope = null;

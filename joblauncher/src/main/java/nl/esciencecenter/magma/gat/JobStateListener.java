@@ -15,17 +15,31 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
 
+/**
+ * Listener for job state
+ *
+ * @author verhoes
+ *
+ */
 public class JobStateListener implements MetricListener {
     protected final static Logger logger = LoggerFactory
             .getLogger(JobStateListener.class);
     private URI status_callback_url;
     private HttpClient httpclient;
 
+    /**
+     *
+     * @param status_callback_url URL to put job state to
+     * @param httpclient Client to put job state to status_callback_url
+     */
     public JobStateListener(URI status_callback_url, HttpClient httpclient) {
         this.status_callback_url = status_callback_url;
         this.httpclient = httpclient;
     }
 
+    /**
+     * PUTs event value to status_callback_url using httpclient
+     */
     public void processMetricEvent(MetricEvent event) {
         String state = event.getValue().toString();
         HttpPut put = new HttpPut(status_callback_url);

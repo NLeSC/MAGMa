@@ -10,12 +10,7 @@ import org.apache.http.params.HttpParams;
  * @author verhoes
  */
 public class MacSchemeFactory implements AuthSchemeFactory {
-	/**
-	 * Creates an instance of {@Link MacScheme}.
-	 *
-	 * @ return auth scheme
-	 */
-    public AuthScheme newInstance(HttpParams params) {
+    public AuthScheme newInstance(final HttpParams params) {
         return new MacScheme();
     }
 }
