@@ -4,8 +4,11 @@ import os
 import zlib,gzip
 import sqlite3
 import time
+import sys
 
 inputdir="/media/PubChem/ftp.ebi.ac.uk/pub/databases/pubchem/Compound/CURRENT-Full/SDF/"
+if len(sys.argv)==2:
+    inputdir = sys.argv[1]
 
 conn2 = sqlite3.connect("Pubchem_Names.db")
 c2 = conn2.cursor()
@@ -188,7 +191,7 @@ while not ready:
    conn.commit()
    elapsed_time=(time.time()-starttime)/60
    c3.execute('UPDATE files SET processed = 1, time = ? WHERE file = ?',(elapsed_time,filename))
-   conn3.commit() 
+   conn3.commit()
    print filename+": ",elapsed_time
 
 print "Creating index ..."

@@ -95,7 +95,6 @@ class Run(Base):
     # ms data parsing parameters
     ms_filename = Column(Unicode)
     abs_peak_cutoff = Column(Float) #: abs intensity threshold for storing peaks in database
-    rel_peak_cutoff = Column(Float) #: fraction of basepeak intensity threshold for storing peaks in database
     max_ms_level = Column(Integer) #: maximum ms level to be included in the analysis
 
     # parameters for matching metabolites and fragments with peaks
