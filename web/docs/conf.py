@@ -26,7 +26,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(__file__, "..", "..")))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx', 'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.viewcode']
+extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.intersphinx',
+              'sphinx.ext.todo',
+              'sphinx.ext.coverage',
+              'sphinx.ext.viewcode']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -42,7 +46,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'MAGMaWeb'
-copyright = u'2011, Stefan Verhoeven & Lars Ridder'
+copyright = u'2011, Stefan Verhoeven & Lars Ridder & Marijn Sanders'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -185,7 +189,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'MAGMaWeb.tex', u'MAGMaWeb Documentation',
-   u'Stefan Verhoeven \\& Lars Ridder', 'manual'),
+   u'Stefan Verhoeven \\& Lars Ridder \\& Marijn Sanders', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -215,7 +219,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'magmawebm', u'MAGMaWeb Documentation',
-     [u'Stefan Verhoeven & Lars Ridder'], 1)
+     [u'Stefan Verhoeven & Lars Ridder & Marijn Sanders'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -229,8 +233,8 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'MAGMaWeb', u'MAGMaWeb Documentation',
-   u'Stefan Verhoeven & Lars Ridder', 'MAGMaWeb', 'One line description of project.',
-   'Miscellaneous'),
+   u'Stefan Verhoeven & Lars Ridder & Marijn Sanders', 'MAGMaWeb', 'Web application to start MAGMa jobs and view results',
+   'Cheminformatics'),
 ]
 
 # Documents to append as an appendix to all manuals.
@@ -244,4 +248,8 @@ texinfo_documents = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/': None}
+intersphinx_mapping = {'http://docs.python.org/': None,
+                       'colander': ('http://python.readthedocs.org/en/latest/', None),
+                       'pyramid': ('http://pyramid.readthedocs.org/en/latest/', None),
+                       'sqlalchemy': ('http://sqlalchemy.readthedocs.org/en/latest/', None),
+                       }
