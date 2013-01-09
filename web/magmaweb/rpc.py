@@ -1,3 +1,4 @@
+"""Module with remote procedure calls views for the magma web application"""
 import json
 from pyramid.view import view_config, view_defaults
 from pyramid.httpexceptions import HTTPInternalServerError
@@ -21,14 +22,14 @@ class RpcViews(object):
         job = self.job_factory.cloneJob(self.job, owner)
         return job
 
-    def submit_query(self, query):
+    def submit_query(self, query, job):
         """Submit query to job factory
 
         Raises a HTTPInternalServerError exception when
         job factory fails to communicate with job manager
         """
         try:
-            self.job_factory.submitQuery(query)
+            self.job_factory.submitQuery(query, job)
         except JobSubmissionError:
             body = {'success': False, 'msg': 'Unable to submit query'}
             raise HTTPInternalServerError(body=json.dumps(body))
@@ -47,7 +48,7 @@ class RpcViews(object):
         jobquery = job.jobquery(self._status_url())
         has_scans = job.db.maxMSLevel() > 0
         jobquery = jobquery.add_structures(self.request.POST, has_scans)
-        self.submit_query(jobquery)
+        self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.add_ms_data', renderer='jsonhtml')
@@ -63,7 +64,7 @@ class RpcViews(object):
         has_metabolites = job.db.metabolitesTotalCount() > 0
         jobquery = job.jobquery(self._status_url())
         jobquery = jobquery.add_ms_data(self.request.POST, has_metabolites)
-        self.submit_query(jobquery)
+        self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.metabolize', renderer='json')
@@ -76,7 +77,7 @@ class RpcViews(object):
         jobquery = job.jobquery(self._status_url())
         has_scans = job.db.maxMSLevel() > 0
         jobquery = jobquery.metabolize(self.request.POST, has_scans)
-        self.submit_query(jobquery)
+        self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.metabolize_one', renderer='json')
@@ -91,7 +92,7 @@ class RpcViews(object):
         has_scans = job.db.maxMSLevel() > 0
         jobquery = job.jobquery(self._status_url())
         jobquery = jobquery.metabolize_one(self.request.POST, has_scans)
-        self.submit_query(jobquery)
+        self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.annotate', renderer='json')
@@ -101,7 +102,7 @@ class RpcViews(object):
         """
         job = self.new_job()
         jobquery = job.jobquery(self._status_url()).annotate(self.request.POST)
-        self.submit_query(jobquery)
+        self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.set_description', renderer='json')

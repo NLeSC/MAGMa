@@ -16,6 +16,12 @@ mako.directories = magmaweb:templates
 cookie.secret = agh7ahfixeiwieCh6Oovei1faecao4ee
 cookie.path = /magma
 
+macauth.master_secret = aeloor3kie2Loch9su3ooj9ALae9Os1e
+# token valid for a year
+access_token.expires_in = 30758400
+# account used for updating status of jobs
+monitor_user = jobmanager
+
 # user database
 sqlalchemy.url = sqlite:///%(here)s/data/users.db
 
@@ -42,7 +48,9 @@ jobfactory.init_script = . /home/stefanv/workspace/MAGMaJob/env2/bin/activate
 use = egg:waitress#main
 host = 0.0.0.0
 port = 6543
+
 # toggle gunicorn as server
+#[server:main]
 #use = egg:gunicorn#main
 #host = 0.0.0.0
 #port = 6543
@@ -58,6 +66,13 @@ use = egg:Paste#urlmap
 
 [filter:gzip]
 use = egg:Paste#gzip
+
+[uwsgi]
+socket = /tmp/magma.uwsgi.sock
+master = true
+processes = 4
+chmod = 666
+enable-threads = true
 
 # Begin logging configuration
 
