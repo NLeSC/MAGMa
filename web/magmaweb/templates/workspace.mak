@@ -63,22 +63,21 @@ Ext.onReady(function() {
 
   var form = Ext.create('Ext.form.Panel', {
     title: 'User',
-    autoScroll: true,
     items:[{
-    	xtype: 'displayfield',
-    	fieldLabel: 'User id',
-    	value: '${request.user.userid}'
+      xtype: 'displayfield',
+      fieldLabel: 'User id',
+      value: '${request.user.userid}'
     }, {
-        xtype: 'textfield',
-    	fieldLabel: 'Name',
-    	width: 400,
-    	value: '${request.user.displayname}'
+      xtype: 'textfield',
+      fieldLabel: 'Name',
+      width: 400,
+      value: '${request.user.displayname}'
     }, {
-        xtype: 'textfield',
-    	fieldLabel: 'Email',
-    	width: 400,
-    	value: '${request.user.email}',
-    	vtype: 'email'
+      xtype: 'textfield',
+      fieldLabel: 'Email',
+      width: 400,
+      value: '${request.user.email}',
+      vtype: 'email'
     }],
     buttons: [{
       text: 'Update'
@@ -89,13 +88,14 @@ Ext.onReady(function() {
   import json
   %>
   var job_store = Ext.create('Ext.data.Store', {
-     fields: ['id', 'description', 'ms_filename', 'created_at', 'url'],
-     data: ${json.dumps(jobs)|n}
+    fields: ['id', 'description', 'ms_filename', 'created_at', 'url'],
+    data: ${json.dumps(jobs)|n}
   });
 
   var job_grid = Ext.create('Ext.grid.Panel', {
     title: 'Jobs',
     store: job_store,
+    height: 500,
     columns: [{
       text: 'ID', dataIndex: 'id', renderer: function(v, m, r) {
         return Ext.String.format('<a href="{0}">{1}</a>', r.data.url, v);
@@ -158,18 +158,19 @@ Ext.onReady(function() {
   };
 
   var access_token = Ext.create('Ext.button.Button', {
-  	text: 'Generate access token for web services',
-  	href: '${request.route_url('access_token')}'
+    text: 'Generate access token for web services',
+    href: '${request.route_url('access_token')}'
   });
 
   Ext.create('Ext.container.Viewport', {
     layout: 'border',
     items: [header, {
-    	region: 'center',
-    	items: [form, access_token, job_grid, access_token],
-        border: false,
-    	bodyPadding: 5,
-	    defaults: { bodyPadding: 5 },
+      region: 'center',
+      items: [form, access_token, job_grid, access_token],
+      border: false,
+      bodyPadding: 5,
+      autoScroll: true,
+      defaults: { bodyPadding: 5 },
     }]
   });
 });
