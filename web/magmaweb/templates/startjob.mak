@@ -1,6 +1,7 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
+<meta charset="utf-8">
 <title>MAGMa - Ms Annotation based on in silico Generated Metabolites</title>
 <link rel="stylesheet"
 	href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
@@ -250,14 +251,15 @@ Ext.onReady(function() {
 <body>
 	<div id="sketcher_content" class="x-hidden">
 		<script language="javascript">
-		var sketcher = new ChemDoodle.SketcherCanvas(
+			var sketcher = new ChemDoodle.SketcherCanvas(
 		        'sketcher_canvas', 500, 300, {
-		        	useServices: false, oneMolecule: true
-		        });
-sketcher.repaint();
-sketcher.toolbarManager.buttonSave.disable();
-sketcher.toolbarManager.buttonOpen.disable();
-</script>
+	        		useServices: false, oneMolecule: true
+	        	}
+		    );
+			sketcher.repaint();
+			sketcher.toolbarManager.buttonSave.disable();
+			sketcher.toolbarManager.buttonOpen.disable();
+		</script>
 	</div>
 	<div id="welcome" class="x-hidden">
 		<h1>
