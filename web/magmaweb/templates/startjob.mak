@@ -1,21 +1,19 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
+<meta charset="utf-8">
 <title>MAGMa - Ms Annotation based on in silico Generated Metabolites</title>
 <link rel="stylesheet"
 	href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
 <link rel="stylesheet"
-	href="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb.css')}"
-	type="text/css"></link>
-<link rel="stylesheet"
-	href="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.8.7.custom.css')}"
+	href="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.9.2.custom.css')}"
 	type="text/css"></link>
 <script type="text/javascript"
 	src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb-libs.js')}"></script>
 <script type="text/javascript"
 	src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb.js')}"></script>
 <script type="text/javascript"
-	src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.8.7.custom.min.js')}"></script>
+	src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.9.2.custom.min.js')}"></script>
 <script type="text/javascript"
 	src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/ChemDoodleWeb-sketcher.js')}"></script>
 <script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
@@ -253,14 +251,16 @@ Ext.onReady(function() {
 <body>
 	<div id="sketcher_content" class="x-hidden">
 		<script language="javascript">
-var sketcher = new ChemDoodle.SketcherCanvas(
-        'sketcher_canvas', 500, 300,
-        '${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/icons/')}',
-        ChemDoodle.featureDetection.supports_touch(), false);
-sketcher.repaint();
-sketcher.toolbarManager.buttonSave.disable();
-sketcher.toolbarManager.buttonOpen.disable();
-</script>
+			var sketcher = new ChemDoodle.SketcherCanvas(
+		        'sketcher_canvas', 500, 300, {
+	        		useServices: false, oneMolecule: true
+	        	}
+		    );
+			sketcher.repaint();
+			sketcher.toolbarManager.setup();
+			sketcher.toolbarManager.buttonSave.disable();
+			sketcher.toolbarManager.buttonOpen.disable();
+		</script>
 	</div>
 	<div id="welcome" class="x-hidden">
 		<h1>

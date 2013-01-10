@@ -18,7 +18,7 @@
  *     });
  *     mass_spectra.selectPeak(1);
  *
- * Note! This example requires d3.v2.js to be sourced.
+ * Note! This example requires d3.v3.js to be sourced.
  *
  */
 Ext.define('Esc.d3.MSpectra', {

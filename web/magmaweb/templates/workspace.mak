@@ -1,33 +1,34 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
+<meta charset="utf-8">
 <title>MAGMa - Workspace</title>
 <link rel="stylesheet"
-    href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
+	href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
 <script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
 <style type="text/css">
 .x-logo a {
-  font-size: 40px;
-  padding-left: 520px;
-  padding-top: 3px; /* aligns app title with text in logo  */
-  background: url(${request.static_url('magmaweb:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}) no-repeat 5px 4px;
+	font-size: 40px;
+	padding-left: 520px;
+	padding-top: 3px; /* aligns app title with text in logo  */
+    background: url(${request.static_url('magmaweb:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}) no-repeat 5px 4px;
 }
 
 .x-title a {
-  font-size: 40px;
-  font-weight: bold;
-  color: #333;
-  text-decoration:none;
-  margin-left: auto;
-  margin-right: auto;
-  padding-top: 3px; /* aligns app title with text in logo  */
+	font-size: 40px;
+	font-weight: bold;
+	color: #333;
+	text-decoration: none;
+	margin-left: auto;
+	margin-right: auto;
+	padding-top: 3px; /* aligns app title with text in logo  */
 }
 
 #welcome h1 {
-    font-size: 200%;
-    padding-top: 40px;
-    padding-bottom: 40px;
-    color: #333;
+	font-size: 200%;
+	padding-top: 40px;
+	padding-bottom: 40px;
+	color: #333;
 }
 </style>
 <script type="text/javascript">
@@ -45,8 +46,10 @@ Ext.Loader.setConfig({
 });
 
 </script>
-## Comment out below for development or when running sencha build, every class is loaded when commented out
-<script type="text/javascript" src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script>
+## Comment out below for development or when running sencha build, every
+## class is loaded when commented out
+<script type="text/javascript"
+	src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script>
 <script type="text/javascript">
 
 Ext.require([
