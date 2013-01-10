@@ -261,6 +261,6 @@ See https://github.com/senchalabs/jsduck
 .. code-block:: bash
 
    jsduck magmaweb/static/extjs-4.2.0/src magmaweb/static/extjs-4.2.0/examples/ux \
-   magmaweb/static/d3/d3.v2.js magmaweb/static/esc magmaweb/static/app --builtin-classes \
+   magmaweb/static/d3/d3.v3.js magmaweb/static/esc magmaweb/static/app --builtin-classes \
    --output jsdoc --images magmaweb/static/extjs-4.2.0/docs/images
    firefox jsdoc/index.html
