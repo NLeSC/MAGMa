@@ -156,7 +156,7 @@ svg {
 <script type="text/javascript"
 	src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/ChemDoodleWeb-sketcher.js')}"></script>
 <script type="text/javascript"
-	src="${request.static_url('magmaweb:static/d3/d3.v2.min.js')}"></script>
+	src="${request.static_url('magmaweb:static/d3/d3.v3.min.js')}"></script>
 <script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
 
 <script type="text/javascript">
@@ -175,7 +175,7 @@ Ext.Loader.setConfig({
 
 </script>
 ## Comment out below for development or when running sencha build, every
-class is loaded when commented out
+## class is loaded when commented out
 <script type="text/javascript"
 	src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script>
 <script type="text/javascript">

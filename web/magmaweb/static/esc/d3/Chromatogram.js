@@ -19,7 +19,7 @@
  *     chromatogram.setExtractedIonChromatogram([{rt:1, intensity: 45, id:4}, {rt:2, intensity: 60, id:5}]);
  *     chromatogram.selectScan(4);
  *
- * Note! This example requires d3.v2.js to be sourced.
+ * Note! This example requires d3.v3.js to be sourced.
  */
 Ext.define('Esc.d3.Chromatogram', {
   extend: 'Esc.d3.Abstract',
