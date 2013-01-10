@@ -214,6 +214,7 @@ Ext.onReady(function() {
 		        }
 			);
 			sketcher.repaint();
+			sketcher.toolbarManager.setup();
 			sketcher.toolbarManager.buttonSave.disable();
 			sketcher.toolbarManager.buttonOpen.disable();
 		</script>
