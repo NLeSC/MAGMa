@@ -46,7 +46,7 @@ class Views(object):
         return {'success': True,
                 'data': JobQuery.defaults(selection)}
 
-    @view_config(route_name='home', renderer='jsonhtml',
+    @view_config(route_name='startjob', renderer='jsonhtml',
                  request_method='POST', permission='view')
     def allinone(self):
         owner = self.request.user.userid
@@ -60,7 +60,15 @@ class Views(object):
         logger.info(self.request.POST)
         status_url = self.request.route_url('status.json', jobid=job.id)
         jobquery = job.jobquery(status_url)
-        jobquery = jobquery.allinone(self.request.POST)
+
+        if 'structure_database' in self.request.POST and self.request.POST['structure_database'] is not '':
+            # add structure database location when structure_database is selected
+            key = 'structure_database.' + self.request.POST['structure_database']
+            str_db_loc = self.request.registry.settings[key]
+            jobquery = jobquery.allinone(self.request.POST, str_db_loc)
+        else:
+            jobquery = jobquery.allinone(self.request.POST)
+
         try:
             self.job_factory.submitQuery(jobquery, job)
         except JobSubmissionError:
