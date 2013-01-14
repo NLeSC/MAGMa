@@ -121,8 +121,9 @@ Ext.onReady(function() {
           if(form.isValid()){
               // TODO test if structures textarea or file is filled
               form.submit({
-                  url: '${request.route_url('home')}',
+                  url: '${request.route_url('startjob')}',
                   waitMsg: 'Uploading your data...',
+                  submitEmptyText: false,
                   success: function(fp, o) {
                       window.location = '${request.application_url}/status/'+o.result.jobid;
                   },

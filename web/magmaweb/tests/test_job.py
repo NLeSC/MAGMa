@@ -1837,8 +1837,8 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         with self.assertRaises(Invalid) as e:
             self.jobquery.add_structures(params, False)
 
-        s = 'Either structures or structure_file must be set'
-        sf = 'Either structures or structure_file must be set'
+        s = 'Either structures or structures_file must be set'
+        sf = 'Either structures or structures_file must be set'
         expected = {'structures': s, 'structures_file': sf}
         self.assertDictEqual(e.exception.asdict(), expected)
 
@@ -2115,7 +2115,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                   'msms_intensity_cutoff': 0.1,
                   'ionisation_mode': 1,
                   'max_broken_bonds': 4,
-                  'use_all_peaks': 'on'
+                  'use_all_peaks': 'on',
                   }
 
         query = self.jobquery.annotate(params)
@@ -2136,13 +2136,62 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                   'msms_intensity_cutoff': 0.1,
                   'ionisation_mode': 1,
                   'max_broken_bonds': 4,
-                  'skip_fragmentation': 'on'
+                  'skip_fragmentation': 'on',
                   }
 
         query = self.jobquery.annotate(params)
 
         script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' -f {db}\n"
+        expected_query = JobQuery(**{'dir': self.jobdir,
+                                     'prestaged': [],
+                                     'script': script
+                                     })
+        self.assertEqual(query, expected_query)
+
+    def test_with_structure_database_without_location(self):
+        params = {'precursor_mz_precision': 0.005,
+                  'mz_precision': 5.0,
+                  'mz_precision_abs': 0.001,
+                  'ms_intensity_cutoff': 200000,
+                  'msms_intensity_cutoff': 0.1,
+                  'ionisation_mode': 1,
+                  'max_broken_bonds': 4,
+                  'skip_fragmentation': 'on',
+                  'structure_database': 'pubchem',
+                  'min_refscore': 1,
+                  'max_mz': 9999,
+                  }
+
+        from colander import Invalid
+        with self.assertRaises(Invalid) as e:
+            self.jobquery.annotate(params)
+
+        msg = 'Unable to locate structure database'
+        self.assertEquals(e.exception.msg, msg)
+
+    def test_with_structure_database(self):
+        params = {'precursor_mz_precision': 0.005,
+                  'mz_precision': 5.0,
+                  'mz_precision_abs': 0.001,
+                  'ms_intensity_cutoff': 200000,
+                  'msms_intensity_cutoff': 0.1,
+                  'ionisation_mode': 1,
+                  'max_broken_bonds': 4,
+                  'skip_fragmentation': 'on',
+                  'structure_database': 'pubchem',
+                  'min_refscore': 1,
+                  'max_mz': 9999,
+                  }
+
+        structure_db_location = 'data/pubchem.db'
+
+        query = self.jobquery.annotate(params, False, structure_db_location)
+
+        script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
+        script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
+        script += " --structure_database 'pubchem' --db_options 'data/pubchem.db,1,9999'"
+        script += " -f {db}\n"
         expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': [],
                                      'script': script
@@ -2255,3 +2304,74 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         self.assertMultiLineEqual(params['structures'],
                                   self.fetch_file('structures.dat'))
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
+
+    def test_without_molecule_and_with_structure_database(self):
+        params = dict(n_reaction_steps=2,
+                      ionisation_mode=1,
+                      ms_intensity_cutoff=200000,
+                      msms_intensity_cutoff=0.1,
+                      abs_peak_cutoff=1000,
+                      precursor_mz_precision=0.005,
+                      max_broken_bonds=4,
+                      mz_precision=5.0,
+                      mz_precision_abs=0.001,
+                      metabolism_types='phase1',
+                      max_ms_level=3,
+                      structures='',
+                      ms_data='bla',
+                      structure_format='smiles',
+                      ms_data_format='mzxml',
+                      structure_database='pubchem',
+                      min_refscore=1,
+                      max_mz=9999,
+                      )
+
+        structure_db_location = 'data/pubchem.db'
+
+        query = self.jobquery.allinone(params, structure_db_location)
+
+        expected_script = "{magma} read_ms_data --ms_data_format 'mzxml'"
+        expected_script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
+
+        expected_script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
+        expected_script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
+        expected_script += " --structure_database 'pubchem' --db_options 'data/pubchem.db,1,9999'"
+        expected_script += " {db}\n"
+
+        expected_query = JobQuery(**{'dir': self.jobdir,
+                                     'prestaged': ['ms_data.dat'],
+                                     'script': expected_script,
+                                     })
+        self.assertEqual(query, expected_query)
+
+    def test_without_molecule_and_structure_database(self):
+        params = dict(n_reaction_steps=2,
+                      ionisation_mode=1,
+                      ms_intensity_cutoff=200000,
+                      msms_intensity_cutoff=0.1,
+                      abs_peak_cutoff=1000,
+                      precursor_mz_precision=0.005,
+                      max_broken_bonds=4,
+                      mz_precision=5.0,
+                      mz_precision_abs=0.001,
+                      metabolism_types='phase1',
+                      max_ms_level=3,
+                      structures='',
+                      ms_data='bla',
+                      structure_format='smiles',
+                      ms_data_format='mzxml',
+                      min_refscore=1,
+                      max_mz=9999,
+                      )
+
+        from colander import Invalid
+        with self.assertRaises(Invalid) as e:
+            self.jobquery.allinone(params)
+
+        s = 'Either structures or structures_file must be set'
+        sf = 'Either structures or structures_file must be set'
+        sd = 'Either structures or structures_file or structure_database must be set'
+        expected = {'structures': s,
+                    'structures_file': sf,
+                    'structure_database': sd}
+        self.assertDictEqual(e.exception.asdict(), expected)
