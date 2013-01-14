@@ -61,7 +61,7 @@ class Views(object):
         status_url = self.request.route_url('status.json', jobid=job.id)
         jobquery = job.jobquery(status_url)
 
-        if 'structure_database' in self.request.POST and self.request.POST['structure_database'] is not '':
+        if 'structure_database' in self.request.POST and self.request.POST['structure_database']:
             # add structure database location when structure_database is selected
             key = 'structure_database.' + self.request.POST['structure_database']
             str_db_loc = self.request.registry.settings[key]
