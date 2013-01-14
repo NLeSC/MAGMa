@@ -2280,6 +2280,9 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
                            ms_data_file=msfield,
                            structure_format='smiles',
                            ms_data_format='mzxml',
+                           structure_database='',
+                           min_refscore=1,
+                           max_mz=9999,
                            )
         params.add('metabolism_types', 'phase2')
 
@@ -2360,6 +2363,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
                       ms_data='bla',
                       structure_format='smiles',
                       ms_data_format='mzxml',
+                      structure_database='',
                       min_refscore=1,
                       max_mz=9999,
                       )

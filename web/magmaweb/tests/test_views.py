@@ -115,6 +115,24 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(job.ms_filename, 'Uploaded as text')
         job.jobquery.assert_called_with('http://example.com/status/foo.json')
 
+    def test_allinone_with_empty_structure_database(self):
+        post = {'ms_data': 'somexml',
+                'ms_data_file': '',
+                'structure_database': ''
+                }
+        request = testing.DummyRequest(post=post)
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+        job = self.fake_job()
+        jobquery = Mock(JobQuery)
+        job.jobquery.return_value = jobquery
+        views = Views(request)
+        views.job_factory = Mock(JobFactory)
+        views.job_factory.fromScratch = Mock(return_value=job)
+
+        response = views.allinone()
+
+        jobquery.allinone.assert_called_with(post)
+
     def test_allinone_no_jobmanager(self):
         from magmaweb.job import JobSubmissionError
         from pyramid.httpexceptions import HTTPInternalServerError
