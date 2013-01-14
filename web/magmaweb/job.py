@@ -143,6 +143,20 @@ class JobQuery(object):
         schema.add(colander.SchemaNode(colander.Boolean(),
                                        default=False, missing=False,
                                        name='skip_fragmentation'))
+        schema.add(colander.SchemaNode(colander.String(),
+                                       missing=colander.null,
+                                       validator=colander.OneOf(['pubchem',
+                                                                 'chebi']),
+                                       name='structure_database'
+                                       ))
+        schema.add(colander.SchemaNode(colander.Integer(),
+                                       missing=colander.null,
+                                       validator=colander.Range(min=1),
+                                       name='min_refscore'))
+        schema.add(colander.SchemaNode(colander.Integer(),
+                                       missing=colander.null,
+                                       validator=colander.Range(min=1),
+                                       name='max_mz'))
 
     def _addMetabolizeSchema(self, schema):
         validator = colander.OneOf(['phase1', 'phase2'])
@@ -175,7 +189,7 @@ class JobQuery(object):
             """Validator that either textarea or file upload is filled"""
             if not(not value['structures'] is colander.null or
                    not value['structures_file'] is colander.null):
-                error = 'Either structures or structure_file must be set'
+                error = 'Either structures or structures_file must be set'
                 exception = colander.Invalid(node)
                 exception.add(colander.Invalid(structuresSchema, error))
                 exception.add(colander.Invalid(structures_fileSchema, error))
@@ -427,7 +441,11 @@ class JobQuery(object):
 
         return self
 
-    def annotate(self, params, from_subset=False):
+    def annotate(self,
+                 params,
+                 from_subset=False,
+                 structure_database_location=None,
+                 ):
         """Configure job query to annotate.
 
         ``params`` is a dict from which the following keys are used:
@@ -442,8 +460,14 @@ class JobQuery(object):
         * use_all_peaks, when key is set then all peaks are used
         * skip_fragmentation, when key is set then
             the no fragmentation of structures is performed.
+        * structure_database, only used when ``structure_database_location`` is given
+        * min_refscore, only used when ``structure_database_location`` is given
+        * max_mz, only used when ``structure_database_location`` is given
 
         If ``from_subset`` is True then metids are read from stdin
+
+        ``structure_database_location``
+           location of structure database to search for candidate molecules
         """
         schema = colander.SchemaNode(colander.Mapping())
         self._addAnnotateSchema(schema)
@@ -466,12 +490,29 @@ class JobQuery(object):
             'ionisation_mode': self.escape(params['ionisation_mode']),
             'max_broken_bonds': self.escape(params['max_broken_bonds'])
         }
+
+        if params['structure_database'] is not colander.null:
+            if structure_database_location is None:
+                sd = colander.SchemaNode(colander.String(),
+                                         name='structure_database')
+                msg = 'Unable to locate structure database'
+                raise colander.Invalid(sd, msg)
+            script += "--structure_database '{structure_database}' --db_options '{db_options}' "
+            sd = self.escape(params['structure_database'])
+            script_substitutions['structure_database'] = sd
+            db_options = '{},{},{}'.format(
+                                           structure_database_location,
+                                           self.escape(params['min_refscore']),
+                                           self.escape(params['max_mz']),
+                                           )
+            script_substitutions['db_options'] = db_options
+
         script = script.format(**script_substitutions)
 
-        if (params['use_all_peaks']):
+        if params['use_all_peaks']:
             script += '-u '
 
-        if (params['skip_fragmentation']):
+        if params['skip_fragmentation']:
             script += '-f '
 
         if from_subset:
@@ -482,10 +523,13 @@ class JobQuery(object):
 
         return self
 
-    def allinone(self, params):
+    def allinone(self, params, structure_database_location=None):
         """Configure job query to do all sub commands in one go.
 
-        params is a MultiDict
+        ``params`` is a MultiDict
+
+        ``structure_database_location``
+           location of structure database to search for candidate molecules
 
         See
         :meth:`~magmaweb.job.JobQuery.add_ms_data`,
@@ -500,10 +544,23 @@ class JobQuery(object):
             metabolize = True
             del(params['metabolize'])
 
-        allin = self.add_ms_data(params).add_structures(params)
+        allin = self.add_ms_data(params)
+        try:
+            allin = allin.add_structures(params)
+        except colander.Invalid as e:
+            # no structures given
+            if 'structure_database' in params and params['structure_database'] is not '':
+                # structures will be added by database lookup during annotate
+                pass
+            else:
+                sd = colander.SchemaNode(colander.String(),
+                                         name='structure_database')
+                msg = 'Either structures or structures_file or structure_database must be set'
+                e.add(colander.Invalid(sd, msg))
+                raise e
         if metabolize:
             allin = allin.metabolize(params)
-        return allin.annotate(params)
+        return allin.annotate(params, False, structure_database_location)
 
     @classmethod
     def defaults(cls, selection=None):
