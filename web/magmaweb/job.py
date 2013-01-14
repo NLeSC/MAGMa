@@ -549,7 +549,7 @@ class JobQuery(object):
             allin = allin.add_structures(params)
         except colander.Invalid as e:
             # no structures given
-            if 'structure_database' in params and params['structure_database'] is not '':
+            if 'structure_database' in params and params['structure_database']:
                 # structures will be added by database lookup during annotate
                 pass
             else:
