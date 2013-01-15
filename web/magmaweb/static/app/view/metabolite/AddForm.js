@@ -45,6 +45,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddForm', {
      */
     setDisabledAnnotateFieldset: function(disabled) {
         this.query('annotatefieldset')[0].setDisabled(disabled);
+        this.queryById('structure_database_tab').setDisabled(disabled);
     },
     /**
      * Load form defaults from server.

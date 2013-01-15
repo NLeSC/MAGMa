@@ -34,6 +34,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
 	    plain : true,
 	    items : [{
 	    	title: 'Database',
+	    	id: 'structure_database_tab',
 	    	items: [{
 	    		xtype: 'combo',
 	    		fieldLabel: 'Database',
