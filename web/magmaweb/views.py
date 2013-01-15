@@ -114,12 +114,16 @@ class Views(object):
         jobs = []
         owner = self.request.user
         for jobmeta in owner.jobs:
+            # Force ISO 8601 format without microseconds
+            # so web browsers can parse it
+            created_at = jobmeta.created_at.replace(microsecond=0).isoformat()
             jobs.append({'id': str(jobmeta.jobid),
                          'url': self.request.route_url('results',
                                                        jobid=jobmeta.jobid),
                          'description': jobmeta.description,
                          'ms_filename': jobmeta.ms_filename,
-                         'created_at': str(jobmeta.created_at)})
+                         'created_at': created_at,
+                         })
 
         return {'jobs': jobs}
 
