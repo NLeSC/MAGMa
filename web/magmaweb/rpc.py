@@ -2,6 +2,9 @@
 import json
 from pyramid.view import view_config, view_defaults
 from pyramid.httpexceptions import HTTPInternalServerError
+from colander import Invalid
+from colander import SchemaNode
+from colander import String
 from magmaweb.job import make_job_factory
 from magmaweb.job import Job
 from magmaweb.job import JobSubmissionError
@@ -47,7 +50,26 @@ class RpcViews(object):
         job = self.new_job()
         jobquery = job.jobquery(self._status_url(job))
         has_scans = job.db.maxMSLevel() > 0
-        jobquery = jobquery.add_structures(self.request.POST, has_scans)
+        params = self.request.POST
+        try:
+            jobquery = jobquery.add_structures(params, has_scans)
+        except Invalid as e:
+            # no structures given
+            if has_scans and 'structure_database' in params and params['structure_database']:
+                # structures will be added by database lookup during extra annotate
+                pass
+            else:
+                sd = SchemaNode(String(), name='structure_database')
+                msg = 'Either structures or structures_file or structure_database must be set'
+                e.add(Invalid(sd, msg))
+                raise e
+
+        if has_scans and 'structure_database' in params and params['structure_database']:
+            # add structure database location when structure_database is selected
+            key = 'structure_database.' + params['structure_database']
+            str_db_loc = self.request.registry.settings[key]
+            jobquery = jobquery.annotate(params, False, str_db_loc)
+
         self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}
 

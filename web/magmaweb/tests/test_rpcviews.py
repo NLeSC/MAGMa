@@ -76,6 +76,24 @@ class RpcViewsTestCase(unittest.TestCase):
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq, self.job2)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid2})
 
+    def test_addstructure_with_db(self):
+        from colander import Invalid, SchemaNode, String
+        self.jobquery.add_structures.side_effect = Invalid(SchemaNode(String()))
+        self.rpc.request.POST['structure_database'] = 'pubchem'
+        self.rpc.request.registry.settings['structure_database.pubchem'] = 'data/pubchem.db'
+
+        response = self.rpc.add_structures()
+
+        self.jobquery.annotate.assert_called_with(self.post, False, 'data/pubchem.db')
+
+    def test_addstructure_with_db_and_no_msdata(self):
+        self.job2.db.maxMSLevel.return_value = 0
+        from colander import Invalid, SchemaNode, String
+        self.jobquery.add_structures.side_effect = Invalid(SchemaNode(String()))
+
+        with self.assertRaises(Invalid) as e:
+            self.rpc.add_structures()
+
     def test_addmsdata(self):
         post = {'ms_data': 'ms data', 'ms_data_file': ''}
         self.rpc.request.POST = post
