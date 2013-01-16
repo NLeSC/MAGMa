@@ -596,15 +596,12 @@ class AnnotateEngine(object):
             metids=set([])
             for metid, in self.db_session.query(Metabolite.metid).all():
                 metids.add(metid)
-            print metids
-        #else:  # split metids in chunks of 500 to avoid error in db_session.query
+        # annotate metids in chunks of 500 to avoid errors in db_session.query and memory problems during parallel processing
         while len(metids)>0:
-            structures=[]
-            for i in range(10):
-                ids=set([])
-                while len(ids)<500 and len(metids)>0:
-                    ids.add(metids.pop())
-                structures = structures+self.db_session.query(Metabolite).filter(Metabolite.metid.in_(ids)).all()
+            ids=set([])
+            while len(ids)<500 and len(metids)>0:
+                ids.add(metids.pop())
+            structures = self.db_session.query(Metabolite).filter(Metabolite.metid.in_(ids)).all()
             jobs=[]
             for structure in structures:
                 # collect all peaks with masses within 3 Da range
