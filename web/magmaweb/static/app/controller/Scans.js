@@ -26,7 +26,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    */
   scans_of_metabolites: [],
   init: function() {
-    console.log('Scans controller init');
+    Ext.log({}, 'Scans controller init');
     var me = this;
 
     this.control({
@@ -183,7 +183,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     var me = this;
     var chromatogram = this.getChromatogram();
     chromatogram.setLoading(false);
-    console.log('Loading chromatogram');
+    Ext.log({}, 'Loading chromatogram');
     if (data.cutoff !== null) {
         chromatogram.cutoff = data.cutoff;
     }
@@ -207,7 +207,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * @param {Number} metid Metobolite identifier
    */
   loadExtractedIonChromatogram: function(metid) {
-    console.log('Loading extracted ion chromatogram');
+    Ext.log({}, 'Loading extracted ion chromatogram');
     this.getChromatogram().setLoading(true);
     var me = this;
     d3.json(
@@ -281,7 +281,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * @param {Array} scans Array of scans
    */
   setScans: function(scans) {
-    console.log('Setting chromatogram scan markers');
+    Ext.log({}, 'Setting chromatogram scan markers');
     var chromatogram = this.getChromatogram();
     if (!chromatogram.hasData()) {
         return; // can not set scan markers if chromatogram is not loaded

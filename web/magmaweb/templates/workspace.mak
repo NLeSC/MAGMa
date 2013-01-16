@@ -32,9 +32,6 @@
 }
 </style>
 <script type="text/javascript">
-if (!window.console) window.console = {};
-if (!window.console.log) window.console.log = function() {};
-
 Ext.Loader.setConfig({
   enabled: true,
 //  disableCaching: false, // uncomment to use firebug breakpoints

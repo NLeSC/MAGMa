@@ -160,9 +160,6 @@ svg {
 <script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
 
 <script type="text/javascript">
-if (!window.console) window.console = {};
-if (!window.console.log) window.console.log = function() {};
-
 Ext.Loader.setConfig({
   enabled: true,
   //disableCaching: false, // uncomment to use firebug breakpoints
@@ -192,12 +189,12 @@ Ext.onReady(function() {
       canRun: ${json.dumps(canRun)|n},
       is_user_authenticated: ${json.dumps(request.user is not None)},
       urls: {
-        home: '${request.route_url('home')}',
+        home: '${request.route_path('home')}',
         fragments: '${request.application_url}/results/${jobid}/fragments/{0}/{1}.json',
         mspectra: '${request.application_url}/results/${jobid}/mspectra/{0}.json?mslevel={1}',
         extractedionchromatogram: '${request.application_url}/results/${jobid}/extractedionchromatogram/{0}.json',
-        chromatogram: '${request.route_url('chromatogram.json',jobid=jobid)}',
-        stderr: '${request.route_url('stderr.txt',jobid=jobid)}'
+        chromatogram: '${request.route_path('chromatogram.json',jobid=jobid)}',
+        stderr: '${request.route_path('stderr.txt',jobid=jobid)}'
       }
     });
 });

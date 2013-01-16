@@ -25,7 +25,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
   appFolder: Ext.Loader.getPath('Esc.magmaweb'),
   extend:'Ext.app.Application',
   constructor: function(config) {
-    console.log('Construct app');
+    Ext.log({}, 'Construct app');
     this.initConfig(config);
     this.callParent(arguments);
     return this;
@@ -111,7 +111,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
    * @param {Ext.Error} err The raised error
    */
   errorHandle: function(err) {
-      console.error(err);
+      Ext.log({level:'error'}, err);
       Ext.Msg.show({
           title: 'Error',
           msg: err.msg,
@@ -208,7 +208,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
         this.selected.metid = false;
     }, this);
 
-    console.log('Launch app');
+    Ext.log({}, 'Launch app');
 
     /**
      * @property {Ext.window.Window} infoWindow

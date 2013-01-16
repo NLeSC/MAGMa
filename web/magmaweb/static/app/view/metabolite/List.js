@@ -44,7 +44,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
     }]
   }],
   initComponent: function() {
-    console.log('Init met grid');
+    Ext.log({}, 'Init met grid');
     var me = this;
     var molcol = Ext.create('Esc.chemdoodle.Column', {
       text: 'Molecule', dataIndex: 'mol',

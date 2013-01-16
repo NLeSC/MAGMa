@@ -43,9 +43,6 @@
 }
 </style>
 <script type="text/javascript">
-if (!window.console) window.console = {};
-if (!window.console.log) window.console.log = function() {};
-
 Ext.Loader.setConfig({
   enabled: true,
 //  disableCaching: false, // uncomment to use firebug breakpoints
@@ -136,8 +133,6 @@ Ext.onReady(function() {
 	                		  buttons: Ext.MessageBox.OK,
 	                	  });
                 	  }
-                      console.log(action.failureType);
-                      console.log(action.result);
                   }
               });
           }
