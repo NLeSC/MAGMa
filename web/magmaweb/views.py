@@ -239,7 +239,10 @@ class JobViews(object):
         self.job.state = jobstate
         return dict(status=jobstate, jobid=str(jobid))
 
-    @view_config(route_name='results', renderer='results.mak')
+    @view_config(route_name='results',
+                 renderer='results.mak',
+                 request_method='GET'
+                 )
     def results(self):
         """Returns results page"""
         db = self.job.db
@@ -249,8 +252,34 @@ class JobViews(object):
                     maxmslevel=db.maxMSLevel(),
                     jobid=self.job.id,
                     # coerce pyramid.security.Allowed|Denied to boolean
-                    canRun=bool(canRun)
+                    canRun=bool(canRun),
+                    job=self.job,
                     )
+
+    @view_config(route_name='results',
+                 renderer='json',
+                 request_method='PUT',
+                 permission='run',
+                 )
+    def updatejson(self):
+        """Update fields of :class:`Job`"""
+        body = self.request.json_body
+        job = self.job
+        job.description = body['description']
+        job.ms_filename = body['ms_filename']
+        return {'success': True, 'message': 'Updated job'}
+
+    @view_config(route_name='results',
+                 renderer='json',
+                 request_method='DELETE',
+                 permission='run',
+                 )
+    def deletejson(self):
+        """Delete job from user database and deletes job directory"""
+        self.job.delete()
+        del self.job
+        self.request.response.status_int = 204
+        return {'success': True, 'message': 'Deleted job'}
 
     @view_config(route_name='metabolites.json', renderer='json')
     def metabolitesjson(self):
