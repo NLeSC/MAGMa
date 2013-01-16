@@ -1018,6 +1018,13 @@ class Job(object):
         if run is not None:
             run.ms_filename = ms_filename
 
+    def delete(self):
+        """Deletes job from user database and deletes job directory"""
+        magmaweb.user.JobMeta.delete(self.meta)
+        # disconnect from job results database before removing database file
+        self.db.session.remove()
+        shutil.rmtree(self.dir)
+
 
 class JobDb(object):
     """Database of a job"""
@@ -1031,7 +1038,10 @@ class JobDb(object):
 
     def runInfo(self):
         """Returns last run info or None if there is no run info"""
-        return self.session.query(Run).order_by(Run.runid.desc()).first()
+        # cache run info to prevent 'database is locked' errors
+        if not hasattr(self, '_runInfo'):
+            self._runInfo = self.session.query(Run).order_by(Run.runid.desc()).first()
+        return self._runInfo
 
     def metabolitesTotalCount(self):
         """Returns unfiltered and not paged count of metabolites"""

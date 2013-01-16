@@ -21,6 +21,9 @@ class AbstractViewsTestCase(unittest.TestCase):
     def fake_job(self):
         job = Mock(Job)
         job.id = 'foo'
+        job.description = ""
+        job.ms_filename = ""
+        job.dir = '/somedir/foo'
         job.db = Mock(JobDb)
         job.db.runInfo.return_value = 'bla'
         job.db.maxMSLevel.return_value = 3
@@ -220,19 +223,6 @@ class ViewsTestCase(AbstractViewsTestCase):
                     }
         self.assertEqual(json.loads(response.body), expected)
 
-    def test_results_cantrun(self):
-        request = testing.DummyRequest()
-        views = JobViews(self.fake_job(), request)
-
-        response = views.results()
-
-        self.assertEqual(response, dict(jobid='foo',
-                                        run='bla',
-                                        maxmslevel=3,
-                                        # no authorization -> allows all
-                                        canRun=True
-                                        ))
-
     def test_workspace(self):
         import uuid
         self.config.add_route('results', '/results/{jobid}')
@@ -431,7 +421,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(response, dict(jobid='foo',
                                         run='bla',
                                         maxmslevel=3,
-                                        canRun=True
+                                        canRun=True,
+                                        job=job,
                                         ))
         has_permission.assert_called_with('run', job, request)
 
@@ -445,10 +436,11 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         response = views.results()
 
-        self.assertEqual(response, dict(jobid='foo',
+        self.assertDictEqual(response, dict(jobid='foo',
                                         run='bla',
                                         maxmslevel=3,
-                                        canRun=False
+                                        canRun=False,
+                                        job=job,
                                         ))
         has_permission.assert_called_with('run', job, request)
 
@@ -837,3 +829,35 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  max_broken_bonds=4
                                                  )
                                     })
+
+    def test_updatejson(self):
+        request = testing.DummyRequest()
+        request.json_body = {"id": "bar",
+                             "description": "New description",
+                             "ms_filename": "F12345.mzxml",
+                             "created_at":"1999-12-17T13:45:04",
+                             }
+        job = self.fake_job()
+        expected_id = job.id
+        execpted_ca = job.created_at
+        views = JobViews(job, request)
+
+        response = views.updatejson()
+
+        self.assertDictEqual(response, {'success': True, 'message': 'Updated job'})
+        self.assertEqual(job.id, expected_id)
+        self.assertEqual(job.description, 'New description')
+        self.assertEqual(job.ms_filename, 'F12345.mzxml')
+        self.assertEqual(job.created_at, execpted_ca)
+
+    def test_deletejson(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        views = JobViews(job, request)
+
+        response = views.deletejson()
+
+        self.assertDictEqual(response, {'success': True, 'message': 'Deleted job'})
+        job.delete.assert_called_with()
+        self.assertEquals(request.response.status_int, 204)
+

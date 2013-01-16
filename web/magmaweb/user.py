@@ -155,6 +155,11 @@ class JobMeta(Base):
         # so force commit here
         session.flush()
 
+    @classmethod
+    def delete(cls, jobmeta):
+        """Deletes :class:JobMeta from db"""
+        session = DBSession()
+        session.delete(jobmeta)
 
 class RootFactory(object):
     """Context factory which sets default acl"""
@@ -209,7 +214,7 @@ class JobIdFactory(RootFactory):
             # for acl inheritance add a parent,
             # this is not the parent job where this job is derived from
             job.__parent__ = self
-            # owner may run calculations
+            # owner may run calculations or perform changes
             monitor_user = self.request.registry.settings['monitor_user']
             job.__acl__ = [(Allow, job.owner, 'run'),
                            # monitor user may monitor this job

@@ -30,6 +30,17 @@
 	padding-bottom: 40px;
 	color: #333;
 }
+
+.x-action-col-cell img {
+     height: 16px;
+     width: 16px;
+     cursor: pointer;
+}
+
+.icon-delete {
+	background-image:
+		url(${request.extjsroot}/examples/writer/images/delete.png) !important;
+}
 </style>
 <script type="text/javascript">
 Ext.Loader.setConfig({
@@ -50,12 +61,17 @@ Ext.Loader.setConfig({
 <script type="text/javascript">
 
 Ext.require([
+  'Ext.container.Viewport',
+  'Ext.layout.container.Border',
+  'Ext.toolbar.Spacer',
+  'Ext.container.ButtonGroup',
   'Ext.form.Panel',
+  'Ext.grid.Panel',
   'Ext.grid.column.Date',
-  'Esc.magmaweb.view.scan.UploadFieldSet',
-  'Esc.magmaweb.view.metabolite.AddFieldSet',
-  'Esc.magmaweb.view.metabolite.MetabolizeFieldSet',
-  'Esc.magmaweb.view.fragment.AnnotateFieldSet'
+  'Ext.grid.column.Action',
+  'Ext.grid.plugin.CellEditing',
+  'Ext.data.proxy.Rest',
+  'Ext.window.MessageBox'
 ]);
 
 Ext.onReady(function() {
@@ -87,15 +103,41 @@ Ext.onReady(function() {
   <%!
   import json
   %>
+
+  Ext.define('Job', {
+	extend: 'Ext.data.Model',
+	fields: [
+	         'id',
+	         'description',
+	         'ms_filename',
+	         {name: 'created_at', type: 'date'},
+	         'url'
+	         ],
+	proxy: {
+		type: 'rest',
+		url: '${request.route_path('jobfromscratch')}'
+	}
+  });
+
   var job_store = Ext.create('Ext.data.Store', {
-    fields: ['id', 'description', 'ms_filename', 'created_at', 'url'],
+	model: 'Job',
     data: ${json.dumps(jobs)|n}
+  });
+
+  var cellEditing = Ext.create('Ext.grid.plugin.CellEditing', {
+      clicksToEdit: 1
   });
 
   var job_grid = Ext.create('Ext.grid.Panel', {
     title: 'Jobs',
     store: job_store,
     height: 500,
+    plugins: [cellEditing],
+    listeners: {
+    	edit: function(editor, e) {
+    		e.record.save();
+    	}
+    },
     columns: [{
       text: 'ID', dataIndex: 'id', renderer: function(v, m, r) {
         return Ext.String.format('<a href="{0}">{1}</a>', r.data.url, v);
@@ -103,12 +145,37 @@ Ext.onReady(function() {
       width: 220
     }, {
       text: 'Description', dataIndex: 'description',
-      width: 600
+      flex: 1,
+      editor: {
+    	  xtype: 'textfield'
+      }
     }, {
-      text: 'MS filename', dataIndex: 'ms_filename'
+      text: 'MS filename', dataIndex: 'ms_filename',
+	  editor: {
+    	  xtype: 'textfield'
+      }
     }, {
       text: 'Created at', dataIndex: 'created_at', width: 120,
       xtype: 'datecolumn', format: "Y-m-d H:i:s"
+    }, {
+        xtype: 'actioncolumn',
+        width:30,
+        sortable: false,
+        items: [{
+        	iconCls: 'icon-delete',
+            tooltip: 'Delete Job',
+            handler: function(grid, rowIndex, colIndex, item, e , row) {
+            	Ext.MessageBox.confirm(
+            		'Delete job',
+            		'Are you sure you want delete job '+row.data.id+'?',
+            		function(button) {
+            			if (button === 'yes') {
+                    	    row.destroy();
+            			}
+            		}
+            	);
+            }
+        }]
     }]
   });
 

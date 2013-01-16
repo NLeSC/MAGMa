@@ -162,14 +162,6 @@ class RpcViewsTestCase(unittest.TestCase):
         self.rpc.job_factory.submitQuery.assert_called_with(self.jq, self.job2)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid2})
 
-    def test_set_description(self):
-        self.rpc.request.POST = {'description': 'My description'}
-
-        response = self.rpc.set_description()
-
-        self.assertEquals(self.job.description, 'My description')
-        self.assertEquals(response, {'success': True, 'jobid': self.jobid})
-
     def test_submit_query_withoutjobmanager(self):
         from magmaweb.job import JobSubmissionError
         from pyramid.httpexceptions import HTTPInternalServerError

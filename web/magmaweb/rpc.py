@@ -130,16 +130,6 @@ class RpcViews(object):
         self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}
 
-    @view_config(route_name='rpc.set_description', renderer='json')
-    def set_description(self):
-        """Sets description of current job
-
-        ``description`` of post parameter.
-        """
-        job = self.job
-        job.description = self.request.POST['description']
-        return {'success': True, 'jobid': str(job.id)}
-
     @view_config(route_name='rpc.assign', renderer='json')
     def assign_metabolite2peak(self):
         job = self.job
