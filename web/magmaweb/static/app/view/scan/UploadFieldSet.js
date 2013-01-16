@@ -7,6 +7,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
 	extend : 'Ext.form.FieldSet',
     alias: 'widget.uploadmsdatafieldset',
     requires: [
+         'Esc.form.field.TextareaTab',
          'Ext.form.field.ComboBox',
          'Ext.form.field.Number',
          'Ext.form.field.File',
@@ -20,7 +21,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         name: 'ms_data_format',
         value: 'mzxml'
     }, {
-        xtype : 'textarea',
+        xtype : 'textareatab',
         name : 'ms_data',
         id: 'ms_data_area',
         emptyText : 'Enter MS data in Tree format or mzXML',
