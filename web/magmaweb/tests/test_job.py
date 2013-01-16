@@ -635,6 +635,17 @@ class JobTestCase(unittest.TestCase):
         self.assertEqual(self.job.ms_filename, 'F4567.mzxml')
         self.assertEqual(self.job.meta.ms_filename, 'F4567.mzxml')
 
+    @patch('magmaweb.user.JobMeta')
+    @patch('magmaweb.job.shutil')
+    def test_delete(self, shutl, jm):
+        self.job.db.session = Mock()
+
+        self.job.delete()
+
+        self.job.db.session.remove.assert_called_with()
+        shutl.rmtree.assert_called_with(self.jobdir)
+        jm.delete.assert_called_with(self.meta)
+
 
 class JobDbTestCaseAbstract(unittest.TestCase):
     def setUp(self):

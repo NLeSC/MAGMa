@@ -8,6 +8,7 @@ from pyramid_multiauth import MultiAuthenticationPolicy
 from sqlalchemy import engine_from_config
 from magmaweb.user import init_user_db, RootFactory, JobIdFactory
 
+
 def main(global_config, **settings):
     """This function returns the Magma WSGI application.
     """
@@ -81,7 +82,6 @@ def main(global_config, **settings):
     add_job_route('rpc.metabolize', '/rpc/{jobid}/metabolize')
     add_job_route('rpc.metabolize_one', '/rpc/{jobid}/metabolize_one')
     add_job_route('rpc.annotate', '/rpc/{jobid}/annotate')
-    add_job_route('rpc.set_description', '/rpc/{jobid}/set_description')
     add_job_route('rpc.assign', '/rpc/{jobid}/assign')
     add_job_route('rpc.unassign', '/rpc/{jobid}/unassign')
 

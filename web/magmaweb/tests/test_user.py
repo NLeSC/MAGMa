@@ -116,6 +116,15 @@ class TestUser(unittest.TestCase):
 
 
 class TestJobMeta(unittest.TestCase):
+    def setUp(self):
+        init_user_db()
+        self.session = user.DBSession()
+        # job must be owned by a user
+        self.session.add(user.User('bob', 'Bob Smith', 'bob@smith.org'))
+
+    def tearDown(self):
+        destroy_user_db()
+
     @patch('datetime.datetime')
     def test_contruct_minimal(self, mock_dt):
         jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
@@ -149,6 +158,31 @@ class TestJobMeta(unittest.TestCase):
         self.assertEqual(j.parentjobid, pid)
         self.assertEqual(j.state, 'RUNNING')
         self.assertEqual(j.created_at, created_at)
+
+    def test_add(self):
+        jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
+        j = user.JobMeta(jid, 'bob')
+        user.JobMeta.add(j)
+
+        self.assertEqual(self.session.query(user.JobMeta).count(), 1)
+
+    def test_by_id(self):
+        jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
+        job_in = user.JobMeta(jid, 'bob')
+        user.JobMeta.add(job_in)
+
+        job_out = user.JobMeta.by_id(jid)
+
+        self.assertEqual(job_out, job_in)
+
+    def test_delete(self):
+        jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
+        job_in = user.JobMeta(jid, 'bob')
+        user.JobMeta.add(job_in)
+
+        user.JobMeta.delete(job_in)
+
+        self.assertEqual(self.session.query(user.JobMeta).count(), 0)
 
 
 class TestRootFactory(unittest.TestCase):
