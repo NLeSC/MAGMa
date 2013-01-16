@@ -631,6 +631,10 @@
                "path" : "static/extjs-4.2.0/src/form/field/"
             },
             {
+               "name" : "TextareaTab.js",
+               "path" : "static/app/view/"
+            },
+            {
                "name" : "Trigger.js",
                "path" : "static/extjs-4.2.0/src/form/field/"
             },
@@ -1169,6 +1173,38 @@
             {
                "name" : "Date.js",
                "path" : "static/extjs-4.2.0/src/picker/"
+            },
+            {
+               "name" : "Date.js",
+               "path" : "static/extjs-4.2.0/src/grid/column/"
+            },
+            {
+               "name" : "Proxy.js",
+               "path" : "static/extjs-4.2.0/src/data/proxy/"
+            },
+            {
+               "name" : "Rest.js",
+               "path" : "static/extjs-4.2.0/src/data/proxy/"
+            },
+            {
+               "name" : "Editing.js",
+               "path" : "static/extjs-4.2.0/src/grid/plugin/"
+            },
+            {
+               "name" : "Editor.js",
+               "path" : "static/extjs-4.2.0/src/layout/container/"
+            },
+            {
+               "name" : "Editor.js",
+               "path" : "static/extjs-4.2.0/src/"
+            },
+            {
+               "name" : "CellEditor.js",
+               "path" : "static/extjs-4.2.0/src/grid/"
+            },
+            {
+               "name" : "CellEditing.js",
+               "path" : "static/extjs-4.2.0/src/grid/plugin/"
             }
          ],
          "compress" : true,
