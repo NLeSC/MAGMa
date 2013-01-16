@@ -22,8 +22,10 @@
 Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
 	extend: 'Ext.form.FieldSet',
 	alias : 'widget.addstructurefieldset',
-	requires : ['Ext.form.field.File', 'Ext.form.field.TextArea',
-	            'Ext.form.field.ComboBox', 'Ext.form.field.Display',
+	requires : ['Ext.form.field.File',
+	            'Esc.form.field.TextareaTab',
+	            'Ext.form.field.ComboBox',
+	            'Ext.form.field.Display',
 	            'Ext.tab.Panel'],
 	items: [{
 	    xtype: 'tabpanel',
@@ -73,7 +75,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
 	                    allowBlank : false,
 	                    value : 'smiles'
 	                }, {
-	                    xtype : 'textarea',
+	                    xtype : 'textareatab',
 	                    name : 'structures',
 	                    id : 'structures_area',
 	                    emptyText : 'Enter smiles strings followed by space and name on each line',
