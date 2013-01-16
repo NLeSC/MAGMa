@@ -163,7 +163,8 @@ class MagmaCommand(object):
                         rs=rs+"\n"
                     metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0,rs, 1, args.mass_filter))
                 except:
-                    print sys.exc_info()
+                    #print sys.exc_info()
+                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0,"", 1, args.mass_filter))
         magma_session.commit()
         for metid in metids:
             print metid
@@ -212,27 +213,27 @@ class MagmaCommand(object):
             for s in args.scans.split(','):
                scans.add(int(s))
         annotate_engine.build_spectra(scans)
-        if args.metids == None:
-            annotate_engine.search_structures(ncpus=args.ncpus,fast=args.fast)
-        else:
-            metids=args.metids.split()
-            annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
-        if args.structure_database == 'chebi':
-            struct_engine = magma_session.get_structure_engine()
-            candidates=annotate_engine.get_chebi_candidates()
-            metids=set([])
-            for id in candidates:
-                try:
-                    metids.add(struct_engine.add_structure(str(candidates[id][0]),str(candidates[id][1]),1.0,1,"",1))
-                except:
-                    pass
-            annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
+#        if args.structure_database == 'chebi':
+#            struct_engine = magma_session.get_structure_engine()
+#            candidates=annotate_engine.get_chebi_candidates()
+#            metids=set([])
+#            for id in candidates:
+#                try:
+#                    metids.add(struct_engine.add_structure(str(candidates[id][0]),str(candidates[id][1]),1.0,1,"",1))
+#                except:
+#                    pass
+#            annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
+        pubchem_metids=[]
         if args.structure_database == 'pubchem':
             db_opts=['','','']
             db_options=args.db_options.split(',')
             for x in range(len(db_options)):
                 db_opts[x]=db_options[x]
-            metids=annotate_engine.get_pubchem_candidates(args.fast,db_opts[0],db_opts[1],db_opts[2])
+            pubchem_metids=annotate_engine.get_pubchem_candidates(args.fast,db_opts[0],db_opts[1],db_opts[2])
+        if args.metids == None:
+            annotate_engine.search_structures(ncpus=args.ncpus,fast=args.fast)
+        else:
+            metids=args.metids.split()+pubchem_metids
             annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
         magma_session.commit()
             # annotate_engine.search_some_structures(metids)
