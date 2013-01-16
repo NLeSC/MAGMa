@@ -34,7 +34,7 @@ def init_user_db(engine, create=True, fill=True):
 
     'engine' is a :class:`sqlalchemy.engine.base.Engine`.
     Set 'create' to False to skip createing tables.
-    Set 'fill' to False to skipp adding 'jobmanager' user.
+    Set 'fill' to False to skip adding 'joblauncher' user.
     """
     DBSession.configure(bind=engine)
     Base.metadata.bind = engine

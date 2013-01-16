@@ -29,7 +29,7 @@ class RpcViews(object):
         """Submit query to job factory
 
         Raises a HTTPInternalServerError exception when
-        job factory fails to communicate with job manager
+        job factory fails to communicate with job launcher
         """
         try:
             self.job_factory.submitQuery(query, job)
