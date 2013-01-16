@@ -175,7 +175,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
    */
   loadMSpectra: function(mslevel, scanid, markers, clearHigherSpectra) {
     var me = this;
-    console.log('Loading msspectra level '+mslevel+' with id '+scanid);
+    Ext.log({}, 'Loading msspectra level '+mslevel+' with id '+scanid);
     this.getMSpectra(mslevel).setLoading(true);
     if (clearHigherSpectra) {
         this.clearMSpectraFrom(mslevel+1); // TODO stop this when (un)assinging a structure to a peak
@@ -258,7 +258,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   loadMSpectrasFromFragment: function(parent, children) {
     if (parent.isRoot()) {
       // lvl1 fragment
-      console.log('Selecting metabolite peak in lvl1 mspectra and loading lvl2 mspectra');
+      Ext.log({}, 'Selecting metabolite peak in lvl1 mspectra and loading lvl2 mspectra');
       var mspectra = this.getMSpectra(1);
       // set markers in lvl1 scan
       mspectra.setMarkers(
@@ -278,7 +278,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
       }
     } else {
       // lvl >1 fragment
-      console.log('Select peak of fragment');
+      Ext.log({}, 'Select peak of fragment');
       this.getMSpectra(parent.data.mslevel).selectPeak(parent.data.mz);
     }
   },
