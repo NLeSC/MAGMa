@@ -20,7 +20,7 @@ macauth.master_secret = aeloor3kie2Loch9su3ooj9ALae9Os1e
 # token valid for a year
 access_token.expires_in = 30758400
 # account used for updating status of jobs
-monitor_user = jobmanager
+monitor_user = joblauncher
 
 # user database
 sqlalchemy.url = sqlite:///%(here)s/data/users.db
@@ -39,10 +39,10 @@ jobfactory.submit_url = http://localhost:9998/job
 # Magma-1.1/magma "$@"
 jobfactory.init_script: tar -zxf Magma-1.1-rh57-x86_64.tar.gz
   export PATH=Magma-1.1:$PATH
-jobfactory.tarball = /home/stefanv/workspace/magmajobmanager/Magma-1.1.tar.gz
+jobfactory.tarball = /home/stefanv/workspace/magma/job/Magma-1.1.tar.gz
 
 # To submit job to local installation of MAGMaJob
-jobfactory.init_script = . /home/stefanv/workspace/MAGMaJob/env2/bin/activate
+jobfactory.init_script = . /home/stefanv/workspace/magma/env/bin/activate
 
 # Location of structure database to fetch candidate molecules to match against ms peak trees
 # db is expected to be available at where job is executed

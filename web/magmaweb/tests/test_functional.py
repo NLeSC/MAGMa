@@ -105,3 +105,23 @@ class FunctionalTests(unittest.TestCase):
                 'reference': url2
             }]
         })
+
+    def test_double_update_job(self):
+        """Double update should not raise OperationalError: database is locked"""
+        self.do_login()
+        jobid = self.fake_jobid()
+        req_url = '/results/' + str(jobid)
+        req_body = json.dumps({"id": "bar",
+                             "description": "New description",
+                             "ms_filename": "F6789.mzxml",
+                             "created_at":"1999-12-17T13:45:04",
+                             })
+        self.testapp.put(req_url, req_body)
+
+        req_body2 = json.dumps({"id": "bar",
+                             "description": "New description 2",
+                             "ms_filename": "F6789.mzxml 2",
+                             "created_at":"1999-12-17T13:45:04",
+                             })
+
+        self.testapp.put(req_url, req_body2)

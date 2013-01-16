@@ -29,7 +29,7 @@ class RpcViews(object):
         """Submit query to job factory
 
         Raises a HTTPInternalServerError exception when
-        job factory fails to communicate with job manager
+        job factory fails to communicate with job launcher
         """
         try:
             self.job_factory.submitQuery(query, job)
@@ -128,16 +128,6 @@ class RpcViews(object):
         job = self.new_job()
         jobquery = job.jobquery(self._status_url(job)).annotate(self.request.POST)
         self.submit_query(jobquery, job)
-        return {'success': True, 'jobid': str(job.id)}
-
-    @view_config(route_name='rpc.set_description', renderer='json')
-    def set_description(self):
-        """Sets description of current job
-
-        ``description`` of post parameter.
-        """
-        job = self.job
-        job.description = self.request.POST['description']
         return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.assign', renderer='json')
