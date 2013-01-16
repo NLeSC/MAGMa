@@ -821,12 +821,12 @@ class JobFactory(object):
 
         return Job(jobmeta, jdir, db)
 
-    def submitJob2Manager(self, body):
-        """Submits job query to jobmanager daemon
+    def submitJob2Launcher(self, body):
+        """Submits job query to job launcher daemon
 
         body is a dict which is submitted as json.
 
-        returns job identifier of job submitted to jobmanager
+        returns job identifier of job submitted to job launcher
         (not the same as job.id).
         """
         request = urllib2.Request(self.submit_url,
@@ -888,7 +888,7 @@ class JobFactory(object):
         job.meta = magmaweb.user.DBSession().merge(job.meta)
 
         try:
-            self.submitJob2Manager(body)
+            self.submitJob2Launcher(body)
         except urllib2.URLError:
             job.state = 'SUBMISSION_ERROR'
             raise JobSubmissionError()

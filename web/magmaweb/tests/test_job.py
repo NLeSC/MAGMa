@@ -393,7 +393,7 @@ class JobFactoryTestCase(unittest.TestCase):
         status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
         jobquery.status_callback_url = status_cb_url
 
-        self.factory.submitJob2Manager = Mock()
+        self.factory.submitJob2Launcher = Mock()
 
         jobid = self.factory.submitQuery(jobquery, job)
 
@@ -416,12 +416,12 @@ class JobFactoryTestCase(unittest.TestCase):
                             'arguments': [self.factory.script_fn],
                             'status_callback_url': status_cb_url
                             }
-        self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
+        self.factory.submitJob2Launcher.assert_called_with(jobmanager_query)
         self.assertEqual(job.state, 'INITIAL')
 
     def test_submitQuery_with_tarball(self):
         self.factory.tarball = 'Magma-1.1.tar.gz'
-        self.factory.submitJob2Manager = Mock()
+        self.factory.submitJob2Launcher = Mock()
         job = self.factory.fromScratch('bob')
         jobquery = JobQuery(job.dir, "", [])
         status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
@@ -443,14 +443,14 @@ class JobFactoryTestCase(unittest.TestCase):
                             'arguments': [self.factory.script_fn],
                             'status_callback_url': status_cb_url
                             }
-        self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
+        self.factory.submitJob2Launcher.assert_called_with(jobmanager_query)
         self.assertEqual(job.state, 'INITIAL')
 
     def test_submitQuery_no_jobmanager(self):
         from urllib2 import URLError
         from magmaweb.job import JobSubmissionError
         exc = URLError('[Errno 111] Connection refused')
-        self.factory.submitJob2Manager = Mock(side_effect=exc)
+        self.factory.submitJob2Launcher = Mock(side_effect=exc)
         job = self.factory.fromScratch('bob')
         jobquery = JobQuery(job.dir, "", [])
         status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
@@ -462,11 +462,11 @@ class JobFactoryTestCase(unittest.TestCase):
         self.assertEqual(job.state, 'SUBMISSION_ERROR')
 
     @patch('urllib2.urlopen')
-    def test_submitJob2Manager(self, ua):
+    def test_submitJob2Launcher(self, ua):
         import json
         body = {'foo': 'bar'}
 
-        self.factory.submitJob2Manager(body)
+        self.factory.submitJob2Launcher(body)
 
         # TODO replace with ua.assert_called_once_with(<hamcrest matcher>)
         req = ua.call_args[0][0]
