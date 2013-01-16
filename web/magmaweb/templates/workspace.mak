@@ -1,39 +1,48 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
+<meta charset="utf-8">
 <title>MAGMa - Workspace</title>
 <link rel="stylesheet"
-    href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
+	href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
 <script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
 <style type="text/css">
 .x-logo a {
-  font-size: 40px;
-  padding-left: 520px;
-  padding-top: 3px; /* aligns app title with text in logo  */
-  background: url(${request.static_url('magmaweb:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}) no-repeat 5px 4px;
+	font-size: 40px;
+	padding-left: 520px;
+	padding-top: 3px; /* aligns app title with text in logo  */
+    background: url(${request.static_url('magmaweb:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}) no-repeat 5px 4px;
 }
 
 .x-title a {
-  font-size: 40px;
-  font-weight: bold;
-  color: #333;
-  text-decoration:none;
-  margin-left: auto;
-  margin-right: auto;
-  padding-top: 3px; /* aligns app title with text in logo  */
+	font-size: 40px;
+	font-weight: bold;
+	color: #333;
+	text-decoration: none;
+	margin-left: auto;
+	margin-right: auto;
+	padding-top: 3px; /* aligns app title with text in logo  */
 }
 
 #welcome h1 {
-    font-size: 200%;
-    padding-top: 40px;
-    padding-bottom: 40px;
-    color: #333;
+	font-size: 200%;
+	padding-top: 40px;
+	padding-bottom: 40px;
+	color: #333;
+}
+
+.x-action-col-cell img {
+     height: 16px;
+     width: 16px;
+     cursor: pointer;
+}
+
+.icon-delete {
+	background-image:
+		url(${request.extjsroot}/examples/writer/images/delete.png) !important;
 }
 </style>
 <script type="text/javascript">
-if (!window.console) window.console = {};
-if (!window.console.log) window.console.log = function() {};
-
 Ext.Loader.setConfig({
   enabled: true,
 //  disableCaching: false, // uncomment to use firebug breakpoints
@@ -45,17 +54,24 @@ Ext.Loader.setConfig({
 });
 
 </script>
-## Comment out below for development or when running sencha build, every class is loaded when commented out
-<script type="text/javascript" src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script>
+## Comment out below for development or when running sencha build, every
+## class is loaded when commented out
+<script type="text/javascript"
+	src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script>
 <script type="text/javascript">
 
 Ext.require([
+  'Ext.container.Viewport',
+  'Ext.layout.container.Border',
+  'Ext.toolbar.Spacer',
+  'Ext.container.ButtonGroup',
   'Ext.form.Panel',
+  'Ext.grid.Panel',
   'Ext.grid.column.Date',
-  'Esc.magmaweb.view.scan.UploadFieldSet',
-  'Esc.magmaweb.view.metabolite.AddFieldSet',
-  'Esc.magmaweb.view.metabolite.MetabolizeFieldSet',
-  'Esc.magmaweb.view.fragment.AnnotateFieldSet'
+  'Ext.grid.column.Action',
+  'Ext.grid.plugin.CellEditing',
+  'Ext.data.proxy.Rest',
+  'Ext.window.MessageBox'
 ]);
 
 Ext.onReady(function() {
@@ -63,22 +79,21 @@ Ext.onReady(function() {
 
   var form = Ext.create('Ext.form.Panel', {
     title: 'User',
-    autoScroll: true,
     items:[{
-    	xtype: 'displayfield',
-    	fieldLabel: 'User id',
-    	value: '${request.user.userid}'
+      xtype: 'displayfield',
+      fieldLabel: 'User id',
+      value: '${request.user.userid}'
     }, {
-        xtype: 'textfield',
-    	fieldLabel: 'Name',
-    	width: 400,
-    	value: '${request.user.displayname}'
+      xtype: 'textfield',
+      fieldLabel: 'Name',
+      width: 400,
+      value: '${request.user.displayname}'
     }, {
-        xtype: 'textfield',
-    	fieldLabel: 'Email',
-    	width: 400,
-    	value: '${request.user.email}',
-    	vtype: 'email'
+      xtype: 'textfield',
+      fieldLabel: 'Email',
+      width: 400,
+      value: '${request.user.email}',
+      vtype: 'email'
     }],
     buttons: [{
       text: 'Update'
@@ -88,14 +103,41 @@ Ext.onReady(function() {
   <%!
   import json
   %>
+
+  Ext.define('Job', {
+	extend: 'Ext.data.Model',
+	fields: [
+	         'id',
+	         'description',
+	         'ms_filename',
+	         {name: 'created_at', type: 'date'},
+	         'url'
+	         ],
+	proxy: {
+		type: 'rest',
+		url: '${request.route_path('jobfromscratch')}'
+	}
+  });
+
   var job_store = Ext.create('Ext.data.Store', {
-     fields: ['id', 'description', 'ms_filename', 'created_at', 'url'],
-     data: ${json.dumps(jobs)|n}
+	model: 'Job',
+    data: ${json.dumps(jobs)|n}
+  });
+
+  var cellEditing = Ext.create('Ext.grid.plugin.CellEditing', {
+      clicksToEdit: 1
   });
 
   var job_grid = Ext.create('Ext.grid.Panel', {
     title: 'Jobs',
     store: job_store,
+    height: 500,
+    plugins: [cellEditing],
+    listeners: {
+    	edit: function(editor, e) {
+    		e.record.save();
+    	}
+    },
     columns: [{
       text: 'ID', dataIndex: 'id', renderer: function(v, m, r) {
         return Ext.String.format('<a href="{0}">{1}</a>', r.data.url, v);
@@ -103,12 +145,37 @@ Ext.onReady(function() {
       width: 220
     }, {
       text: 'Description', dataIndex: 'description',
-      width: 600
+      flex: 1,
+      editor: {
+    	  xtype: 'textfield'
+      }
     }, {
-      text: 'MS filename', dataIndex: 'ms_filename'
+      text: 'MS filename', dataIndex: 'ms_filename',
+	  editor: {
+    	  xtype: 'textfield'
+      }
     }, {
       text: 'Created at', dataIndex: 'created_at', width: 120,
       xtype: 'datecolumn', format: "Y-m-d H:i:s"
+    }, {
+        xtype: 'actioncolumn',
+        width:30,
+        sortable: false,
+        items: [{
+        	iconCls: 'icon-delete',
+            tooltip: 'Delete Job',
+            handler: function(grid, rowIndex, colIndex, item, e , row) {
+            	Ext.MessageBox.confirm(
+            		'Delete job',
+            		'Are you sure you want delete job '+row.data.id+'?',
+            		function(button) {
+            			if (button === 'yes') {
+                    	    row.destroy();
+            			}
+            		}
+            	);
+            }
+        }]
     }]
   });
 
@@ -157,14 +224,20 @@ Ext.onReady(function() {
     }]
   };
 
+  var access_token = Ext.create('Ext.button.Button', {
+    text: 'Generate access token for web services',
+    href: '${request.route_url('access_token')}'
+  });
+
   Ext.create('Ext.container.Viewport', {
     layout: 'border',
     items: [header, {
-    	region: 'center',
-    	items: [form, job_grid],
-        border: false,
-    	bodyPadding: 5,
-	    defaults: { bodyPadding: 5 },
+      region: 'center',
+      items: [form, access_token, job_grid, access_token],
+      border: false,
+      bodyPadding: 5,
+      autoScroll: true,
+      defaults: { bodyPadding: 5 },
     }]
   });
 });

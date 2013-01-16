@@ -1,0 +1,13 @@
+# Example configuration make copy of me
+#macs:
+#- id: <MAC key identifier>
+#  key: <MAC key>
+#  scope: <URL where MAC key should be used>
+gat:
+  brokerURI: localq://localhost
+  preferences:
+    localq.max.concurrent.jobs: 1
+http:
+  port: 9998
+
+

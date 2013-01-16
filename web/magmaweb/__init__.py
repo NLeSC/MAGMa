@@ -3,7 +3,7 @@ import json
 from pyramid.config import Configurator
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.authentication import AuthTktAuthenticationPolicy
-from pyramid_ipauth import IPAuthenticationPolicy
+from pyramid_macauth import MACAuthenticationPolicy
 from pyramid_multiauth import MultiAuthenticationPolicy
 from sqlalchemy import engine_from_config
 from magmaweb.user import init_user_db, RootFactory, JobIdFactory
@@ -16,15 +16,21 @@ def main(global_config, **settings):
 
     config.include('pyramid_tm')
 
+    # for human users
     authn_policy1 = AuthTktAuthenticationPolicy(
         secret=settings['cookie.secret'],
-        path=settings['cookie.path']
+        path=settings['cookie.path'],
+        hashalg='sha512',
     )
-    # TODO Make jobmanager_ipadr a setting
-    jobmanager_ipadr = "127.0.*.*"
-    authn_policy2 = IPAuthenticationPolicy(jobmanager_ipadr, "jobmanager",
-                                           ["monitor"], '127.0.0.1')
-    authn_policy = MultiAuthenticationPolicy([authn_policy1, authn_policy2])
+
+    # for service consumers
+    # See http://www.rfk.id.au/blog/entry/securing-pyramid-persona-macauth/
+    authn_policy2 = MACAuthenticationPolicy.from_settings(settings)
+
+    authn_policy = MultiAuthenticationPolicy([
+                                              authn_policy1,
+                                              authn_policy2,
+                                              ])
     config.set_authentication_policy(authn_policy)
     config.set_authorization_policy(ACLAuthorizationPolicy())
     config.set_root_factory(RootFactory)
@@ -43,6 +49,7 @@ def main(global_config, **settings):
     config.add_route('jobfromscratch', '/results/')
     config.add_route('uploaddb', '/uploaddb')
     config.add_route('workspace', '/workspace')
+    config.add_route('access_token', '/access_token.json')
     config.add_route('logout', '/logout')
 
     # JobFactory + traverse
@@ -75,7 +82,6 @@ def main(global_config, **settings):
     add_job_route('rpc.metabolize', '/rpc/{jobid}/metabolize')
     add_job_route('rpc.metabolize_one', '/rpc/{jobid}/metabolize_one')
     add_job_route('rpc.annotate', '/rpc/{jobid}/annotate')
-    add_job_route('rpc.set_description', '/rpc/{jobid}/set_description')
     add_job_route('rpc.assign', '/rpc/{jobid}/assign')
     add_job_route('rpc.unassign', '/rpc/{jobid}/unassign')
 

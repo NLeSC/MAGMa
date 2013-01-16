@@ -1,3 +1,5 @@
+"""Module for job submission and job data alteration/retrieval
+"""
 import uuid
 import os
 import csv
@@ -13,6 +15,7 @@ from sqlalchemy.orm import sessionmaker, aliased, scoped_session
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import desc, asc, null
 from sqlalchemy.orm.exc import NoResultFound
+import transaction
 from magmaweb.models import Base, Metabolite, Scan, Peak, Fragment, Run
 import magmaweb.user
 
@@ -82,7 +85,6 @@ class JobQuery(object):
             return cstruct
 
     def __init__(self,
-                 id,
                  dir,
                  script='',
                  prestaged=None,
@@ -91,30 +93,27 @@ class JobQuery(object):
         """Contruct JobQuery
 
         Params:
-        - id, job identifier
         - dir, job directory
         - script, script to run in job directory
         - prestaged, list of files to prestage
         - status_callback_url, Url to PUT status of job to.
 
         """
-        self.id = id
         self.dir = dir
         self.script = script
         self.prestaged = prestaged or []
         self.status_callback_url = status_callback_url
 
     def __eq__(self, other):
-        return (self.id == other.id and
-                self.dir == other.dir and
+        return (self.dir == other.dir and
                 self.script == other.script and
                 self.prestaged == other.prestaged)
 
     def __repr__(self):
         """Return a printable representation."""
-        s = "JobQuery({!r}, {!r}, script={!r}, "
+        s = "JobQuery({!r}, script={!r}, "
         s += "prestaged={!r}, status_callback_url={!r})"
-        return s.format(self.id, self.dir, self.script,
+        return s.format(self.dir, self.script,
                         self.prestaged, self.status_callback_url)
 
     def escape(self, string):
@@ -144,6 +143,20 @@ class JobQuery(object):
         schema.add(colander.SchemaNode(colander.Boolean(),
                                        default=False, missing=False,
                                        name='skip_fragmentation'))
+        schema.add(colander.SchemaNode(colander.String(),
+                                       missing=colander.null,
+                                       validator=colander.OneOf(['pubchem',
+                                                                 'chebi']),
+                                       name='structure_database'
+                                       ))
+        schema.add(colander.SchemaNode(colander.Integer(),
+                                       missing=colander.null,
+                                       validator=colander.Range(min=1),
+                                       name='min_refscore'))
+        schema.add(colander.SchemaNode(colander.Integer(),
+                                       missing=colander.null,
+                                       validator=colander.Range(min=1),
+                                       name='max_mz'))
 
     def _addMetabolizeSchema(self, schema):
         validator = colander.OneOf(['phase1', 'phase2'])
@@ -176,7 +189,7 @@ class JobQuery(object):
             """Validator that either textarea or file upload is filled"""
             if not(not value['structures'] is colander.null or
                    not value['structures_file'] is colander.null):
-                error = 'Either structures or structure_file must be set'
+                error = 'Either structures or structures_file must be set'
                 exception = colander.Invalid(node)
                 exception.add(colander.Invalid(structuresSchema, error))
                 exception.add(colander.Invalid(structures_fileSchema, error))
@@ -258,7 +271,6 @@ class JobQuery(object):
         * ms_data_file, file-like object with MS data
         * max_ms_level
         * abs_peak_cutoff
-        * rel_peak_cutoff
 
         If ``has_metabolites`` is True then
             :meth:`~magmaweb.job.JobQuery.annotate` will be called.
@@ -303,9 +315,6 @@ class JobQuery(object):
         schema.add(colander.SchemaNode(colander.Float(),
                                        validator=colander.Range(min=0),
                                        name='abs_peak_cutoff'))
-        schema.add(colander.SchemaNode(colander.Float(),
-                                       validator=colander.Range(0, 1),
-                                       name='rel_peak_cutoff'))
         if has_metabolites:
             self._addAnnotateSchema(schema)
         params = schema.deserialize(params)
@@ -326,13 +335,12 @@ class JobQuery(object):
 
         script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}' "
         script += "-l '{max_ms_level}' "
-        script += "-a '{abs_peak_cutoff}' -r '{rel_peak_cutoff}' "
+        script += "-a '{abs_peak_cutoff}' "
         script += "ms_data.dat {{db}}\n"
         script__substitution = {
             'ms_data_format': self.escape(params['ms_data_format']),
             'max_ms_level': self.escape(params['max_ms_level']),
-            'abs_peak_cutoff': self.escape(params['abs_peak_cutoff']),
-            'rel_peak_cutoff': self.escape(params['rel_peak_cutoff'])
+            'abs_peak_cutoff': self.escape(params['abs_peak_cutoff'])
         }
         self.script += script.format(**script__substitution)
 
@@ -353,6 +361,7 @@ class JobQuery(object):
 
         If ``has_ms_data`` is True then
             :meth:`~magmaweb.job.JobQuery.annotate` will be called.
+
         If ``from_subset`` is True then metids are read from stdin
         """
         schema = colander.SchemaNode(colander.Mapping())
@@ -432,7 +441,11 @@ class JobQuery(object):
 
         return self
 
-    def annotate(self, params, from_subset=False):
+    def annotate(self,
+                 params,
+                 from_subset=False,
+                 structure_database_location=None,
+                 ):
         """Configure job query to annotate.
 
         ``params`` is a dict from which the following keys are used:
@@ -447,8 +460,14 @@ class JobQuery(object):
         * use_all_peaks, when key is set then all peaks are used
         * skip_fragmentation, when key is set then
             the no fragmentation of structures is performed.
+        * structure_database, only used when ``structure_database_location`` is given
+        * min_refscore, only used when ``structure_database_location`` is given
+        * max_mz, only used when ``structure_database_location`` is given
 
         If ``from_subset`` is True then metids are read from stdin
+
+        ``structure_database_location``
+           location of structure database to search for candidate molecules
         """
         schema = colander.SchemaNode(colander.Mapping())
         self._addAnnotateSchema(schema)
@@ -471,12 +490,29 @@ class JobQuery(object):
             'ionisation_mode': self.escape(params['ionisation_mode']),
             'max_broken_bonds': self.escape(params['max_broken_bonds'])
         }
+
+        if params['structure_database'] is not colander.null:
+            if structure_database_location is None:
+                sd = colander.SchemaNode(colander.String(),
+                                         name='structure_database')
+                msg = 'Unable to locate structure database'
+                raise colander.Invalid(sd, msg)
+            script += "--structure_database '{structure_database}' --db_options '{db_options}' "
+            sd = self.escape(params['structure_database'])
+            script_substitutions['structure_database'] = sd
+            db_options = '{},{},{}'.format(
+                                           structure_database_location,
+                                           self.escape(params['min_refscore']),
+                                           self.escape(params['max_mz']),
+                                           )
+            script_substitutions['db_options'] = db_options
+
         script = script.format(**script_substitutions)
 
-        if (params['use_all_peaks']):
+        if params['use_all_peaks']:
             script += '-u '
 
-        if (params['skip_fragmentation']):
+        if params['skip_fragmentation']:
             script += '-f '
 
         if from_subset:
@@ -487,10 +523,13 @@ class JobQuery(object):
 
         return self
 
-    def allinone(self, params):
+    def allinone(self, params, structure_database_location=None):
         """Configure job query to do all sub commands in one go.
 
-        params is a MultiDict
+        ``params`` is a MultiDict
+
+        ``structure_database_location``
+           location of structure database to search for candidate molecules
 
         See
         :meth:`~magmaweb.job.JobQuery.add_ms_data`,
@@ -499,8 +538,29 @@ class JobQuery(object):
         :meth:`~magmaweb.job.JobQuery.annotate` for params.
 
         """
-        allin = self.add_ms_data(params).add_structures(params)
-        return allin.metabolize(params).annotate(params)
+        # only metabolize when params['metabolize'] exists
+        metabolize = False
+        if 'metabolize' in params:
+            metabolize = True
+            del(params['metabolize'])
+
+        allin = self.add_ms_data(params)
+        try:
+            allin = allin.add_structures(params)
+        except colander.Invalid as e:
+            # no structures given
+            if 'structure_database' in params and params['structure_database']:
+                # structures will be added by database lookup during annotate
+                pass
+            else:
+                sd = colander.SchemaNode(colander.String(),
+                                         name='structure_database')
+                msg = 'Either structures or structures_file or structure_database must be set'
+                e.add(colander.Invalid(sd, msg))
+                raise e
+        if metabolize:
+            allin = allin.metabolize(params)
+        return allin.annotate(params, False, structure_database_location)
 
     @classmethod
     def defaults(cls, selection=None):
@@ -522,7 +582,6 @@ class JobQuery(object):
             mz_precision_abs=0.001,
             use_all_peaks=False,
             abs_peak_cutoff=1000,
-            rel_peak_cutoff=0.01,
             max_ms_level=10,
             precursor_mz_precision=0.005,
             max_broken_bonds=4)
@@ -576,7 +635,6 @@ class JobQuery(object):
             mz_precision_abs=0,
             use_all_peaks=False,
             abs_peak_cutoff=1000,
-            rel_peak_cutoff=0.01,
             max_ms_level=10,
             precursor_mz_precision=0.005,
             max_broken_bonds=3)
@@ -590,7 +648,6 @@ class JobFactory(object):
                  tarball=None,
                  script_fn='script.sh',
                  db_fn='results.db',
-                 state_fn='job.state',
                  submit_url='http://localhost:9998',
                  time_max=30):
         """
@@ -601,11 +658,11 @@ class JobFactory(object):
             Sqlite db file name in job directory (default results.db)
 
         submit_url
-            Url of job manager daemon where job can be submitted
+            Url of job launcher daemon where job can be submitted
             (default http://localhost:9998)
 
         script_fn
-            Script in job directory which must be run by job manager daemon
+            Script in job directory which must be run by job launcher daemon
 
         init_script
             String containing os commands to put magma in path,
@@ -615,17 +672,12 @@ class JobFactory(object):
             Local absolute location of tarball which contains application
             which init_script will unpack and run
 
-        state_fn
-            Filename where job manager daemon writes job state
-            (default job.state)
-
         time_max
             Maximum time in minutes a job can take (default 30)
         """
         self.root_dir = root_dir
         self.db_fn = db_fn
         self.submit_url = submit_url
-        self.state_fn = state_fn
         self.script_fn = script_fn
         self.tarball = tarball
         self.time_max = time_max
@@ -739,7 +791,7 @@ class JobFactory(object):
         """Returns new Job which has copy of 'job's database.
 
         ``job``
-            :class:Job job to clone
+            :class:`Job` job to clone
 
         ``owner``
             User id of owner
@@ -769,32 +821,32 @@ class JobFactory(object):
 
         return Job(jobmeta, jdir, db)
 
-    def submitJob2Manager(self, body):
-        """Submits job query to jobmanager daemon
+    def submitJob2Launcher(self, body):
+        """Submits job query to job launcher daemon
 
         body is a dict which is submitted as json.
 
-        returns job identifier of job submitted to jobmanager
+        returns job identifier of job submitted to job launcher
         (not the same as job.id).
         """
         request = urllib2.Request(self.submit_url,
                                   json.dumps(body),
-                                  {'Content-Type': 'application/json'})
-        # log what is send to job manager
-        import logging
-        logger = logging.getLogger('magmaweb')
-        logger.info(request.data)
-        logger.info('to jobmanager at {}'.format(self.submit_url))
+                                  {'Content-Type': 'application/json',
+                                   'Accept': 'application/json'})
         return urllib2.urlopen(request)
 
-    def submitQuery(self, query):
-        """Writes job script to job dir and submits job to job manager
+    def submitQuery(self, query, job):
+        """Writes job query script to job dir
+        and submits job query to job launcher.
+
         Changes the job state to 'INITIAL' or
         'SUBMISSION_ERROR' if job submission fails.
 
         query is a :class:`JobQuery` object
 
-        Returns job identifier
+        job is a :class:`Job` object
+
+        Raises JobSubmissionError if job submission fails.
         """
 
         # write job script into job dir
@@ -821,19 +873,25 @@ class JobFactory(object):
         if (self.tarball is not None):
             body['prestaged'].append(self.tarball)
 
-        jobmeta = self._getJobMeta(query.id)
+        job.state = 'INITIAL'
+
+        # Job launcher will try to report states of the submitted job
+        # even before this request has been handled
+        # The job launcher will not be able to find the job
+        # causing the first state updates not to be saved
+        # because commits happen at the end of this request
+        # So force commit now
+        transaction.commit()
+        # due to commit job.meta will become deattached
+        # making job.meta unusable
+        # by merging it the job.meta is attached and valid again
+        job.meta = magmaweb.user.DBSession().merge(job.meta)
 
         try:
-            self.submitJob2Manager(body)
+            self.submitJob2Launcher(body)
         except urllib2.URLError:
-            jobmeta.state = 'SUBMISSION_ERROR'
-            self._addJobMeta(jobmeta)
+            job.state = 'SUBMISSION_ERROR'
             raise JobSubmissionError()
-
-        jobmeta.state = 'INITIAL'
-        self._addJobMeta(jobmeta)
-
-        return query.id
 
     def id2jobdir(self, jid):
         """Returns job directory based on jid and root_dir """
@@ -855,14 +913,14 @@ class Job(object):
     def __init__(self, meta, dir, db=None):
         """
         meta
-            :class:magmaweb.user.JobMeta instance.
+            :class:`magmaweb.user.JobMeta` instance.
             For owner, parent etc.
 
         dir
             Directory where input and output files reside
 
         db
-            :class:JobDb instance
+            :class:`JobDb` instance
         """
         self.dir = dir
         self.meta = meta
@@ -872,13 +930,13 @@ class Job(object):
 
     @property
     def id(self):
-        """Identifier of the job, is a :class:uuid.UUID"""
+        """Identifier of the job, is a :class:`uuid.UUID`"""
         return self.meta.jobid
 
     @property
     def __name__(self):
         """Same as id and as lookup key
-        using :class:magmaweb.user.JobIdFactory
+        using :class:`magmaweb.user.JobIdFactory`
         """
         return str(self.id)
 
@@ -887,7 +945,7 @@ class Job(object):
 
         'status_callback_url' is the url to PUT status of job to.
         """
-        return JobQuery(self.id, self.dir,
+        return JobQuery(self.dir,
                         status_callback_url=status_callback_url)
 
     @property
@@ -960,6 +1018,13 @@ class Job(object):
         if run is not None:
             run.ms_filename = ms_filename
 
+    def delete(self):
+        """Deletes job from user database and deletes job directory"""
+        magmaweb.user.JobMeta.delete(self.meta)
+        # disconnect from job results database before removing database file
+        self.db.session.remove()
+        shutil.rmtree(self.dir)
+
 
 class JobDb(object):
     """Database of a job"""
@@ -973,7 +1038,10 @@ class JobDb(object):
 
     def runInfo(self):
         """Returns last run info or None if there is no run info"""
-        return self.session.query(Run).order_by(Run.runid.desc()).first()
+        # cache run info to prevent 'database is locked' errors
+        if not hasattr(self, '_runInfo'):
+            self._runInfo = self.session.query(Run).order_by(Run.runid.desc()).first()
+        return self._runInfo
 
     def metabolitesTotalCount(self):
         """Returns unfiltered and not paged count of metabolites"""
@@ -1258,13 +1326,13 @@ class JobDb(object):
         return chromatogram
 
     def chromatogram(self):
-        """Returns dict with scans key with list of dicts with
-         - id
-         - rt
-         - basepeakintensity
-        keys for each lvl1 scan
+        """Returns dict with `cutoff` key with ms_intensity_cutoff and
+        `scans` key which is a list of all lvl1 scans.
 
-        and cutoff key with ms_intensity_cutoff
+        Each scan is a dict with:
+            * id, scan identifier
+            * rt, retention time
+            * intensity
         """
         scans = []
 
@@ -1338,24 +1406,23 @@ class JobDb(object):
 
     def fragments(self, scanid, metid, node):
         """Returns fragments of a metabolite on a scan.
+
         When node is not set then returns metabolites and its lvl2 fragments.
+
         When node is set then returns children fragments as list
-            which have ``node`` as parent fragment.
+        which have ``node`` as parent fragment.
 
         Can be used in a Extjs.data.TreeStore if jsonified.
 
-        ``scanid``
-            Fragments on scan with this identifier
+        Parameters:
 
-        ``metid``
-            Fragments of metabolite with this identifier
-
-        ``node``
-            The fragment identifier to fetch children fragments for.
+        * ``scanid``, Fragments on scan with this identifier
+        * ``metid``, Fragments of metabolite with this identifier
+        * ``node``, The fragment identifier to fetch children fragments for.
             Use 'root' for root node.
 
         Raises FragmentNotFound when no fragment is found
-            with the given scanid/metid combination
+        with the given scanid/metid combination
         """
         def q():
             return self.session.query(Fragment,

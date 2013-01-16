@@ -1,6 +1,7 @@
 import os
 from setuptools import setup, find_packages
 from setuptools.extension import Extension
+import numpy as np
 
 here = os.path.abspath(os.path.dirname(__file__))
 try:
@@ -8,6 +9,13 @@ try:
 except IOError:
     README = ''
 
+# Test if rdkit is present with INCHI support
+try:
+    from rdkit.Chem.inchi import INCHI_AVAILABLE
+    if not INCHI_AVAILABLE:
+        raise Exception('RDKit with INCHI support is required')
+except ImportError:
+    raise Exception('RDKit with INCHI support is required')
 
 # Only use Cython if it is available, else just use the pre-generated files
 try:
@@ -31,6 +39,12 @@ setup(
     url='http://www.esciencecenter.nl',
     description='Ms Annotation based on in silico Generated Metabolites',
     long_description=README,
+    classifiers=["Intended Audience :: Science/Research",
+                   "Environment :: Console",
+                   "Natural Language :: English",
+                   "Operating System :: OS Independent",
+                   "Topic :: Scientific/Engineering :: Chemistry",
+                   ],
     packages=find_packages(),
     install_requires=['sqlalchemy', 'lxml', 'numpy', 'pp'],
     package_data={
@@ -43,4 +57,5 @@ setup(
     },
     cmdclass=cmdclass,
     ext_modules=ext_modules,
+    include_dirs=[np.get_include()],
 )

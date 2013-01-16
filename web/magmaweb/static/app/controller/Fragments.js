@@ -30,7 +30,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
 	  msdata: false
   },
   init: function() {
-    console.log('Fragments controller init');
+    Ext.log({}, 'Fragments controller init');
 
     this.getFragmentsStore().on('load', this.onLoad, this);
 
@@ -131,7 +131,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
    */
   loadFragments: function (scanid, metid) {
     this.clearFragments();
-    console.log('Show fragments of scan '+scanid+' metabolite '+metid);
+    Ext.log({}, 'Show fragments of scan '+scanid+' metabolite '+metid);
     var store = this.getFragmentsStore();
     store.setProxy(this.fragmentProxyFactory(scanid, metid));
     store.load();
@@ -167,7 +167,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
    * Clears fragments from store.
    */
   clearFragments: function() {
-    console.log('Clearing fragments and mspectra >lvl1');
+    Ext.log({}, 'Clearing fragments and mspectra >lvl1');
     this.getFragmentsStore().getRootNode().removeAll();
 
     // (un)assignment not possible when no fragment is selected
@@ -185,7 +185,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     this.application.fireEvent('fragmentexpand', fragment);
   },
   onSelect: function(rm, r) {
-    console.log('Selected fragment '+r.id);
+    Ext.log({}, 'Selected fragment '+r.id);
     // show child mspectra of selected node or mz
     if (!r.isLeaf()) {
       // onselect then expand
@@ -310,7 +310,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
           Ext.MessageBox.confirm('Cancel job', 'Job is still running. Do you want to cancel it?', function(but) {
               if (but == 'yes') {
                   // TODO cancel job
-                  console.log('Cancelling job');
+                  Ext.log({}, 'Cancelling job');
               }
           });
       });
@@ -337,7 +337,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
       url: app.urls.home+'status/'+me.newjobid+'.json',
       success: function(o) {
         var response = Ext.JSON.decode(o.responseText);
-        console.log(response.status);
+        Ext.log({}, response.status);
         if (response.status == 'STOPPED') {
           Ext.TaskManager.stop(me.pollTask);
           delete me.pollTask;

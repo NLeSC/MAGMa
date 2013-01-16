@@ -10,6 +10,7 @@ from magmaweb.user import User, JobMeta
 class AbstractViewsTestCase(unittest.TestCase):
     def setUp(self):
         self.settings = {'jobfactory.root_dir': '/somedir',
+                         'access_token.expires_in': 360,
                          }
         self.config = testing.setUp(settings=self.settings)
         self.config.add_route('status.json', '/status/{jobid}.json')
@@ -20,6 +21,9 @@ class AbstractViewsTestCase(unittest.TestCase):
     def fake_job(self):
         job = Mock(Job)
         job.id = 'foo'
+        job.description = ""
+        job.ms_filename = ""
+        job.dir = '/somedir/foo'
         job.db = Mock(JobDb)
         job.db.runInfo.return_value = 'bla'
         job.db.maxMSLevel.return_value = 3
@@ -65,7 +69,7 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         views.job_factory.fromScratch.assert_called_with('bob')
         jobquery.allinone.assert_called_with(post)
-        views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(), job)
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
         self.assertEqual(job.ms_filename, 'c:\bla\bla\F1234.mzxml')
         job.jobquery.assert_called_with('http://example.com/status/foo.json')
@@ -85,10 +89,52 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         views.job_factory.fromScratch.assert_called_with('bob')
         jobquery.allinone.assert_called_with(post)
-        views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(), job)
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
         self.assertEqual(job.ms_filename, 'Uploaded as text')
         job.jobquery.assert_called_with('http://example.com/status/foo.json')
+
+    def test_allinone_with_structure_database(self):
+        post = {'ms_data': 'somexml',
+                'ms_data_file': '',
+                'structure_database': 'pubchem'
+                }
+        request = testing.DummyRequest(post=post)
+        request.registry.settings['structure_database.pubchem'] = 'data/pubchem.db'
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+        job = self.fake_job()
+        jobquery = Mock(JobQuery)
+        job.jobquery.return_value = jobquery
+        views = Views(request)
+        views.job_factory = Mock(JobFactory)
+        views.job_factory.fromScratch = Mock(return_value=job)
+
+        response = views.allinone()
+
+        views.job_factory.fromScratch.assert_called_with('bob')
+        jobquery.allinone.assert_called_with(post, 'data/pubchem.db')
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(), job)
+        self.assertEqual(response, {'success': True, 'jobid': 'foo'})
+        self.assertEqual(job.ms_filename, 'Uploaded as text')
+        job.jobquery.assert_called_with('http://example.com/status/foo.json')
+
+    def test_allinone_with_empty_structure_database(self):
+        post = {'ms_data': 'somexml',
+                'ms_data_file': '',
+                'structure_database': ''
+                }
+        request = testing.DummyRequest(post=post)
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+        job = self.fake_job()
+        jobquery = Mock(JobQuery)
+        job.jobquery.return_value = jobquery
+        views = Views(request)
+        views.job_factory = Mock(JobFactory)
+        views.job_factory.fromScratch = Mock(return_value=job)
+
+        response = views.allinone()
+
+        jobquery.allinone.assert_called_with(post)
 
     def test_allinone_no_jobmanager(self):
         from magmaweb.job import JobSubmissionError
@@ -113,7 +159,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertEquals(json.loads(e.exception.body), expected_json)
         views.job_factory.fromScratch.assert_called_with('bob')
         jobquery.allinone.assert_called_with(post)
-        views.job_factory.submitQuery.assert_called_with(jobquery.allinone())
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(), job)
 
     def test_uploaddb_get(self):
         request = testing.DummyRequest()
@@ -177,19 +223,6 @@ class ViewsTestCase(AbstractViewsTestCase):
                     }
         self.assertEqual(json.loads(response.body), expected)
 
-    def test_results_cantrun(self):
-        request = testing.DummyRequest()
-        views = JobViews(self.fake_job(), request)
-
-        response = views.results()
-
-        self.assertEqual(response, dict(jobid='foo',
-                                        run='bla',
-                                        maxmslevel=3,
-                                        # no authorization -> allows all
-                                        canRun=True
-                                        ))
-
     def test_workspace(self):
         import uuid
         self.config.add_route('results', '/results/{jobid}')
@@ -210,7 +243,7 @@ class ViewsTestCase(AbstractViewsTestCase):
                           'url': url1,
                           'description': 'My job',
                           'ms_filename': 'F1234.mzxml',
-                          'created_at': '2012-11-14 10:48:26.504478'}]
+                          'created_at': '2012-11-14T10:48:26'}]
         self.assertEqual(response, {'jobs': expected_jobs})
 
     @patch('magmaweb.views.JobQuery')
@@ -239,6 +272,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.config.add_route('home', '/')
         self.config.add_route('login', '/login')
         request = testing.DummyRequest()
+        request.user = None
         request.url = 'http://example.com/login'
         views = Views(request)
 
@@ -249,11 +283,14 @@ class ViewsTestCase(AbstractViewsTestCase):
                              'password': ''
                              }
         self.assertDictEqual(response, expected_response)
+        self.assertEqual(request.response.headers['WWW-Authenticate'], 'MAC')
+        self.assertEqual(request.response.status_int, 401)
 
     def test_login_get(self):
         self.config.add_route('home', '/')
         self.config.add_route('login', '/login')
         request = testing.DummyRequest()
+        request.user = None
         request.url = 'http://example.com/startjob'
         views = Views(request)
 
@@ -264,6 +301,8 @@ class ViewsTestCase(AbstractViewsTestCase):
                              'password': ''
                              }
         self.assertDictEqual(response, expected_response)
+        self.assertEqual(request.response.headers['WWW-Authenticate'], 'MAC')
+        self.assertEqual(request.response.status_int, 401)
 
     @patch('magmaweb.views.remember')
     @patch('magmaweb.views.User')
@@ -277,6 +316,7 @@ class ViewsTestCase(AbstractViewsTestCase):
                 'password': 'mypw'}
         params = {'came_from': 'http://example.com/startjob'}
         request = testing.DummyRequest(post=post, params=params)
+        request.user = None
         views = Views(request)
 
         response = views.login()
@@ -297,6 +337,7 @@ class ViewsTestCase(AbstractViewsTestCase):
                 'password': 'mypw'}
         params = {'came_from': 'http://example.com/startjob'}
         request = testing.DummyRequest(post=post, params=params)
+        request.user = None
         views = Views(request)
 
         response = views.login()
@@ -308,6 +349,17 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertDictEqual(response, expected_response)
         u.validate_password.assert_called_with('mypw')
         self.assertFalse(remember.called)
+
+    def test_login_authenticated(self):
+        from pyramid.exceptions import Forbidden
+        request = testing.DummyRequest()
+        request.user = 'bob'
+        request.exception = Forbidden()
+        views = Views(request)
+
+        response = views.login()
+
+        self.assertIsInstance(response, Forbidden)
 
     @patch('magmaweb.views.forget')
     def test_logout(self, forget):
@@ -322,48 +374,35 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(response.location, 'http://example.com/')
         self.assertDictContainsSubset({'forget': 'headers'}, response.headers)
 
-    def test_forbidden_authenticated(self):
-        from pyramid.exceptions import Forbidden
+    @patch('magmaweb.views.time.time')
+    def test_access_token(self, time):
+        time.return_value = 1355000000.000000
         request = testing.DummyRequest()
-        request.user = 'bob'
-        request.exception = Forbidden()
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+
+        # mock auth
+        from pyramid.authorization import ACLAuthorizationPolicy
+        from pyramid_macauth import MACAuthenticationPolicy
+        from pyramid_multiauth import MultiAuthenticationPolicy
+        self.config.set_authorization_policy(ACLAuthorizationPolicy())
+        policy = Mock(MACAuthenticationPolicy)
+        policy.encode_mac_id.return_value = 'id', 'key'
+        mpolicy = MultiAuthenticationPolicy([policy])
+        self.config.set_authentication_policy(mpolicy)
+
         views = Views(request)
 
-        response = views.forbidden()
+        response = views.access_token()
 
-        self.assertIsInstance(response, Forbidden)
-
-    def test_forbidden_unauthenticated(self):
-        from pyramid.httpexceptions import HTTPFound
-        self.config.add_route('home', '/')
-        self.config.add_route('login', '/login')
-        request = testing.DummyRequest()
-        request.user = None
-        request.url = 'http://example.com/somepage'
-        views = Views(request)
-
-        response = views.forbidden()
-
-        self.assertIsInstance(response, HTTPFound)
-        loc = 'http://example.com/login?'
-        loc += 'came_from=http%3A%2F%2Fexample.com%2Fsomepage'
-        self.assertEqual(response.location, loc)
-
-    def test_forbidden_unauthenticated_from_loginpage(self):
-        from pyramid.httpexceptions import HTTPFound
-        self.config.add_route('home', '/')
-        self.config.add_route('login', '/login')
-        request = testing.DummyRequest()
-        request.user = None
-        request.url = 'http://example.com/login'
-        views = Views(request)
-
-        response = views.forbidden()
-
-        self.assertIsInstance(response, HTTPFound)
-        loc = 'http://example.com/login?'
-        loc += 'came_from=http%3A%2F%2Fexample.com%2F'
-        self.assertEqual(response.location, loc)
+        expected_response = {"acesss_token": 'id',
+                             "mac_key": 'key',
+                             "expires_in": 360,
+                             "token_type": "mac",
+                             "mac_algorithm": "hmac-sha-1"}
+        self.assertDictEqual(response, expected_response)
+        self.assertEqual(request.response.headers['Cache-Control'], "no-store")
+        policy.encode_mac_id.assert_called_with(request, 'bob',
+                                                expires=1355000360)
 
 
 class JobViewsTestCase(AbstractViewsTestCase):
@@ -382,7 +421,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(response, dict(jobid='foo',
                                         run='bla',
                                         maxmslevel=3,
-                                        canRun=True
+                                        canRun=True,
+                                        job=job,
                                         ))
         has_permission.assert_called_with('run', job, request)
 
@@ -396,10 +436,11 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         response = views.results()
 
-        self.assertEqual(response, dict(jobid='foo',
+        self.assertDictEqual(response, dict(jobid='foo',
                                         run='bla',
                                         maxmslevel=3,
-                                        canRun=False
+                                        canRun=False,
+                                        job=job,
                                         ))
         has_permission.assert_called_with('run', job, request)
 
@@ -710,7 +751,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
             ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
             mz_precision=4.0, mz_precision_abs=0.002, use_all_peaks=True,
             ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
-            rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=0.01,
+            max_ms_level=3, precursor_mz_precision=0.01,
             max_broken_bonds=4, description='My first description'
         )
         views = JobViews(job, request)
@@ -729,7 +770,6 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  mz_precision_abs=0.002,
                                                  use_all_peaks=True,
                                                  abs_peak_cutoff=1000,
-                                                 rel_peak_cutoff=0.001,
                                                  max_ms_level=3,
                                                  precursor_mz_precision=0.01,
                                                  max_broken_bonds=4
@@ -741,10 +781,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
         request = testing.DummyRequest()
         job = self.fake_job()
         from magmaweb.models import Run
-        job.db.runInfo.return_value = Run(
-            abs_peak_cutoff=1100,
-            rel_peak_cutoff=0.012
-        )
+        job.db.runInfo.return_value = Run(abs_peak_cutoff=1100)
         views = JobViews(job, request)
 
         response = views.runinfojson()
@@ -761,7 +798,6 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  mz_precision_abs=0.001,
                                                  use_all_peaks=False,
                                                  abs_peak_cutoff=1100,
-                                                 rel_peak_cutoff=0.012,
                                                  max_ms_level=10,
                                                  precursor_mz_precision=0.005,
                                                  max_broken_bonds=4
@@ -788,9 +824,40 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  mz_precision_abs=0.001,
                                                  use_all_peaks=False,
                                                  abs_peak_cutoff=1000,
-                                                 rel_peak_cutoff=0.01,
                                                  max_ms_level=10,
                                                  precursor_mz_precision=0.005,
                                                  max_broken_bonds=4
                                                  )
                                     })
+
+    def test_updatejson(self):
+        request = testing.DummyRequest()
+        request.json_body = {"id": "bar",
+                             "description": "New description",
+                             "ms_filename": "F12345.mzxml",
+                             "created_at":"1999-12-17T13:45:04",
+                             }
+        job = self.fake_job()
+        expected_id = job.id
+        execpted_ca = job.created_at
+        views = JobViews(job, request)
+
+        response = views.updatejson()
+
+        self.assertDictEqual(response, {'success': True, 'message': 'Updated job'})
+        self.assertEqual(job.id, expected_id)
+        self.assertEqual(job.description, 'New description')
+        self.assertEqual(job.ms_filename, 'F12345.mzxml')
+        self.assertEqual(job.created_at, execpted_ca)
+
+    def test_deletejson(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        views = JobViews(job, request)
+
+        response = views.deletejson()
+
+        self.assertDictEqual(response, {'success': True, 'message': 'Deleted job'})
+        job.delete.assert_called_with()
+        self.assertEquals(request.response.status_int, 204)
+
