@@ -1,0 +1,17 @@
+{
+    "jobdir": "/tmp/jobdir/",
+    "executable": "/bin/sh",
+    "stderr": "stderr.txt",
+    "stdout": "stdout.txt",
+    "arguments": [
+        "magma.sh"
+    ],
+    "prestaged": [
+    	"magma.sh", "data.mzxml"
+    ],
+    "poststaged": ["results.db"],
+	"time_max" :0,
+	"memory_min": 0,
+	"memory_max": 0,
+    "status_callback_url": "http://localhost/status"
+}

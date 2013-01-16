@@ -25,11 +25,12 @@ describe('Scans controller', function() {
 	mocked_form = {
 		submit: function() {},
 		isValid: function() { return true; },
+		setValues: function() {},
 		load: function() {}
 	};
 	mocked_form_panel = {
 		setDisabledAnnotateFieldset: function() {},
-		setDefaults: function() {},
+		loadDefaults: function() {},
 		getForm: function() { return mocked_form; }
 	};
 	spyOn(ctrl, 'getUploadForm').andReturn(mocked_form_panel);
@@ -420,7 +421,7 @@ describe('Scans controller', function() {
   });
 
   it('uploadHandler', function() {
-	  spyOn(mocked_form, 'isValid');
+	  spyOn(mocked_form, 'isValid').andReturn(true);
       spyOn(mocked_form, 'submit');
 	  
       ctrl.uploadHandler();
@@ -433,6 +434,16 @@ describe('Scans controller', function() {
           success: jasmine.any(Function),
           failure: jasmine.any(Function)
       });
+  });
+
+  it('uploadHandler with invalid form', function() {
+	  spyOn(mocked_form, 'isValid').andReturn(false);
+      spyOn(mocked_form, 'submit');
+
+      ctrl.uploadHandler();
+
+	  expect(mocked_form.isValid).toHaveBeenCalledWith();
+      expect(mocked_form.submit).not.toHaveBeenCalled();
   });
 
   it('showActionsMenu', function() {

@@ -19,6 +19,31 @@ def destroy_user_db():
     user.DBSession.remove()
 
 
+class TestUUIDType(unittest.TestCase):
+    def setUp(self):
+        self.uuidtype = user.UUIDType()
+
+    def test_bind_value(self):
+        expected = u'37dc6b15-2013-429c-98b7-f058bcf0c274'
+        value = uuid.UUID(expected)
+        self.assertEqual(self.uuidtype.process_bind_param(value, None),
+                         expected)
+
+    def test_bind_none(self):
+        self.assertEqual(self.uuidtype.process_bind_param(None, None),
+                         None)
+
+    def test_result_value(self):
+        value = u'37dc6b15-2013-429c-98b7-f058bcf0c274'
+        expected = uuid.UUID(value)
+        self.assertEqual(self.uuidtype.process_result_value(value, None),
+                         expected)
+
+    def test_result_none(self):
+        self.assertEqual(self.uuidtype.process_result_value(None, None),
+                         None)
+
+
 class TestUser(unittest.TestCase):
     def test_construct(self):
         u = user.User('bob', 'Bob Smith', 'bob@smith.org')
@@ -91,6 +116,15 @@ class TestUser(unittest.TestCase):
 
 
 class TestJobMeta(unittest.TestCase):
+    def setUp(self):
+        init_user_db()
+        self.session = user.DBSession()
+        # job must be owned by a user
+        self.session.add(user.User('bob', 'Bob Smith', 'bob@smith.org'))
+
+    def tearDown(self):
+        destroy_user_db()
+
     @patch('datetime.datetime')
     def test_contruct_minimal(self, mock_dt):
         jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
@@ -124,6 +158,31 @@ class TestJobMeta(unittest.TestCase):
         self.assertEqual(j.parentjobid, pid)
         self.assertEqual(j.state, 'RUNNING')
         self.assertEqual(j.created_at, created_at)
+
+    def test_add(self):
+        jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
+        j = user.JobMeta(jid, 'bob')
+        user.JobMeta.add(j)
+
+        self.assertEqual(self.session.query(user.JobMeta).count(), 1)
+
+    def test_by_id(self):
+        jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
+        job_in = user.JobMeta(jid, 'bob')
+        user.JobMeta.add(job_in)
+
+        job_out = user.JobMeta.by_id(jid)
+
+        self.assertEqual(job_out, job_in)
+
+    def test_delete(self):
+        jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
+        job_in = user.JobMeta(jid, 'bob')
+        user.JobMeta.add(job_in)
+
+        user.JobMeta.delete(job_in)
+
+        self.assertEqual(self.session.query(user.JobMeta).count(), 0)
 
 
 class TestRootFactory(unittest.TestCase):
@@ -185,6 +244,7 @@ class TestJobIdFactory(unittest.TestCase):
         self.request = testing.DummyRequest()
         self.request.registry.settings = {'extjsroot': 'extjsroot',
                                           'jobfactory.root_dir': '/somedir',
+                                          'monitor_user': 'jobmanager',
                                           }
         init_user_db()
         self.session = user.DBSession()
@@ -211,7 +271,8 @@ class TestJobIdFactory(unittest.TestCase):
         jif.job_factory.fromId.assert_called_once_with(job_id)
         self.assertEqual(job, mjob)
         self.assertEqual(job.__parent__, jif)
-        self.assertEqual(job.__acl__, [(Allow, 'bob', 'run')])
+        self.assertEqual(job.__acl__, [(Allow, 'bob', 'run'),
+                                       (Allow, 'jobmanager', 'monitor')])
 
     def test_getJobNotFound(self):
         from magmaweb.job import JobNotFound

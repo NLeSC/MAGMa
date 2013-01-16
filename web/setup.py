@@ -4,14 +4,14 @@ import sys
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.txt')).read()
+README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = ['pyramid',
             'SQLAlchemy',
             'pyramid_tm',
             'pyramid_multiauth',
-            'pyramid_ipauth',
+            'pyramid_macauth',
             'zope.sqlalchemy',
             'colander',
             'waitress',
@@ -31,14 +31,19 @@ setup(name='MAGMaWeb',
       description='MAGMaWeb',
       long_description=README + '\n\n' + CHANGES,
       classifiers=["Programming Language :: Python",
-                   "Framework :: Pylons",
-                   "Topic :: Internet :: WWW/HTTP",
+                   "Programming Language :: JavaScript",
+                   "Intended Audience :: Science/Research",
+                   "Environment :: Web Environment",
+                   "Natural Language :: English",
+                   "Framework :: Pyramid",
+                   "Operating System :: OS Independent",
                    "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+                   "Topic :: Scientific/Engineering :: Chemistry",
                    ],
       author='Stefan Verhoeven',
       author_email='s.verhoeven@esciencecenter.nl',
-      url='http://www.esciencecenter.nl',
-      keywords='web wsgi bfg pylons pyramid',
+      url='http://www.emetabolomics.org',
+      keywords='web wsgi bfg pylons pyramid cheminformatics',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,

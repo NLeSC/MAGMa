@@ -1,4 +1,6 @@
+"""Module with views for the magma web application"""
 import json
+import time
 from pyramid.response import Response
 from pyramid.view import forbidden_view_config
 from pyramid.view import view_config
@@ -10,6 +12,8 @@ from pyramid.security import has_permission
 from pyramid.security import remember
 from pyramid.security import forget
 from pyramid.security import NO_PERMISSION_REQUIRED
+from pyramid.interfaces import IAuthenticationPolicy
+from pyramid_macauth import MACAuthenticationPolicy
 from colander import Invalid
 from magmaweb.job import make_job_factory
 from magmaweb.job import Job
@@ -42,7 +46,7 @@ class Views(object):
         return {'success': True,
                 'data': JobQuery.defaults(selection)}
 
-    @view_config(route_name='home', renderer='jsonhtml',
+    @view_config(route_name='startjob', renderer='jsonhtml',
                  request_method='POST', permission='view')
     def allinone(self):
         owner = self.request.user.userid
@@ -51,11 +55,22 @@ class Views(object):
             job.ms_filename = self.request.POST['ms_data_file'].filename
         except AttributeError:
             job.ms_filename = 'Uploaded as text'
+        import logging
+        logger = logging.getLogger('magmaweb')
+        logger.info(self.request.POST)
         status_url = self.request.route_url('status.json', jobid=job.id)
         jobquery = job.jobquery(status_url)
-        jobquery = jobquery.allinone(self.request.POST)
+
+        if 'structure_database' in self.request.POST and self.request.POST['structure_database']:
+            # add structure database location when structure_database is selected
+            key = 'structure_database.' + self.request.POST['structure_database']
+            str_db_loc = self.request.registry.settings[key]
+            jobquery = jobquery.allinone(self.request.POST, str_db_loc)
+        else:
+            jobquery = jobquery.allinone(self.request.POST)
+
         try:
-            self.job_factory.submitQuery(jobquery)
+            self.job_factory.submitQuery(jobquery, job)
         except JobSubmissionError:
             body = {'success': False, 'msg': 'Unable to submit query'}
             raise HTTPInternalServerError(body=json.dumps(body))
@@ -99,54 +114,83 @@ class Views(object):
         jobs = []
         owner = self.request.user
         for jobmeta in owner.jobs:
+            # Force ISO 8601 format without microseconds
+            # so web browsers can parse it
+            created_at = jobmeta.created_at.replace(microsecond=0).isoformat()
             jobs.append({'id': str(jobmeta.jobid),
                          'url': self.request.route_url('results',
                                                        jobid=jobmeta.jobid),
                          'description': jobmeta.description,
                          'ms_filename': jobmeta.ms_filename,
-                         'created_at': str(jobmeta.created_at)})
+                         'created_at': created_at,
+                         })
 
         return {'jobs': jobs}
 
+    @view_config(route_name='access_token', renderer='json', permission='view')
+    def access_token(self):
+        """Issue a MAC-Type Access Token"""
+        # Get a reference to the MACAuthenticationPolicy plugin.
+        policy = self.request.registry.getUtility(IAuthenticationPolicy)
+        policy = policy.get_policy(MACAuthenticationPolicy)
+
+        # Generate a new id and secret key for the current user.
+        user = self.request.user.userid
+        expires_in = self.request.registry.settings['access_token.expires_in']
+        expires = time.time() + float(expires_in)
+        mac_id, mac_key = policy.encode_mac_id(self.request, user,
+                                               expires=expires)
+
+        self.request.response.cache_control = "no-store"
+        return {"acesss_token": mac_id,
+                "mac_key": mac_key,
+                "expires_in": expires_in,
+                "token_type": "mac",
+                "mac_algorithm": "hmac-sha-1"}
+
     @view_config(route_name='login', renderer='login.mak',
                  permission=NO_PERMISSION_REQUIRED)
+    @forbidden_view_config(renderer='login.mak')
     def login(self):
-        login_url = self.request.route_url('login')
-        referrer = self.request.url
-        if referrer == login_url:
-            # never use the login form itself as came_from
-            referrer = self.request.route_url('home')
-        came_from = self.request.params.get('came_from', referrer)
-        userid = ''
-        password = ''
+        """Login page
 
-        if self.request.method == 'POST':
-            userid = self.request.POST['userid']
-            password = self.request.POST['password']
-            user = User.by_id(userid)
-            if user is not None and user.validate_password(password):
-                headers = remember(self.request, userid)
-                return HTTPFound(location=came_from,
-                                 headers=headers)
+        - Authenticated -> forbidden exception
+        - Unauthenticated
+        -- GET login page + MAC challenge
+        -- POST -> authenticated -> redirect came_from
+                                    or home if came_from=login
+        -- POST -> unauthenticated -> login page
 
-        return dict(came_from=came_from,
-                    userid=userid,
-                    password=password,
-                    )
-
-    @forbidden_view_config()
-    def forbidden(self):
-        """Redirect to login if not logged in or give forbidden exception"""
-        if self.request.user is None:
+        """
+        if self.request.user is not None:
+            return self.request.exception
+        else:
+            login_url = self.request.route_url('login')
             referrer = self.request.url
-            if referrer == self.request.route_url('login'):
+            if referrer == login_url:
                 # never use the login form itself as came_from
                 referrer = self.request.route_url('home')
-            query = {'came_from': referrer}
-            location = self.request.route_url('login', _query=query)
-            return HTTPFound(location=location)
-        else:
-            return self.request.exception
+            came_from = self.request.params.get('came_from', referrer)
+            userid = ''
+            password = ''
+
+            if self.request.method == 'POST':
+                userid = self.request.POST['userid']
+                password = self.request.POST['password']
+                user = User.by_id(userid)
+                if user is not None and user.validate_password(password):
+                    headers = remember(self.request, userid)
+                    return HTTPFound(location=came_from,
+                                     headers=headers)
+            else:
+                self.request.response.status_int = 401
+                # Add MAC challenge
+                self.request.response.headers["WWW-Authenticate"] = "MAC"
+
+            return dict(came_from=came_from,
+                        userid=userid,
+                        password=password,
+                        )
 
     @view_config(route_name='logout', permission='view')
     def logout(self):
@@ -187,14 +231,18 @@ class JobViews(object):
         return dict(status=jobstate, jobid=str(jobid))
 
     @view_config(route_name='status.json', renderer='json',
-                 permission='monitor', request_method='PUT')
+                 permission='monitor',
+                 request_method='PUT')
     def set_job_status(self):
         jobid = self.job.id
         jobstate = self.request.body
         self.job.state = jobstate
-        return dict(status=jobstate, jobid=jobid)
+        return dict(status=jobstate, jobid=str(jobid))
 
-    @view_config(route_name='results', renderer='results.mak')
+    @view_config(route_name='results',
+                 renderer='results.mak',
+                 request_method='GET'
+                 )
     def results(self):
         """Returns results page"""
         db = self.job.db
@@ -204,8 +252,34 @@ class JobViews(object):
                     maxmslevel=db.maxMSLevel(),
                     jobid=self.job.id,
                     # coerce pyramid.security.Allowed|Denied to boolean
-                    canRun=bool(canRun)
+                    canRun=bool(canRun),
+                    job=self.job,
                     )
+
+    @view_config(route_name='results',
+                 renderer='json',
+                 request_method='PUT',
+                 permission='run',
+                 )
+    def updatejson(self):
+        """Update fields of :class:`Job`"""
+        body = self.request.json_body
+        job = self.job
+        job.description = body['description']
+        job.ms_filename = body['ms_filename']
+        return {'success': True, 'message': 'Updated job'}
+
+    @view_config(route_name='results',
+                 renderer='json',
+                 request_method='DELETE',
+                 permission='run',
+                 )
+    def deletejson(self):
+        """Delete job from user database and deletes job directory"""
+        self.job.delete()
+        del self.job
+        self.request.response.status_int = 204
+        return {'success': True, 'message': 'Deleted job'}
 
     @view_config(route_name='metabolites.json', renderer='json')
     def metabolitesjson(self):
@@ -310,7 +384,7 @@ class JobViews(object):
 
     @view_config(route_name='metabolites.csv')
     def metabolitescsv(self):
-        """Same as metabolitesjson(), but returns csv file
+        """Same as :func:`metabolitesjson`, but returns csv file
 
         Additional request.params:
           `cols`
@@ -330,7 +404,7 @@ class JobViews(object):
 
     @view_config(route_name='metabolites.sdf')
     def metabolitessdf(self):
-        """Same as metabolitesjson(), but returns sdf file
+        """Same as :func:`metabolitesjson`, but returns sdf file
 
         Additional request.params:
           `cols`
@@ -591,8 +665,6 @@ class JobViews(object):
                 runinfo['use_all_peaks'] = r.use_all_peaks
             if r.abs_peak_cutoff:
                 runinfo['abs_peak_cutoff'] = r.abs_peak_cutoff
-            if r.rel_peak_cutoff:
-                runinfo['rel_peak_cutoff'] = r.rel_peak_cutoff
             if r.max_ms_level:
                 runinfo['max_ms_level'] = r.max_ms_level
             if r.precursor_mz_precision:

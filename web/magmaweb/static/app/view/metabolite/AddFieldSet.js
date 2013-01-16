@@ -33,6 +33,37 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
 	    },
 	    plain : true,
 	    items : [{
+	    	title: 'Database',
+	    	id: 'structure_database_tab',
+	    	items: [{
+	    		xtype: 'combo',
+	    		fieldLabel: 'Database',
+	    		name: 'structure_database',
+	    		emptyText: 'No database selected',
+	    		store: [['chebi', 'ChEBI'],['pubchem', 'PubChem']]
+	    	}, {
+	    		xtype: 'fieldset',
+	    		title: 'PubChem options',
+	            collapsed : true,
+	            collapsible : true,
+	            defaults: {
+	    	        labelWidth : 300
+	    		},
+	    		items: [{
+	    			xtype: 'numberfield',
+	    			fieldLabel: 'Minimum number of Depositor-Supplied Synonyms',
+	    			name: 'min_refscore',
+	    			minValue: 1,
+	    			value: 1
+	    		}, {
+	    			xtype: 'numberfield',
+	    			fieldLabel: 'Maximum m/z (mass-to-charge ratio)',
+	    			name: 'max_mz',
+	    			minValue: 1,
+	    			value: 9999
+	    		}]
+	    	}]
+	    }, {
 	        title : 'Upload',
 	        items : [{
 	                    xtype : 'combo',

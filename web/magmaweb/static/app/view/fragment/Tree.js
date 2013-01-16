@@ -56,7 +56,7 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
   }],
   requires: [ 'Esc.chemdoodle.Column', 'Ext.selection.CheckboxModel', 'Ext.grid.column.Number' ],
   initComponent: function() {
-    console.log('Init fragment tree');
+    Ext.log({}, 'Init fragment tree');
 
     // atoms property is array filled with fragment atoms that need to be black
     // bonds having both atoms in array are black
@@ -93,7 +93,7 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
             target: id,
             listeners: {
                 render: function(tip,e) {
-                    console.log('Drawing tooltip for '+id);
+                    Ext.log({}, 'Drawing tooltip for '+id);
                     var c = new ChemDoodle.ViewerCanvas(id+'-'+tip.id, 300, 300);
                     c.specs.bonds_color = 'cyan';
                     c.specs.atoms_color = 'cyan';

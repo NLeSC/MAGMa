@@ -1,3 +1,7 @@
+"""Module for authentication, authorization.
+
+Contains db schema for users and jobs.
+"""
 import uuid
 import datetime
 import bcrypt
@@ -28,19 +32,17 @@ Base = declarative_base()
 def init_user_db(engine, create=True, fill=True):
     """Binds engine with DBSession and Mappings.
 
-    'engine' is a :class:sqlalchemy.engine.base.Engine .
+    'engine' is a :class:`sqlalchemy.engine.base.Engine`.
     Set 'create' to False to skip createing tables.
-    Set 'fill' to False to skipp adding 'jobmanager' user.
+    Set 'fill' to False to skip adding 'joblauncher' user.
     """
     DBSession.configure(bind=engine)
     Base.metadata.bind = engine
     if create:
         Base.metadata.create_all(engine)
     if fill:
-        # create jobmanager account
-        DBSession.add(User('jobmananger', 'Job Manager daemon',
-                           's.verhoeven@esciencecenter.nl'))
         # TODO register all found jobs
+        pass
 
 
 class UUIDType(TypeDecorator):
@@ -50,7 +52,7 @@ class UUIDType(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is None:
             return None
-        return str(value)
+        return unicode(value)
 
     def process_result_value(self, value, dialect):
         if value is None:
@@ -99,13 +101,15 @@ class User(Base):
 
     @classmethod
     def by_id(cls, userid):
-        """Fetch :class:User by `userid`"""
+        """Fetch :class:`User` by `userid`"""
         return DBSession().query(cls).get(userid)
 
     @classmethod
     def add(cls, user):
-        """Adds :class:User to db"""
-        DBSession().add(user)
+        """Adds :class:`User` to db"""
+        session = DBSession()
+        session.add(user)
+        session.flush()
 
 
 class JobMeta(Base):
@@ -138,7 +142,7 @@ class JobMeta(Base):
 
     @classmethod
     def by_id(cls, jobid):
-        """Fetch :class:JobMeta by `jobid`"""
+        """Fetch :class:`JobMeta` by `jobid`"""
         return DBSession().query(cls).get(jobid)
 
     @classmethod
@@ -151,6 +155,11 @@ class JobMeta(Base):
         # so force commit here
         session.flush()
 
+    @classmethod
+    def delete(cls, jobmeta):
+        """Deletes :class:JobMeta from db"""
+        session = DBSession()
+        session.delete(jobmeta)
 
 class RootFactory(object):
     """Context factory which sets default acl"""
@@ -174,7 +183,7 @@ class RootFactory(object):
         self.request.extjsroot = self.request.static_url(extjsroot)
 
     def user(self):
-        """Adds :class:User as request.user
+        """Adds :class:`User` as request.user
 
         Returns None when there is no authenticatied userid or
         if user is not found in user db
@@ -192,7 +201,7 @@ class RootFactory(object):
 
 
 class JobIdFactory(RootFactory):
-    """Context factory which creates :class:magmaweb.job.Job
+    """Context factory which creates :class:`magmaweb.job.Job`
     as context of request
     """
     def __init__(self, request):
@@ -205,8 +214,11 @@ class JobIdFactory(RootFactory):
             # for acl inheritance add a parent,
             # this is not the parent job where this job is derived from
             job.__parent__ = self
-            # owner may run calculations
-            job.__acl__ = [(Allow, job.owner, 'run')]
+            # owner may run calculations or perform changes
+            monitor_user = self.request.registry.settings['monitor_user']
+            job.__acl__ = [(Allow, job.owner, 'run'),
+                           # monitor user may monitor this job
+                           (Allow, monitor_user, 'monitor')]
         except JobNotFound:
             # TODO to fetch job state job's db can be absent
             raise HTTPNotFound()

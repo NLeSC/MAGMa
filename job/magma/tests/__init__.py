@@ -68,7 +68,6 @@ class TestMagmaSession(unittest.TestCase):
         rundata = ms.db_session.query(Run).one()
         self.assertDictContainsSubset({
                                       'abs_peak_cutoff': 1000,
-                                      'rel_peak_cutoff': 0.01,
                                       'max_ms_level': 10
                                        }, rundata.__dict__)
 
@@ -76,7 +75,6 @@ class TestMagmaSession(unittest.TestCase):
         ms = magma.MagmaSession(':memory:', u'My description')
         args = {
                 'abs_peak_cutoff': 10001,
-                'rel_peak_cutoff': 0.011,
                 'max_ms_level': 101
                 }
         se = ms.get_ms_data_engine(**args)

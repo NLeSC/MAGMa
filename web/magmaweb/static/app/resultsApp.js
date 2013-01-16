@@ -22,9 +22,10 @@
  */
 Ext.define('Esc.magmaweb.resultsApp', {
   name: 'Esc.magmaweb',
+  appFolder: Ext.Loader.getPath('Esc.magmaweb'),
   extend:'Ext.app.Application',
   constructor: function(config) {
-    console.log('Construct app');
+    Ext.log({}, 'Construct app');
     this.initConfig(config);
     this.callParent(arguments);
     return this;
@@ -110,7 +111,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
    * @param {Ext.Error} err The raised error
    */
   errorHandle: function(err) {
-      console.error(err);
+      Ext.log({level:'error'}, err);
       Ext.Msg.show({
           title: 'Error',
           msg: err.msg,
@@ -207,7 +208,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
         this.selected.metid = false;
     }, this);
 
-    console.log('Launch app');
+    Ext.log({}, 'Launch app');
 
     /**
      * @property {Ext.window.Window} infoWindow
@@ -220,27 +221,6 @@ Ext.define('Esc.magmaweb.resultsApp', {
         closeAction: 'hide',
         contentEl: 'resultsinfo',
         tools: [{
-            type: 'gear',
-            tooltip: 'Set description',
-            handler: function() {
-                Ext.MessageBox.prompt('Description', 'Please enter a description:', function(button, description) {
-                    if (button == 'ok') {
-                        Ext.Ajax.request({
-                            url: me.rpcUrl('set_description'),
-                            params: {
-                                description: description
-                            },
-                            success: function(response) {
-                                Ext.get('description').setHTML(description);
-                            },
-                            failure: function(r,o) {
-                               Ext.Error.raise('Failed to set description');
-                            }
-                        });
-                    }
-                }, this, true, Ext.get('description').getHTML());
-            }
-        }, {
             type: 'save',
             tooltip: 'Save log file',
             handler: function() {

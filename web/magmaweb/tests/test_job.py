@@ -5,6 +5,7 @@ import unittest
 from mock import Mock, patch
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import transaction
 from magmaweb.job import JobFactory, Job, JobDb, make_job_factory, JobQuery
 from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
 import magmaweb.user as mu
@@ -46,7 +47,7 @@ def populateTestingDB(session):
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
         mz_precision=10, mz_precision_abs=0.002, use_all_peaks=True,
         ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
-        rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=10,
+        max_ms_level=3, precursor_mz_precision=10,
         max_broken_bonds=4, description='My first description'
     ))
     session.add(Metabolite(
@@ -148,7 +149,7 @@ def populateWithUseAllPeaks(session):
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
         mz_precision=10, mz_precision_abs=0.002, use_all_peaks=False,
         ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
-        rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=10,
+        max_ms_level=3, precursor_mz_precision=10,
         max_broken_bonds=4, description='My second description'
     ))
     session.add(Metabolite(
@@ -293,6 +294,7 @@ class JobFactoryTestCase(unittest.TestCase):
         self.factory = JobFactory(root_dir=self.root_dir)
 
         # fill user db
+        transaction.begin()
         engine = create_engine('sqlite:///:memory:')
         mu.DBSession.configure(bind=engine)
         mu.Base.metadata.create_all(engine)
@@ -387,15 +389,14 @@ class JobFactoryTestCase(unittest.TestCase):
 
         self.factory.script_fn = 'script.sh'
         cmd = "magma add_structures -t smiles structures.dat results.db\n"
-        jobquery = JobQuery(job.id, job.dir, cmd, ['structures.dat'])
+        jobquery = JobQuery(job.dir, cmd, ['structures.dat'])
         status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
         jobquery.status_callback_url = status_cb_url
 
-        self.factory.submitJob2Manager = Mock()
+        self.factory.submitJob2Launcher = Mock()
 
-        jobid = self.factory.submitQuery(jobquery)
+        jobid = self.factory.submitQuery(jobquery, job)
 
-        self.assertEqual(jobid, jobquery.id)
         job_script_fn = os.path.join(jobquery.dir, self.factory.script_fn)
         job_script = open(job_script_fn).read()
         exp_script = "# make magma available\n"
@@ -415,20 +416,19 @@ class JobFactoryTestCase(unittest.TestCase):
                             'arguments': [self.factory.script_fn],
                             'status_callback_url': status_cb_url
                             }
-        self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
+        self.factory.submitJob2Launcher.assert_called_with(jobmanager_query)
         self.assertEqual(job.state, 'INITIAL')
 
     def test_submitQuery_with_tarball(self):
         self.factory.tarball = 'Magma-1.1.tar.gz'
-        self.factory.submitJob2Manager = Mock()
+        self.factory.submitJob2Launcher = Mock()
         job = self.factory.fromScratch('bob')
-        jobquery = JobQuery(job.id, job.dir, "", [])
+        jobquery = JobQuery(job.dir, "", [])
         status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
         jobquery.status_callback_url = status_cb_url
 
-        jobid = self.factory.submitQuery(jobquery)
+        jobid = self.factory.submitQuery(jobquery, job)
 
-        self.assertEqual(jobid, jobquery.id)
         jobmanager_query = {'jobdir': jobquery.dir + '/',
                             'executable': "/bin/sh",
                             'prestaged': [self.factory.script_fn,
@@ -443,36 +443,37 @@ class JobFactoryTestCase(unittest.TestCase):
                             'arguments': [self.factory.script_fn],
                             'status_callback_url': status_cb_url
                             }
-        self.factory.submitJob2Manager.assert_called_with(jobmanager_query)
+        self.factory.submitJob2Launcher.assert_called_with(jobmanager_query)
         self.assertEqual(job.state, 'INITIAL')
 
     def test_submitQuery_no_jobmanager(self):
         from urllib2 import URLError
         from magmaweb.job import JobSubmissionError
         exc = URLError('[Errno 111] Connection refused')
-        self.factory.submitJob2Manager = Mock(side_effect=exc)
+        self.factory.submitJob2Launcher = Mock(side_effect=exc)
         job = self.factory.fromScratch('bob')
-        jobquery = JobQuery(job.id, job.dir, "", [])
+        jobquery = JobQuery(job.dir, "", [])
         status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
         jobquery.status_callback_url = status_cb_url
 
         with self.assertRaises(JobSubmissionError):
-            self.factory.submitQuery(jobquery)
+            self.factory.submitQuery(jobquery, job)
 
         self.assertEqual(job.state, 'SUBMISSION_ERROR')
 
     @patch('urllib2.urlopen')
-    def test_submitJob2Manager(self, ua):
+    def test_submitJob2Launcher(self, ua):
         import json
         body = {'foo': 'bar'}
 
-        self.factory.submitJob2Manager(body)
+        self.factory.submitJob2Launcher(body)
 
         # TODO replace with ua.assert_called_once_with(<hamcrest matcher>)
         req = ua.call_args[0][0]
         self.assertEquals(req.get_data(), json.dumps(body))
         self.assertEquals(req.get_full_url(), self.factory.submit_url)
         self.assertEquals(req.get_header('Content-type'), 'application/json')
+        self.assertEquals(req.get_header('Accept'), 'application/json')
 
     def test_fromScratch(self):
         # mock/stub private methods which do external calls
@@ -594,7 +595,6 @@ class JobTestCase(unittest.TestCase):
         status_cb_url = 'http://example/status/{}.json'.format(self.job.id)
         jobquery = self.job.jobquery(status_cb_url)
         self.assertIsInstance(jobquery, JobQuery)
-        self.assertEqual(jobquery.id, self.job.id)
         self.assertEqual(jobquery.dir, self.job.dir)
 
     def test_state(self):
@@ -635,6 +635,17 @@ class JobTestCase(unittest.TestCase):
         self.assertEqual(self.job.ms_filename, 'F4567.mzxml')
         self.assertEqual(self.job.meta.ms_filename, 'F4567.mzxml')
 
+    @patch('magmaweb.user.JobMeta')
+    @patch('magmaweb.job.shutil')
+    def test_delete(self, shutl, jm):
+        self.job.db.session = Mock()
+
+        self.job.delete()
+
+        self.job.db.session.remove.assert_called_with()
+        shutl.rmtree.assert_called_with(self.jobdir)
+        jm.delete.assert_called_with(self.meta)
+
 
 class JobDbTestCaseAbstract(unittest.TestCase):
     def setUp(self):
@@ -654,7 +665,6 @@ class JobDbTestCase(JobDbTestCaseAbstract):
 
         self.assertEqual(runInfo.ms_filename, 'F123456.mzxml')
         self.assertEqual(runInfo.abs_peak_cutoff, 1000)
-        self.assertEqual(runInfo.rel_peak_cutoff, 0.001)
         self.assertEqual(runInfo.max_ms_level, 3)
         self.assertEqual(runInfo.precursor_mz_precision, 10)
 
@@ -675,7 +685,7 @@ class JobDbTestCase(JobDbTestCaseAbstract):
             ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
             mz_precision=10, mz_precision_abs=0.002, use_all_peaks=True,
             ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
-            rel_peak_cutoff=0.001, max_ms_level=3, precursor_mz_precision=10,
+            max_ms_level=3, precursor_mz_precision=10,
             max_broken_bonds=4, description='My second description'
         ))
 
@@ -1579,39 +1589,34 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
 
 class JobQueryTestCase(unittest.TestCase):
     def setUp(self):
-        self.jobid = 12345
         self.jobdir = '/somedir'
-        self.jobquery = JobQuery(id=self.jobid, dir=self.jobdir)
+        self.jobquery = JobQuery(dir=self.jobdir)
 
     def test_eq(self):
-        self.assertEqual(JobQuery(id=self.jobid, dir=self.jobdir),
+        self.assertEqual(JobQuery(dir=self.jobdir),
                          self.jobquery)
 
-    def test_eq_id(self):
-        self.assertNotEqual(JobQuery(id=67890, dir=self.jobdir),
-                            self.jobquery)
-
     def test_eq_dir(self):
-        self.assertNotEqual(JobQuery(id=self.jobid, dir='/otherdir'),
+        self.assertNotEqual(JobQuery(dir='/otherdir'),
                             self.jobquery)
 
     def test_eq_script(self):
-        job1 = JobQuery(id=self.jobid, dir=self.jobdir, script='b')
+        job1 = JobQuery(dir=self.jobdir, script='b')
         self.assertNotEqual(job1, self.jobquery)
 
     def test_eq_prestaged(self):
-        job1 = JobQuery(id=self.jobid, dir=self.jobdir, prestaged=[1])
+        job1 = JobQuery(dir=self.jobdir, prestaged=[1])
         self.assertNotEqual(job1, self.jobquery)
 
     def test_repr(self):
-        jq = JobQuery('x', 'y', script='z', prestaged=[123],
+        jq = JobQuery('y', script='z', prestaged=[123],
                       status_callback_url='foo')
-        s = "JobQuery('x', 'y', script='z', prestaged=[123], "
+        s = "JobQuery('y', script='z', prestaged=[123], "
         s += "status_callback_url='foo')"
         self.assertEqual(jq.__repr__(), s)
 
     def test_escape_single_quote(self):
-        jq = JobQuery('x', '/y')
+        jq = JobQuery('/y')
         self.assertEquals(jq.escape("'"), '&#39;')
 
     def test_defaults(self):
@@ -1625,7 +1630,6 @@ class JobQueryTestCase(unittest.TestCase):
                         mz_precision_abs=0.001,
                         use_all_peaks=False,
                         abs_peak_cutoff=1000,
-                        rel_peak_cutoff=0.01,
                         max_ms_level=10,
                         precursor_mz_precision=0.005,
                         max_broken_bonds=4
@@ -1679,7 +1683,6 @@ class JobQueryTestCase(unittest.TestCase):
             mz_precision_abs=0,
             use_all_peaks=False,
             abs_peak_cutoff=1000,
-            rel_peak_cutoff=0.01,
             max_ms_level=10,
             precursor_mz_precision=0.005,
             max_broken_bonds=3)
@@ -1718,9 +1721,8 @@ class JobQueryFileTestCase(unittest.TestCase):
 class JobQueryActionTestCase(unittest.TestCase):
     def setUp(self):
         import tempfile
-        self.jobid = uuid.uuid1()
         self.jobdir = tempfile.mkdtemp()
-        self.jobquery = JobQuery(id=self.jobid, dir=self.jobdir, script='')
+        self.jobquery = JobQuery(dir=self.jobdir, script='')
 
     def tearDown(self):
         import shutil
@@ -1738,8 +1740,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
 
         sf = 'structures.dat'
         script = "{magma} add_structures -t 'smiles' structures.dat {db}\n"
-        expected_query = JobQuery(id=self.jobid,
-                                  dir=self.jobdir,
+        expected_query = JobQuery(dir=self.jobdir,
                                   prestaged=[sf],
                                   script=script
                                   )
@@ -1759,8 +1760,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_structures(params)
 
         script = "{magma} add_structures -t 'smiles' structures.dat {db}\n"
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': ['structures.dat'],
                                      'script': script
                                      })
@@ -1782,8 +1782,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         sf = 'structures.dat'
         script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
         script += "{magma} metabolize -s '2' -m 'phase1,phase2' -j - {db}\n"
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': [sf],
                                      'script': script
                                      })
@@ -1806,8 +1805,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1' -i '1'"
         script += " -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': [sf],
                                      'script': script
                                      })
@@ -1835,8 +1833,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         script += "{magma} metabolize -s '2' -m 'phase2' -j - {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1' -i '1'"
         script += " -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': [sf],
                                      'script': script
                                      })
@@ -1851,8 +1848,8 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         with self.assertRaises(Invalid) as e:
             self.jobquery.add_structures(params, False)
 
-        s = 'Either structures or structure_file must be set'
-        sf = 'Either structures or structure_file must be set'
+        s = 'Either structures or structures_file must be set'
+        sf = 'Either structures or structures_file must be set'
         expected = {'structures': s, 'structures_file': sf}
         self.assertDictEqual(e.exception.asdict(), expected)
 
@@ -1888,15 +1885,13 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                   'ms_data_file': msfield,
                   'max_ms_level': 3,
                   'abs_peak_cutoff': 1000,
-                  'rel_peak_cutoff': 0.01
                   }
 
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': ['ms_data.dat'],
                                      'script': script
                                      })
@@ -1908,15 +1903,13 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                   'ms_data': 'foo',
                   'max_ms_level': 3,
                   'abs_peak_cutoff': 1000,
-                  'rel_peak_cutoff': 0.01
                   }
 
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': ['ms_data.dat'],
                                      'script': script
                                      })
@@ -1927,7 +1920,6 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         params = {'ms_data_format': 'mzxml',
                   'max_ms_level': 3,
                   'abs_peak_cutoff': 1000,
-                  'rel_peak_cutoff': 0.01
                   }
         from colander import Invalid
         with self.assertRaises(Invalid) as e:
@@ -1950,7 +1942,6 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                   'ms_data': 'bar',
                   'max_ms_level': 3,
                   'abs_peak_cutoff': 1000,
-                  'rel_peak_cutoff': 0.01
                   }
 
         self.jobquery.add_ms_data(params)
@@ -1970,7 +1961,6 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                   'ms_data_file': msfield,
                   'max_ms_level': 3,
                   'abs_peak_cutoff': 1000,
-                  'rel_peak_cutoff': 0.01,
                   'precursor_mz_precision': 0.005,
                   'mz_precision': 5.0,
                   'mz_precision_abs': 0.001,
@@ -1983,11 +1973,10 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params, True)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml' "
-        script += "-l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
+        script += "-l '3' -a '1000.0' ms_data.dat {db}\n"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' {db}\n"
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': ['ms_data.dat'],
                                      'script': script
                                      })
@@ -2006,15 +1995,13 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                   'ms_data_file': msfield,
                   'max_ms_level': 3,
                   'abs_peak_cutoff': 1000,
-                  'rel_peak_cutoff': 0.01
                   }
 
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'tree'"
-        script += " -l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': ['ms_data.dat'],
                                      'script': script
                                      })
@@ -2031,8 +2018,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
         query = self.jobquery.metabolize(params)
 
         script = "{magma} metabolize -s '2' -m 'phase1' {db}\n"
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': [],
                                      'script': script
                                      })
@@ -2056,8 +2042,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
         script = "{magma} metabolize -s '2' -m 'phase1,phase2' {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': [],
                                      'script': script
                                      })
@@ -2078,8 +2063,7 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
         script = "echo '123' | {magma} metabolize -j - -s '2'"
         script += " -m 'phase1,phase2' {db}\n"
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': [],
                                      'script': script
                                      })
@@ -2105,8 +2089,7 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
         script += "-m 'phase1' {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': [],
                                      'script': script
                                      })
@@ -2129,8 +2112,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
         script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1' -i '1'"
         script += " -b '4' --precursor_mz_precision '0.005' {db}\n"
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': [],
                                      'script': script
                                      })
@@ -2144,15 +2126,14 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                   'msms_intensity_cutoff': 0.1,
                   'ionisation_mode': 1,
                   'max_broken_bonds': 4,
-                  'use_all_peaks': 'on'
+                  'use_all_peaks': 'on',
                   }
 
         query = self.jobquery.annotate(params)
 
         script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' -u {db}\n"
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': [],
                                      'script': script
                                      })
@@ -2166,15 +2147,63 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                   'msms_intensity_cutoff': 0.1,
                   'ionisation_mode': 1,
                   'max_broken_bonds': 4,
-                  'skip_fragmentation': 'on'
+                  'skip_fragmentation': 'on',
                   }
 
         query = self.jobquery.annotate(params)
 
         script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' -f {db}\n"
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        expected_query = JobQuery(**{'dir': self.jobdir,
+                                     'prestaged': [],
+                                     'script': script
+                                     })
+        self.assertEqual(query, expected_query)
+
+    def test_with_structure_database_without_location(self):
+        params = {'precursor_mz_precision': 0.005,
+                  'mz_precision': 5.0,
+                  'mz_precision_abs': 0.001,
+                  'ms_intensity_cutoff': 200000,
+                  'msms_intensity_cutoff': 0.1,
+                  'ionisation_mode': 1,
+                  'max_broken_bonds': 4,
+                  'skip_fragmentation': 'on',
+                  'structure_database': 'pubchem',
+                  'min_refscore': 1,
+                  'max_mz': 9999,
+                  }
+
+        from colander import Invalid
+        with self.assertRaises(Invalid) as e:
+            self.jobquery.annotate(params)
+
+        msg = 'Unable to locate structure database'
+        self.assertEquals(e.exception.msg, msg)
+
+    def test_with_structure_database(self):
+        params = {'precursor_mz_precision': 0.005,
+                  'mz_precision': 5.0,
+                  'mz_precision_abs': 0.001,
+                  'ms_intensity_cutoff': 200000,
+                  'msms_intensity_cutoff': 0.1,
+                  'ionisation_mode': 1,
+                  'max_broken_bonds': 4,
+                  'skip_fragmentation': 'on',
+                  'structure_database': 'pubchem',
+                  'min_refscore': 1,
+                  'max_mz': 9999,
+                  }
+
+        structure_db_location = 'data/pubchem.db'
+
+        query = self.jobquery.annotate(params, False, structure_db_location)
+
+        script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
+        script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
+        script += " --structure_database 'pubchem' --db_options 'data/pubchem.db,1,9999'"
+        script += " -f {db}\n"
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': [],
                                      'script': script
                                      })
@@ -2183,7 +2212,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
 class JobQueryAllInOneTestCase(JobQueryActionTestCase):
 
-    def test_it(self):
+    def test_with_metabolize(self):
         self.maxDiff = 100000
         import tempfile
         from cgi import FieldStorage
@@ -2198,24 +2227,24 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
                            ms_intensity_cutoff=200000,
                            msms_intensity_cutoff=0.1,
                            abs_peak_cutoff=1000,
-                           rel_peak_cutoff=0.01,
                            precursor_mz_precision=0.005,
                            max_broken_bonds=4,
                            mz_precision=5.0,
                            mz_precision_abs=0.001,
+                           metabolize='on',
                            metabolism_types='phase1',
                            max_ms_level=3,
                            structures='C1CCCC1 comp1',
                            ms_data_file=msfield,
                            structure_format='smiles',
-                           ms_data_format='mzxml'
+                           ms_data_format='mzxml',
                            )
         params.add('metabolism_types', 'phase2')
 
         query = self.jobquery.allinone(params)
 
         expected_script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        expected_script += " -l '3' -a '1000.0' -r '0.01' ms_data.dat {db}\n"
+        expected_script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
 
         expected_script += "{magma} add_structures -t 'smiles'"
         expected_script += " structures.dat {db}\n"
@@ -2227,8 +2256,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         expected_script += " {db}\n"
 
-        expected_query = JobQuery(**{'id': self.jobid,
-                                     'dir': self.jobdir,
+        expected_query = JobQuery(**{'dir': self.jobdir,
                                      'prestaged': ['ms_data.dat',
                                                    'structures.dat'],
                                      'script': expected_script
@@ -2237,3 +2265,128 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         self.assertMultiLineEqual(params['structures'],
                                   self.fetch_file('structures.dat'))
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
+
+    def test_without_metabolize(self):
+        self.maxDiff = 100000
+        import tempfile
+        from cgi import FieldStorage
+        ms_data_file = tempfile.NamedTemporaryFile()
+        ms_data_file.write('foo')
+        ms_data_file.flush()
+        msfield = FieldStorage()
+        msfield.file = ms_data_file
+        from webob.multidict import MultiDict
+        params = MultiDict(n_reaction_steps=2,
+                           ionisation_mode=1,
+                           ms_intensity_cutoff=200000,
+                           msms_intensity_cutoff=0.1,
+                           abs_peak_cutoff=1000,
+                           precursor_mz_precision=0.005,
+                           max_broken_bonds=4,
+                           mz_precision=5.0,
+                           mz_precision_abs=0.001,
+                           metabolism_types='phase1',
+                           max_ms_level=3,
+                           structures='C1CCCC1 comp1',
+                           ms_data_file=msfield,
+                           structure_format='smiles',
+                           ms_data_format='mzxml',
+                           structure_database='',
+                           min_refscore=1,
+                           max_mz=9999,
+                           )
+        params.add('metabolism_types', 'phase2')
+
+        query = self.jobquery.allinone(params)
+
+        expected_script = "{magma} read_ms_data --ms_data_format 'mzxml'"
+        expected_script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
+
+        expected_script += "{magma} add_structures -t 'smiles'"
+        expected_script += " structures.dat {db}\n"
+
+        expected_script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
+        expected_script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
+        expected_script += " {db}\n"
+
+        expected_query = JobQuery(**{'dir': self.jobdir,
+                                     'prestaged': ['ms_data.dat',
+                                                   'structures.dat'],
+                                     'script': expected_script
+                                     })
+        self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual(params['structures'],
+                                  self.fetch_file('structures.dat'))
+        self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
+
+    def test_without_molecule_and_with_structure_database(self):
+        params = dict(n_reaction_steps=2,
+                      ionisation_mode=1,
+                      ms_intensity_cutoff=200000,
+                      msms_intensity_cutoff=0.1,
+                      abs_peak_cutoff=1000,
+                      precursor_mz_precision=0.005,
+                      max_broken_bonds=4,
+                      mz_precision=5.0,
+                      mz_precision_abs=0.001,
+                      metabolism_types='phase1',
+                      max_ms_level=3,
+                      structures='',
+                      ms_data='bla',
+                      structure_format='smiles',
+                      ms_data_format='mzxml',
+                      structure_database='pubchem',
+                      min_refscore=1,
+                      max_mz=9999,
+                      )
+
+        structure_db_location = 'data/pubchem.db'
+
+        query = self.jobquery.allinone(params, structure_db_location)
+
+        expected_script = "{magma} read_ms_data --ms_data_format 'mzxml'"
+        expected_script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
+
+        expected_script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
+        expected_script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
+        expected_script += " --structure_database 'pubchem' --db_options 'data/pubchem.db,1,9999'"
+        expected_script += " {db}\n"
+
+        expected_query = JobQuery(**{'dir': self.jobdir,
+                                     'prestaged': ['ms_data.dat'],
+                                     'script': expected_script,
+                                     })
+        self.assertEqual(query, expected_query)
+
+    def test_without_molecule_and_structure_database(self):
+        params = dict(n_reaction_steps=2,
+                      ionisation_mode=1,
+                      ms_intensity_cutoff=200000,
+                      msms_intensity_cutoff=0.1,
+                      abs_peak_cutoff=1000,
+                      precursor_mz_precision=0.005,
+                      max_broken_bonds=4,
+                      mz_precision=5.0,
+                      mz_precision_abs=0.001,
+                      metabolism_types='phase1',
+                      max_ms_level=3,
+                      structures='',
+                      ms_data='bla',
+                      structure_format='smiles',
+                      ms_data_format='mzxml',
+                      structure_database='',
+                      min_refscore=1,
+                      max_mz=9999,
+                      )
+
+        from colander import Invalid
+        with self.assertRaises(Invalid) as e:
+            self.jobquery.allinone(params)
+
+        s = 'Either structures or structures_file must be set'
+        sf = 'Either structures or structures_file must be set'
+        sd = 'Either structures or structures_file or structure_database must be set'
+        expected = {'structures': s,
+                    'structures_file': sf,
+                    'structure_database': sd}
+        self.assertDictEqual(e.exception.asdict(), expected)
