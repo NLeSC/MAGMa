@@ -253,7 +253,7 @@ class ViewsTestCase(AbstractViewsTestCase):
                           'url': url1,
                           'description': 'My job',
                           'ms_filename': 'F1234.mzxml',
-                          'created_at': '2012-11-14 10:48:26.504478'}]
+                          'created_at': '2012-11-14T10:48:26'}]
         self.assertEqual(response, {'jobs': expected_jobs})
 
     @patch('magmaweb.views.JobQuery')

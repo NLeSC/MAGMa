@@ -21,7 +21,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     ref: 'metabolitePanel', selector: 'metabolitepanel'
   }],
   init: function() {
-    console.log('Metabolites controller init');
+    Ext.log({}, 'Metabolites controller init');
     var me = this;
 
     // configure store
@@ -161,7 +161,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     this.application.fireEvent('metaboliteload', store);
     this.metabolizable(store.getTotalUnfilteredCount() > 0);
     if (store.getCount() == 1 && !this.getSelectionModel().hasSelection()) {
-        console.log('Only one metabolite loaded and its not selected, selecting it');
+        Ext.log({}, 'Only one metabolite loaded and its not selected, selecting it');
         this.getSelectionModel().select(0);
     }
     if (store.getTotalUnfilteredCount() === 0) {
@@ -226,7 +226,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
    * Remove filters and clears selection
    */
   clearFilters: function() {
-    console.log('Clear metabolite filters');
+    Ext.log({}, 'Clear metabolite filters');
     this.getMetaboliteList().clearFilters();
     this.application.fireEvent('metabolitenoselect');
   },
