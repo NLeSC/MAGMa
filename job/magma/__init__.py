@@ -92,7 +92,7 @@ class StructureEngine(object):
         self.metabolism_types=rundata.metabolism_types.split(',')
         self.n_reaction_steps=rundata.n_reaction_steps
 
-    def add_structure(self,molblock,name,prob,level,sequence,isquery,mass_filter=9999,mim=None,inchikey=None,molform=None,reference=None,logP=None,check_duplicates=False):
+    def add_structure(self,molblock,name,prob,level,sequence,isquery,mass_filter=9999,mim=None,inchikey=None,molform=None,reference=None,logP=None,check_duplicates=True):
         if inchikey==None or mim==None or molform==None or logP==None:
             mol=Chem.MolFromMolBlock(molblock)
         if inchikey == None:
@@ -119,7 +119,13 @@ class StructureEngine(object):
             reference=reference,
             logp=logP
             )
-        if check_duplicates and len(self.db_session.query(Metabolite).filter_by(smiles=inchikey).all())>0:
+        if check_duplicates: 
+            dups=self.db_session.query(Metabolite).filter_by(smiles=inchikey).all()
+            if len(dups)>0:
+                metab=dups[0]
+                metab.origin=unicode(str(metab.origin)+'</br>'+name, 'utf-8', 'xmlcharrefreplace')
+                metab.reference=reference
+                metab.probability=prob
 #            if dupid.probability < prob:
 #                self.db_session.delete(dupid)
 #                metab.metid=dupid.metid
@@ -127,13 +133,12 @@ class StructureEngine(object):
 #                sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - old one removed\n')
 #                # TODO remove any fragments related to this structure as well
 #            else:
-            sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - kept old one\n')
-            return
-        else:
-            self.db_session.add(metab)
-            #sys.stderr.write('Added: '+name+'\n')
-            self.db_session.flush()
-            return metab.metid
+#                sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - kept old one\n')
+#                return
+        self.db_session.add(metab)
+        #sys.stderr.write('Added: '+name+'\n')
+        self.db_session.flush()
+        return metab.metid
 
     def add_structure_tmp(self,mol,name,prob,level,sequence,isquery):
         m=Chem.MolFromMolBlock(mol)
