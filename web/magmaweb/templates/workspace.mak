@@ -5,37 +5,9 @@
 <title>MAGMa - Workspace</title>
 <link rel="stylesheet"
 	href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
+<link rel="stylesheet" href="${request.static_url('magmaweb:static/style.css')}" type="text/css"/>
 <script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
 <style type="text/css">
-.x-logo a {
-	font-size: 40px;
-	padding-left: 520px;
-	padding-top: 3px; /* aligns app title with text in logo  */
-    background: url(${request.static_url('magmaweb:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}) no-repeat 5px 4px;
-}
-
-.x-title a {
-	font-size: 40px;
-	font-weight: bold;
-	color: #333;
-	text-decoration: none;
-	margin-left: auto;
-	margin-right: auto;
-	padding-top: 3px; /* aligns app title with text in logo  */
-}
-
-#welcome h1 {
-	font-size: 200%;
-	padding-top: 40px;
-	padding-bottom: 40px;
-	color: #333;
-}
-
-.x-action-col-cell img {
-     height: 16px;
-     width: 16px;
-     cursor: pointer;
-}
 
 .icon-delete {
 	background-image:
