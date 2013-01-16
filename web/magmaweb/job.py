@@ -821,12 +821,12 @@ class JobFactory(object):
 
         return Job(jobmeta, jdir, db)
 
-    def submitJob2Manager(self, body):
-        """Submits job query to jobmanager daemon
+    def submitJob2Launcher(self, body):
+        """Submits job query to job launcher daemon
 
         body is a dict which is submitted as json.
 
-        returns job identifier of job submitted to jobmanager
+        returns job identifier of job submitted to job launcher
         (not the same as job.id).
         """
         request = urllib2.Request(self.submit_url,
@@ -888,7 +888,7 @@ class JobFactory(object):
         job.meta = magmaweb.user.DBSession().merge(job.meta)
 
         try:
-            self.submitJob2Manager(body)
+            self.submitJob2Launcher(body)
         except urllib2.URLError:
             job.state = 'SUBMISSION_ERROR'
             raise JobSubmissionError()
@@ -1018,6 +1018,13 @@ class Job(object):
         if run is not None:
             run.ms_filename = ms_filename
 
+    def delete(self):
+        """Deletes job from user database and deletes job directory"""
+        magmaweb.user.JobMeta.delete(self.meta)
+        # disconnect from job results database before removing database file
+        self.db.session.remove()
+        shutil.rmtree(self.dir)
+
 
 class JobDb(object):
     """Database of a job"""
@@ -1031,7 +1038,10 @@ class JobDb(object):
 
     def runInfo(self):
         """Returns last run info or None if there is no run info"""
-        return self.session.query(Run).order_by(Run.runid.desc()).first()
+        # cache run info to prevent 'database is locked' errors
+        if not hasattr(self, '_runInfo'):
+            self._runInfo = self.session.query(Run).order_by(Run.runid.desc()).first()
+        return self._runInfo
 
     def metabolitesTotalCount(self):
         """Returns unfiltered and not paged count of metabolites"""

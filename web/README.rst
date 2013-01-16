@@ -38,7 +38,7 @@ Additional to the `Development installation`_ to make application more complete/
 * `Minimize javscript`_
 * Configure reverse http proxy webserver like `nginx`_ to host static content
 * Use a faster wsgi python server like `gunicorn`_ or `uWSGI`_
-* Install :ref:`job manager <manager>` or `docs/manager.rst <docs/manager.rst>`_ to perform calculations
+* Install :ref:`job launcher <launcher>` or `docs/launcher.rst <docs/launcher.rst>`_ to perform calculations
 * (Optionally) Make ExtJS installation smaller by removing it's `docs`, `builds` directories
 
 nginx
