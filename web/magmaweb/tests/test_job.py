@@ -2156,7 +2156,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
         query = self.jobquery.annotate(params)
 
         script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
-        script += " -i '1' -b '4' --precursor_mz_precision '0.005' -f {db}\n"
+        script += " -i '1' -b '4' --precursor_mz_precision '0.005' --skip_fragmentation {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [],
                                      'script': script
@@ -2206,7 +2206,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
         script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         script += " --structure_database 'pubchem'"
         script += " --db_options 'data/pubchem.db,1,9999'"
-        script += " -f {db}\n"
+        script += " --skip_fragmentation {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [],
                                      'script': script
