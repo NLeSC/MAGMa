@@ -74,5 +74,9 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         xtype : 'checkbox',
         fieldLabel : 'Skip substructure annotation of fragment peaks',
         name : 'skip_fragmentation'
+    },  {
+        xtype : 'checkbox',
+        fieldLabel : 'Quick calculations for molecules up to 64 atoms',
+        name : 'fast'
     }]
 });

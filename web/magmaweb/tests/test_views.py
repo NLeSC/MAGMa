@@ -758,7 +758,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
             mz_precision=4.0, mz_precision_abs=0.002, use_all_peaks=True,
             ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
             max_ms_level=3, precursor_mz_precision=0.01,
-            max_broken_bonds=4, description='My first description'
+            max_broken_bonds=4, description='My first description',
+            fast=False,
         )
         views = JobViews(job, request)
 
@@ -778,7 +779,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  abs_peak_cutoff=1000,
                                                  max_ms_level=3,
                                                  precursor_mz_precision=0.01,
-                                                 max_broken_bonds=4
+                                                 max_broken_bonds=4,
+                                                 fast=False,
                                                  )
                                     })
 
@@ -806,7 +808,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  abs_peak_cutoff=1100,
                                                  max_ms_level=10,
                                                  precursor_mz_precision=0.005,
-                                                 max_broken_bonds=4
+                                                 max_broken_bonds=4,
+                                                 fast=False,
                                                  )
                                     })
 
@@ -832,7 +835,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  abs_peak_cutoff=1000,
                                                  max_ms_level=10,
                                                  precursor_mz_precision=0.005,
-                                                 max_broken_bonds=4
+                                                 max_broken_bonds=4,
+                                                 fast=False,
                                                  )
                                     })
 
