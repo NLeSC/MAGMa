@@ -161,6 +161,7 @@ class JobMeta(Base):
         session = DBSession()
         session.delete(jobmeta)
 
+
 class RootFactory(object):
     """Context factory which sets default acl"""
     __name__ = ''

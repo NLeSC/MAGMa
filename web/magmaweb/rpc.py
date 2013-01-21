@@ -55,17 +55,22 @@ class RpcViews(object):
             jobquery = jobquery.add_structures(params, has_scans)
         except Invalid as e:
             # no structures given
-            if has_scans and 'structure_database' in params and params['structure_database']:
-                # structures will be added by database lookup during extra annotate
+            if (has_scans and 'structure_database' in params
+                    and params['structure_database']):
+                # structures will be added by
+                # database lookup during extra annotate
                 pass
             else:
                 sd = SchemaNode(String(), name='structure_database')
-                msg = 'Either structures or structures_file or structure_database must be set'
+                msg = 'Either structures or structures_file '
+                msg += 'or structure_database must be set'
                 e.add(Invalid(sd, msg))
                 raise e
 
-        if has_scans and 'structure_database' in params and params['structure_database']:
-            # add structure database location when structure_database is selected
+        if (has_scans and 'structure_database' in params
+                and params['structure_database']):
+            # add structure database location
+            # when structure_database is selected
             key = 'structure_database.' + params['structure_database']
             str_db_loc = self.request.registry.settings[key]
             jobquery = jobquery.annotate(params, False, str_db_loc)
@@ -126,7 +131,8 @@ class RpcViews(object):
 
         """
         job = self.new_job()
-        jobquery = job.jobquery(self._status_url(job)).annotate(self.request.POST)
+        jobquery = job.jobquery(self._status_url(job))
+        jobquery = jobquery.annotate(self.request.POST)
         self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}
 
