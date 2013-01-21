@@ -522,7 +522,7 @@ class JobQuery(object):
             script += '-u '
 
         if params['skip_fragmentation']:
-            script += '-f '
+            script += '--skip_fragmentation '
 
         if from_subset:
             script += '-j - '
