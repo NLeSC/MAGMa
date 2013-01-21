@@ -157,6 +157,9 @@ class JobQuery(object):
                                        missing=colander.null,
                                        validator=colander.Range(min=1),
                                        name='max_mz'))
+        schema.add(colander.SchemaNode(colander.Boolean(),
+                                       default=False, missing=False,
+                                       name='fast'))
 
     def _addMetabolizeSchema(self, schema):
         validator = colander.OneOf(['phase1', 'phase2'])
@@ -467,7 +470,9 @@ class JobQuery(object):
         * max_broken_bonds
         * use_all_peaks, when key is set then all peaks are used
         * skip_fragmentation, when key is set then
-            the no fragmentation of structures is performed.
+            no fragmentation of structures is performed.
+        * fast, when key is set then
+            Quick calculations for molecules up to 64 atoms is used
         * structure_database,
             only used when ``structure_database_location`` is given
         * min_refscore, only used when ``structure_database_location`` is given
@@ -523,6 +528,9 @@ class JobQuery(object):
 
         if params['skip_fragmentation']:
             script += '--skip_fragmentation '
+
+        if params['fast']:
+            script += '--fast '
 
         if from_subset:
             script += '-j - '
@@ -581,20 +589,21 @@ class JobQuery(object):
         if selection == 'example':
             return cls._example()
 
-        return dict(
-            n_reaction_steps=2,
-            metabolism_types=['phase1', 'phase2'],
-            ionisation_mode=1,
-            skip_fragmentation=False,
-            ms_intensity_cutoff=1000000.0,
-            msms_intensity_cutoff=0.1,
-            mz_precision=5.0,
-            mz_precision_abs=0.001,
-            use_all_peaks=False,
-            abs_peak_cutoff=1000,
-            max_ms_level=10,
-            precursor_mz_precision=0.005,
-            max_broken_bonds=4)
+        return dict(n_reaction_steps=2,
+                    metabolism_types=['phase1', 'phase2'],
+                    ionisation_mode=1,
+                    skip_fragmentation=False,
+                    ms_intensity_cutoff=1000000.0,
+                    msms_intensity_cutoff=0.1,
+                    mz_precision=5.0,
+                    mz_precision_abs=0.001,
+                    use_all_peaks=False,
+                    abs_peak_cutoff=1000,
+                    max_ms_level=10,
+                    precursor_mz_precision=0.005,
+                    max_broken_bonds=4,
+                    fast=False,
+                    )
 
     @classmethod
     def _example(cls):
@@ -634,20 +643,21 @@ class JobQuery(object):
             '    353.087097: 4146696',
             '    )'
         ]
-        return dict(
-            ms_data="\n".join(example_tree),
-            ms_data_format='tree',
-            ionisation_mode=-1,
-            skip_fragmentation=False,
-            ms_intensity_cutoff=0,
-            msms_intensity_cutoff=0,
-            mz_precision=5,
-            mz_precision_abs=0,
-            use_all_peaks=False,
-            abs_peak_cutoff=1000,
-            max_ms_level=10,
-            precursor_mz_precision=0.005,
-            max_broken_bonds=3)
+        return dict(ms_data="\n".join(example_tree),
+                    ms_data_format='tree',
+                    ionisation_mode=-1,
+                    skip_fragmentation=False,
+                    ms_intensity_cutoff=0,
+                    msms_intensity_cutoff=0,
+                    mz_precision=5,
+                    mz_precision_abs=0,
+                    use_all_peaks=False,
+                    abs_peak_cutoff=1000,
+                    max_ms_level=10,
+                    precursor_mz_precision=0.005,
+                    max_broken_bonds=3,
+                    fast=False,
+                    )
 
 
 class JobFactory(object):

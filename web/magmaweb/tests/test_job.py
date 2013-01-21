@@ -48,7 +48,8 @@ def populateTestingDB(session):
         mz_precision=10, mz_precision_abs=0.002, use_all_peaks=True,
         ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
         max_ms_level=3, precursor_mz_precision=10,
-        max_broken_bonds=4, description='My first description'
+        max_broken_bonds=4, description='My first description',
+        fast=False,
     ))
     session.add(Metabolite(
         metid=72, mol='Molfile', level=0, probability=1.0,
@@ -150,7 +151,8 @@ def populateWithUseAllPeaks(session):
         mz_precision=10, mz_precision_abs=0.002, use_all_peaks=False,
         ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
         max_ms_level=3, precursor_mz_precision=10,
-        max_broken_bonds=4, description='My second description'
+        max_broken_bonds=4, description='My second description',
+        fast=False,
     ))
     session.add(Metabolite(
         metid=12,
@@ -669,14 +671,15 @@ class JobDbTestCase(JobDbTestCaseAbstract):
         self.assertEqual(runInfo.precursor_mz_precision, 10)
 
         self.assertEqual(runInfo.ionisation_mode, -1)
-        self.assertEqual(runInfo.skip_fragmentation, True)
+        self.assertTrue(runInfo.skip_fragmentation)
         self.assertEqual(runInfo.max_broken_bonds, 4)
         self.assertEqual(runInfo.ms_intensity_cutoff, 200000.0)
         self.assertEqual(runInfo.msms_intensity_cutoff, 0.5)
         self.assertEqual(runInfo.mz_precision, 10)
         self.assertEqual(runInfo.mz_precision_abs, 0.002)
-        self.assertEqual(runInfo.use_all_peaks, True)
+        self.assertTrue(runInfo.use_all_peaks)
         self.assertEqual(runInfo.description, 'My first description')
+        self.assertFalse(runInfo.fast)
 
     def test_runInfo_maxrunid(self):
         self.session.add(Run(
@@ -686,7 +689,8 @@ class JobDbTestCase(JobDbTestCaseAbstract):
             mz_precision=10, mz_precision_abs=0.002, use_all_peaks=True,
             ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
             max_ms_level=3, precursor_mz_precision=10,
-            max_broken_bonds=4, description='My second description'
+            max_broken_bonds=4, description='My second description',
+            fast=True,
         ))
 
         runInfo = self.job.runInfo()
@@ -1632,7 +1636,8 @@ class JobQueryTestCase(unittest.TestCase):
                         abs_peak_cutoff=1000,
                         max_ms_level=10,
                         precursor_mz_precision=0.005,
-                        max_broken_bonds=4
+                        max_broken_bonds=4,
+                        fast=False,
                         )
         self.assertDictEqual(expected, JobQuery.defaults())
 
@@ -1672,20 +1677,21 @@ class JobQueryTestCase(unittest.TestCase):
             '    353.087097: 4146696',
             '    )'
         ]
-        expected = dict(
-            ms_data="\n".join(example_tree),
-            ms_data_format='tree',
-            ionisation_mode=-1,
-            skip_fragmentation=False,
-            ms_intensity_cutoff=0,
-            msms_intensity_cutoff=0,
-            mz_precision=5,
-            mz_precision_abs=0,
-            use_all_peaks=False,
-            abs_peak_cutoff=1000,
-            max_ms_level=10,
-            precursor_mz_precision=0.005,
-            max_broken_bonds=3)
+        expected = dict(ms_data="\n".join(example_tree),
+                        ms_data_format='tree',
+                        ionisation_mode=-1,
+                        skip_fragmentation=False,
+                        ms_intensity_cutoff=0,
+                        msms_intensity_cutoff=0,
+                        mz_precision=5,
+                        mz_precision_abs=0,
+                        use_all_peaks=False,
+                        abs_peak_cutoff=1000,
+                        max_ms_level=10,
+                        precursor_mz_precision=0.005,
+                        max_broken_bonds=3,
+                        fast=False,
+                        )
         self.assertDictEqual(expected, JobQuery.defaults('example'))
 
 
@@ -2156,7 +2162,30 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
         query = self.jobquery.annotate(params)
 
         script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
-        script += " -i '1' -b '4' --precursor_mz_precision '0.005' --skip_fragmentation {db}\n"
+        script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
+        script += " --skip_fragmentation {db}\n"
+        expected_query = JobQuery(**{'directory': self.jobdir,
+                                     'prestaged': [],
+                                     'script': script
+                                     })
+        self.assertEqual(query, expected_query)
+
+    def test_fast(self):
+        params = {'precursor_mz_precision': 0.005,
+                  'mz_precision': 5.0,
+                  'mz_precision_abs': 0.001,
+                  'ms_intensity_cutoff': 200000,
+                  'msms_intensity_cutoff': 0.1,
+                  'ionisation_mode': 1,
+                  'max_broken_bonds': 4,
+                  'fast': 'on',
+                  }
+
+        query = self.jobquery.annotate(params)
+
+        script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
+        script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
+        script += " --fast {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [],
                                      'script': script
