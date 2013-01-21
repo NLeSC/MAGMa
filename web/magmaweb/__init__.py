@@ -27,10 +27,8 @@ def main(global_config, **settings):
     # See http://www.rfk.id.au/blog/entry/securing-pyramid-persona-macauth/
     authn_policy2 = MACAuthenticationPolicy.from_settings(settings)
 
-    authn_policy = MultiAuthenticationPolicy([
-                                              authn_policy1,
-                                              authn_policy2,
-                                              ])
+    auth_policies = [authn_policy1, authn_policy2, ]
+    authn_policy = MultiAuthenticationPolicy(auth_policies)
     config.set_authentication_policy(authn_policy)
     config.set_authorization_policy(ACLAuthorizationPolicy())
     config.set_root_factory(RootFactory)
