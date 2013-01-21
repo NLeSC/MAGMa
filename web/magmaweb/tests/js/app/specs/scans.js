@@ -26,6 +26,7 @@ describe('Scans controller', function() {
 		submit: function() {},
 		isValid: function() { return true; },
 		setValues: function() {},
+		getValues: function() {},
 		load: function() {}
 	};
 	mocked_form_panel = {
@@ -423,7 +424,7 @@ describe('Scans controller', function() {
   it('uploadHandler', function() {
 	  spyOn(mocked_form, 'isValid').andReturn(true);
       spyOn(mocked_form, 'submit');
-	  
+
       ctrl.uploadHandler();
 
 	  expect(mocked_form.isValid).toHaveBeenCalledWith();
@@ -513,27 +514,40 @@ describe('Scans controller', function() {
 	  };
 	  expect(mocked_form.load).toHaveBeenCalledWith(expected);
   });
-  
+
   describe('changeMsDataFormat', function() {
 	it('tree', function() {
+		var filter_init = {
+				'ms_intensity_cutoff': 1,
+			    'msms_intensity_cutoff': 2,
+			    'abs_peak_cutoff': 3
+		};
+		spyOn(mocked_form, 'getValues').andReturn(filter_init);
 		spyOn(mocked_form, 'setValues');
-		
+
 		ctrl.changeMsDataFormat(null, 'tree');
-		
-		filter_off = {
+
+		var filter_off = {
 			'ms_intensity_cutoff': 0,
 		    'msms_intensity_cutoff': 0,
 		    'abs_peak_cutoff': 0
 		};
 		expect(mocked_form.setValues).toHaveBeenCalledWith(filter_off);
 	});
-	
+
 	it('non-tree', function() {
+		var filter_init = {
+				'ms_intensity_cutoff': 1,
+			    'msms_intensity_cutoff': 2,
+			    'abs_peak_cutoff': 3
+		};
+		spyOn(mocked_form, 'getValues').andReturn(filter_init);
 		spyOn(mocked_form, 'setValues');
-		
+		ctrl.changeMsDataFormat(null, 'tree');
+
 		ctrl.changeMsDataFormat(null, 'mzxml');
-		
-		expect(mocked_form.setValues).not.toHaveBeenCalled();
+
+		expect(mocked_form.setValues).toHaveBeenCalledWith(filter_init);
 	});
   });
 });
