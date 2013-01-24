@@ -12,8 +12,6 @@ import java.util.Random;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import nl.esciencecenter.magma.gat.JobStateListener;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.Header;
 import org.apache.http.HttpRequest;
@@ -39,7 +37,7 @@ import org.slf4j.LoggerFactory;
  */
 public class MacScheme implements ContextAwareAuthScheme {
     protected static final Logger logger = LoggerFactory
-            .getLogger(JobStateListener.class);
+            .getLogger(MacScheme.class);
 
     /** The name of this authorization scheme. */
     public static final String SCHEME_NAME = "MAC";
