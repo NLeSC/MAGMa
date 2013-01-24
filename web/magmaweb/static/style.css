@@ -76,6 +76,10 @@ line.peak {
 	stroke: lightgreen;
 }
 
+.annotated:hover {
+	stroke: darkgreen;
+}
+
 line.assigned {
 	stroke: orange !important; /* #afdddd; */
 }
