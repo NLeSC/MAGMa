@@ -20,4 +20,4 @@ job/env2/
 job/*.egg-info/
 job/development.ini
 job/production.ini
-env/
+env*/

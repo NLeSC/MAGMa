@@ -78,20 +78,25 @@ class RpcViewsTestCase(unittest.TestCase):
 
     def test_addstructure_with_db(self):
         from colander import Invalid, SchemaNode, String
-        self.jobquery.add_structures.side_effect = Invalid(SchemaNode(String()))
+        invalid = Invalid(SchemaNode(String()))
+        self.jobquery.add_structures.side_effect = invalid
         self.rpc.request.POST['structure_database'] = 'pubchem'
-        self.rpc.request.registry.settings['structure_database.pubchem'] = 'data/pubchem.db'
+        s = self.rpc.request.registry.settings
+        s['structure_database.pubchem'] = 'data/pubchem.db'
 
-        response = self.rpc.add_structures()
+        self.rpc.add_structures()
 
-        self.jobquery.annotate.assert_called_with(self.post, False, 'data/pubchem.db')
+        self.jobquery.annotate.assert_called_with(self.post,
+                                                  False,
+                                                  'data/pubchem.db')
 
     def test_addstructure_with_db_and_no_msdata(self):
         self.job2.db.maxMSLevel.return_value = 0
         from colander import Invalid, SchemaNode, String
-        self.jobquery.add_structures.side_effect = Invalid(SchemaNode(String()))
+        invalid = Invalid(SchemaNode(String()))
+        self.jobquery.add_structures.side_effect = invalid
 
-        with self.assertRaises(Invalid) as e:
+        with self.assertRaises(Invalid):
             self.rpc.add_structures()
 
     def test_addmsdata(self):

@@ -24,6 +24,7 @@ Install
    unzip JavaGAT-2.1.3-src.zip
    cd JavaGAT-2.1.3
    ant
+   cd ..
 
 2. Add JavaGAT jars in local maven repository, so they can be used as maven dependencies
 
@@ -35,6 +36,7 @@ Install
    mvn install:install-file -Dfile=lib/GAT-engine.jar -DartifactId=GAT-engine -Dversion=$GAT_VERSION -DgroupId=org.gridlab.gat -Dpackaging=jar -DgeneratePom=true
    mvn install:install-file -Dfile=lib/GAT-tests.jar -DartifactId=GAT-tests -Dversion=$GAT_VERSION -DgroupId=org.gridlab.gat -Dpackaging=jar -DgeneratePom=true
    mvn install:install-file -Dfile=lib/ibis-util-2.3-pre.jar -DartifactId=ibis-util -Dversion=2.3-pre -DgroupId=ibis -Dpackaging=jar -DgeneratePom=true
+   cd ..
 
 3. Make copy of 'joblauncher.yml-dist' to 'joblauncher.yml'
 3.1 Configure JavaGAT broker
