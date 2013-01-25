@@ -16,12 +16,10 @@ requires = ['pyramid',
             'colander',
             'waitress',
             'py-bcrypt',
-            'Paste'
+            'Paste',
+            'WebTest',
+            'mock'
             ]
-
-tests_require = ['WebTest',
-                 'mock'
-                 ]
 
 if sys.version_info[:3] < (2, 5, 0):
     requires.append('pysqlite')
@@ -49,7 +47,6 @@ setup(name='MAGMaWeb',
       zip_safe=False,
       test_suite='magmaweb.tests',
       install_requires=requires,
-      tests_require=tests_require,
       entry_points="""\
       [paste.app_factory]
       main = magmaweb:main
