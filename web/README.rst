@@ -10,6 +10,7 @@ and the client-side is written in `ExtJS <http://www.sencha.com/products/extjs>`
 Development installation
 ========================
 
+0. Requires Python 2.6 with development libraries for compilations
 1. Download ExtJs at http://sencha.com/products/extjs and unzip in `web/magmaweb/static`.
 2. Create users and register jobs see :ref:`User management <user>` or `docs/user.rst <docs/user.rst>`_.
 3. Install MAGMa web and it's dependencies

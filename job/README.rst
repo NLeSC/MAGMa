@@ -10,6 +10,8 @@ Requirements
 MAGMa requires RDKit with INCHI support.
 See http://code.google.com/p/rdkit/wiki/BuildingWithCmake for RDKit installation instructions.
 
+And make sure libxml2-dev and libxslt-dev are installed for mzxml file parsing.
+
 Development installation
 ------------------------
 

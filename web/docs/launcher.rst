@@ -19,5 +19,6 @@ Installation
 
 1. Create a user for the joblauncher, see :ref:`User management <user>` or `user.rst <user.rst>`_.
 2. Set username as 'monitor_user' key in web config file, so that user is authorized with status update rights.
-3. On workspace page generate an access token.
-4. Configure joblauncher with supplied token.
+3. Login as joblauncher on web site
+4. On workspace page generate an access token.
+5. Configure joblauncher with supplied token.
