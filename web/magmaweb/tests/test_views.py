@@ -69,7 +69,8 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         views.job_factory.fromScratch.assert_called_with('bob')
         jobquery.allinone.assert_called_with(post)
-        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(), job)
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(),
+                                                         job)
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
         self.assertEqual(job.ms_filename, 'c:\bla\bla\F1234.mzxml')
         job.jobquery.assert_called_with('http://example.com/status/foo.json')
@@ -89,7 +90,8 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         views.job_factory.fromScratch.assert_called_with('bob')
         jobquery.allinone.assert_called_with(post)
-        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(), job)
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(),
+                                                         job)
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
         self.assertEqual(job.ms_filename, 'Uploaded as text')
         job.jobquery.assert_called_with('http://example.com/status/foo.json')
@@ -100,7 +102,8 @@ class ViewsTestCase(AbstractViewsTestCase):
                 'structure_database': 'pubchem'
                 }
         request = testing.DummyRequest(post=post)
-        request.registry.settings['structure_database.pubchem'] = 'data/pubchem.db'
+        s = request.registry.settings
+        s['structure_database.pubchem'] = 'data/pubchem.db'
         request.user = User('bob', 'Bob Example', 'bob@example.com')
         job = self.fake_job()
         jobquery = Mock(JobQuery)
@@ -113,7 +116,8 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         views.job_factory.fromScratch.assert_called_with('bob')
         jobquery.allinone.assert_called_with(post, 'data/pubchem.db')
-        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(), job)
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(),
+                                                         job)
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
         self.assertEqual(job.ms_filename, 'Uploaded as text')
         job.jobquery.assert_called_with('http://example.com/status/foo.json')
@@ -132,7 +136,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         views.job_factory = Mock(JobFactory)
         views.job_factory.fromScratch = Mock(return_value=job)
 
-        response = views.allinone()
+        views.allinone()
 
         jobquery.allinone.assert_called_with(post)
 
@@ -159,7 +163,8 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertEquals(json.loads(e.exception.body), expected_json)
         views.job_factory.fromScratch.assert_called_with('bob')
         jobquery.allinone.assert_called_with(post)
-        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(), job)
+        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(),
+                                                         job)
 
     def test_uploaddb_get(self):
         request = testing.DummyRequest()
@@ -436,12 +441,13 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         response = views.results()
 
-        self.assertDictEqual(response, dict(jobid='foo',
-                                        run='bla',
-                                        maxmslevel=3,
-                                        canRun=False,
-                                        job=job,
-                                        ))
+        exp_response = dict(jobid='foo',
+                            run='bla',
+                            maxmslevel=3,
+                            canRun=False,
+                            job=job,
+                            )
+        self.assertDictEqual(response, exp_response)
         has_permission.assert_called_with('run', job, request)
 
     def test_jobstatus(self):
@@ -538,7 +544,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
     def test_metabolitesjson_sortonlevel(self):
         sort_in = '[{"property":"level","direction":"DESC"}]'
-        sort_expected = [{"property":"level", "direction": "DESC"}]
+        sort_expected = [{"property": "level", "direction": "DESC"}]
         request = testing.DummyRequest(params={'start': 0,
                                                'limit': 10,
                                                'sort': sort_in
@@ -598,7 +604,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                })
 
         views = JobViews(job, request)
-        rows = [{'name':'foo', 'score': 'bar', 'id': 123}]
+        rows = [{'name': 'foo', 'score': 'bar', 'id': 123}]
         views.metabolitesjson = Mock(return_value={'rows': rows})
 
         views.metabolitescsv()
@@ -746,13 +752,14 @@ class JobViewsTestCase(AbstractViewsTestCase):
         job = self.fake_job()
         from magmaweb.models import Run
         job.db.runInfo.return_value = Run(
-            n_reaction_steps=2, metabolism_types='phase1,phase2',
+            n_reaction_steps=2, metabolism_types=['phase1', 'phase2'],
             ionisation_mode=-1, skip_fragmentation=True,
             ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
             mz_precision=4.0, mz_precision_abs=0.002, use_all_peaks=True,
             ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
             max_ms_level=3, precursor_mz_precision=0.01,
-            max_broken_bonds=4, description='My first description'
+            max_broken_bonds=4, description='My first description',
+            fast=False,
         )
         views = JobViews(job, request)
 
@@ -772,7 +779,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  abs_peak_cutoff=1000,
                                                  max_ms_level=3,
                                                  precursor_mz_precision=0.01,
-                                                 max_broken_bonds=4
+                                                 max_broken_bonds=4,
+                                                 fast=False,
                                                  )
                                     })
 
@@ -800,7 +808,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  abs_peak_cutoff=1100,
                                                  max_ms_level=10,
                                                  precursor_mz_precision=0.005,
-                                                 max_broken_bonds=4
+                                                 max_broken_bonds=4,
+                                                 fast=False,
                                                  )
                                     })
 
@@ -826,7 +835,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  abs_peak_cutoff=1000,
                                                  max_ms_level=10,
                                                  precursor_mz_precision=0.005,
-                                                 max_broken_bonds=4
+                                                 max_broken_bonds=4,
+                                                 fast=False,
                                                  )
                                     })
 
@@ -835,7 +845,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
         request.json_body = {"id": "bar",
                              "description": "New description",
                              "ms_filename": "F12345.mzxml",
-                             "created_at":"1999-12-17T13:45:04",
+                             "created_at": "1999-12-17T13:45:04",
                              }
         job = self.fake_job()
         expected_id = job.id
@@ -844,7 +854,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         response = views.updatejson()
 
-        self.assertDictEqual(response, {'success': True, 'message': 'Updated job'})
+        exp_response = {'success': True, 'message': 'Updated job'}
+        self.assertDictEqual(response, exp_response)
         self.assertEqual(job.id, expected_id)
         self.assertEqual(job.description, 'New description')
         self.assertEqual(job.ms_filename, 'F12345.mzxml')
@@ -857,7 +868,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         response = views.deletejson()
 
-        self.assertDictEqual(response, {'success': True, 'message': 'Deleted job'})
+        exp_response = {'success': True, 'message': 'Deleted job'}
+        self.assertDictEqual(response, exp_response)
         job.delete.assert_called_with()
         self.assertEquals(request.response.status_int, 204)
-

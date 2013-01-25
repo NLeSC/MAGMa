@@ -61,9 +61,12 @@ class Views(object):
         status_url = self.request.route_url('status.json', jobid=job.id)
         jobquery = job.jobquery(status_url)
 
-        if 'structure_database' in self.request.POST and self.request.POST['structure_database']:
-            # add structure database location when structure_database is selected
-            key = 'structure_database.' + self.request.POST['structure_database']
+        if ('structure_database' in self.request.POST
+                and self.request.POST['structure_database']):
+            # add structure database location when
+            # structure_database is selected
+            key = 'structure_database.'
+            key += self.request.POST['structure_database']
             str_db_loc = self.request.registry.settings[key]
             jobquery = jobquery.allinone(self.request.POST, str_db_loc)
         else:
@@ -640,35 +643,13 @@ class JobViews(object):
 
         """
         r = self.job.db.runInfo()
+
         defaults = Views(self.request).defaults()
-        if (r is None):
+        if r is None:
             return defaults
         else:
             runinfo = defaults['data']
-            if r.n_reaction_steps:
-                runinfo['n_reaction_steps'] = r.n_reaction_steps
-            if r.metabolism_types:
-                runinfo['metabolism_types'] = r.metabolism_types.split(',')
-            if r.ionisation_mode:
-                runinfo['ionisation_mode'] = r.ionisation_mode
-            if r.skip_fragmentation:
-                runinfo['skip_fragmentation'] = r.skip_fragmentation
-            if r.ms_intensity_cutoff:
-                runinfo['ms_intensity_cutoff'] = r.ms_intensity_cutoff
-            if r.msms_intensity_cutoff:
-                runinfo['msms_intensity_cutoff'] = r.msms_intensity_cutoff
-            if r.mz_precision:
-                runinfo['mz_precision'] = r.mz_precision
-            if r.mz_precision_abs:
-                runinfo['mz_precision_abs'] = r.mz_precision_abs
-            if r.use_all_peaks:
-                runinfo['use_all_peaks'] = r.use_all_peaks
-            if r.abs_peak_cutoff:
-                runinfo['abs_peak_cutoff'] = r.abs_peak_cutoff
-            if r.max_ms_level:
-                runinfo['max_ms_level'] = r.max_ms_level
-            if r.precursor_mz_precision:
-                runinfo['precursor_mz_precision'] = r.precursor_mz_precision
-            if r.max_broken_bonds:
-                runinfo['max_broken_bonds'] = r.max_broken_bonds
+            for key in r.__dict__.keys():
+                if key in runinfo:
+                    runinfo[key] = r.__getattribute__(key)
             return {'success': True, 'data': runinfo}

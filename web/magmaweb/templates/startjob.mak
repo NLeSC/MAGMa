@@ -2,12 +2,13 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>MAGMa - Ms Annotation based on in silico Generated Metabolites</title>
+<title>MAGMa - Start</title>
 <link rel="stylesheet"
 	href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
 <link rel="stylesheet"
 	href="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.9.2.custom.css')}"
 	type="text/css"></link>
+<link rel="stylesheet" href="${request.static_url('magmaweb:static/style.css')}" type="text/css"/>
 <script type="text/javascript"
 	src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb-libs.js')}"></script>
 <script type="text/javascript"
@@ -17,31 +18,6 @@
 <script type="text/javascript"
 	src="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/ChemDoodleWeb-sketcher.js')}"></script>
 <script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
-<style type="text/css">
-.x-logo a {
-  font-size: 40px;
-  padding-left: 520px;
-  padding-top: 3px; /* aligns app title with text in logo  */
-  background: url(${request.static_url('magmaweb:static/ESCIENCE_log_B_nl_long_cyanblack.jpg')}) no-repeat 5px 4px;
-}
-
-.x-title a {
-  font-size: 40px;
-  font-weight: bold;
-  color: #333;
-  text-decoration:none;
-  margin-left: auto;
-  margin-right: auto;
-  padding-top: 3px; /* aligns app title with text in logo  */
-}
-
-#welcome h1 {
-	font-size: 200%;
-	padding-top: 40px;
-	padding-bottom: 40px;
-	color: #333;
-}
-</style>
 <script type="text/javascript">
 Ext.Loader.setConfig({
   enabled: true,
@@ -160,13 +136,22 @@ Ext.onReady(function() {
   });
   // change settings when tree ms data format is chosen.
   var ms_data_format_combo = form.down('component[name=ms_data_format]');
+  var filters_before_tree = {};
   ms_data_format_combo.addListener('change', function(field, value) {
 	if (value == 'tree') {
+		var values = form.getForm().getValues();
+		filters_before_tree = {
+            'ms_intensity_cutoff': values['ms_intensity_cutoff'],
+            'msms_intensity_cutoff': values['msms_intensity_cutoff'],
+            'abs_peak_cutoff': values['abs_peak_cutoff']
+        };
 		form.getForm().setValues({
 		    'ms_intensity_cutoff': 0,
 		    'msms_intensity_cutoff': 0,
 		    'abs_peak_cutoff': 0
 		});
+	} else {
+		form.getForm().setValues(filters_before_tree);
 	}
   });
 

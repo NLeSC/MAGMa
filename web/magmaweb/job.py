@@ -85,7 +85,7 @@ class JobQuery(object):
             return cstruct
 
     def __init__(self,
-                 dir,
+                 directory,
                  script='',
                  prestaged=None,
                  status_callback_url=None,
@@ -93,13 +93,13 @@ class JobQuery(object):
         """Contruct JobQuery
 
         Params:
-        - dir, job directory
+        - directory, job directory
         - script, script to run in job directory
         - prestaged, list of files to prestage
         - status_callback_url, Url to PUT status of job to.
 
         """
-        self.dir = dir
+        self.dir = directory
         self.script = script
         self.prestaged = prestaged or []
         self.status_callback_url = status_callback_url
@@ -157,6 +157,9 @@ class JobQuery(object):
                                        missing=colander.null,
                                        validator=colander.Range(min=1),
                                        name='max_mz'))
+        schema.add(colander.SchemaNode(colander.Boolean(),
+                                       default=False, missing=False,
+                                       name='fast'))
 
     def _addMetabolizeSchema(self, schema):
         validator = colander.OneOf(['phase1', 'phase2'])
@@ -168,6 +171,45 @@ class JobQuery(object):
         schema.add(colander.SchemaNode(colander.Integer(),
                                        validator=colander.Range(0, 10),
                                        name='n_reaction_steps'))
+
+    def _addAddStructuresSchema(self, has_ms_data, must_metabolize):
+        def textarea_or_file(node, value):
+            """Validator that either textarea or file upload is filled"""
+            if not(not value['structures'] is colander.null or
+                   not value['structures_file'] is colander.null):
+                error = 'Either structures or structures_file must be set'
+                exception = colander.Invalid(node)
+                exception.add(colander.Invalid(structuresSchema, error))
+                exception.add(colander.Invalid(structures_fileSchema, error))
+                raise exception
+
+        schema = colander.SchemaNode(colander.Mapping(),
+                                     validator=textarea_or_file)
+        formats = ['smiles', 'sdf']
+        schema.add(colander.SchemaNode(colander.String(),
+                                       validator=colander.OneOf(formats),
+                                       name='structure_format'))
+        filled = colander.Length(min=1)
+        structuresSchema = colander.SchemaNode(colander.String(),
+                                               validator=filled,
+                                               missing=colander.null,
+                                               name='structures')
+        schema.add(structuresSchema)
+        structures_fileSchema = colander.SchemaNode(self.File(),
+                                                    missing=colander.null,
+                                                    name='structures_file')
+        schema.add(structures_fileSchema)
+        schema.add(colander.SchemaNode(colander.Boolean(),
+                                       default=False,
+                                       missing=False,
+                                       name='metabolize'))
+
+        if has_ms_data:
+            self._addAnnotateSchema(schema)
+        if must_metabolize:
+            self._addMetabolizeSchema(schema)
+
+        return schema
 
     def add_structures(self, params, has_ms_data=False):
         """Configure job query to add_structures from params.
@@ -185,47 +227,16 @@ class JobQuery(object):
         If both ``stuctures`` and ``structures_file`` is filled then
             ``structures`` is ignored.
         """
-        def textarea_or_file(node, value):
-            """Validator that either textarea or file upload is filled"""
-            if not(not value['structures'] is colander.null or
-                   not value['structures_file'] is colander.null):
-                error = 'Either structures or structures_file must be set'
-                exception = colander.Invalid(node)
-                exception.add(colander.Invalid(structuresSchema, error))
-                exception.add(colander.Invalid(structures_fileSchema, error))
-                raise exception
+        must_metabolize = 'metabolize' in params
+        schema = self._addAddStructuresSchema(has_ms_data, must_metabolize)
 
-        schema = colander.SchemaNode(colander.Mapping(),
-                                     validator=textarea_or_file)
-        schema.add(colander.SchemaNode(colander.String(),
-                                       validator=colander.OneOf(['smiles',
-                                                                 'sdf']),
-                                       name='structure_format'
-                                       ))
-        filled = colander.Length(min=1)
-        structuresSchema = colander.SchemaNode(colander.String(),
-                                               validator=filled,
-                                               missing=colander.null,
-                                               name='structures')
-        schema.add(structuresSchema)
-        structures_fileSchema = colander.SchemaNode(self.File(),
-                                                    missing=colander.null,
-                                                    name='structures_file')
-        schema.add(structures_fileSchema)
-        schema.add(colander.SchemaNode(colander.Boolean(),
-                                       default=False,
-                                       missing=False,
-                                       name='metabolize'))
-        if has_ms_data:
-            self._addAnnotateSchema(schema)
-        if ('metabolize' in params):
-            self._addMetabolizeSchema(schema)
         if hasattr(params, 'mixed'):
             # unflatten multidict
             params = params.mixed()
         if ('metabolism_types' in params and
                 isinstance(params['metabolism_types'], basestring)):
             params['metabolism_types'] = [params['metabolism_types']]
+
         params = schema.deserialize(params)
 
         metsfile = file(os.path.join(self.dir, 'structures.dat'), 'w')
@@ -248,7 +259,7 @@ class JobQuery(object):
         self.script += script.format(structure_format=sf)
         self.prestaged.append('structures.dat')
 
-        if params['metabolize']:
+        if must_metabolize:
             self.script += " |"
             self.metabolize(params, has_ms_data, True)
         elif (has_ms_data):
@@ -299,9 +310,9 @@ class JobQuery(object):
 
         filled = colander.Length(min=1)
         msdata_stringSchema = colander.SchemaNode(colander.String(),
-                                               validator=filled,
-                                               missing=colander.null,
-                                               name='ms_data')
+                                                  validator=filled,
+                                                  missing=colander.null,
+                                                  name='ms_data')
         schema.add(msdata_stringSchema)
 
         msdata_fileSchema = colander.SchemaNode(self.File(),
@@ -459,8 +470,11 @@ class JobQuery(object):
         * max_broken_bonds
         * use_all_peaks, when key is set then all peaks are used
         * skip_fragmentation, when key is set then
-            the no fragmentation of structures is performed.
-        * structure_database, only used when ``structure_database_location`` is given
+            no fragmentation of structures is performed.
+        * fast, when key is set then
+            Quick calculations for molecules up to 64 atoms is used
+        * structure_database,
+            only used when ``structure_database_location`` is given
         * min_refscore, only used when ``structure_database_location`` is given
         * max_mz, only used when ``structure_database_location`` is given
 
@@ -497,11 +511,11 @@ class JobQuery(object):
                                          name='structure_database')
                 msg = 'Unable to locate structure database'
                 raise colander.Invalid(sd, msg)
-            script += "--structure_database '{structure_database}' --db_options '{db_options}' "
+            script += "--structure_database '{structure_database}'"
+            script += " --db_options '{db_options}' "
             sd = self.escape(params['structure_database'])
             script_substitutions['structure_database'] = sd
-            db_options = '{},{},{}'.format(
-                                           structure_database_location,
+            db_options = '{},{},{}'.format(structure_database_location,
                                            self.escape(params['min_refscore']),
                                            self.escape(params['max_mz']),
                                            )
@@ -513,7 +527,10 @@ class JobQuery(object):
             script += '-u '
 
         if params['skip_fragmentation']:
-            script += '-f '
+            script += '--skip_fragmentation '
+
+        if params['fast']:
+            script += '--fast '
 
         if from_subset:
             script += '-j - '
@@ -555,7 +572,8 @@ class JobQuery(object):
             else:
                 sd = colander.SchemaNode(colander.String(),
                                          name='structure_database')
-                msg = 'Either structures or structures_file or structure_database must be set'
+                msg = 'Either structures or structures_file'
+                msg += ' or structure_database must be set'
                 e.add(colander.Invalid(sd, msg))
                 raise e
         if metabolize:
@@ -571,20 +589,21 @@ class JobQuery(object):
         if selection == 'example':
             return cls._example()
 
-        return dict(
-            n_reaction_steps=2,
-            metabolism_types=['phase1', 'phase2'],
-            ionisation_mode=1,
-            skip_fragmentation=False,
-            ms_intensity_cutoff=1000000.0,
-            msms_intensity_cutoff=0.1,
-            mz_precision=5.0,
-            mz_precision_abs=0.001,
-            use_all_peaks=False,
-            abs_peak_cutoff=1000,
-            max_ms_level=10,
-            precursor_mz_precision=0.005,
-            max_broken_bonds=4)
+        return dict(n_reaction_steps=2,
+                    metabolism_types=['phase1', 'phase2'],
+                    ionisation_mode=1,
+                    skip_fragmentation=False,
+                    ms_intensity_cutoff=1000000.0,
+                    msms_intensity_cutoff=0.1,
+                    mz_precision=5.0,
+                    mz_precision_abs=0.001,
+                    use_all_peaks=False,
+                    abs_peak_cutoff=1000,
+                    max_ms_level=10,
+                    precursor_mz_precision=0.005,
+                    max_broken_bonds=4,
+                    fast=False,
+                    )
 
     @classmethod
     def _example(cls):
@@ -624,20 +643,21 @@ class JobQuery(object):
             '    353.087097: 4146696',
             '    )'
         ]
-        return dict(
-            ms_data="\n".join(example_tree),
-            ms_data_format='tree',
-            ionisation_mode=-1,
-            skip_fragmentation=False,
-            ms_intensity_cutoff=0,
-            msms_intensity_cutoff=0,
-            mz_precision=5,
-            mz_precision_abs=0,
-            use_all_peaks=False,
-            abs_peak_cutoff=1000,
-            max_ms_level=10,
-            precursor_mz_precision=0.005,
-            max_broken_bonds=3)
+        return dict(ms_data="\n".join(example_tree),
+                    ms_data_format='tree',
+                    ionisation_mode=-1,
+                    skip_fragmentation=False,
+                    ms_intensity_cutoff=0,
+                    msms_intensity_cutoff=0,
+                    mz_precision=5,
+                    mz_precision_abs=0,
+                    use_all_peaks=False,
+                    abs_peak_cutoff=1000,
+                    max_ms_level=10,
+                    precursor_mz_precision=0.005,
+                    max_broken_bonds=3,
+                    fast=False,
+                    )
 
 
 class JobFactory(object):
@@ -769,7 +789,7 @@ class JobFactory(object):
 
         # session for job db
         session = self._makeJobSession(jobid)
-        Base.metadata.create_all(session.connection())
+        Base.metadata.create_all(session.connection())  # @UndefinedVariable
         db = JobDb(session)
 
         #register job in user db
@@ -910,19 +930,19 @@ class JobFactory(object):
 class Job(object):
     """Job contains results database of Magma calculation run"""
 
-    def __init__(self, meta, dir, db=None):
+    def __init__(self, meta, directory, db=None):
         """
         meta
             :class:`magmaweb.user.JobMeta` instance.
             For owner, parent etc.
 
-        dir
+        directory
             Directory where input and output files reside
 
         db
             :class:`JobDb` instance
         """
-        self.dir = dir
+        self.dir = directory
         self.meta = meta
 
         if db is not None:
@@ -948,48 +968,48 @@ class Job(object):
         return JobQuery(self.dir,
                         status_callback_url=status_callback_url)
 
-    @property
-    def description(self):
+    def get_description(self):
         """Description string of job"""
         return self.meta.description
 
-    @description.setter
-    def description(self, description):
+    def set_description(self, description):
         """Sets description in JobMeta and JobDb.runInfo() if present"""
         self.meta.description = description
         run = self.db.runInfo()
         if run is not None:
             run.description = description
 
-    @property
-    def parent(self):
+    description = property(get_description, set_description)
+
+    def get_parent(self):
         """Identifier of parent job"""
         return self.meta.parentjobid
 
-    @parent.setter
-    def parent(self, parent):
+    def set_parent(self, parent):
         self.meta.parentjobid = parent
 
-    @property
-    def owner(self):
+    parent = property(get_parent, set_parent)
+
+    def get_owner(self):
         """User id which owns this job"""
         return self.meta.owner
 
-    @owner.setter
-    def owner(self, userid):
+    def set_owner(self, userid):
         self.meta.owner = userid
 
-    @property
-    def state(self):
+    owner = property(get_owner, set_owner)
+
+    def get_state(self):
         """Returns state of job
 
         See ibis org.gridlab.gat.resources.Job.JobState for possible states.
         """
         return self.meta.state
 
-    @state.setter
-    def state(self, newstate):
+    def set_state(self, newstate):
         self.meta.state = newstate
+
+    state = property(get_state, set_state)
 
     def stderr(self):
         """Returns stderr text file or empty file if stderr does not exist"""
@@ -1003,13 +1023,11 @@ class Job(object):
         """Datetime when job was created"""
         return self.meta.created_at
 
-    @property
-    def ms_filename(self):
+    def get_ms_filename(self):
         """Filename of MS datafile"""
         return self.meta.ms_filename
 
-    @ms_filename.setter
-    def ms_filename(self, ms_filename):
+    def set_ms_filename(self, ms_filename):
         """Sets Filename of MS datafile in
         JobMeta and JobDb.runInfo(0 if present
         """
@@ -1017,6 +1035,8 @@ class Job(object):
         run = self.db.runInfo()
         if run is not None:
             run.ms_filename = ms_filename
+
+    ms_filename = property(get_ms_filename, set_ms_filename)
 
     def delete(self):
         """Deletes job from user database and deletes job directory"""
@@ -1040,36 +1060,92 @@ class JobDb(object):
         """Returns last run info or None if there is no run info"""
         # cache run info to prevent 'database is locked' errors
         if not hasattr(self, '_runInfo'):
-            self._runInfo = self.session.query(Run).order_by(Run.runid.desc()).first()
+            q = self.session.query(Run).order_by(Run.runid.desc())
+            self._runInfo = q.first()
         return self._runInfo
 
     def metabolitesTotalCount(self):
         """Returns unfiltered and not paged count of metabolites"""
         return self.session.query(Metabolite).count()
 
-    def extjsgridfilter(self, q, column, filter):
+    def extjsgridfilter(self, q, column, afilter):
         """Query helper to convert a extjs grid filter dict
         to a sqlalchemy query filter
 
         """
-        if (filter['type'] == 'numeric'):
-            if (filter['comparison'] == 'eq'):
-                return q.filter(column == filter['value'])
-            if (filter['comparison'] == 'gt'):
-                return q.filter(column > filter['value'])
-            if (filter['comparison'] == 'lt'):
-                return q.filter(column < filter['value'])
-        elif (filter['type'] == 'string'):
-            return q.filter(column.contains(filter['value']))
-        elif (filter['type'] == 'list'):
-            return q.filter(column.in_(filter['value']))
-        elif (filter['type'] == 'boolean'):
-            return q.filter(column == filter['value'])
-        elif (filter['type'] == 'null'):
-            if not filter['value']:
+        if (afilter['type'] == 'numeric'):
+            if (afilter['comparison'] == 'eq'):
+                return q.filter(column == afilter['value'])
+            if (afilter['comparison'] == 'gt'):
+                return q.filter(column > afilter['value'])
+            if (afilter['comparison'] == 'lt'):
+                return q.filter(column < afilter['value'])
+        elif (afilter['type'] == 'string'):
+            return q.filter(column.contains(afilter['value']))
+        elif (afilter['type'] == 'list'):
+            return q.filter(column.in_(afilter['value']))
+        elif (afilter['type'] == 'boolean'):
+            return q.filter(column == afilter['value'])
+        elif (afilter['type'] == 'null'):
+            if not afilter['value']:
                 return q.filter(column == null())  # IS NULL
             else:
                 return q.filter(column != null())  # IS NOT NULL
+
+    def _metabolitesQuery2Rows(self, start, limit, q):
+        mets = []
+        for r in q[start: limit + start]:
+            met = r.Metabolite
+            row = {'metid': met.metid,
+                   'mol': met.mol,
+                   'level': met.level,
+                   'probability': met.probability,
+                   'reactionsequence': met.reactionsequence,
+                   'smiles': met.smiles,
+                   'molformula': met.molformula,
+                   'isquery': met.isquery,
+                   'origin': met.origin,
+                   'nhits': met.nhits,
+                   'mim': met.mim,
+                   'logp': met.logp,
+                   'assigned': r.assigned > 0,
+                   'reference': met.reference,
+                   }
+            if ('score' in r.keys()):
+                row['score'] = r.score
+                row['deltappm'] = r.deltappm
+            mets.append(row)
+
+        return mets
+
+    def _addSortingToMetabolitesQuery(self,
+                                      sorts,
+                                      scanid,
+                                      q,
+                                      fragal,
+                                      assign_q):
+        for col3 in sorts:
+            if col3['property'] == 'assigned':
+                col2 = assign_q.c.assigned
+            elif (col3['property'] == 'score'):
+                if (scanid is not None):
+                    col2 = fragal.score
+                else:
+                    raise ScanRequiredError()
+            elif (col3['property'] == 'deltappm'):
+                if (scanid is not None):
+                    col2 = fragal.deltappm
+                else:
+                    raise ScanRequiredError()
+            else:
+                cprop = col3['property']
+                col2 = Metabolite.__dict__[cprop]  # @UndefinedVariable
+            if (col3['direction'] == 'DESC'):
+                q = q.order_by(desc(col2))
+            elif (col3['direction'] == 'ASC'):
+                q = q.order_by(asc(col2))
+
+        return q
 
     def metabolites(self,
                     start=0, limit=10,
@@ -1096,10 +1172,9 @@ class JobDb(object):
                  {"property":"metid","direction":"ASC"}]
 
         """
-        sorts = sorts or [{"property":"probability", "direction":"DESC"},
-                          {"property":"metid", "direction":"ASC"}]
+        sorts = sorts or [{"property": "probability", "direction": "DESC"},
+                          {"property": "metid", "direction": "ASC"}]
         filters = filters or []
-        mets = []
         q = self.session.query(Metabolite)
 
         # custom filters
@@ -1113,75 +1188,38 @@ class JobDb(object):
 
         # add assigned column
         assigned = func.count('*').label('assigned')
-        stmt2 = self.session.query(Peak.assigned_metid, assigned)
-        stmt2 = stmt2.filter(Peak.assigned_metid != null())
-        stmt2 = stmt2.group_by(Peak.assigned_metid).subquery()
-        q = q.add_columns(stmt2.c.assigned).\
-            outerjoin(stmt2, Metabolite.metid == stmt2.c.assigned_metid)
+        assign_q = self.session.query(Peak.assigned_metid, assigned)
+        assign_q = assign_q.filter(Peak.assigned_metid != null())
+        assign_q = assign_q.group_by(Peak.assigned_metid).subquery()
+        q = q.add_columns(assign_q.c.assigned).\
+            outerjoin(assign_q, Metabolite.metid == assign_q.c.assigned_metid)
 
-        for filter in filters:
-            if filter['field'] == 'assigned':
-                col = stmt2.c.assigned
-                filter['type'] = 'null'
-            elif (filter['field'] == 'score'):
+        for afilter in filters:
+            if afilter['field'] == 'assigned':
+                col = assign_q.c.assigned
+                afilter['type'] = 'null'
+            elif (afilter['field'] == 'score'):
                 if (scanid is not None):
                     col = fragal.score
                 else:
                     raise ScanRequiredError()
-            elif (filter['field'] == 'deltappm'):
+            elif (afilter['field'] == 'deltappm'):
                 if (scanid is not None):
                     col = fragal.deltappm
                 else:
                     raise ScanRequiredError()
             else:
                 # generic filters
-                col = Metabolite.__dict__[filter['field']]
-            q = self.extjsgridfilter(q, col, filter)
+                ffield = afilter['field']
+                col = Metabolite.__dict__[ffield]  # @UndefinedVariable
+            q = self.extjsgridfilter(q, col, afilter)
 
         total = q.count()
 
-        for col in sorts:
-            if col['property'] == 'assigned':
-                col2 = stmt2.c.assigned
-            elif (col['property'] == 'score'):
-                if (scanid is not None):
-                    col2 = fragal.score
-                else:
-                    raise ScanRequiredError()
-            elif (col['property'] == 'deltappm'):
-                if (scanid is not None):
-                    col2 = fragal.deltappm
-                else:
-                    raise ScanRequiredError()
-            else:
-                col2 = Metabolite.__dict__[col['property']]
-            if (col['direction'] == 'DESC'):
-                q = q.order_by(desc(col2))
-            elif (col['direction'] == 'ASC'):
-                q = q.order_by(asc(col2))
+        q = self._addSortingToMetabolitesQuery(sorts, scanid,
+                                               q, fragal, assign_q)
 
-        for r in q[start:(limit + start)]:
-            met = r.Metabolite
-            row = {
-                'metid': met.metid,
-                'mol': met.mol,
-                'level': met.level,
-                'probability': met.probability,
-                'reactionsequence': met.reactionsequence,
-                'smiles': met.smiles,
-                'molformula': met.molformula,
-                'isquery': met.isquery,
-                'origin': met.origin,
-                'nhits': met.nhits,
-                'mim': met.mim,
-                'logp': met.logp,
-                'assigned': r.assigned > 0,
-                'reference': met.reference
-            }
-            if ('score' in r.keys()):
-                row['score'] = r.score
-                row['deltappm'] = r.deltappm
-            mets.append(row)
+        mets = self._metabolitesQuery2Rows(start, limit, q)
 
         return {'total': total, 'rows': mets}
 
@@ -1272,26 +1310,29 @@ class JobDb(object):
         if (metid is not None):
             fq = fq.filter(Fragment.metid == metid)
 
-        for filter in filters:
-            has_no_hit_filter = (filter['field'] == 'nhits'
-                                 and filter['comparison'] == 'gt'
-                                 and filter['value'] == 0)
+        for afilter in filters:
+            has_no_hit_filter = (afilter['field'] == 'nhits'
+                                 and afilter['comparison'] == 'gt'
+                                 and afilter['value'] == 0)
             if has_no_hit_filter:
                 continue
-            if (filter['field'] == 'score'):
-                fq = self.extjsgridfilter(fq, Fragment.score, filter)
-            elif (filter['field'] == 'deltappm'):
-                fq = self.extjsgridfilter(fq, Fragment.deltappm, filter)
-            elif (filter['field'] == 'assigned'):
-                filter['type'] = 'null'
+            if (afilter['field'] == 'score'):
+                fq = self.extjsgridfilter(fq, Fragment.score, afilter)
+            elif (afilter['field'] == 'deltappm'):
+                fq = self.extjsgridfilter(fq, Fragment.deltappm, afilter)
+            elif (afilter['field'] == 'assigned'):
+                afilter['type'] = 'null'
                 fq = fq.join(Peak, and_(Fragment.scanid == Peak.scanid,
                                         Fragment.mz == Peak.mz))
-                fq = self.extjsgridfilter(fq, Peak.assigned_metid, filter)
+                fq = self.extjsgridfilter(fq, Peak.assigned_metid, afilter)
             else:
-                fq = fq.join(Metabolite, Fragment.metabolite)
+                fq = fq.join(Metabolite,
+                             Fragment.metabolite)  # @UndefinedVariable
+                ffield = afilter['field']
+                fcol = Metabolite.__dict__[ffield]  # @UndefinedVariable
                 fq = self.extjsgridfilter(fq,
-                                          Metabolite.__dict__[filter['field']],
-                                          filter
+                                          fcol,
+                                          afilter
                                           )
 
         hits = []
@@ -1404,6 +1445,34 @@ class JobDb(object):
                 'precursor': precursor,
                 }
 
+    def _fragmentsQuery(self):
+        return self.session.query(Fragment,
+                                  Metabolite.mol,
+                                  Scan.mslevel).join(Metabolite).join(Scan)
+
+    def _fragment2json(self, row):
+        (frag, mol, mslevel) = row
+        f = {
+            'fragid': frag.fragid,
+            'scanid': frag.scanid,
+            'metid': frag.metid,
+            'score': frag.score,
+            'mol': mol,
+            'atoms': frag.atoms,
+            'mz': frag.mz,
+            'mass': frag.mass,
+            'deltah': frag.deltah,
+            'mslevel': mslevel,
+            'deltappm': frag.deltappm
+        }
+        if (len(frag.children) > 0):
+            f['expanded'] = False
+            f['leaf'] = False
+        else:
+            f['expanded'] = True
+            f['leaf'] = True
+        return f
+
     def fragments(self, scanid, metid, node):
         """Returns fragments of a metabolite on a scan.
 
@@ -1424,42 +1493,15 @@ class JobDb(object):
         Raises FragmentNotFound when no fragment is found
         with the given scanid/metid combination
         """
-        def q():
-            return self.session.query(Fragment,
-                                      Metabolite.mol,
-                                      Scan.mslevel).join(Metabolite).join(Scan)
-
-        def fragment2json(row):
-            (frag, mol, mslevel) = row
-            f = {
-                'fragid': frag.fragid,
-                'scanid': frag.scanid,
-                'metid': frag.metid,
-                'score': frag.score,
-                'mol': mol,
-                'atoms': frag.atoms,
-                'mz': frag.mz,
-                'mass': frag.mass,
-                'deltah': frag.deltah,
-                'mslevel': mslevel,
-                'deltappm': frag.deltappm
-            }
-            if (len(frag.children) > 0):
-                f['expanded'] = False
-                f['leaf'] = False
-            else:
-                f['expanded'] = True
-                f['leaf'] = True
-            return f
 
         # parent metabolite
         if (node == 'root'):
             structures = []
-            pms = q().filter(Fragment.scanid == scanid)
+            pms = self._fragmentsQuery().filter(Fragment.scanid == scanid)
             pms = pms.filter(Fragment.metid == metid)
             pms = pms.filter(Fragment.parentfragid == 0)
             for row in pms:
-                structure = fragment2json(row)
+                structure = self._fragment2json(row)
 
                 qa = self.session.query(func.count('*')).\
                     filter(Peak.scanid == scanid).\
@@ -1469,9 +1511,10 @@ class JobDb(object):
                 # load children
                 structure['children'] = []
                 pf = Fragment.parentfragid
-                for frow in q().filter(pf == structure['fragid']):
+                cq = self._fragmentsQuery().filter(pf == structure['fragid'])
+                for frow in cq:
                     structure['expanded'] = True
-                    structure['children'].append(fragment2json(frow))
+                    structure['children'].append(self._fragment2json(frow))
                 structures.append(structure)
 
             if (len(structures) == 0):
@@ -1480,8 +1523,9 @@ class JobDb(object):
         # fragments
         else:
             fragments = []
-            for row in q().filter(Fragment.parentfragid == node):
-                fragments.append(fragment2json(row))
+            fq = self._fragmentsQuery().filter(Fragment.parentfragid == node)
+            for row in fq:
+                fragments.append(self._fragment2json(row))
             return fragments
 
     def _peak(self, scanid, mz):
