@@ -95,8 +95,7 @@ Ext.onReady(function() {
       flex:1 // aligns buttongroup right
     }, {
       xtype: 'component',
-      cls: 'x-logo',
-      html: '<a href="http://www.esciencecenter.nl"></a>'
+      contentEl: 'logos'
     }]
   };
 
@@ -135,5 +134,6 @@ Ext.onReady(function() {
 					calculation</a></li>
 		</ul>
 	</div>
+	<%include file="logos.mak"/>
 </body>
 </html>
