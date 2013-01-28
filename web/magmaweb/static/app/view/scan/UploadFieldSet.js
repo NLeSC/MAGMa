@@ -13,6 +13,9 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
          'Ext.form.field.File',
          'Ext.container.Container'
     ],
+	defaults : {
+	    labelWidth : 300
+	},
     items: [{
         xtype: 'combo',
         store: [['mzxml','mzXML'], ['tree', 'Tree']],
@@ -52,25 +55,18 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
 	        value : '&nbsp;<a href="help/example">Information on example</a>'
     	}]
     },{
-        xtype: 'fieldset',
-        title: 'MS data options',
-        collapsed: true,
-        collapsible: true,
-        defaults: { labelWidth: 300 },
-        items: [{
-            xtype: 'numberfield',
-            name: 'max_ms_level',
-            fieldLabel: 'Maximum MS level',
-            allowBlank: false,
-            minValue: 1,
-            maxValue: 15,
-            decimalPrecision: 0
-        }, {
-            xtype: 'numberfield',
-            name: 'abs_peak_cutoff',
-            fieldLabel: 'Absolute intensity threshold for storing peaks in database',
-            allowBlank: false,
-            decimalPrecision: 5
-        }]
+        xtype: 'numberfield',
+        name: 'max_ms_level',
+        fieldLabel: 'Maximum MS level',
+        allowBlank: false,
+        minValue: 1,
+        maxValue: 15,
+        decimalPrecision: 0
+    }, {
+        xtype: 'numberfield',
+        name: 'abs_peak_cutoff',
+        fieldLabel: 'Absolute intensity threshold for storing peaks in database',
+        allowBlank: false,
+        decimalPrecision: 5
     }]
 });
