@@ -201,6 +201,9 @@ class Views(object):
         home = self.request.route_url('home')
         return HTTPFound(location=home, headers=headers)
 
+    @view_config(route_name='help', renderer='help.mak')
+    def help(self):
+        return {}
 
 @view_defaults(context=Job, permission='view')
 class JobViews(object):
