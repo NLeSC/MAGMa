@@ -39,6 +39,7 @@ def main(global_config, **settings):
 
     # for everyone
     config.add_route('home', '/')
+    config.add_route('help', '/help')
     config.add_route('login', '/login')
 
     # for authenticated users

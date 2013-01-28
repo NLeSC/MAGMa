@@ -409,6 +409,13 @@ class ViewsTestCase(AbstractViewsTestCase):
         policy.encode_mac_id.assert_called_with(request, 'bob',
                                                 expires=1355000360)
 
+    def test_help(self):
+        request = testing.DummyRequest()
+        views = Views(request)
+        response = views.help()
+
+        self.assertEqual(response, {})
+
 
 class JobViewsTestCase(AbstractViewsTestCase):
     """ Test case for magmaweb.views.JobViews"""
