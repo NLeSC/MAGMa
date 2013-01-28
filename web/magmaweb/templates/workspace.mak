@@ -168,7 +168,7 @@ Ext.onReady(function() {
         hrefTarget: '_self'
       }, {
         text: 'Help',
-        href: '../help'
+        href: "${request.route_url('help')}"
       }, {
         text: 'Workspace',
         tooltip: 'My settings and jobs',
