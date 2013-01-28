@@ -64,9 +64,11 @@ Ext.onReady(function() {
       xtype: 'buttongroup',
       columns: 2,
       items: [{
-        text: 'Help',
-        tooltip: 'Goto help pages',
+        text: 'Home',
         disabled: true
+      }, {
+        text: 'Help',
+        href: '../help'
       }, {
         text: 'Workspace',
         tooltip: 'My settings and jobs',

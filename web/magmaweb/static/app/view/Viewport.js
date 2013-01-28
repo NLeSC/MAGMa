@@ -23,10 +23,12 @@ Ext.define('Esc.magmaweb.view.Viewport', {
               xtype: 'buttongroup',
               columns: 3,
               items: [{
-                  text: 'Restart',
-                  tooltip: 'Upload a new dataset',
-              	  href: '../start',
-              	  hrefTarget: '_self'
+                  text: 'Home',
+                  href: '../',
+                  hrefTarget: '_self'
+              }, {
+                  text: 'Help',
+                  href: '../help'
               }, {
                   text: 'Annotate',
                   tooltip: 'Annotate all structures',
@@ -34,18 +36,10 @@ Ext.define('Esc.magmaweb.view.Viewport', {
                   iconCls: 'icon-annot',
                   disabled: true
               }, {
-                  text: 'Help',
-                  tooltip: 'Goto help pages',
-                  disabled: true
-              }, {
-                  text: 'Information',
-                  tooltip: 'Information about input parameters',
-                  action: 'information'
-              }, {
                   text: 'Workspace',
-              	  tooltip: 'My settings and jobs',
-              	  href: '../workspace',
-              	  hrefTarget: '_self'
+             	  tooltip: 'My settings and jobs',
+             	  href: '../workspace',
+            	  hrefTarget: '_self'
               }, {
                   text: 'Logout',
               	  href: '../logout',
@@ -54,6 +48,10 @@ Ext.define('Esc.magmaweb.view.Viewport', {
                   text: 'Login',
                   href: "../login",
                   hrefTarget: '_self'
+              }, {
+                  text: 'Information',
+                  tooltip: 'Information about input parameters',
+                  action: 'information'
               }]
           }, {
             xtype:'tbspacer',
