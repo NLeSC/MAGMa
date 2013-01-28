@@ -387,7 +387,8 @@ class JobQuery(object):
             params['metabolism_types'] = [params['metabolism_types']]
         params = schema.deserialize(params)
 
-        script = "{{magma}} metabolize -s '{n_reaction_steps}'"
+        script = "{{magma}} metabolize"
+        script += " --n_reaction_steps '{n_reaction_steps}'"
         script += " -m '{metabolism_types}'"
         metabolism_types = ','.join(params['metabolism_types'])
         script_substitution = {
@@ -435,7 +436,8 @@ class JobQuery(object):
         params = schema.deserialize(params)
 
         script = "echo '{metid}' | {{magma}} metabolize -j - "
-        script += "-s '{n_reaction_steps}' -m '{metabolism_types}' {{db}}"
+        script += "--n_reaction_steps '{n_reaction_steps}' "
+        script += "-m '{metabolism_types}' {{db}}"
         metabolism_types = ','.join(params['metabolism_types'])
         script_substitutions = {
             'metid': self.escape(params['metid']),
