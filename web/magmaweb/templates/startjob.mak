@@ -83,14 +83,6 @@ Ext.onReady(function() {
     },{
       text: 'Submit',
       handler: function(){
-          var form = this.up('form').getForm();
-          var mol = sketcher.getMolecule();
-          if (mol.bonds.length > 0) {
-              form.setValues({
-                 structures_format: 'sdf',
-                 structures_area: ChemDoodle.writeMOL(mol)
-              });
-          }
           if(form.isValid()){
               // TODO test if structures textarea or file is filled
               form.submit({

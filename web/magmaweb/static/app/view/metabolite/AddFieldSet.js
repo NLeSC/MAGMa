@@ -93,7 +93,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
 	                        if (mol.bonds.length > 0) {
 	                            var molblock = ChemDoodle.writeMOL(mol);
 	                            form.setValues({
-	                                structures_format: 'sdf',
+	                                structure_format: 'sdf',
 	                                structures_area: molblock
 	                            });
 	                        }
