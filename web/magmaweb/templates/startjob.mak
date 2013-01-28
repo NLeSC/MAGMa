@@ -228,6 +228,10 @@ Ext.onReady(function() {
   };
 
   user_authenticated(${json.dumps(request.user is not None)});
+
+  // hide interactive job run starting points
+  Ext.ComponentQuery.query('component[text=Start from scratch]')[0].hide();
+  Ext.ComponentQuery.query('component[text=Upload result]')[0].disable();
 });
 </script>
 </head>
