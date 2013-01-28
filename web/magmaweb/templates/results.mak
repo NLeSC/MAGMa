@@ -111,5 +111,6 @@ Ext.onReady(function() {
 			sketcher.toolbarManager.buttonOpen.disable();
 		</script>
 	</div>
+	<%include file="logos.mak"/>
 </body>
 </html>
