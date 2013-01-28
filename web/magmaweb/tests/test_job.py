@@ -1787,7 +1787,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
 
         sf = 'structures.dat'
         script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
-        script += "{magma} metabolize -s '2' -m 'phase1,phase2' -j - {db}\n"
+        script += "{magma} metabolize --n_reaction_steps '2' -m 'phase1,phase2' -j - {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [sf],
                                      'script': script
@@ -1837,7 +1837,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
 
         sf = 'structures.dat'
         script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
-        script += "{magma} metabolize -s '2' -m 'phase2' -j - {db} |"
+        script += "{magma} metabolize --n_reaction_steps '2' -m 'phase2' -j - {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1'"
         script += " -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
@@ -2025,7 +2025,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize(params)
 
-        script = "{magma} metabolize -s '2' -m 'phase1' {db}\n"
+        script = "{magma} metabolize --n_reaction_steps '2' -m 'phase1' {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [],
                                      'script': script
@@ -2047,7 +2047,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                             ])
         query = self.jobquery.metabolize(params, True)
 
-        script = "{magma} metabolize -s '2' -m 'phase1,phase2' {db} |"
+        script = "{magma} metabolize --n_reaction_steps '2' -m 'phase1,phase2' {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
@@ -2069,7 +2069,7 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize_one(params)
 
-        script = "echo '123' | {magma} metabolize -j - -s '2'"
+        script = "echo '123' | {magma} metabolize -j - --n_reaction_steps '2'"
         script += " -m 'phase1,phase2' {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [],
@@ -2093,7 +2093,7 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize_one(params, True)
 
-        script = "echo '123' | {magma} metabolize -j - -s '2' "
+        script = "echo '123' | {magma} metabolize -j - --n_reaction_steps '2' "
         script += "-m 'phase1' {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
@@ -2282,7 +2282,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += "{magma} add_structures -t 'smiles'"
         expected_script += " structures.dat {db}\n"
 
-        expected_script += "{magma} metabolize -s '2' -m 'phase1,phase2'"
+        expected_script += "{magma} metabolize --n_reaction_steps '2' -m 'phase1,phase2'"
         expected_script += " {db}\n"
 
         expected_script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0'"
