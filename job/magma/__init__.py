@@ -757,11 +757,11 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_small_losses,
                                (besthit.score == childhit.score and abs(besthit.deltaH) > abs(childhit.deltaH)) or \
                                fragment_engine.score_fragment_rel2parent(besthit.fragment,fragment) > fragment_engine.score_fragment_rel2parent(childhit.fragment,fragment):
                             besthit=childhit
-                hit.besthits.append(besthit)
                 if besthit.score==None:
                     total_score+=childpeak.missing_fragment_score
                     # total_score+=missingfragmentpenalty*weight
                 else:
+                    hit.besthits.append(besthit)
                     total_score+=min(besthit.score,childpeak.missing_fragment_score)
                     # total_score+=min(besthit.score,missingfragmentpenalty)*weight
             hit.score = hit.score + total_score
