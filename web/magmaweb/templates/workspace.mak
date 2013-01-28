@@ -168,8 +168,7 @@ Ext.onReady(function() {
         hrefTarget: '_self'
       }, {
         text: 'Help',
-        tooltip: 'Goto help pages',
-        disabled: true
+        href: '../help'
       }, {
         text: 'Workspace',
         tooltip: 'My settings and jobs',

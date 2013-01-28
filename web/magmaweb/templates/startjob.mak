@@ -164,17 +164,20 @@ Ext.onReady(function() {
 	},
 	items: [{
 	  xtype: 'buttongroup',
-	  columns: 2,
+	  columns: 3,
 	  items: [{
-	    text: 'Help',
-	    tooltip: 'Goto help pages',
-	    disabled: true
-	  }, {
-	    text: 'Upload result',
-	    tooltip: 'Upload a result db for viewing',
-	    href: '${request.route_url('uploaddb')}',
-        hrefTarget: '_self'
+        text: 'Home',
+    	href: "${request.route_url('home')}",
+    	hrefTarget: '_self'
       }, {
+        text: 'Help',
+        href: '../help'
+      }, {
+  	    text: 'Upload result',
+        tooltip: 'Upload a result db for viewing',
+        href: '${request.route_url('uploaddb')}',
+        hrefTarget: '_self'
+	  }, {
         text: 'Workspace',
         tooltip: 'My settings and jobs',
         href: "${request.route_url('workspace')}",
