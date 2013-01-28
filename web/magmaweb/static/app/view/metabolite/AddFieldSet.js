@@ -91,6 +91,10 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
 	                        var mol = sketcher.getMolecule();
 	                        if (mol.bonds.length > 0) {
 	                            var molblock = ChemDoodle.writeMOL(mol);
+	                            // rdkit does not like v2000 in sdf
+	                            // replace them with V2000
+	                            // See https://github.com/NLeSC/MAGMa/issues/88
+	                            molblock = molblock.replace("v2000",'V2000');
 	                            form.setValues({
 	                                structure_format: 'sdf',
 	                                structures_area: molblock
