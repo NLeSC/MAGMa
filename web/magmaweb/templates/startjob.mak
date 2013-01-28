@@ -55,25 +55,33 @@ Ext.onReady(function() {
     bodyPadding: 5,
     defaults: { bodyPadding: 5 },
     autoScroll: true,
+    layout: {
+    	type: 'hbox',
+    	align: 'stretch'
+    },
+    defaults: {
+    	flex: 1,
+    	bodyPadding: 5,
+    	border: false
+    },
     items:[{
-        contentEl: 'welcome',
-        border: false
+    	items: [{
+        	title: 'Molecules',
+            xtype : 'addstructurefieldset'
+        }, {
+        	title: 'MS Data',
+            xtype : 'uploadmsdatafieldset'
+    	}]
     }, {
-    	title: 'Molecules',
-        xtype : 'addstructurefieldset'
-    }, {
-    	title: 'MS Data',
-        xtype : 'uploadmsdatafieldset'
-    }, {
-        xtype : 'metabolizefieldset',
-        checkboxToggle: true,
-        checkboxName: 'metabolize',
-        collapsed : true,
-        collapsible : true
-    }, {
-        xtype : 'annotatefieldset',
-        collapsed : true,
-        collapsible : true
+    	items: [{
+            xtype : 'metabolizefieldset',
+            checkboxToggle: true,
+            checkboxName: 'metabolize',
+            collapsed : true,
+            collapsible : true
+        }, {
+            xtype : 'annotatefieldset'
+    	}]
     }],
     buttons: [{
       text: 'Start from scratch',
@@ -84,7 +92,6 @@ Ext.onReady(function() {
       text: 'Submit',
       handler: function(){
           if(form.isValid()){
-              // TODO test if structures textarea or file is filled
               form.submit({
                   url: '${request.route_url('startjob')}',
                   waitMsg: 'Uploading your data...',
@@ -223,7 +230,7 @@ Ext.onReady(function() {
 </head>
 <body>
 	<div id="sketcher_content" class="x-hidden">
-		<script language="javascript">
+		<script type="text/javascript">
 			var sketcher = new ChemDoodle.SketcherCanvas(
 		        'sketcher_canvas', 500, 300, {
 	        		useServices: false, oneMolecule: true
@@ -234,12 +241,6 @@ Ext.onReady(function() {
 			sketcher.toolbarManager.buttonSave.disable();
 			sketcher.toolbarManager.buttonOpen.disable();
 		</script>
-	</div>
-	<div id="welcome" class="x-hidden">
-		<h1>
-			Welcome to the <b>M</b>s <b>A</b>nnotation based on in silico <b>G</b>enerated
-			<b>M</b>et<b>a</b>bolites application
-		</h1>
 	</div>
 </body>
 </html>
