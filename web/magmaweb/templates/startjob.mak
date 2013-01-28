@@ -203,8 +203,7 @@ Ext.onReady(function() {
 	  flex:1 // aligns buttongroup right
 	}, {
 	  xtype: 'component',
-	  cls: 'x-logo',
-	  html: '<a href="http://www.esciencecenter.nl"></a>'
+	  contentEl: 'logos'
 	}]
   };
 
@@ -249,5 +248,6 @@ Ext.onReady(function() {
 			sketcher.toolbarManager.buttonOpen.disable();
 		</script>
 	</div>
+	<%include file="logos.mak"/>
 </body>
 </html>
