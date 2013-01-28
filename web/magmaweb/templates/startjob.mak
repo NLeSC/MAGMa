@@ -171,11 +171,11 @@ Ext.onReady(function() {
     	hrefTarget: '_self'
       }, {
         text: 'Help',
-        href: '../help'
+        href: "${request.route_url('help')}"
       }, {
   	    text: 'Upload result',
         tooltip: 'Upload a result db for viewing',
-        href: '${request.route_url('uploaddb')}',
+        href: "${request.route_url('uploaddb')}",
         hrefTarget: '_self'
 	  }, {
         text: 'Workspace',
