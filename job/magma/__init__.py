@@ -339,9 +339,8 @@ class MsDataEngine(object):
         self.db_session.commit()
 
     def store_manual_tree(self,manual_tree):
-        tree_string=open(manual_tree).read()
-        tree_list=re.split('([\,\(\)])',tree_string.replace(" ","").replace("\n",""))
-        print tree_list
+        tree_string=''.join(open(manual_tree).read().split()) # remove whitespaces (' ','\t','\n',etc) from tree_string
+        tree_list=re.split('([\,\(\)])',tree_string)
         self.global_scanid = 1
         self.store_manual_subtree(tree_list,0,0,0,1)
 
