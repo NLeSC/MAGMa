@@ -80,7 +80,8 @@ Ext.onReady(function() {
     app = Ext.create('Esc.magmaweb.resultsApp', {
       maxmslevel: ${maxmslevel},
       jobid: '${jobid}',
-      canRun: ${json.dumps(canRun)|n},
+      canRun: false, // don't allow starting job runs from results page
+      canAssign: ${json.dumps(canRun)|n},
       is_user_authenticated: ${json.dumps(request.user is not None)},
       urls: {
         home: '${request.route_path('home')}',

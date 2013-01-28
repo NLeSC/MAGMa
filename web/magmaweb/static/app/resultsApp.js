@@ -49,10 +49,15 @@ Ext.define('Esc.magmaweb.resultsApp', {
      */
     jobid: null,
     /**
-     * Whether user has rights to run actions like add structures or assign a peak to a structure.
+     * Whether user has rights to run actions like add structures or re-annotate.
      * @cfg {Boolean}
      */
     canRun: true,
+    /**
+     * Whether user has rights to (un)assign a peak to a structure.
+     * @cfg {Boolean}
+     */
+    canAssign: true,
     /**
      * Whether user is logged in, shows login or logout button.
      * @cfg {Boolean}

@@ -584,8 +584,8 @@ describe('Fragments', function() {
     	expect(ctrl.applyRole).toHaveBeenCalledWith();
     });
 
-    it('canrun', function() {
-  	  ctrl.application.canRun = true;
+    it('canassign', function() {
+  	  ctrl.application.canAssign = true;
       assignbut = jasmine.createSpyObj('abut', [ 'hide']);
       spyOn(ctrl,'getAssignStruct2PeakButton').andReturn(assignbut);
 
@@ -594,8 +594,8 @@ describe('Fragments', function() {
   	  expect(assignbut.hide).not.toHaveBeenCalledWith();
     });
 
-    it('cantrun', function() {
-  	  ctrl.application.canRun = false;
+    it('cantassign', function() {
+  	  ctrl.application.canAssign = false;
       assignbut = jasmine.createSpyObj('abut', [ 'hide']);
       spyOn(ctrl,'getAssignStruct2PeakButton').andReturn(assignbut);
 
