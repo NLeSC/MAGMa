@@ -4,7 +4,7 @@
  * The sketcher requires a dom element:
  *
  *      <div id="sketcher_content" class="x-hidden">
- *        <script language="javascript">
+ *        <script type="text/javascript">
  *            var sketcher = new ChemDoodle.SketcherCanvas(
  *                'sketcher_canvas', 500, 300,
  *                '${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/icons/')}',
@@ -31,12 +31,17 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
 	    xtype: 'tabpanel',
 	    activeTab : 0,
 	    defaults : {
+			border: false,
 	        bodyPadding : 5
 	    },
 	    plain : true,
+	    border: false,
 	    items : [{
 	    	title: 'Database',
 	    	id: 'structure_database_tab',
+		    defaults : {
+		        labelWidth : 300
+		    },
 	    	items: [{
 	    		xtype: 'combo',
 	    		fieldLabel: 'Database',
@@ -44,29 +49,23 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
 	    		emptyText: 'No database selected',
 	    		store: [['chebi', 'ChEBI'],['pubchem', 'PubChem']]
 	    	}, {
-	    		xtype: 'fieldset',
-	    		title: 'PubChem options',
-	            collapsed : true,
-	            collapsible : true,
-	            defaults: {
-	    	        labelWidth : 300
-	    		},
-	    		items: [{
-	    			xtype: 'numberfield',
-	    			fieldLabel: 'Minimum number of Depositor-Supplied Synonyms',
-	    			name: 'min_refscore',
-	    			minValue: 1,
-	    			value: 1
-	    		}, {
-	    			xtype: 'numberfield',
-	    			fieldLabel: 'Maximum m/z (mass-to-charge ratio)',
-	    			name: 'max_mz',
-	    			minValue: 1,
-	    			value: 9999
-	    		}]
+    			xtype: 'numberfield',
+    			fieldLabel: 'Minimum reference score based on nr. of synonyms and substances',
+    			name: 'min_refscore',
+    			minValue: 1,
+    			value: 1
+    		}, {
+    			xtype: 'numberfield',
+    			fieldLabel: 'Maximum m/z (mass-to-charge ratio)',
+    			name: 'max_mz',
+    			minValue: 1,
+    			value: 9999
 	    	}]
 	    }, {
 	        title : 'Upload',
+		    defaults : {
+		        labelWidth : 300
+		    },
 	        items : [{
 	                    xtype : 'combo',
 	                    name : 'structure_format',
@@ -93,7 +92,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
 	                        if (mol.bonds.length > 0) {
 	                            var molblock = ChemDoodle.writeMOL(mol);
 	                            form.setValues({
-	                                structures_format: 'sdf',
+	                                structure_format: 'sdf',
 	                                structures_area: molblock
 	                            });
 	                        }
