@@ -102,6 +102,7 @@ class Run(Base):
     ionisation_mode = Column(Integer)
     skip_fragmentation = Column(Boolean)
     max_broken_bonds = Column(Integer) #: max number of bonds broken in substructures generated from metabolites
+    max_water_losses = Column(Integer) #: max number of additional neutral water losses
     ms_intensity_cutoff = Column(Float) #: Absolute intensity minimum of lvl1 scan peaks which are matched with metabolites
     msms_intensity_cutoff = Column(Float) #: Ratio of basepeak intensity
     mz_precision = Column(Float) #: precision for matching a metabolite mim to m/z of a peak
