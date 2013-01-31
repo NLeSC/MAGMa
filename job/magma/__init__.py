@@ -519,7 +519,7 @@ class AnnotateEngine(object):
     def get_pubchem_candidates(self,fast,dbfilename='',min_refscore='',max_mz=''):
         where=''
         if dbfilename=='':
-            dbfilename='/media/PubChem/Pubchem_MAGMa.db'
+            dbfilename='/media/MAGMa_pubchem/Pubchem_MAGMa.db'
         if min_refscore!='':
             where += ' AND refscore >= '+min_refscore
         if fast:
