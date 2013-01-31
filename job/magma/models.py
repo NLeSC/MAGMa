@@ -30,6 +30,7 @@ class Metabolite(Base):
     origin = Column(Unicode) #: Name of molecule
     nhits = Column(Integer)
     mim = Column(Float) #: Monoisotopic mass
+    natoms = Column(Integer) #: Number of non-hydrogen atoms
     logp = Column(Float) #: Calculated logP
     reference = Column(Unicode)
     fragments = relationship('Fragment', backref='metabolite') #: each metabolite is fragmented into fragments
