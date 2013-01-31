@@ -85,7 +85,8 @@ class MagmaCommand(object):
         sc.add_argument('-d', '--msms_intensity_cutoff', help="Minimum intensity of of fragment peaks to be annotated, as fraction of basepeak (default: %(default)s)", default=0.1,type=float)
         sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
         sc.add_argument('-j', '--metids', type=argparse.FileType('rb'), help="File with structure ids")
-        sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bond breaks to generate substructures (default: %(default)s)", default=4,type=int)
+        sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bond breaks to generate substructures (default: %(default)s)", default=3,type=int)
+        sc.add_argument('-w', '--max_water_losses', help="Maximum number of additional neutral water losses (default: %(default)s)", default=1,type=int)
         sc.add_argument('--precursor_mz_precision', help="Mass precision for matching peaks and precursor ions (default: %(default)s)", default=0.005,type=float)
         sc.add_argument('-u', '--use_all_peaks', help="Annotate all level 1 peaks, including those not fragmented (default: %(default)s)", action="store_true")
         sc.add_argument('--skip_fragmentation', help="Skip substructure annotation of fragment peaks (default: %(default)s)", action="store_true")
@@ -200,6 +201,7 @@ class MagmaCommand(object):
         annotate_engine = magma_session.get_annotate_engine(ionisation_mode=args.ionisation_mode,
             skip_fragmentation=args.skip_fragmentation,
             max_broken_bonds=args.max_broken_bonds,
+            max_water_losses=args.max_water_losses,
             ms_intensity_cutoff=args.ms_intensity_cutoff,
             msms_intensity_cutoff=args.msms_intensity_cutoff,
             mz_precision=args.mz_precision,

@@ -27,8 +27,6 @@ generate 2D conformation for those
 generate smiles
 """
 
-max_small_losses=1
-
 
 class MagmaSession(object):
     def __init__(self,db_name,description=""):
@@ -59,7 +57,8 @@ class MagmaSession(object):
     def get_annotate_engine(self,
                  ionisation_mode=1,
                  skip_fragmentation=False,
-                 max_broken_bonds=4,
+                 max_broken_bonds=3,
+                 max_water_losses=1,
                  ms_intensity_cutoff=1e6,
                  msms_intensity_cutoff=0.1,
                  mz_precision=5.0,
@@ -67,7 +66,7 @@ class MagmaSession(object):
                  precursor_mz_precision=0.005,
                  use_all_peaks=False
                  ):
-        return AnnotateEngine(self.db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,
+        return AnnotateEngine(self.db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
                  ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,use_all_peaks)
     def get_data_analysis_engine(self):
         return DataAnalysisEngine(self.db_session)
@@ -369,7 +368,7 @@ class MsDataEngine(object):
 
 
 class AnnotateEngine(object):
-    def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,
+    def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
                  ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,
                  precursor_mz_precision,use_all_peaks):
         self.db_session = db_session
@@ -383,6 +382,8 @@ class AnnotateEngine(object):
             rundata.skip_fragmentation=skip_fragmentation
         if rundata.max_broken_bonds == None:
             rundata.max_broken_bonds=max_broken_bonds
+        if rundata.max_water_losses == None:
+            rundata.max_water_losses=max_water_losses
         if rundata.ms_intensity_cutoff == None:
             rundata.ms_intensity_cutoff=ms_intensity_cutoff
         if rundata.msms_intensity_cutoff == None:
@@ -400,6 +401,7 @@ class AnnotateEngine(object):
         self.ionisation_mode=rundata.ionisation_mode
         self.skip_fragmentation=rundata.skip_fragmentation
         self.max_broken_bonds=rundata.max_broken_bonds
+        self.max_water_losses=rundata.max_water_losses
         self.ms_intensity_cutoff=rundata.ms_intensity_cutoff
         self.msms_intensity_cutoff=rundata.msms_intensity_cutoff
         self.mz_precision=rundata.mz_precision
@@ -604,7 +606,7 @@ class AnnotateEngine(object):
                                   structure.molformula,
                                   peaks,
                                   self.max_broken_bonds,
-                                  max_small_losses,
+                                  self.max_water_losses,
                                   self.precision,
                                   self.mz_precision_abs,
                                   self.use_all_peaks,
@@ -700,7 +702,7 @@ class DataAnalysisEngine(object):
                     print '> <'+column+'>\n'+str(molecule.__getattribute__(column))+'\n'
             print '$$$$'
 
-def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_small_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast):
+def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast):
     # Chem=magma.cdk_engine.engine()      # Use cdk_engine
     Chem=magma.rdkit_engine             # Use rdkit_engine
     pars=magma.pars
@@ -768,7 +770,7 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_small_losses,
                 if not Fragmented:
                     #sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+' '+str(structure.reactionsequence)+'\n')
                     #sys.stderr.write('Mim: '+str(structure.mim)+'\n')
-                    fragment_engine=Fragmentation.FragmentEngine(mol,max_broken_bonds,max_small_losses)
+                    fragment_engine=Fragmentation.FragmentEngine(mol,max_broken_bonds,max_water_losses)
                     #fragment_engine=GrowingEngine(mol)
                     if fragment_engine.accepted():
                         fragment_engine.generate_fragments()
