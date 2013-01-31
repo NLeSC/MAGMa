@@ -92,19 +92,16 @@ class StructureEngine(object):
         self.metabolism_types=rundata.metabolism_types.split(',')
         self.n_reaction_steps=rundata.n_reaction_steps
 
-    def add_structure(self,molblock,name,prob,level,sequence,isquery,mass_filter=9999,mim=None,inchikey=None,molform=None,reference=None,logP=None,check_duplicates=True):
-        if inchikey==None or mim==None or molform==None or logP==None:
+    def add_structure(self,molblock,name,prob,level,sequence,isquery,mass_filter=9999,mim=None,natoms=None,inchikey=None,molform=None,reference=None,logP=None,check_duplicates=True):
+        if inchikey==None or mim==None or molform==None or logP==None or natoms==None:
             mol=Chem.MolFromMolBlock(molblock)
-        if inchikey == None:
             inchikey=Chem.MolToInchiKey(mol)[:14]
             # inchikey=Chem.MolToSmiles(mol)
-        if mim == None or molform == None:
             mim,molform=Chem.GetFormulaProps(mol)
+            natoms=mol.GetNumHeavyAtoms()
+            logP = Chem.LogP(mol)
         if mim > mass_filter:
             return
-        if logP == None:
-            logP = Chem.LogP(mol)
-        # mim=self.calc_mim(mol)
         metab=Metabolite(
             mol=unicode(molblock, 'utf-8', 'xmlcharrefreplace'),
             level=level,
@@ -116,6 +113,7 @@ class StructureEngine(object):
             origin=unicode(name, 'utf-8', 'xmlcharrefreplace'),
             nhits=0,
             mim=mim,
+            natoms=natoms,
             reference=reference,
             logp=logP
             )
@@ -499,14 +497,12 @@ class AnnotateEngine(object):
                     print str(mass)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
 
-    def get_pubchem_candidates(self,fast,dbfilename='',min_refscore='',max_mz=''):
+    def get_pubchem_candidates(self,dbfilename='',min_refscore='',max_mz=''):
         where=''
         if dbfilename=='':
             dbfilename='/media/MAGMa_pubchem/Pubchem_MAGMa.db'
         if min_refscore!='':
             where += ' AND refscore >= '+min_refscore
-        if fast:
-            where += ' AND natoms <= 64' # fast calculations are based on 64 long int, larger molecules are not allowed
         if max_mz=='':
             max_mz='9999'
         mmz=float(max_mz)
@@ -535,7 +531,7 @@ class AnnotateEngine(object):
 
         # in case of an empty database, no check for existing duplicates needed
         check_duplicates = (self.db_session.query(Metabolite.metid).count() > 0)
-        print 'check: ',check_duplicates,fast
+        print 'check: ',check_duplicates
 
         # All candidates are stored in dbsession, resulting metids are returned
         metids=set([])
@@ -545,6 +541,7 @@ class AnnotateEngine(object):
                 metid=struct_engine.add_structure(molblock=zlib.decompress(molblock),
                                name=name+' ('+str(cid)+')',
                                mim=float(mim/1e6),
+                               natoms=natoms,
                                molform=molform,
                                inchikey=inchikey,
                                prob=refscore,
@@ -563,10 +560,6 @@ class AnnotateEngine(object):
 
     def search_structures(self,metids=None,ncpus=1,fast=False):
         logging.warn('Searching structures')
-        if fast:
-            fragmentation_module='magma.fragmentation_cy'
-        else:
-            fragmentation_module='magma.fragmentation_py'
         global fragid
         fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
         if fragid == None:
@@ -601,6 +594,10 @@ class AnnotateEngine(object):
                 except:
                     pass
                 if len(peaks)>0:
+                    if fast and structure.natoms<=64:
+                        fragmentation_module='magma.fragmentation_cy'
+                    else:
+                        fragmentation_module='magma.fragmentation_py'
                     jobs.append((structure,
                        job_server.submit(search_structure,(structure.mol,
                                   structure.mim,
@@ -612,7 +609,7 @@ class AnnotateEngine(object):
                                   self.mz_precision_abs,
                                   self.use_all_peaks,
                                   self.ionisation_mode,
-                                  fast
+                                  (fast and structure.natoms<=64)
                                   ),(),(
                                   "magma.types",
                                   "magma.pars",

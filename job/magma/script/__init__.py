@@ -229,7 +229,7 @@ class MagmaCommand(object):
             db_options=args.db_options.split(',')
             for x in range(len(db_options)):
                 db_opts[x]=db_options[x]
-            pubchem_metids=annotate_engine.get_pubchem_candidates(args.fast,db_opts[0],db_opts[1],db_opts[2])
+            pubchem_metids=annotate_engine.get_pubchem_candidates(db_opts[0],db_opts[1],db_opts[2])
         if args.metids == None:
             annotate_engine.search_structures(ncpus=args.ncpus,fast=args.fast)
         else:
