@@ -140,23 +140,6 @@ class StructureEngine(object):
         self.db_session.flush()
         return metab.metid
 
-    def add_structure_tmp(self,mol,name,prob,level,sequence,isquery):
-        m=Chem.MolFromMolBlock(mol)
-        smiles=Chem.MolToSmiles(m)
-        molform=Chem.Descriptors.MolecularFormula(m)
-        mim=self.calc_mim(m)
-        dupid = self.db_session.query(Metabolite).filter_by(smiles=smiles).all()
-        while len(dupid)>0:
-            smiles+='_'
-            dupid = self.db_session.query(Metabolite).filter_by(smiles=smiles).all()
-        metab=Metabolite(
-            mol=unicode(mol), level=level, probability=prob,
-            reactionsequence=sequence, smiles=smiles,
-            molformula=molform, isquery=isquery, origin=unicode(name),
-            mim=mim
-            )
-        self.db_session.add(metab)
-
     def metabolize(self,metid,metabolism,nsteps):
         try:
             parent = self.db_session.query(Metabolite).filter_by(metid=metid).one()
