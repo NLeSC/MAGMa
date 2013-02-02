@@ -90,39 +90,36 @@ class StructureEngine(object):
         self.db_session.commit()
         self.metabolism_types=rundata.metabolism_types.split(',')
         self.n_reaction_steps=rundata.n_reaction_steps
+    
+    def add_structure(self,molblock,name,prob,level,sequence,isquery,mim=None,natoms=None,inchikey=None,molform=None,reference=None,logp=None,mass_filter=9999):
+        molecule=types.MoleculeType(molblock,name,prob,level,sequence,isquery,mim,natoms,inchikey,molform,reference,logp)
+        self.add_molecule(molecule,mass_filter)
 
-    def add_structure(self,molblock,name,prob,level,sequence,isquery,mass_filter=9999,mim=None,natoms=None,inchikey=None,molform=None,reference=None,logP=None,check_duplicates=True):
-        if inchikey==None or mim==None or molform==None or logP==None or natoms==None:
-            mol=Chem.MolFromMolBlock(molblock)
-            inchikey=Chem.MolToInchiKey(mol)[:14]
-            # inchikey=Chem.MolToSmiles(mol)
-            mim,molform=Chem.GetFormulaProps(mol)
-            natoms=mol.GetNumHeavyAtoms()
-            logP = Chem.LogP(mol)
-        if mim > mass_filter:
+    def add_molecule(self,molecule,mass_filter=9999,check_duplicates=True):
+        if molecule.mim > mass_filter:
             return
         metab=Metabolite(
-            mol=unicode(molblock, 'utf-8', 'xmlcharrefreplace'),
-            level=level,
-            probability=prob,
-            reactionsequence=sequence,
-            smiles=inchikey,
-            molformula=molform,
-            isquery=isquery,
-            origin=unicode(name, 'utf-8', 'xmlcharrefreplace'),
+            mol=unicode(molecule.molblock, 'utf-8', 'xmlcharrefreplace'),
+            level=molecule.level,
+            probability=molecule.probability,
+            reactionsequence=molecule.reactionsequence,
+            smiles=molecule.inchikey,
+            molformula=molecule.molformula,
+            isquery=molecule.isquery,
+            origin=unicode(molecule.name, 'utf-8', 'xmlcharrefreplace'),
             nhits=0,
-            mim=mim,
-            natoms=natoms,
-            reference=reference,
-            logp=logP
+            mim=molecule.mim,
+            natoms=molecule.natoms,
+            reference=molecule.reference,
+            logp=molecule.logp
             )
         if check_duplicates: 
-            dups=self.db_session.query(Metabolite).filter_by(smiles=inchikey).all()
+            dups=self.db_session.query(Metabolite).filter_by(smiles=molecule.inchikey).all()
             if len(dups)>0:
                 metab=dups[0]
-                metab.origin=unicode(str(metab.origin)+'</br>'+name, 'utf-8', 'xmlcharrefreplace')
-                metab.reference=reference
-                metab.probability=prob
+                metab.origin=unicode(str(metab.origin)+'</br>'+molecule.name, 'utf-8', 'xmlcharrefreplace')
+                metab.reference=molecule.reference
+                metab.probability=molecule.probability
 #            if dupid.probability < prob:
 #                self.db_session.delete(dupid)
 #                metab.metid=dupid.metid
@@ -189,7 +186,8 @@ class StructureEngine(object):
                         sequence=''
                     reactionsequence=parent.reactionsequence+sequence
                 line=reactor.stdout.readline()
-            metids.append(self.add_structure(mol,name,prob,level,reactionsequence,isquery))
+            molecule=types.MoleculeType(mol,name,prob,level,reactionsequence,isquery)
+            metids.append(self.add_molecule(molecule))
             line=reactor.stdout.readline()
         reactor.stdout.close()
         self.db_session.commit()
@@ -210,7 +208,7 @@ class StructureEngine(object):
         c = conn.cursor()
         result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass-0.01,mass+0.01))
         for (id,mim,molblock,smiles,chebi_name) in result:
-            self.add_structure(zlib.decompress(molblock),str(chebi_name),1.0,1,"",1)
+            self.add_molecule(zlib.decompress(molblock),str(chebi_name),1.0,1,"",1)
 
 class MsDataEngine(object):
     def __init__(self,db_session,abs_peak_cutoff,rel_peak_cutoff,max_ms_level):
@@ -499,26 +497,18 @@ class AnnotateEngine(object):
                     print str(mass)+' --> '+str(len(db_candidates))+' candidates'
         return db_candidates
 
-    def get_pubchem_candidates(self,dbfilename='',min_refscore='',max_mz=''):
-        where=''
-        if dbfilename=='':
-            dbfilename='/media/MAGMa_pubchem/Pubchem_MAGMa.db'
-        if min_refscore!='':
-            where += ' AND refscore >= '+min_refscore
-        if max_mz=='':
-            max_mz='9999'
-        mmz=float(max_mz)
+    def get_db_candidates(self,query_engine,max_mim=""):
+        if max_mim=='':
+            max_mim='1200'
+        mmim=int(float(max_mim)*1e6)
 
-        conn = sqlite3.connect(dbfilename)
-        conn.text_factory=str
-        c = conn.cursor()
         struct_engine = StructureEngine(self.db_session,"",0)
 
         # build sorted list of query masses
         mzs=[]
         for scan in self.scans:
             for peak in scan.peaks:
-                if not ((not self.use_all_peaks) and peak.childscan==None) and peak.mz <= mmz:
+                if not ((not self.use_all_peaks) and peak.childscan==None):
                     mzs.append(peak.mz)
         mzs.sort()
         # build non-overlapping set of queries around these masses
@@ -526,10 +516,13 @@ class AnnotateEngine(object):
         for mz in mzs:
             ql=int(1e6*(mz/self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass)))
             qh=int(1e6*(mz*self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass)))
-            if queries[-1][0] <= ql <= queries[-1][1]:
-                queries[-1][1]=qh
-            else:
-                queries.append([ql,qh])
+            if ql < mmim:
+                if qh > mmim:
+                    qh == mmim
+                if queries[-1][0] <= ql <= queries[-1][1]:
+                    queries[-1][1]=qh
+                else:
+                    queries.append([ql,qh])
 
         # in case of an empty database, no check for existing duplicates needed
         check_duplicates = (self.db_session.query(Metabolite.metid).count() > 0)
@@ -538,23 +531,9 @@ class AnnotateEngine(object):
         # All candidates are stored in dbsession, resulting metids are returned
         metids=set([])
         for ql,qh in queries:
-            result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ? %s' % where, (ql,qh))
-            for (cid,mim,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
-                metid=struct_engine.add_structure(molblock=zlib.decompress(molblock),
-                               name=name+' ('+str(cid)+')',
-                               mim=float(mim/1e6),
-                               natoms=natoms,
-                               molform=molform,
-                               inchikey=inchikey,
-                               prob=refscore,
-                               level=1,
-                               sequence="",
-                               isquery=1,
-                               reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
-                                         str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>',
-                               logP=float(logp)/10.0,
-                               check_duplicates=check_duplicates
-                               )
+            result=query_engine.query_on_mim(ql,qh)
+            for molecule in result:
+                metid=struct_engine.add_molecule(molecule,check_duplicates=check_duplicates)
                 metids.add(metid)
             print str(ql)+','+str(qh)+' --> '+str(len(metids))+' candidates'
         self.db_session.commit()
@@ -660,6 +639,73 @@ class AnnotateEngine(object):
             for childhit in hit.besthits:
                 if childhit != None: # still need to work out how to deal with missed fragments
                     self.store_hit(childhit,metid,currentFragid)
+
+class PubChemEngine(object):
+    def __init__(self,dbfilename='',max_64atoms=False,min_refscore=''):
+        if dbfilename=='':
+            dbfilename='/media/MAGMa_pubchem/Pubchem_MAGMa.db'
+        self.where=''
+        if min_refscore!='':
+            self.where += ' AND refscore >= '+min_refscore
+        if max_64atoms==True:
+            self.where += ' AND natoms <= 64'
+        self.conn = sqlite3.connect(dbfilename)
+        self.conn.text_factory=str
+        self.c = self.conn.cursor()
+    def query_on_mim(self,low,high):
+        result=self.c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ? %s' % self.where, (low,high))
+        molecules=[]
+        for (cid,mim,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
+            molecules.append(types.MoleculeType(
+                           molblock=zlib.decompress(molblock),
+                           name=name+' ('+str(cid)+')',
+                           mim=float(mim/1e6),
+                           natoms=natoms,
+                           molform=molform,
+                           inchikey=inchikey,
+                           prob=refscore,
+                           level=1,
+                           sequence="",
+                           isquery=1,
+                           reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
+                                     str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>',
+                           logp=float(logp)/10.0,
+                           ))
+        return molecules
+
+class KeggEngine(object):
+    def __init__(self,dbfilename='',max_64atoms=False):
+        if dbfilename=='':
+            dbfilename='/media/MAGMa_pubchem/Pubchem_MAGMa_Kegg.db'
+        self.where=''
+        if max_64atoms==True:
+            self.where += ' AND natoms <= 64'
+        self.conn = sqlite3.connect(dbfilename)
+        self.conn.text_factory=str
+        self.c = self.conn.cursor()
+    def query_on_mim(self,low,high):
+        result=self.c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ? %s' % self.where, (low,high))
+        molecules=[]
+        for (cid,mim,natoms,molblock,inchikey,molform,name,reference,logp) in result:
+            keggids=reference.split(',')
+            keggrefs='<a href="http://www.genome.jp/dbget-bin/www_bget?cpd:'+keggids[0]+'" target="_blank">'+keggids[0]+' (Kegg)</a>'
+            for keggid in keggids[1:]:
+                keggrefs+='<br><a href="http://www.genome.jp/dbget-bin/www_bget?cpd:'+keggid+'" target="_blank">'+keggid+' (Kegg)</a>'
+            molecules.append(types.MoleculeType(
+                           molblock=zlib.decompress(molblock),
+                           name=name+' ('+str(cid)+')',
+                           mim=float(mim/1e6),
+                           natoms=natoms,
+                           molform=molform,
+                           inchikey=inchikey,
+                           prob=None,
+                           level=1,
+                           sequence="",
+                           isquery=1,
+                           reference=keggrefs,
+                           logp=float(logp)/10.0,
+                           ))
+        return molecules
 
 
 class DataAnalysisEngine(object):
