@@ -17,31 +17,31 @@ class MagmaCommand(object):
         self.parser.add_argument('--version', action='version', version='%(prog)s ' + self.version())
         subparsers = self.parser.add_subparsers(title='Sub-commands')
 
-        sc = subparsers.add_parser("all_in_one", help=self.all_in_one.__doc__, description=self.all_in_one.__doc__)
-        sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
-        # read_ms_data arguments
-        sc.add_argument('ms_data', type=argparse.FileType('r'), help="file with MS/MS data")
-        sc.add_argument('--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml"])
-        sc.add_argument('-l', '--max_ms_level', help="Maximum MS level to be processsed (default: %(default)s)", default=10,type=int)
-        sc.add_argument('-a', '--abs_peak_cutoff', help="Absolute intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
-        sc.add_argument('-r', '--rel_peak_cutoff', help="fraction of basepeak intensity threshold for storing peaks in database (default: %(default)s)", default=0.01,type=float)
-        # add_structures arguments
-        sc.add_argument('structures', type=argparse.FileType('rb'), help="File with smiles used as structures")
-        sc.add_argument('-t', '--structure_format', help="Structure input type (default: %(default)s)", default="smiles", choices=["smiles", "sdf"])
-        sc.add_argument('-n', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=2,type=int)
-        sc.add_argument('-m', '--metabolism_types', help="1 and/or 2 for phase 1 and 2 biotransformations (default: %(default)s)", default="phase1,phase2", type=str)
-        # annotate arguments
-        sc.add_argument('-p', '--mz_precision', help="Mass precision for matching calculated masses with peaks (default: %(default)s)", default=0.001,type=float)
-        sc.add_argument('-c', '--ms_intensity_cutoff', help="Minimum intensity of level 1 peaks to be annotated (default: %(default)s)", default=1e6,type=float)
-        sc.add_argument('-d', '--msms_intensity_cutoff', help="Minimum intensity of of fragment peaks to be annotated, as fraction of basepeak (default: %(default)s)", default=0.1,type=float)
-        sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
-        sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bond breaks to generate substructures (default: %(default)s)", default=4,type=int)
-        sc.add_argument('--precursor_mz_precision', help="Mass precision for matching peaks and precursor ions (default: %(default)s)", default=0.005,type=float)
-        sc.add_argument('-u', '--use_all_peaks', help="Annotate all level 1 peaks, including those not fragmented (default: %(default)s)", action="store_true")
-        sc.add_argument('-f', '--skip_fragmentation', help="Skip substructure annotation of fragment peaks", action="store_true")
-        sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["chebi","pubchem"])
-        sc.add_argument('db', type=str, help="Sqlite database file with results")
-        sc.set_defaults(func=self.all_in_one)
+#        sc = subparsers.add_parser("all_in_one", help=self.all_in_one.__doc__, description=self.all_in_one.__doc__)
+#        sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
+#        # read_ms_data arguments
+#        sc.add_argument('ms_data', type=argparse.FileType('r'), help="file with MS/MS data")
+#        sc.add_argument('--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml"])
+#        sc.add_argument('-l', '--max_ms_level', help="Maximum MS level to be processsed (default: %(default)s)", default=10,type=int)
+#        sc.add_argument('-a', '--abs_peak_cutoff', help="Absolute intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
+#        sc.add_argument('-r', '--rel_peak_cutoff', help="fraction of basepeak intensity threshold for storing peaks in database (default: %(default)s)", default=0.01,type=float)
+#        # add_structures arguments
+#        sc.add_argument('structures', type=argparse.FileType('rb'), help="File with smiles used as structures")
+#        sc.add_argument('-t', '--structure_format', help="Structure input type (default: %(default)s)", default="smiles", choices=["smiles", "sdf"])
+#        sc.add_argument('-n', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=2,type=int)
+#        sc.add_argument('-m', '--metabolism_types', help="1 and/or 2 for phase 1 and 2 biotransformations (default: %(default)s)", default="phase1,phase2", type=str)
+#        # annotate arguments
+#        sc.add_argument('-p', '--mz_precision', help="Mass precision for matching calculated masses with peaks (default: %(default)s)", default=0.001,type=float)
+#        sc.add_argument('-c', '--ms_intensity_cutoff', help="Minimum intensity of level 1 peaks to be annotated (default: %(default)s)", default=1e6,type=float)
+#        sc.add_argument('-d', '--msms_intensity_cutoff', help="Minimum intensity of of fragment peaks to be annotated, as fraction of basepeak (default: %(default)s)", default=0.1,type=float)
+#        sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
+#        sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bond breaks to generate substructures (default: %(default)s)", default=4,type=int)
+#        sc.add_argument('--precursor_mz_precision', help="Mass precision for matching peaks and precursor ions (default: %(default)s)", default=0.005,type=float)
+#        sc.add_argument('-u', '--use_all_peaks', help="Annotate all level 1 peaks, including those not fragmented (default: %(default)s)", action="store_true")
+#        sc.add_argument('-f', '--skip_fragmentation', help="Skip substructure annotation of fragment peaks", action="store_true")
+#        sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["chebi","pubchem"])
+#        sc.add_argument('db', type=str, help="Sqlite database file with results")
+#        sc.set_defaults(func=self.all_in_one)
 
         sc = subparsers.add_parser("init_db", help=self.init_db.__doc__, description=self.init_db.__doc__)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
@@ -91,8 +91,8 @@ class MagmaCommand(object):
         sc.add_argument('-u', '--use_all_peaks', help="Annotate all level 1 peaks, including those not fragmented (default: %(default)s)", action="store_true")
         sc.add_argument('--skip_fragmentation', help="Skip substructure annotation of fragment peaks (default: %(default)s)", action="store_true")
         sc.add_argument('-f', '--fast', help="Quick calculations for molecules up to 64 atoms (default: %(default)s)", action="store_true")
-        sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["chebi","pubchem"])
-        sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,min_refscore,max_mim (default: %(default)s)",default=",,",type=str)
+        sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["pubchem","kegg"])
+        sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,min_refscore(only for PubChem) (default: %(default)s)",default=",1200,False,",type=str)
         sc.add_argument('--ncpus', help="Number of parallel cpus to use for annotation (default: %(default)s)", default=1,type=int)
         sc.add_argument('--scans', help="Search in specified scans (default: %(default)s)", default="all",type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
@@ -155,17 +155,17 @@ class MagmaCommand(object):
         metids=set([])
         if args.structure_format == 'smiles':
             for mol in self.smiles2mols(args.structures):
-                metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 'PARENT', 1, args.mass_filter))
+                metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 'PARENT', 1, mass_filter=args.mass_filter))
         elif args.structure_format == 'sdf':
             for mol in Chem.SDMolSupplier(args.structures.name):
                 try:
                     rs=mol.GetProp('ReactionSequence')
                     if rs!="":
                         rs=rs+"\n"
-                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0,rs, 1, args.mass_filter))
+                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0,rs, 1, mass_filter=args.mass_filter))
                 except:
                     #print sys.exc_info()
-                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0,"", 1, args.mass_filter))
+                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0,"", 1, mass_filter=args.mass_filter))
         magma_session.commit()
         for metid in metids:
             print metid
@@ -226,12 +226,16 @@ class MagmaCommand(object):
 #                    pass
 #            annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
         pubchem_metids=[]
-        if args.structure_database == 'pubchem':
-            db_opts=['','','']
+        if args.structure_database != "":
+            db_opts=['','','','']
             db_options=args.db_options.split(',')
             for x in range(len(db_options)):
                 db_opts[x]=db_options[x]
-            pubchem_metids=annotate_engine.get_pubchem_candidates(db_opts[0],db_opts[1],db_opts[2])
+            if args.structure_database == 'pubchem':
+                query_engine=magma.PubChemEngine(db_opts[0],(db_opts[2]=='True'),db_opts[3])
+            elif args.structure_database == 'kegg':
+                query_engine=magma.KeggEngine(db_opts[0],(db_opts[2]=='True'))
+            pubchem_metids=annotate_engine.get_db_candidates(query_engine,db_opts[1])
         if args.metids == None:
             annotate_engine.search_structures(ncpus=args.ncpus,fast=args.fast)
         else:
