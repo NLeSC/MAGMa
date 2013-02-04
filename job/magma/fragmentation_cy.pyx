@@ -53,7 +53,7 @@ cdef class FragmentEngine(object):
             for x in range(self.natoms):
                 self.bonded_atoms[x].nbonds=0
                 self.atom_masses[x]=Chem.GetExtendedAtomMass(mol,x)
-                if Chem.GetAtomSymbol(mol,x) == 'O' and Chem.GetAtomHs(mol,x) == 1:
+                if Chem.GetAtomSymbol(mol,x) == 'O' and Chem.GetAtomHs(mol,x) == 1 and Chem.GetNBonds(mol,x)==1:
                     self.neutral_loss_atoms.append(x)
             for x in range(self.nbonds):
                 a1,a2 = Chem.GetBondAtoms(mol,x)

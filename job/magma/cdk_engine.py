@@ -3,7 +3,7 @@ import jpype,glob,os
 #jars= glob.glob('/home/ridderl/cdk/Marijn_jars/*jar')
 jars= ('/home/ridderl/cdk/cdk-1.4.13.jar',)
 classpath = ":".join([ os.path.abspath(jar) for jar in jars])
-os.environ['JAVA_HOME'] = '/usr/lib/jvm/java-6-openjdk'
+os.environ['JAVA_HOME'] = '/usr/lib/jvm/java-1.7.0-openjdk-amd64'
 jpype.startJVM(jpype.getDefaultJVMPath(),"-ea", "-Djava.class.path="+classpath)
 
 class engine(object):
@@ -100,6 +100,11 @@ class engine(object):
         for a in mol.getBond(bond).atoms().iterator():
             atoms.append(mol.getAtomNumber(a))
         return atoms
+    def GetNBonds(self,mol,atom):
+        neighbours=mol.getAtom(atom).getFormalNeighbourCount().intValue()
+        hydrogens=mol.getAtom(atom).getImplicitHydrogenCount().intValue()
+        # return number of bonds, excluding hydrogens 
+        return neighbours-hydrogens
     def GetBondType(self,mol,bond):
         if mol.getBond(bond).getFlag(4) == 1:
             return "AROMATIC"
