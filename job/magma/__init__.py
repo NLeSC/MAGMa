@@ -601,7 +601,7 @@ class AnnotateEngine(object):
                 raw_result=job(raw_result=True)
                 hits,sout = pickle.loads(raw_result)
                 #print sout
-                sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin)+'\n')
+                sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin.encode('utf8'))+'\n')
                 structure.nhits=len(hits)
                 self.db_session.add(structure)
                 for hit in hits:
@@ -707,6 +707,39 @@ class KeggEngine(object):
                            ))
         return molecules
 
+class HmdbEngine(object):
+    def __init__(self,dbfilename='',max_64atoms=False):
+        if dbfilename=='':
+            dbfilename='/home/ridderl/hmdb/HMDB_MAGMa.db'
+        self.where=''
+        if max_64atoms==True:
+            self.where += ' AND natoms <= 64'
+        self.conn = sqlite3.connect(dbfilename)
+        self.conn.text_factory=str
+        self.c = self.conn.cursor()
+    def query_on_mim(self,low,high):
+        result=self.c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ? %s' % self.where, (low,high))
+        molecules=[]
+        for (cid,mim,natoms,molblock,inchikey,molform,name,reference,logp) in result:
+            hmdb_ids=reference.split(',')
+            hmdb_refs='<a href="http://www.hmdb.ca/metabolites/'+hmdb_ids[0]+'" target="_blank">'+hmdb_ids[0]+' (HMDB)</a>'
+            for hmdb_id in hmdb_ids[1:]:
+                hmdb_refs+='<br><a href="http://www.hmdb.ca/metabolites/'+hmdb_id+'" target="_blank">'+hmdb_id+' (HMDB)</a>'
+            molecules.append(types.MoleculeType(
+                           molblock=zlib.decompress(molblock),
+                           name=name+' ('+str(cid)+')',
+                           mim=float(mim/1e6),
+                           natoms=natoms,
+                           molform=molform,
+                           inchikey=inchikey,
+                           prob=None,
+                           level=1,
+                           sequence="",
+                           isquery=1,
+                           reference=hmdb_refs,
+                           logp=float(logp)/10.0,
+                           ))
+        return molecules
 
 class DataAnalysisEngine(object):
     def __init__(self,db_session):
