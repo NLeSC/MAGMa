@@ -45,6 +45,8 @@ def nbonds(mol):
 def GetBondAtoms(mol,b):
     bond=mol.GetBondWithIdx(b)
     return [bond.GetBeginAtomIdx(),bond.GetEndAtomIdx()]
+def GetNBonds(mol,a):
+    return len(mol.GetAtomWithIdx(a).GetBonds())
 def GetBondType(mol,b):
     bond=mol.GetBondWithIdx(b)
     return bondtype2string[bond.GetBondType()]

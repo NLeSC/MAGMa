@@ -1,4 +1,6 @@
 import rdkit_engine as Chem
+# import cdk_engine               # Use cdk_engine
+# Chem=cdk_engine.engine()
 import numpy
 import pars
 
@@ -23,7 +25,7 @@ class FragmentEngine(object):
         for x in range(self.natoms):
             self.bonded_atoms.append([])
             self.atom_masses.append(Chem.GetExtendedAtomMass(self.mol,x))
-            if Chem.GetAtomSymbol(self.mol,x) == 'O' and Chem.GetAtomHs(self.mol,x) == 1:
+            if Chem.GetAtomSymbol(self.mol,x) == 'O' and Chem.GetAtomHs(self.mol,x) == 1 and Chem.GetNBonds(self.mol,x)==1:
                 self.neutral_loss_atoms.append(x)
         for x in range(Chem.nbonds(self.mol)):
             a1,a2 = Chem.GetBondAtoms(self.mol,x)
