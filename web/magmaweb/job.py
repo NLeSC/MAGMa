@@ -137,12 +137,6 @@ class JobQuery(object):
         schema.add(colander.SchemaNode(colander.Integer(),
                                        validator=colander.Range(min=0),
                                        name='max_broken_bonds'))
-        schema.add(colander.SchemaNode(colander.Boolean(),
-                                       default=False, missing=False,
-                                       name='use_all_peaks'))
-        schema.add(colander.SchemaNode(colander.Boolean(),
-                                       default=False, missing=False,
-                                       name='skip_fragmentation'))
         schema.add(colander.SchemaNode(colander.String(),
                                        missing=colander.null,
                                        validator=colander.OneOf(['pubchem',
@@ -470,9 +464,6 @@ class JobQuery(object):
         * msms_intensity_cutoff
         * ionisation_mode
         * max_broken_bonds
-        * use_all_peaks, when key is set then all peaks are used
-        * skip_fragmentation, when key is set then
-            no fragmentation of structures is performed.
         * fast, when key is set then
             Quick calculations for molecules up to 64 atoms is used
         * structure_database,
@@ -524,12 +515,6 @@ class JobQuery(object):
             script_substitutions['db_options'] = db_options
 
         script = script.format(**script_substitutions)
-
-        if params['use_all_peaks']:
-            script += '-u '
-
-        if params['skip_fragmentation']:
-            script += '--skip_fragmentation '
 
         if params['fast']:
             script += '--fast '
@@ -594,12 +579,10 @@ class JobQuery(object):
         return dict(n_reaction_steps=2,
                     metabolism_types=['phase1', 'phase2'],
                     ionisation_mode=1,
-                    skip_fragmentation=False,
                     ms_intensity_cutoff=1000000.0,
                     msms_intensity_cutoff=0.1,
                     mz_precision=5.0,
                     mz_precision_abs=0.001,
-                    use_all_peaks=False,
                     abs_peak_cutoff=1000,
                     max_ms_level=10,
                     precursor_mz_precision=0.005,
@@ -648,12 +631,10 @@ class JobQuery(object):
         return dict(ms_data="\n".join(example_tree),
                     ms_data_format='tree',
                     ionisation_mode=-1,
-                    skip_fragmentation=False,
                     ms_intensity_cutoff=0,
                     msms_intensity_cutoff=0,
                     mz_precision=5,
                     mz_precision_abs=0,
-                    use_all_peaks=False,
                     abs_peak_cutoff=1000,
                     max_ms_level=10,
                     precursor_mz_precision=0.005,

@@ -84,26 +84,6 @@
 					fraction of basepeak:</td>
 				<td>${run.msms_intensity_cutoff}</td>
 			</tr>
-			<tr>
-				<td>Annotate all level 1 peaks, including those not fragmented:</td>
-				<td>
-				% if run.use_all_peaks:
-				Yes
-				% else:
-				No
-				% endif
-				</td>
-			</tr>
-			<tr>
-				<td>Skip substructure annotation of fragment peaks:</td>
-				<td>
-				% if run.skip_fragmentation:
-				Yes
-				% else:
-				No
-				% endif
-				</td>
-			</tr>
             <tr>
                 <td>Quick calculations for molecules up to 64 atoms:</td>
                 <td>

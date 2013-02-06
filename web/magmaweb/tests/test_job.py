@@ -671,13 +671,11 @@ class JobDbTestCase(JobDbTestCaseAbstract):
         self.assertEqual(runInfo.precursor_mz_precision, 10)
 
         self.assertEqual(runInfo.ionisation_mode, -1)
-        self.assertTrue(runInfo.skip_fragmentation)
         self.assertEqual(runInfo.max_broken_bonds, 4)
         self.assertEqual(runInfo.ms_intensity_cutoff, 200000.0)
         self.assertEqual(runInfo.msms_intensity_cutoff, 0.5)
         self.assertEqual(runInfo.mz_precision, 10)
         self.assertEqual(runInfo.mz_precision_abs, 0.002)
-        self.assertTrue(runInfo.use_all_peaks)
         self.assertEqual(runInfo.description, 'My first description')
         self.assertFalse(runInfo.fast)
 
@@ -1627,12 +1625,10 @@ class JobQueryTestCase(unittest.TestCase):
         expected = dict(n_reaction_steps=2,
                         metabolism_types=['phase1', 'phase2'],
                         ionisation_mode=1,
-                        skip_fragmentation=False,
                         ms_intensity_cutoff=1000000.0,
                         msms_intensity_cutoff=0.1,
                         mz_precision=5.0,
                         mz_precision_abs=0.001,
-                        use_all_peaks=False,
                         abs_peak_cutoff=1000,
                         max_ms_level=10,
                         precursor_mz_precision=0.005,
@@ -1680,12 +1676,10 @@ class JobQueryTestCase(unittest.TestCase):
         expected = dict(ms_data="\n".join(example_tree),
                         ms_data_format='tree',
                         ionisation_mode=-1,
-                        skip_fragmentation=False,
                         ms_intensity_cutoff=0,
                         msms_intensity_cutoff=0,
                         mz_precision=5,
                         mz_precision_abs=0,
-                        use_all_peaks=False,
                         abs_peak_cutoff=1000,
                         max_ms_level=10,
                         precursor_mz_precision=0.005,
@@ -2127,49 +2121,6 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                                      })
         self.assertEqual(query, expected_query)
 
-    def test_all_peaks_skip(self):
-        params = {'precursor_mz_precision': 0.005,
-                  'mz_precision': 5.0,
-                  'mz_precision_abs': 0.001,
-                  'ms_intensity_cutoff': 200000,
-                  'msms_intensity_cutoff': 0.1,
-                  'ionisation_mode': 1,
-                  'max_broken_bonds': 4,
-                  'use_all_peaks': 'on',
-                  }
-
-        query = self.jobquery.annotate(params)
-
-        script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
-        script += " -i '1' -b '4' --precursor_mz_precision '0.005' -u {db}\n"
-        expected_query = JobQuery(**{'directory': self.jobdir,
-                                     'prestaged': [],
-                                     'script': script
-                                     })
-        self.assertEqual(query, expected_query)
-
-    def test_no_fragmentation(self):
-        params = {'precursor_mz_precision': 0.005,
-                  'mz_precision': 5.0,
-                  'mz_precision_abs': 0.001,
-                  'ms_intensity_cutoff': 200000,
-                  'msms_intensity_cutoff': 0.1,
-                  'ionisation_mode': 1,
-                  'max_broken_bonds': 4,
-                  'skip_fragmentation': 'on',
-                  }
-
-        query = self.jobquery.annotate(params)
-
-        script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
-        script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
-        script += " --skip_fragmentation {db}\n"
-        expected_query = JobQuery(**{'directory': self.jobdir,
-                                     'prestaged': [],
-                                     'script': script
-                                     })
-        self.assertEqual(query, expected_query)
-
     def test_fast(self):
         params = {'precursor_mz_precision': 0.005,
                   'mz_precision': 5.0,
@@ -2200,7 +2151,6 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                   'msms_intensity_cutoff': 0.1,
                   'ionisation_mode': 1,
                   'max_broken_bonds': 4,
-                  'skip_fragmentation': 'on',
                   'structure_database': 'pubchem',
                   'min_refscore': 1,
                   'max_mz': 9999,
@@ -2221,7 +2171,6 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                   'msms_intensity_cutoff': 0.1,
                   'ionisation_mode': 1,
                   'max_broken_bonds': 4,
-                  'skip_fragmentation': 'on',
                   'structure_database': 'pubchem',
                   'min_refscore': 1,
                   'max_mz': 9999,
@@ -2235,7 +2184,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
         script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         script += " --structure_database 'pubchem'"
         script += " --db_options 'data/pubchem.db,1,9999'"
-        script += " --skip_fragmentation {db}\n"
+        script += " {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [],
                                      'script': script
