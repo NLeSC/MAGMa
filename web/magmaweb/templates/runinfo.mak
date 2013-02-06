@@ -84,16 +84,6 @@
 					fraction of basepeak:</td>
 				<td>${run.msms_intensity_cutoff}</td>
 			</tr>
-            <tr>
-                <td>Quick calculations for molecules up to 64 atoms:</td>
-                <td>
-                % if run.fast:
-                Yes
-                % else:
-                No
-                % endif
-                </td>
-            </tr>
 		</table>
 	</fieldset>
 	% else:
