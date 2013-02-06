@@ -116,3 +116,7 @@ svg {
 	width: 16px;
 	cursor: pointer;
 }
+
+.relation {
+	float: right;
+}

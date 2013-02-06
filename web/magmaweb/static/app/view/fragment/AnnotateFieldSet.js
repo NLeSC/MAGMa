@@ -10,9 +10,9 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         'Ext.form.field.Number', 'Ext.form.RadioGroup',
         'Ext.form.field.Checkbox', 'Ext.form.field.Radio'
     ],
-    title : 'Annotate options',
+    title : 'Annotate',
     defaults : {
-        labelWidth : 300
+        labelWidth : 200
     },
     items : [{
         fieldLabel : 'Ionisation mode',
@@ -28,8 +28,14 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
                     name : 'ionisation_mode',
                     inputValue : 1
                 }]
-    },{
-        fieldLabel : 'Maximum number of bond breaks to generate substructures',
+    }, {
+        xtype: 'displayfield',
+        value: 'Substructure options:'
+    }, {
+        fieldLabel: 'Bond breaks',
+        tooltip : 'Maximum number of bond breaks to generate substructures',
+        labelSeparator: '',
+        afterLabelTextTpl: '<span class="relation">&le;</span>',
         name : 'max_broken_bonds',
         xtype : 'numberfield',
         allowBlank : false,
@@ -37,33 +43,54 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         minValue : 0,
         decimalPrecision : 0
     }, {
+        xtype: 'displayfield',
+        value: 'Precision:'
+    }, {
         xtype : 'numberfield',
         name : 'mz_precision',
-        fieldLabel : 'Mass precision (ppm) for matching calculated masses with peaks',
+        labelSeparator: '',
+        afterLabelTextTpl: '<span class="relation">&le;</span>',
+        fieldLabel: 'Relative (ppm)',
+        tooltip : 'Mass precision (ppm) for matching calculated masses with peaks',
         allowBlank : false,
         decimalPrecision : 5
     }, {
         xtype : 'numberfield',
         name : 'mz_precision_abs',
-        fieldLabel : 'Mass precision (Da) for matching calculated masses with peaks',
+        labelSeparator: '',
+        afterLabelTextTpl: '<span class="relation">&le;</span>',
+        fieldLabel: 'Absolute (Da)',
+        tooltip : 'Mass precision (Da) for matching calculated masses with peaks',
         allowBlank : false,
         decimalPrecision : 5
     },{
         xtype: 'numberfield',
         name: 'precursor_mz_precision',
-        fieldLabel: 'Mass precision for matching peaks and precursor ions',
+        labelSeparator: '',
+        afterLabelTextTpl: '<span class="relation">&le;</span>',
+        fieldLabel: 'Precursor m/z (Da)',
+        tooltip: 'Mass precision for matching peaks and precursor ions',
         allowBlank: false,
         decimalPrecision: 5
     }, {
+        xtype: 'displayfield',
+        value: 'Intensity thresholds:'
+    }, {
         xtype : 'numberfield',
         name : 'ms_intensity_cutoff',
-        fieldLabel : 'Minimum intensity of level 1 peaks to be annotated',
+        labelSeparator: '',
+        afterLabelTextTpl: '<span class="relation">&le;</span>',
+        fieldLabel: 'MS<sup>1</sup> (abs.)',
+        tooltip : 'Minimum intensity of level 1 peaks to be annotated',
         allowBlank : false,
         decimalPrecision : 5
     }, {
         xtype : 'numberfield',
         name : 'msms_intensity_cutoff',
-        fieldLabel : 'Minimum intensity of fragment peaks to be annotated, as fraction of basepeak',
+        labelSeparator: '',
+        afterLabelTextTpl: '<span class="relation">&le;</span>',
+        fieldLabel: 'MS<sup>n&gt;1</sup> (fraction of base peak)',
+        tooltip : 'Minimum intensity of fragment peaks to be annotated, as fraction of basepeak',
         allowBlank : false,
         decimalPrecision : 5
     }, {

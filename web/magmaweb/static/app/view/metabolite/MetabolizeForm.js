@@ -9,6 +9,7 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeForm', {
     alias: 'widget.metabolizeform',
     requires: [
         'Ext.form.Panel',
+        'Ext.ux.DataTip',
         'Esc.magmaweb.view.metabolite.MetabolizeFieldSet',
         'Esc.magmaweb.view.fragment.AnnotateFieldSet'
     ],
@@ -22,6 +23,9 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeForm', {
         bodyPadding : 5,
         defaults : {
             bodyPadding : 5
+        },
+        plugins: {
+            ptype: 'datatip'
         },
         border : false,
         autoScroll : true,
