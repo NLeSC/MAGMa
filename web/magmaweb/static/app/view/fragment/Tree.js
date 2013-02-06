@@ -108,20 +108,20 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
 
     Ext.apply(this, {
       columns: [
-        { text: 'Score', dataIndex: 'score', xtype: 'treecolumn', width: 120, renderer: function(value) {
-        	 // can't use numbercolumn or we will loose depth visualisation, so use renderer
-        	 return Ext.util.Format.number(value, '0.00000');
-        }},
-        fmolcol,
-        { text: 'ID', dataIndex: 'fragid', hidden: true},
-        { text: 'Scan', dataIndex: 'scanid', hidden: false},
-        { text: 'Metabolite', dataIndex: 'metid', hidden: true},
+        { text: 'MS Level', dataIndex: 'mslevel', xtype: 'treecolumn'},
+        { text: 'Scan', dataIndex: 'scanid', hidden: true},
         { text: 'M/z', dataIndex: 'mz', xtype: 'numbercolumn', format: '0.00000'},
-        { text: 'Mass', dataIndex: 'mass', xtype: 'numbercolumn', format: '0.00000'},
-        { text: 'MS Level', dataIndex: 'mslevel'},
+        { text: 'ID', dataIndex: 'fragid', hidden: true},
+        fmolcol,
+        { text: 'Molecule ID', dataIndex: 'metid', hidden: true},
         { text: 'Fragment atoms', dataIndex: 'atoms', hidden: true},
+        { text: 'Score', dataIndex: 'score', width: 120, renderer: function(value) {
+            // can't use numbercolumn or we will loose depth visualisation, so use renderer
+            return Ext.util.Format.number(value, '0.00000');
+       }},
+        { text: 'Mass', dataIndex: 'mass', xtype: 'numbercolumn', format: '0.00000'},
         { text: '&Delta;H', dataIndex: 'deltah', xtype: 'numbercolumn', format: '0.00000'},
-        { text: '&Delta;Mass (ppm)', dataIndex: 'deltappm', hidden: true, xtype: 'numbercolumn', format: '0.00000'}
+        { text: '&Delta;Mass (ppm)', dataIndex: 'deltappm', hidden: false, xtype: 'numbercolumn', format: '0.00000'}
       ],
       plugins: [fmolcol]
     });
