@@ -48,7 +48,23 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                 labelSeparator: '',
 	    		name: 'structure_database',
 	    		emptyText: 'No database selected',
-	    		store: [['chebi', 'ChEBI'],['pubchem', 'PubChem']]
+                store: [
+                    ['pubchem', 'PubChem'],
+                    ['kegg', 'Kegg'],
+                    ['hmdb', 'Human Metabolome Database']
+                ],
+                listeners: {
+                    /**
+                     * Only show 'PubChem reference score' when 'pubchem' is selected.
+                     *
+                     * @param t
+                     * @param value
+                     */
+                    change: function(t, value) {
+                        var min_refscore = this.up('form').down('numberfield[name="min_refscore"]');
+                        min_refscore.setVisible(value == 'pubchem');
+                    }
+                }
 	    	}, {
     			xtype: 'numberfield',
                 fieldLabel: 'PubChem reference score',
@@ -57,7 +73,8 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                 tooltip: 'Minimum reference score based on nr. of synonyms and substances',
     			name: 'min_refscore',
     			minValue: 1,
-    			value: 1
+                value: 1,
+                hidden: true
     		}, {
     			xtype: 'numberfield',
                 fieldLabel: 'Mass',
@@ -66,7 +83,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                 afterLabelTextTpl: '<span class="relation">&le;</span>',
     			name: 'max_mz',
     			minValue: 1,
-    			value: 9999
+                value: 1200
 	    	}]
 	    }, {
 	        title : 'Upload',

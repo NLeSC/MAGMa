@@ -143,7 +143,9 @@ class JobQuery(object):
         schema.add(colander.SchemaNode(colander.String(),
                                        missing=colander.null,
                                        validator=colander.OneOf(['pubchem',
-                                                                 'chebi']),
+                                                                 'kegg',
+                                                                 'hmdb',
+                                                                 ]),
                                        name='structure_database'
                                        ))
         schema.add(colander.SchemaNode(colander.Integer(),
@@ -508,14 +510,16 @@ class JobQuery(object):
                 msg = 'Unable to locate structure database'
                 raise colander.Invalid(sd, msg)
             script += "--structure_database '{structure_database}'"
-            script += " --db_options '{db_options}' "
+            script += " --db_options "
+            script += "'{db_filename},{max_mim},{max_64atoms},{min_refscore}' "
             sd = self.escape(params['structure_database'])
             script_substitutions['structure_database'] = sd
-            db_options = '{},{},{}'.format(structure_database_location,
-                                           self.escape(params['min_refscore']),
-                                           self.escape(params['max_mz']),
-                                           )
-            script_substitutions['db_options'] = db_options
+            db_options = {'db_filename': structure_database_location,
+                          'max_mim': self.escape(params['max_mz']),
+                          'min_refscore': self.escape(params['min_refscore']),
+                          'max_64atoms': False
+                          }
+            script_substitutions.update(db_options)
 
         script = script.format(**script_substitutions)
 
