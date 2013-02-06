@@ -2154,7 +2154,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                   'max_water_losses': 1,
                   'structure_database': 'pubchem',
                   'min_refscore': 1,
-                  'max_mz': 9999,
+                  'max_mz': 1200,
                   }
 
         from colander import Invalid
@@ -2175,7 +2175,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                   'max_water_losses': 1,
                   'structure_database': 'pubchem',
                   'min_refscore': 1,
-                  'max_mz': 9999,
+                  'max_mz': 1200,
                   }
 
         structure_db_location = 'data/pubchem.db'
@@ -2186,7 +2186,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
         script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         script += " --max_water_losses '1'"
         script += " --structure_database 'pubchem'"
-        script += " --db_options 'data/pubchem.db,1,9999'"
+        script += " --db_options 'data/pubchem.db,1200,False,1'"
         script += " --fast {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [],
@@ -2327,7 +2327,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
                       ms_data_format='mzxml',
                       structure_database='pubchem',
                       min_refscore=1,
-                      max_mz=9999,
+                      max_mz=1200,
                       )
 
         structure_db_location = 'data/pubchem.db'
@@ -2342,7 +2342,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         expected_script += " --max_water_losses '1'"
         expected_script += " --structure_database 'pubchem'"
-        expected_script += " --db_options 'data/pubchem.db,1,9999'"
+        expected_script += " --db_options 'data/pubchem.db,1200,False,1'"
         expected_script += " --fast {db}\n"
 
         expected_query = JobQuery(**{'directory': self.jobdir,
