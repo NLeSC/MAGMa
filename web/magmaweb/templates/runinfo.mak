@@ -81,7 +81,7 @@
 			</tr>
 			<tr>
 				<td>Minimum intensity of fragment peaks to be annotated, as
-					fraction of basepeak:</td>
+					percentage of basepeak:</td>
 				<td>${run.msms_intensity_cutoff}</td>
 			</tr>
 			<tr>
