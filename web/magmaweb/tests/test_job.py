@@ -49,7 +49,7 @@ def populateTestingDB(session):
         ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
         max_ms_level=3, precursor_mz_precision=10,
         max_broken_bonds=4, description='My first description',
-        fast=True, max_water_losses=1,
+        max_water_losses=1,
     ))
     session.add(Metabolite(
         metid=72, mol='Molfile', level=0, probability=1.0,
@@ -152,7 +152,7 @@ def populateWithUseAllPeaks(session):
         ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
         max_ms_level=3, precursor_mz_precision=10,
         max_broken_bonds=4, description='My second description',
-        fast=True, max_water_losses=1,
+        max_water_losses=1,
     ))
     session.add(Metabolite(
         metid=12,
@@ -677,7 +677,6 @@ class JobDbTestCase(JobDbTestCaseAbstract):
         self.assertEqual(runInfo.mz_precision, 10)
         self.assertEqual(runInfo.mz_precision_abs, 0.002)
         self.assertEqual(runInfo.description, 'My first description')
-        self.assertTrue(runInfo.fast)
         self.assertEqual(runInfo.max_water_losses, 1)
 
     def test_runInfo_maxrunid(self):
@@ -689,7 +688,7 @@ class JobDbTestCase(JobDbTestCaseAbstract):
             ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
             max_ms_level=3, precursor_mz_precision=10,
             max_broken_bonds=4, description='My second description',
-            fast=True, max_water_losses=1,
+            max_water_losses=1,
         ))
 
         runInfo = self.job.runInfo()
