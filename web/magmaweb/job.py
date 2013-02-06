@@ -580,7 +580,7 @@ class JobQuery(object):
                     metabolism_types=['phase1', 'phase2'],
                     ionisation_mode=1,
                     ms_intensity_cutoff=1000000.0,
-                    msms_intensity_cutoff=0.1,
+                    msms_intensity_cutoff=10,
                     mz_precision=5.0,
                     mz_precision_abs=0.001,
                     abs_peak_cutoff=1000,

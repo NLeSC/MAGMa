@@ -100,8 +100,8 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         name : 'msms_intensity_cutoff',
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
-        fieldLabel: 'MS<sup>n&gt;1</sup> (fraction of base peak)',
-        tooltip : 'Minimum intensity of fragment peaks to be annotated, as fraction of basepeak',
+        fieldLabel: 'MS<sup>n&gt;1</sup> (% of base peak)',
+        tooltip : 'Minimum intensity of fragment peaks to be annotated, as percentage of basepeak',
         allowBlank : false,
         decimalPrecision : 5
     }]
