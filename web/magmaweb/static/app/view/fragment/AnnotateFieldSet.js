@@ -93,9 +93,5 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         tooltip : 'Minimum intensity of fragment peaks to be annotated, as fraction of basepeak',
         allowBlank : false,
         decimalPrecision : 5
-    },  {
-        xtype : 'checkbox',
-        fieldLabel : 'Quick calculations for molecules up to 64 atoms',
-        name : 'fast'
     }]
 });

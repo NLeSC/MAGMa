@@ -151,9 +151,6 @@ class JobQuery(object):
                                        missing=colander.null,
                                        validator=colander.Range(min=1),
                                        name='max_mz'))
-        schema.add(colander.SchemaNode(colander.Boolean(),
-                                       default=False, missing=False,
-                                       name='fast'))
 
     def _addMetabolizeSchema(self, schema):
         validator = colander.OneOf(['phase1', 'phase2'])
@@ -464,8 +461,6 @@ class JobQuery(object):
         * msms_intensity_cutoff
         * ionisation_mode
         * max_broken_bonds
-        * fast, when key is set then
-            Quick calculations for molecules up to 64 atoms is used
         * structure_database,
             only used when ``structure_database_location`` is given
         * min_refscore, only used when ``structure_database_location`` is given
@@ -475,6 +470,8 @@ class JobQuery(object):
 
         ``structure_database_location``
            location of structure database to search for candidate molecules
+
+        Uses fast option by default.
         """
         schema = colander.SchemaNode(colander.Mapping())
         self._addAnnotateSchema(schema)
@@ -516,13 +513,10 @@ class JobQuery(object):
 
         script = script.format(**script_substitutions)
 
-        if params['fast']:
-            script += '--fast '
-
         if from_subset:
             script += '-j - '
 
-        script += "{db}\n"
+        script += "--fast {db}\n"
         self.script += script
 
         return self
@@ -587,7 +581,6 @@ class JobQuery(object):
                     max_ms_level=10,
                     precursor_mz_precision=0.005,
                     max_broken_bonds=4,
-                    fast=False,
                     )
 
     @classmethod
@@ -639,7 +632,6 @@ class JobQuery(object):
                     max_ms_level=10,
                     precursor_mz_precision=0.005,
                     max_broken_bonds=3,
-                    fast=False,
                     )
 
 

@@ -49,7 +49,7 @@ def populateTestingDB(session):
         ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
         max_ms_level=3, precursor_mz_precision=10,
         max_broken_bonds=4, description='My first description',
-        fast=False,
+        fast=True,
     ))
     session.add(Metabolite(
         metid=72, mol='Molfile', level=0, probability=1.0,
@@ -152,7 +152,7 @@ def populateWithUseAllPeaks(session):
         ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
         max_ms_level=3, precursor_mz_precision=10,
         max_broken_bonds=4, description='My second description',
-        fast=False,
+        fast=True,
     ))
     session.add(Metabolite(
         metid=12,
@@ -677,7 +677,7 @@ class JobDbTestCase(JobDbTestCaseAbstract):
         self.assertEqual(runInfo.mz_precision, 10)
         self.assertEqual(runInfo.mz_precision_abs, 0.002)
         self.assertEqual(runInfo.description, 'My first description')
-        self.assertFalse(runInfo.fast)
+        self.assertTrue(runInfo.fast)
 
     def test_runInfo_maxrunid(self):
         self.session.add(Run(
@@ -1633,7 +1633,6 @@ class JobQueryTestCase(unittest.TestCase):
                         max_ms_level=10,
                         precursor_mz_precision=0.005,
                         max_broken_bonds=4,
-                        fast=False,
                         )
         self.assertDictEqual(expected, JobQuery.defaults())
 
@@ -1684,7 +1683,6 @@ class JobQueryTestCase(unittest.TestCase):
                         max_ms_level=10,
                         precursor_mz_precision=0.005,
                         max_broken_bonds=3,
-                        fast=False,
                         )
         self.assertDictEqual(expected, JobQuery.defaults('example'))
 
@@ -1781,7 +1779,8 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
 
         sf = 'structures.dat'
         script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
-        script += "{magma} metabolize --n_reaction_steps '2' -m 'phase1,phase2' -j - {db}\n"
+        script += "{magma} metabolize --n_reaction_steps '2' "
+        script += "-m 'phase1,phase2' -j - {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [sf],
                                      'script': script
@@ -1805,7 +1804,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1'"
-        script += " -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
+        script += " -b '4' --precursor_mz_precision '0.005' -j - --fast {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [sf],
                                      'script': script
@@ -1831,10 +1830,11 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
 
         sf = 'structures.dat'
         script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
-        script += "{magma} metabolize --n_reaction_steps '2' -m 'phase2' -j - {db} |"
+        script += "{magma} metabolize --n_reaction_steps '2' "
+        script += "-m 'phase2' -j - {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1'"
-        script += " -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
+        script += " -b '4' --precursor_mz_precision '0.005' -j - --fast {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [sf],
                                      'script': script
@@ -1977,7 +1977,8 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         script = "{magma} read_ms_data --ms_data_format 'mzxml' "
         script += "-l '3' -a '1000.0' ms_data.dat {db}\n"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
-        script += " -i '1' -b '4' --precursor_mz_precision '0.005' {db}\n"
+        script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
+        script += " --fast {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': ['ms_data.dat'],
                                      'script': script
@@ -2041,9 +2042,11 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                             ])
         query = self.jobquery.metabolize(params, True)
 
-        script = "{magma} metabolize --n_reaction_steps '2' -m 'phase1,phase2' {db} |"
+        script = "{magma} metabolize --n_reaction_steps '2' "
+        script += "-m 'phase1,phase2' {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
-        script += " -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
+        script += " -i '1' -b '4' --precursor_mz_precision '0.005' -j - "
+        script += "--fast {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [],
                                      'script': script
@@ -2089,8 +2092,10 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
         script = "echo '123' | {magma} metabolize -j - --n_reaction_steps '2' "
         script += "-m 'phase1' {db} |"
-        script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
-        script += " -i '1' -b '4' --precursor_mz_precision '0.005' -j - {db}\n"
+        script += "{magma} annotate -p '5.0' -q '0.001' "
+        script += "-c '200000.0' -d '0.1' "
+        script += "-i '1' -b '4' --precursor_mz_precision '0.005' -j - "
+        script += "--fast {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [],
                                      'script': script
@@ -2114,29 +2119,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
         script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
         script += " -i '1'"
-        script += " -b '4' --precursor_mz_precision '0.005' {db}\n"
-        expected_query = JobQuery(**{'directory': self.jobdir,
-                                     'prestaged': [],
-                                     'script': script
-                                     })
-        self.assertEqual(query, expected_query)
-
-    def test_fast(self):
-        params = {'precursor_mz_precision': 0.005,
-                  'mz_precision': 5.0,
-                  'mz_precision_abs': 0.001,
-                  'ms_intensity_cutoff': 200000,
-                  'msms_intensity_cutoff': 0.1,
-                  'ionisation_mode': 1,
-                  'max_broken_bonds': 4,
-                  'fast': 'on',
-                  }
-
-        query = self.jobquery.annotate(params)
-
-        script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
-        script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
-        script += " --fast {db}\n"
+        script += " -b '4' --precursor_mz_precision '0.005' --fast {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [],
                                      'script': script
@@ -2184,7 +2167,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
         script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         script += " --structure_database 'pubchem'"
         script += " --db_options 'data/pubchem.db,1,9999'"
-        script += " {db}\n"
+        script += " --fast {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [],
                                      'script': script
@@ -2231,13 +2214,13 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += "{magma} add_structures -t 'smiles'"
         expected_script += " structures.dat {db}\n"
 
-        expected_script += "{magma} metabolize --n_reaction_steps '2' -m 'phase1,phase2'"
-        expected_script += " {db}\n"
+        expected_script += "{magma} metabolize --n_reaction_steps '2'"
+        expected_script += " -m 'phase1,phase2' {db}\n"
 
         expected_script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0'"
         expected_script += " -d '0.1'"
         expected_script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
-        expected_script += " {db}\n"
+        expected_script += " --fast {db}\n"
 
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': ['ms_data.dat',
@@ -2291,7 +2274,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0'"
         expected_script += " -d '0.1'"
         expected_script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
-        expected_script += " {db}\n"
+        expected_script += " --fast {db}\n"
 
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': ['ms_data.dat',
@@ -2336,7 +2319,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         expected_script += " --structure_database 'pubchem'"
         expected_script += " --db_options 'data/pubchem.db,1,9999'"
-        expected_script += " {db}\n"
+        expected_script += " --fast {db}\n"
 
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': ['ms_data.dat'],
