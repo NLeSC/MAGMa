@@ -40,6 +40,7 @@ Ext.require([
   'Ext.toolbar.Spacer',
   'Ext.container.Viewport',
   'Ext.layout.container.Border',
+  'Ext.ux.DataTip',
   'Esc.magmaweb.view.scan.UploadFieldSet',
   'Esc.magmaweb.view.metabolite.AddFieldSet',
   'Esc.magmaweb.view.metabolite.MetabolizeFieldSet',
@@ -58,6 +59,9 @@ Ext.onReady(function() {
     layout: {
     	type: 'hbox',
     	align: 'stretch'
+    },
+    plugins: {
+        ptype: 'datatip'
     },
     defaults: {
     	flex: 1,
