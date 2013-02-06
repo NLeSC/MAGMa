@@ -1632,7 +1632,7 @@ class JobQueryTestCase(unittest.TestCase):
                         abs_peak_cutoff=1000,
                         max_ms_level=10,
                         precursor_mz_precision=0.005,
-                        max_broken_bonds=4,
+                        max_broken_bonds=3,
                         )
         self.assertDictEqual(expected, JobQuery.defaults())
 
