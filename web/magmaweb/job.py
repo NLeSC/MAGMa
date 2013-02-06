@@ -137,6 +137,9 @@ class JobQuery(object):
         schema.add(colander.SchemaNode(colander.Integer(),
                                        validator=colander.Range(min=0),
                                        name='max_broken_bonds'))
+        schema.add(colander.SchemaNode(colander.Integer(),
+                                       validator=colander.Range(min=0),
+                                       name='max_water_losses'))
         schema.add(colander.SchemaNode(colander.String(),
                                        missing=colander.null,
                                        validator=colander.OneOf(['pubchem',
@@ -461,6 +464,7 @@ class JobQuery(object):
         * msms_intensity_cutoff
         * ionisation_mode
         * max_broken_bonds
+        * max_water_losses
         * structure_database,
             only used when ``structure_database_location`` is given
         * min_refscore, only used when ``structure_database_location`` is given
@@ -481,7 +485,8 @@ class JobQuery(object):
         script += " -p '{mz_precision}' -q '{mz_precision_abs}'"
         script += " -c '{ms_intensity_cutoff}' -d '{msms_intensity_cutoff}'"
         script += " -i '{ionisation_mode}' -b '{max_broken_bonds}'"
-        script += " --precursor_mz_precision '{precursor_mz_precision}' "
+        script += " --precursor_mz_precision '{precursor_mz_precision}'"
+        script += " --max_water_losses '{max_water_losses}' "
         pmzp = params['precursor_mz_precision']
         ms_ic = params['ms_intensity_cutoff']
         msms_ic = params['msms_intensity_cutoff']
@@ -492,7 +497,8 @@ class JobQuery(object):
             'ms_intensity_cutoff': self.escape(ms_ic),
             'msms_intensity_cutoff': self.escape(msms_ic),
             'ionisation_mode': self.escape(params['ionisation_mode']),
-            'max_broken_bonds': self.escape(params['max_broken_bonds'])
+            'max_broken_bonds': self.escape(params['max_broken_bonds']),
+            'max_water_losses': self.escape(params['max_water_losses']),
         }
 
         if params['structure_database'] is not colander.null:
@@ -581,6 +587,7 @@ class JobQuery(object):
                     max_ms_level=10,
                     precursor_mz_precision=0.005,
                     max_broken_bonds=3,
+                    max_water_losses=1,
                     )
 
     @classmethod
@@ -632,6 +639,7 @@ class JobQuery(object):
                     max_ms_level=10,
                     precursor_mz_precision=0.005,
                     max_broken_bonds=3,
+                    max_water_losses=1,
                     )
 
 
