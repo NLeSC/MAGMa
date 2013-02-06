@@ -64,6 +64,8 @@ class Metabolite(Base):
     nhits = Column(Integer)
     # Monoisotopic mass
     mim = Column(Float)
+    # Number of non-hydrogen atoms
+    natoms = Column(Integer)
     # Calculated logP
     logp = Column(Float)
     reference = Column(Unicode)
