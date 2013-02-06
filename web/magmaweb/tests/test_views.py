@@ -766,7 +766,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
             ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
             max_ms_level=3, precursor_mz_precision=0.01,
             max_broken_bonds=4, description='My first description',
-            fast=False,
+            max_water_losses=1,
         )
         views = JobViews(job, request)
 
@@ -777,17 +777,15 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  metabolism_types=['phase1',
                                                                    'phase2'],
                                                  ionisation_mode=-1,
-                                                 skip_fragmentation=True,
                                                  ms_intensity_cutoff=200000.0,
                                                  msms_intensity_cutoff=0.5,
                                                  mz_precision=4.0,
                                                  mz_precision_abs=0.002,
-                                                 use_all_peaks=True,
                                                  abs_peak_cutoff=1000,
                                                  max_ms_level=3,
                                                  precursor_mz_precision=0.01,
                                                  max_broken_bonds=4,
-                                                 fast=False,
+                                                 max_water_losses=1,
                                                  )
                                     })
 
@@ -806,17 +804,15 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  metabolism_types=['phase1',
                                                                    'phase2'],
                                                  ionisation_mode=1,
-                                                 skip_fragmentation=False,
                                                  ms_intensity_cutoff=1000000.0,
                                                  msms_intensity_cutoff=0.1,
                                                  mz_precision=5.0,
                                                  mz_precision_abs=0.001,
-                                                 use_all_peaks=False,
                                                  abs_peak_cutoff=1100,
                                                  max_ms_level=10,
                                                  precursor_mz_precision=0.005,
-                                                 max_broken_bonds=4,
-                                                 fast=False,
+                                                 max_broken_bonds=3,
+                                                 max_water_losses=1,
                                                  )
                                     })
 
@@ -833,17 +829,15 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  metabolism_types=['phase1',
                                                                    'phase2'],
                                                  ionisation_mode=1,
-                                                 skip_fragmentation=False,
                                                  ms_intensity_cutoff=1000000.0,
                                                  msms_intensity_cutoff=0.1,
                                                  mz_precision=5.0,
                                                  mz_precision_abs=0.001,
-                                                 use_all_peaks=False,
                                                  abs_peak_cutoff=1000,
                                                  max_ms_level=10,
                                                  precursor_mz_precision=0.005,
-                                                 max_broken_bonds=4,
-                                                 fast=False,
+                                                 max_broken_bonds=3,
+                                                 max_water_losses=1,
                                                  )
                                     })
 

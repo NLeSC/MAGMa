@@ -43,6 +43,17 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         minValue : 0,
         decimalPrecision : 0
     }, {
+        fieldLabel: 'Additional water losses',
+        tooltip : 'Maximum number of additional neutral water losses',
+        labelSeparator: '',
+        afterLabelTextTpl: '<span class="relation">&le;</span>',
+        name : 'max_water_losses',
+        xtype : 'numberfield',
+        allowBlank : false,
+        maxValue : 10,
+        minValue : 0,
+        decimalPrecision : 0
+    }, {
         xtype: 'displayfield',
         value: 'Precision:'
     }, {
@@ -93,17 +104,5 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         tooltip : 'Minimum intensity of fragment peaks to be annotated, as percentage of basepeak',
         allowBlank : false,
         decimalPrecision : 5
-    }, {
-        xtype : 'checkbox',
-        fieldLabel : 'Annotate all level 1 peaks, including those not fragmented',
-        name : 'use_all_peaks'
-    },  {
-        xtype : 'checkbox',
-        fieldLabel : 'Skip substructure annotation of fragment peaks',
-        name : 'skip_fragmentation'
-    },  {
-        xtype : 'checkbox',
-        fieldLabel : 'Quick calculations for molecules up to 64 atoms',
-        name : 'fast'
     }]
 });

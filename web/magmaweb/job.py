@@ -137,12 +137,9 @@ class JobQuery(object):
         schema.add(colander.SchemaNode(colander.Integer(),
                                        validator=colander.Range(min=0),
                                        name='max_broken_bonds'))
-        schema.add(colander.SchemaNode(colander.Boolean(),
-                                       default=False, missing=False,
-                                       name='use_all_peaks'))
-        schema.add(colander.SchemaNode(colander.Boolean(),
-                                       default=False, missing=False,
-                                       name='skip_fragmentation'))
+        schema.add(colander.SchemaNode(colander.Integer(),
+                                       validator=colander.Range(min=0),
+                                       name='max_water_losses'))
         schema.add(colander.SchemaNode(colander.String(),
                                        missing=colander.null,
                                        validator=colander.OneOf(['pubchem',
@@ -157,9 +154,6 @@ class JobQuery(object):
                                        missing=colander.null,
                                        validator=colander.Range(min=1),
                                        name='max_mz'))
-        schema.add(colander.SchemaNode(colander.Boolean(),
-                                       default=False, missing=False,
-                                       name='fast'))
 
     def _addMetabolizeSchema(self, schema):
         validator = colander.OneOf(['phase1', 'phase2'])
@@ -470,11 +464,7 @@ class JobQuery(object):
         * msms_intensity_cutoff
         * ionisation_mode
         * max_broken_bonds
-        * use_all_peaks, when key is set then all peaks are used
-        * skip_fragmentation, when key is set then
-            no fragmentation of structures is performed.
-        * fast, when key is set then
-            Quick calculations for molecules up to 64 atoms is used
+        * max_water_losses
         * structure_database,
             only used when ``structure_database_location`` is given
         * min_refscore, only used when ``structure_database_location`` is given
@@ -484,6 +474,8 @@ class JobQuery(object):
 
         ``structure_database_location``
            location of structure database to search for candidate molecules
+
+        Uses fast option by default.
         """
         schema = colander.SchemaNode(colander.Mapping())
         self._addAnnotateSchema(schema)
@@ -493,7 +485,8 @@ class JobQuery(object):
         script += " -p '{mz_precision}' -q '{mz_precision_abs}'"
         script += " -c '{ms_intensity_cutoff}' -d '{msms_intensity_cutoff}'"
         script += " -i '{ionisation_mode}' -b '{max_broken_bonds}'"
-        script += " --precursor_mz_precision '{precursor_mz_precision}' "
+        script += " --precursor_mz_precision '{precursor_mz_precision}'"
+        script += " --max_water_losses '{max_water_losses}' "
         pmzp = params['precursor_mz_precision']
         ms_ic = params['ms_intensity_cutoff']
         msms_ic = params['msms_intensity_cutoff']
@@ -504,7 +497,8 @@ class JobQuery(object):
             'ms_intensity_cutoff': self.escape(ms_ic),
             'msms_intensity_cutoff': self.escape(msms_ic),
             'ionisation_mode': self.escape(params['ionisation_mode']),
-            'max_broken_bonds': self.escape(params['max_broken_bonds'])
+            'max_broken_bonds': self.escape(params['max_broken_bonds']),
+            'max_water_losses': self.escape(params['max_water_losses']),
         }
 
         if params['structure_database'] is not colander.null:
@@ -525,19 +519,10 @@ class JobQuery(object):
 
         script = script.format(**script_substitutions)
 
-        if params['use_all_peaks']:
-            script += '-u '
-
-        if params['skip_fragmentation']:
-            script += '--skip_fragmentation '
-
-        if params['fast']:
-            script += '--fast '
-
         if from_subset:
             script += '-j - '
 
-        script += "{db}\n"
+        script += "--fast {db}\n"
         self.script += script
 
         return self
@@ -594,17 +579,15 @@ class JobQuery(object):
         return dict(n_reaction_steps=2,
                     metabolism_types=['phase1', 'phase2'],
                     ionisation_mode=1,
-                    skip_fragmentation=False,
                     ms_intensity_cutoff=1000000.0,
                     msms_intensity_cutoff=0.1,
                     mz_precision=5.0,
                     mz_precision_abs=0.001,
-                    use_all_peaks=False,
                     abs_peak_cutoff=1000,
                     max_ms_level=10,
                     precursor_mz_precision=0.005,
-                    max_broken_bonds=4,
-                    fast=False,
+                    max_broken_bonds=3,
+                    max_water_losses=1,
                     )
 
     @classmethod
@@ -648,17 +631,15 @@ class JobQuery(object):
         return dict(ms_data="\n".join(example_tree),
                     ms_data_format='tree',
                     ionisation_mode=-1,
-                    skip_fragmentation=False,
                     ms_intensity_cutoff=0,
                     msms_intensity_cutoff=0,
                     mz_precision=5,
                     mz_precision_abs=0,
-                    use_all_peaks=False,
                     abs_peak_cutoff=1000,
                     max_ms_level=10,
                     precursor_mz_precision=0.005,
                     max_broken_bonds=3,
-                    fast=False,
+                    max_water_losses=1,
                     )
 
 
