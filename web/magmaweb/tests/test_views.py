@@ -766,7 +766,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
             ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
             max_ms_level=3, precursor_mz_precision=0.01,
             max_broken_bonds=4, description='My first description',
-            fast=False,
+            fast=True,
         )
         views = JobViews(job, request)
 
@@ -785,7 +785,6 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  max_ms_level=3,
                                                  precursor_mz_precision=0.01,
                                                  max_broken_bonds=4,
-                                                 fast=False,
                                                  )
                                     })
 
@@ -812,7 +811,6 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  max_ms_level=10,
                                                  precursor_mz_precision=0.005,
                                                  max_broken_bonds=4,
-                                                 fast=False,
                                                  )
                                     })
 
@@ -837,7 +835,6 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  max_ms_level=10,
                                                  precursor_mz_precision=0.005,
                                                  max_broken_bonds=4,
-                                                 fast=False,
                                                  )
                                     })
 
