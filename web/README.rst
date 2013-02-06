@@ -164,7 +164,11 @@ The `sencha create` command does not work for our pages. So we role our own jsb3
 2. Goto developers/firebug console
 3. Enter `copy(Ext.Loader.history)`
 4. Open file `myhistory` and paste clipboard (CTRL-p)
-5. Run `perl loader2jsb3.pl myhistory > magmaweb.results-4.1.1a.jsb3`
+5. Load workspace page
+6. Goto developers/firebug console
+7. Enter `copy(Ext.Loader.history)`
+8. Open file `myhistory` for appending and paste clipboard (CTRL-p)
+9. Run `perl loader2jsb3.pl myhistory > magmaweb.results-4.2.0.jsb3`
 
 loader2jsb3.pl looks like:
 
@@ -211,7 +215,7 @@ loader2jsb3.pl looks like:
        "builds"=> [
            {
                "name"=> "All Classes",
-               "target"=> "resultsApp-all-4.1.1a.js",
+               "target"=> "resultsApp-all-4.2.0.js",
                "compress"=> JSON::true,
                "files"=> \@files
    }
