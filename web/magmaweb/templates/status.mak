@@ -9,6 +9,6 @@
 <meta http-equiv="refresh" content="10" />
 % endif
 </head>
-<body>Job is in '${status}' status. This page will reload every 30 seconds.
+<body>Job is in '${status}' status. This page will reload every 10 seconds.
 </body>
 </html>
