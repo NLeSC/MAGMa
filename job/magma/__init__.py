@@ -60,7 +60,7 @@ class MagmaSession(object):
                  max_broken_bonds=3,
                  max_water_losses=1,
                  ms_intensity_cutoff=1e6,
-                 msms_intensity_cutoff=0.1,
+                 msms_intensity_cutoff=5,
                  mz_precision=5.0,
                  mz_precision_abs=0.001,
                  precursor_mz_precision=0.005,
@@ -415,7 +415,7 @@ class AnnotateEngine(object):
         if scan.mslevel==1:
             cutoff=self.ms_intensity_cutoff
         else:
-            cutoff=dbscan.basepeakintensity*self.msms_intensity_cutoff
+            cutoff=dbscan.basepeakintensity*self.msms_intensity_cutoff/100
         dbpeaks=self.db_session.query(Peak).filter(Peak.scanid==scan.scanid).filter(Peak.intensity>=cutoff).all()
         for dbpeak in dbpeaks:
             scan.peaks.append(types.PeakType(dbpeak.mz,dbpeak.intensity,scan.scanid,pars.missingfragmentpenalty*(dbpeak.intensity**0.5)))
