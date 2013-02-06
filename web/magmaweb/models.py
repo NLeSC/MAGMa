@@ -196,5 +196,3 @@ class Run(Base):
     # precision for matching precursor mz with peak mz in parent scan
     precursor_mz_precision = Column(Float)
     use_all_peaks = Column(Boolean)
-    # Quick calculations for molecules up to 64 atoms
-    fast = Column(Boolean)
