@@ -67,6 +67,10 @@
 				<td>Maximum number bond breaks to generate substructures:</td>
 				<td>${run.max_broken_bonds}</td>
 			</tr>
+            <tr>
+                <td>Maximum number of additional neutral water losses:</td>
+                <td>${run.max_water_losses}</td>
+            </tr>
 			<tr>
 				<td>Mass precision for matching calculated masses with peaks:</td>
 				<td>${run.mz_precision}</td>

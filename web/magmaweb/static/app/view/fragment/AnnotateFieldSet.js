@@ -43,6 +43,17 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         minValue : 0,
         decimalPrecision : 0
     }, {
+        fieldLabel: 'Additional water losses',
+        tooltip : 'Maximum number of additional neutral water losses',
+        labelSeparator: '',
+        afterLabelTextTpl: '<span class="relation">&le;</span>',
+        name : 'max_water_losses',
+        xtype : 'numberfield',
+        allowBlank : false,
+        maxValue : 10,
+        minValue : 0,
+        decimalPrecision : 0
+    }, {
         xtype: 'displayfield',
         value: 'Precision:'
     }, {
