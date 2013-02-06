@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <title>MAGMa - Workspace</title>
 <link rel="stylesheet"
-	href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
+  href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
 <link rel="stylesheet" href="${request.static_url('magmaweb:static/style.css')}" type="text/css"/>
 <script type="text/javascript" src="${request.extjsroot}/ext.js"></script>
 <style type="text/css">
 
 .icon-delete {
-	background-image:
-		url(${request.extjsroot}/examples/writer/images/delete.png) !important;
+  background-image:
+    url(${request.extjsroot}/examples/writer/images/delete.png) !important;
 }
 </style>
 <script type="text/javascript">
@@ -29,7 +29,7 @@ Ext.Loader.setConfig({
 ## Comment out below for development or when running sencha build, every
 ## class is loaded when commented out
 <script type="text/javascript"
-	src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script>
+  src="${request.static_url('magmaweb:static/app/resultsApp-all.js')}"></script>
 <script type="text/javascript">
 
 Ext.require([
@@ -77,27 +77,31 @@ Ext.onReady(function() {
   %>
 
   Ext.define('Job', {
-	extend: 'Ext.data.Model',
-	fields: [
-	         'id',
-	         'description',
-	         'ms_filename',
-	         {name: 'created_at', type: 'date'},
-	         'url'
-	         ],
-	proxy: {
-		type: 'rest',
-		url: '${request.route_path('jobfromscratch')}'
-	}
+      extend: 'Ext.data.Model',
+      fields: [
+        'id',
+        'description',
+        'ms_filename',
+        {name: 'created_at', type: 'date'},
+        'url'
+      ],
+      proxy: {
+        type: 'rest',
+        url: '${request.route_path('jobfromscratch')}'
+      }
   });
 
   var job_store = Ext.create('Ext.data.Store', {
-	model: 'Job',
+    model: 'Job',
+    sorters: {
+        property: 'created_at',
+        direction: 'DESC'
+    },
     data: ${json.dumps(jobs)|n}
   });
 
   var cellEditing = Ext.create('Ext.grid.plugin.CellEditing', {
-      clicksToEdit: 1
+    clicksToEdit: 1
   });
 
   var job_grid = Ext.create('Ext.grid.Panel', {
@@ -106,9 +110,9 @@ Ext.onReady(function() {
     height: 500,
     plugins: [cellEditing],
     listeners: {
-    	edit: function(editor, e) {
-    		e.record.save();
-    	}
+      edit: function(editor, e) {
+        e.record.save();
+      }
     },
     columns: [{
       text: 'ID', dataIndex: 'id', renderer: function(v, m, r) {
@@ -119,35 +123,35 @@ Ext.onReady(function() {
       text: 'Description', dataIndex: 'description',
       flex: 1,
       editor: {
-    	  xtype: 'textfield'
+        xtype: 'textfield'
       }
     }, {
       text: 'MS filename', dataIndex: 'ms_filename',
-	  editor: {
-    	  xtype: 'textfield'
+      editor: {
+        xtype: 'textfield'
       }
     }, {
       text: 'Created at', dataIndex: 'created_at', width: 120,
       xtype: 'datecolumn', format: "Y-m-d H:i:s"
     }, {
-        xtype: 'actioncolumn',
-        width:30,
-        sortable: false,
-        items: [{
-        	iconCls: 'icon-delete',
-            tooltip: 'Delete Job',
-            handler: function(grid, rowIndex, colIndex, item, e , row) {
-            	Ext.MessageBox.confirm(
-            		'Delete job',
-            		'Are you sure you want delete job '+row.data.id+'?',
-            		function(button) {
-            			if (button === 'yes') {
-                    	    row.destroy();
-            			}
-            		}
-            	);
-            }
-        }]
+      xtype: 'actioncolumn',
+      width:30,
+      sortable: false,
+      items: [{
+        iconCls: 'icon-delete',
+          tooltip: 'Delete Job',
+          handler: function(grid, rowIndex, colIndex, item, e , row) {
+            Ext.MessageBox.confirm(
+              'Delete job',
+              'Are you sure you want delete job '+row.data.id+'?',
+              function(button) {
+                if (button === 'yes') {
+                  row.destroy();
+                }
+              }
+            );
+          }
+      }]
     }]
   });
 
