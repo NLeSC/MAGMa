@@ -8,6 +8,14 @@ Ext.define('Esc.magmaweb.view.scan.UploadForm', {
     alias: 'widget.scanuploadform',
     autoScroll: true,
     trackResetOnLoad: true,
+    requires: [
+       'Ext.ux.DataTip',
+       'Esc.magmaweb.view.scan.UploadFieldSet',
+       'Esc.magmaweb.view.fragment.AnnotateFieldSet'
+    ],
+    plugins: {
+        ptype: 'datatip'
+    },
     items: [{
         xtype: 'uploadmsdatafieldset'
     }, {
