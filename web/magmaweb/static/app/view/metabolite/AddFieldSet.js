@@ -40,23 +40,30 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
 	    	title: 'Database',
 	    	id: 'structure_database_tab',
 		    defaults : {
-		        labelWidth : 300
+		        labelWidth : 200
 		    },
 	    	items: [{
 	    		xtype: 'combo',
-	    		fieldLabel: 'Database',
+                fieldLabel: '&nbsp;',
+                labelSeparator: '',
 	    		name: 'structure_database',
 	    		emptyText: 'No database selected',
 	    		store: [['chebi', 'ChEBI'],['pubchem', 'PubChem']]
 	    	}, {
     			xtype: 'numberfield',
-    			fieldLabel: 'Minimum reference score based on nr. of synonyms and substances',
+                fieldLabel: 'PubChem reference score',
+                labelSeparator: '',
+                afterLabelTextTpl: '<span class="relation">&ge;</span>',
+                tooltip: 'Minimum reference score based on nr. of synonyms and substances',
     			name: 'min_refscore',
     			minValue: 1,
     			value: 1
     		}, {
     			xtype: 'numberfield',
-    			fieldLabel: 'Maximum m/z (mass-to-charge ratio)',
+                fieldLabel: 'Mass',
+                labelSeparator: '',
+                tooltip: 'Maximum m/z (mass-to-charge ratio)',
+                afterLabelTextTpl: '<span class="relation">&le;</span>',
     			name: 'max_mz',
     			minValue: 1,
     			value: 9999
@@ -64,7 +71,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
 	    }, {
 	        title : 'Upload',
 		    defaults : {
-		        labelWidth : 300
+		        labelWidth : 200
 		    },
 	        items : [{
 	                    xtype : 'combo',
