@@ -44,7 +44,7 @@ def populateTestingDB(session):
     session.add(Run(
         n_reaction_steps=2, metabolism_types='phase1,phase2',
         ionisation_mode=-1, skip_fragmentation=True,
-        ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
+        ms_intensity_cutoff=200000.0, msms_intensity_cutoff=50,
         mz_precision=10, mz_precision_abs=0.002, use_all_peaks=True,
         ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
         max_ms_level=3, precursor_mz_precision=10,
@@ -147,7 +147,7 @@ def populateWithUseAllPeaks(session):
     session.add(Run(
         n_reaction_steps=2, metabolism_types='phase1,phase2',
         ionisation_mode=-1, skip_fragmentation=True,
-        ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
+        ms_intensity_cutoff=200000.0, msms_intensity_cutoff=50,
         mz_precision=10, mz_precision_abs=0.002, use_all_peaks=False,
         ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
         max_ms_level=3, precursor_mz_precision=10,
@@ -673,7 +673,7 @@ class JobDbTestCase(JobDbTestCaseAbstract):
         self.assertEqual(runInfo.ionisation_mode, -1)
         self.assertEqual(runInfo.max_broken_bonds, 4)
         self.assertEqual(runInfo.ms_intensity_cutoff, 200000.0)
-        self.assertEqual(runInfo.msms_intensity_cutoff, 0.5)
+        self.assertEqual(runInfo.msms_intensity_cutoff, 50)
         self.assertEqual(runInfo.mz_precision, 10)
         self.assertEqual(runInfo.mz_precision_abs, 0.002)
         self.assertEqual(runInfo.description, 'My first description')
@@ -683,7 +683,7 @@ class JobDbTestCase(JobDbTestCaseAbstract):
         self.session.add(Run(
             n_reaction_steps=2, metabolism_types='phase1,phase2',
             ionisation_mode=-1, skip_fragmentation=True,
-            ms_intensity_cutoff=200000.0, msms_intensity_cutoff=0.5,
+            ms_intensity_cutoff=200000.0, msms_intensity_cutoff=50,
             mz_precision=10, mz_precision_abs=0.002, use_all_peaks=True,
             ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
             max_ms_level=3, precursor_mz_precision=10,
@@ -1346,7 +1346,7 @@ class JobMSpectraTestCase(JobDbTestCaseAbstract):
                  'mz': 163.076232910156,
                  'assigned_metid': None}
             ],
-            'cutoff': 139505.0,
+            'cutoff': 13950500.0,
             'mslevel': 2,
             'precursor': {'id': 870, 'mz': 207.0663147}
         })
@@ -1626,7 +1626,7 @@ class JobQueryTestCase(unittest.TestCase):
                         metabolism_types=['phase1', 'phase2'],
                         ionisation_mode=1,
                         ms_intensity_cutoff=1000000.0,
-                        msms_intensity_cutoff=0.1,
+                        msms_intensity_cutoff=10,
                         mz_precision=5.0,
                         mz_precision_abs=0.001,
                         abs_peak_cutoff=1000,
@@ -1796,7 +1796,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                   'mz_precision': 5.0,
                   'mz_precision_abs': 0.001,
                   'ms_intensity_cutoff': 200000,
-                  'msms_intensity_cutoff': 0.1,
+                  'msms_intensity_cutoff': 10,
                   'ionisation_mode': 1,
                   'max_broken_bonds': 4,
                   'max_water_losses': 1,
@@ -1805,7 +1805,8 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
 
         sf = 'structures.dat'
         script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
-        script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
+        script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0'"
+        script += " -d '10.0'"
         script += " -i '1'"
         script += " -b '4' --precursor_mz_precision '0.005'"
         script += " --max_water_losses '1' -j - --fast {db}\n"
@@ -1826,7 +1827,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                            mz_precision=5.0,
                            mz_precision_abs=0.001,
                            ms_intensity_cutoff=200000,
-                           msms_intensity_cutoff=0.1,
+                           msms_intensity_cutoff=10,
                            ionisation_mode=1,
                            max_broken_bonds=4,
                            max_water_losses=1,
@@ -1837,7 +1838,8 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
         script += "{magma} metabolize --n_reaction_steps '2' "
         script += "-m 'phase2' -j - {db} |"
-        script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
+        script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0'"
+        script += " -d '10.0'"
         script += " -i '1'"
         script += " -b '4' --precursor_mz_precision '0.005'"
         script += " --max_water_losses '1' -j - --fast {db}\n"
@@ -1973,7 +1975,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                   'mz_precision': 5.0,
                   'mz_precision_abs': 0.001,
                   'ms_intensity_cutoff': 200000,
-                  'msms_intensity_cutoff': 0.1,
+                  'msms_intensity_cutoff': 10,
                   'ionisation_mode': 1,
                   'max_broken_bonds': 4,
                   'max_water_losses': 1,
@@ -1983,7 +1985,8 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml' "
         script += "-l '3' -a '1000.0' ms_data.dat {db}\n"
-        script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
+        script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0'"
+        script += " -d '10.0'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         script += " --max_water_losses '1' --fast {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
@@ -2043,7 +2046,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                             ('mz_precision', 5.0),
                             ('mz_precision_abs', 0.001),
                             ('ms_intensity_cutoff', 200000),
-                            ('msms_intensity_cutoff', 0.1),
+                            ('msms_intensity_cutoff', 10),
                             ('ionisation_mode', 1),
                             ('max_broken_bonds', 4),
                             ('max_water_losses', 1),
@@ -2052,7 +2055,8 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 
         script = "{magma} metabolize --n_reaction_steps '2' "
         script += "-m 'phase1,phase2' {db} |"
-        script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
+        script += "{magma} annotate -p '5.0' -q '0.001'"
+        script += " -c '200000.0' -d '10.0'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' "
         script += "--max_water_losses '1' -j - "
         script += "--fast {db}\n"
@@ -2092,7 +2096,7 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
                            mz_precision=5.0,
                            mz_precision_abs=0.001,
                            ms_intensity_cutoff=200000,
-                           msms_intensity_cutoff=0.1,
+                           msms_intensity_cutoff=10,
                            ionisation_mode=1,
                            max_broken_bonds=4,
                            max_water_losses=1,
@@ -2103,7 +2107,7 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
         script = "echo '123' | {magma} metabolize -j - --n_reaction_steps '2' "
         script += "-m 'phase1' {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001' "
-        script += "-c '200000.0' -d '0.1' "
+        script += "-c '200000.0' -d '10.0' "
         script += "-i '1' -b '4' --precursor_mz_precision '0.005'"
         script += " --max_water_losses '1' -j - "
         script += "--fast {db}\n"
@@ -2121,7 +2125,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                   'mz_precision': 5.0,
                   'mz_precision_abs': 0.001,
                   'ms_intensity_cutoff': 200000,
-                  'msms_intensity_cutoff': 0.1,
+                  'msms_intensity_cutoff': 10,
                   'ionisation_mode': 1,
                   'max_broken_bonds': 4,
                   'max_water_losses': 1,
@@ -2129,7 +2133,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.annotate(params)
 
-        script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
+        script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '10.0'"
         script += " -i '1'"
         script += " -b '4' --precursor_mz_precision '0.005'"
         script += " --max_water_losses '1' --fast {db}\n"
@@ -2144,7 +2148,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                   'mz_precision': 5.0,
                   'mz_precision_abs': 0.001,
                   'ms_intensity_cutoff': 200000,
-                  'msms_intensity_cutoff': 0.1,
+                  'msms_intensity_cutoff': 10,
                   'ionisation_mode': 1,
                   'max_broken_bonds': 4,
                   'max_water_losses': 1,
@@ -2165,7 +2169,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                   'mz_precision': 5.0,
                   'mz_precision_abs': 0.001,
                   'ms_intensity_cutoff': 200000,
-                  'msms_intensity_cutoff': 0.1,
+                  'msms_intensity_cutoff': 10,
                   'ionisation_mode': 1,
                   'max_broken_bonds': 4,
                   'max_water_losses': 1,
@@ -2178,7 +2182,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.annotate(params, False, structure_db_location)
 
-        script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '0.1'"
+        script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '10.0'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         script += " --max_water_losses '1'"
         script += " --structure_database 'pubchem'"
@@ -2206,7 +2210,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         params = MultiDict(n_reaction_steps=2,
                            ionisation_mode=1,
                            ms_intensity_cutoff=200000,
-                           msms_intensity_cutoff=0.1,
+                           msms_intensity_cutoff=10,
                            abs_peak_cutoff=1000,
                            precursor_mz_precision=0.005,
                            max_broken_bonds=4,
@@ -2235,7 +2239,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += " -m 'phase1,phase2' {db}\n"
 
         expected_script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0'"
-        expected_script += " -d '0.1'"
+        expected_script += " -d '10.0'"
         expected_script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         expected_script += " --max_water_losses '1' --fast {db}\n"
 
@@ -2262,7 +2266,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         params = MultiDict(n_reaction_steps=2,
                            ionisation_mode=1,
                            ms_intensity_cutoff=200000,
-                           msms_intensity_cutoff=0.1,
+                           msms_intensity_cutoff=10,
                            abs_peak_cutoff=1000,
                            precursor_mz_precision=0.005,
                            max_broken_bonds=4,
@@ -2290,7 +2294,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += " structures.dat {db}\n"
 
         expected_script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0'"
-        expected_script += " -d '0.1'"
+        expected_script += " -d '10.0'"
         expected_script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         expected_script += " --max_water_losses '1' --fast {db}\n"
 
@@ -2308,7 +2312,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         params = dict(n_reaction_steps=2,
                       ionisation_mode=1,
                       ms_intensity_cutoff=200000,
-                      msms_intensity_cutoff=0.1,
+                      msms_intensity_cutoff=10,
                       abs_peak_cutoff=1000,
                       precursor_mz_precision=0.005,
                       max_broken_bonds=4,
@@ -2334,7 +2338,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
 
         expected_script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0'"
-        expected_script += " -d '0.1'"
+        expected_script += " -d '10.0'"
         expected_script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         expected_script += " --max_water_losses '1'"
         expected_script += " --structure_database 'pubchem'"
@@ -2351,7 +2355,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         params = dict(n_reaction_steps=2,
                       ionisation_mode=1,
                       ms_intensity_cutoff=200000,
-                      msms_intensity_cutoff=0.1,
+                      msms_intensity_cutoff=10,
                       abs_peak_cutoff=1000,
                       precursor_mz_precision=0.005,
                       max_broken_bonds=4,
