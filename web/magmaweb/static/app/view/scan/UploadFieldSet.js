@@ -14,7 +14,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
          'Ext.container.Container'
     ],
 	defaults : {
-	    labelWidth : 300
+	    labelWidth : 200
 	},
     items: [{
         xtype: 'combo',
@@ -57,7 +57,10 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
     },{
         xtype: 'numberfield',
         name: 'max_ms_level',
-        fieldLabel: 'Maximum MS level',
+        labelSeparator: '',
+        afterLabelTextTpl: '<span class="relation">&le;</span>',
+        fieldLabel: 'MS level',
+        tooltip: 'Maximum MS level',
         allowBlank: false,
         minValue: 1,
         maxValue: 15,
@@ -65,7 +68,10 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
     }, {
         xtype: 'numberfield',
         name: 'abs_peak_cutoff',
-        fieldLabel: 'Absolute intensity threshold for storing peaks in database',
+        fieldLabel: 'Noise level',
+        labelSeparator: '',
+        afterLabelTextTpl: '<span class="relation">&ge;</span>',
+        tooltip: 'Absolute intensity threshold for storing peaks in database',
         allowBlank: false,
         decimalPrecision: 5
     }]
