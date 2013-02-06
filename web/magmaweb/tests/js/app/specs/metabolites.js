@@ -225,7 +225,7 @@ describe('Metabolites', function() {
        expect(list.showFragmentScoreColumn).toHaveBeenCalled();
        expect(mockedstore.setScanFilter).toHaveBeenCalledWith(scanid);
        expect(mockedstore.sorters.indexOfKey('score')).toEqual(0);
-       expect(mockedstore.sorters.getByKey('score').direction).toEqual('DESC');
+       expect(mockedstore.sorters.getByKey('score').direction).toEqual('ASC');
      });
 
      describe('clear scan filter', function() {
