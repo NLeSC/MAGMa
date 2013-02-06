@@ -237,7 +237,12 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
    * @param {Number} scanid Scan identifier to filter on.
    */
   applyScanFilter: function(scanid) {
-      this.getMetabolitesStore().setScanFilter(scanid);
+      var store = this.getMetabolitesStore();
+      store.sorters.insert(0, new Ext.util.Sorter({
+          property: 'score',
+          direction: 'DESC'
+      }));
+      store.setScanFilter(scanid);
       this.getMetaboliteList().showFragmentScoreColumn();
       // TODO in spectra add markers for metabolites present in scan
   },
