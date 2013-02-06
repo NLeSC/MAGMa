@@ -182,6 +182,8 @@ class Run(Base):
     skip_fragmentation = Column(Boolean)
     # max number of bonds broken in substructures generated from metabolites
     max_broken_bonds = Column(Integer)
+    # max number of additional neutral water losses
+    max_water_losses = Column(Integer)
     # Absolute intensity minimum of lvl1 scan peaks
     # which are matched with metabolites
     ms_intensity_cutoff = Column(Float)
@@ -194,5 +196,3 @@ class Run(Base):
     # precision for matching precursor mz with peak mz in parent scan
     precursor_mz_precision = Column(Float)
     use_all_peaks = Column(Boolean)
-    # Quick calculations for molecules up to 64 atoms
-    fast = Column(Boolean)
