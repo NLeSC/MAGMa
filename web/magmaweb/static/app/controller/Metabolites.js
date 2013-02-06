@@ -240,7 +240,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       var store = this.getMetabolitesStore();
       store.sorters.insert(0, new Ext.util.Sorter({
           property: 'score',
-          direction: 'DESC'
+          direction: 'ASC'
       }));
       store.setScanFilter(scanid);
       this.getMetaboliteList().showFragmentScoreColumn();
