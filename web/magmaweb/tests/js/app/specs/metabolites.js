@@ -210,7 +210,12 @@ describe('Metabolites', function() {
        spyOn(list, 'showFragmentScoreColumn');
 
        // mock store
-       var mockedstore = { setScanFilter: function() {} };
+       var mockedstore = {
+           setScanFilter: function() {},
+           sorters: new Ext.util.AbstractMixedCollection(false, function(item) {
+               return item.id || item.property;
+           })
+       };
        spyOn(ctrl, 'getMetabolitesStore').andReturn(mockedstore);
        spyOn(mockedstore, 'setScanFilter');
 
@@ -219,6 +224,8 @@ describe('Metabolites', function() {
 
        expect(list.showFragmentScoreColumn).toHaveBeenCalled();
        expect(mockedstore.setScanFilter).toHaveBeenCalledWith(scanid);
+       expect(mockedstore.sorters.indexOfKey('score')).toEqual(0);
+       expect(mockedstore.sorters.getByKey('score').direction).toEqual('DESC');
      });
 
      describe('clear scan filter', function() {
@@ -237,7 +244,11 @@ describe('Metabolites', function() {
            // mock store
            mockedstore = {
                setScanFilter: function() {},
-               removeScanFilter: function() {}
+               removeScanFilter: function() {},
+               sorters: {
+                   removeAtKey: function() {},
+                   insert: function() {}
+               }
            };
            spyOn(ctrl, 'getMetabolitesStore').andReturn(mockedstore);
            spyOn(mockedstore, 'setScanFilter');
