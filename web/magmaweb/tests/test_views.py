@@ -810,7 +810,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  abs_peak_cutoff=1100,
                                                  max_ms_level=10,
                                                  precursor_mz_precision=0.005,
-                                                 max_broken_bonds=4,
+                                                 max_broken_bonds=3,
                                                  )
                                     })
 
@@ -834,7 +834,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  abs_peak_cutoff=1000,
                                                  max_ms_level=10,
                                                  precursor_mz_precision=0.005,
-                                                 max_broken_bonds=4,
+                                                 max_broken_bonds=3,
                                                  )
                                     })
 

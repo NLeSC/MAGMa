@@ -2,7 +2,7 @@
     "data" : {
         "n_reaction_steps" : 1,
         "abs_peak_cutoff" : 1000.0,
-        "max_broken_bonds" : 4,
+        "max_broken_bonds" : 3,
         "ionisation_mode" : -1,
         "metabolism_types" : ["phase1", "phase2"],
         "mz_precision" : 5,
