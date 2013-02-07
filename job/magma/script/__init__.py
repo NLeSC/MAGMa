@@ -82,7 +82,7 @@ class MagmaCommand(object):
         sc.add_argument('-p', '--mz_precision', help="Mass precision (ppm) for matching calculated masses with peaks (default: %(default)s)", default=5,type=float)
         sc.add_argument('-q', '--mz_precision_abs', help="Mass precision (Da) for matching calculated masses with peaks (default: %(default)s)", default=0.001,type=float)
         sc.add_argument('-c', '--ms_intensity_cutoff', help="Minimum intensity of level 1 peaks to be annotated (default: %(default)s)", default=1e6,type=float)
-        sc.add_argument('-d', '--msms_intensity_cutoff', help="Minimum intensity of of fragment peaks to be annotated, as percentage of basepeak (default: %(default)s)", default=5,type=int)
+        sc.add_argument('-d', '--msms_intensity_cutoff', help="Minimum intensity of of fragment peaks to be annotated, as percentage of basepeak (default: %(default)s)", default=5,type=float)
         sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
         sc.add_argument('-j', '--metids', type=argparse.FileType('rb'), help="File with structure ids")
         sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bond breaks to generate substructures (default: %(default)s)", default=3,type=int)
@@ -264,7 +264,7 @@ class MagmaCommand(object):
             line = line.strip()
             if line=="":
                 continue
-            (smilestring, molname) = line.split('|')
+            (smilestring, molname) = line.split(' ')
             mol = Chem.MolFromSmiles(smilestring)
             if (args.depiction == '2D'):
                 AllChem.Compute2DCoords(mol)
@@ -276,13 +276,19 @@ class MagmaCommand(object):
 
     def smiles2mols(self, smiles):
         mols = []
+        nonames=0
         for line in smiles:
             line = line.strip()
             if line=="":
                 continue
-            (molname, smilestring) = line.split('\t')
-            mol = Chem.MolFromSmiles(smilestring)
-            mol.SetProp('_Name', molname)
+            splitline = line.split()
+            mol = Chem.MolFromSmiles(splitline[0])
+            if len(splitline) > 1:
+                name=splitline[1]
+            else:
+                nonames+=1
+                name="Noname"+str(nonames)
+            mol.SetProp('_Name', name)
             AllChem.Compute2DCoords(mol)
             mols.append(mol)
         return mols
