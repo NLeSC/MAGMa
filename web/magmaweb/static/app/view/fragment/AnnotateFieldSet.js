@@ -100,7 +100,7 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         fieldLabel: 'MS<sup>1</sup> (abs.)',
-        tooltip : 'Minimum intensity of level 1 peaks to be annotated',
+        labelAttrTpl: 'data-qtip="Minimum intensity of level 1 peaks to be annotated"',
         allowBlank : false,
         decimalPrecision : 5
     }, {
@@ -109,7 +109,7 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         fieldLabel: 'MS<sup>n&gt;1</sup> (% of base peak)',
-        tooltip : 'Minimum intensity of fragment peaks to be annotated, as percentage of basepeak',
+        labelAttrTpl: 'data-qtip="Minimum intensity of fragment peaks to be annotated, as percentage of basepeak"',
         allowBlank : false,
         decimalPrecision : 5
     }]

@@ -14,9 +14,11 @@ Ext.define('Esc.magmaweb.view.metabolite.AddForm', {
        'Esc.magmaweb.view.fragment.AnnotateFieldSet'
     ],
     items : [{
+        margin: '0 0 10 0',
         xtype : 'addstructurefieldset'
     }, {
         xtype : 'metabolizefieldset',
+        margin: '0 0 10 0',
         checkboxToggle: true,
         checkboxName: 'metabolize',
         collapsed : true,

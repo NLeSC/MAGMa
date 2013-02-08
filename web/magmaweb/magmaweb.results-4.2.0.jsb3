@@ -619,10 +619,6 @@
                "path" : "static/extjs-4.2.0/src/tip/"
             },
             {
-               "name" : "DataTip.js",
-               "path" : "static/extjs-4.2.0/examples/ux/"
-            },
-            {
                "name" : "Window.js",
                "path" : "static/extjs-4.2.0/src/window/"
             },
