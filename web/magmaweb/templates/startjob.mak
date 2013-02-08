@@ -143,11 +143,13 @@ Ext.onReady(function() {
 		var values = form.getForm().getValues();
 		filters_before_tree = {
             'ms_intensity_cutoff': values['ms_intensity_cutoff'],
-            'msms_intensity_cutoff': values['msms_intensity_cutoff']
+            'msms_intensity_cutoff': values['msms_intensity_cutoff'],
+            'abs_peak_cutoff': values['abs_peak_cutoff']
         };
 		form.getForm().setValues({
 		    'ms_intensity_cutoff': 0,
-		    'msms_intensity_cutoff': 0
+		    'msms_intensity_cutoff': 0,
+		    'abs_peak_cutoff': 0
 		});
 	} else {
 		form.getForm().setValues(filters_before_tree);
