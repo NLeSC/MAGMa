@@ -122,10 +122,13 @@ class JobQuery(object):
 
     def _addAnnotateSchema(self, schema):
         schema.add(colander.SchemaNode(colander.Float(),
+                                       validator=colander.Range(0, 1),
                                        name='precursor_mz_precision'))
         schema.add(colander.SchemaNode(colander.Float(),
+                                       validator=colander.Range(0, 1000),
                                        name='mz_precision'))
         schema.add(colander.SchemaNode(colander.Float(),
+                                       validator=colander.Range(0, 1),
                                        name='mz_precision_abs'))
         schema.add(colander.SchemaNode(colander.Float(),
                                        name='ms_intensity_cutoff'))
@@ -135,10 +138,10 @@ class JobQuery(object):
                                        validator=colander.OneOf([-1, 1]),
                                        name='ionisation_mode'))
         schema.add(colander.SchemaNode(colander.Integer(),
-                                       validator=colander.Range(min=0),
+                                       validator=colander.Range(0, 4),
                                        name='max_broken_bonds'))
         schema.add(colander.SchemaNode(colander.Integer(),
-                                       validator=colander.Range(min=0),
+                                       validator=colander.Range(0, 4),
                                        name='max_water_losses'))
         schema.add(colander.SchemaNode(colander.String(),
                                        missing=colander.null,
