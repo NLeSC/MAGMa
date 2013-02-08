@@ -85,11 +85,11 @@ Ext.onReady(function() {
       is_user_authenticated: ${json.dumps(request.user is not None)},
       urls: {
         home: '${request.route_path('home')}',
-        fragments: '${request.application_url}/results/${jobid}/fragments/{0}/{1}.json',
-        mspectra: '${request.application_url}/results/${jobid}/mspectra/{0}.json?mslevel={1}',
-        extractedionchromatogram: '${request.application_url}/results/${jobid}/extractedionchromatogram/{0}.json',
-        chromatogram: '${request.route_path('chromatogram.json',jobid=jobid)}',
-        stderr: '${request.route_path('stderr.txt',jobid=jobid)}'
+        fragments: '${request.route_path('results',jobid=jobid)}/fragments/{0}/{1}.json',
+        mspectra: '${request.route_path('results',jobid=jobid)}/mspectra/{0}.json?mslevel={1}',
+        extractedionchromatogram: '${request.route_path('results',jobid=jobid)}/extractedionchromatogram/{0}.json',
+        chromatogram: '${request.route_path('results',jobid=jobid)}/chromatogram.json',
+        stderr: '${request.route_path('results',jobid=jobid)}/stderr.txt'
       }
     });
 });
