@@ -11,7 +11,6 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeOneForm', {
         'Ext.form.Panel',
         'Ext.form.field.Hidden',
         'Ext.form.field.Display',
-        'Ext.ux.DataTip',
         'Esc.magmaweb.view.metabolite.MetabolizeFieldSet',
         'Esc.magmaweb.view.fragment.AnnotateFieldSet'
     ],
@@ -26,9 +25,6 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeOneForm', {
         defaults : {
             bodyPadding : 5
         },
-        plugins: {
-            ptype: 'datatip'
-        },
         border : false,
         autoScroll : true,
         trackResetOnLoad: true,
@@ -40,6 +36,7 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeOneForm', {
             xtype: 'hiddenfield',
             name: 'metid'
         },{
+            margin: '0 0 10 0',
             xtype : 'metabolizefieldset'
         }, {
             xtype : 'annotatefieldset',

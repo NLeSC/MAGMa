@@ -4,10 +4,11 @@
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.magmaweb.view.metabolite.MetabolizeFieldSet', {
-    extend : 'Ext.form.FieldSet',
+    extend : 'Ext.panel.Panel',
     alias : 'widget.metabolizefieldset',
     requires : [ 'Ext.form.field.Number', 'Ext.form.field.ComboBox' ],
     title : 'Generate metabolite options',
+    frame: true,
     defaults : {
         labelWidth : 300
     },

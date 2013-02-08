@@ -62,7 +62,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         fieldLabel: 'MS level',
-        tooltip: 'Maximum MS level',
+        labelAttrTpl: 'data-qtip="Maximum MS level"',
         allowBlank: false,
         minValue: 1,
         maxValue: 15,
@@ -73,7 +73,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         fieldLabel: 'Noise filter',
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&lt;</span>',
-        tooltip: 'Absolute intensity threshold for storing peaks in database',
+        labelAttrTpl: 'data-qtip="Absolute intensity threshold for storing peaks in database"',
         allowBlank: false,
         decimalPrecision: 5
     }]
