@@ -1676,15 +1676,6 @@ class JobQueryTestCase(unittest.TestCase):
         expected = dict(ms_data="\n".join(example_tree),
                         ms_data_format='tree',
                         ionisation_mode=-1,
-                        ms_intensity_cutoff=0,
-                        msms_intensity_cutoff=0,
-                        mz_precision=5,
-                        mz_precision_abs=0,
-                        abs_peak_cutoff=1000,
-                        max_ms_level=10,
-                        precursor_mz_precision=0.005,
-                        max_broken_bonds=3,
-                        max_water_losses=1,
                         )
         self.assertDictEqual(expected, JobQuery.defaults('example'))
 
