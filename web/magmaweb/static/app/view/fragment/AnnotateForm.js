@@ -9,7 +9,6 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateForm', {
     alias: 'widget.annotateform',
     requires: [
         'Ext.form.Panel',
-        'Ext.ux.DataTip',
         'Esc.magmaweb.view.fragment.AnnotateFieldSet'
     ],
     modal : true,
@@ -21,9 +20,6 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateForm', {
         xtype : 'form',
         trackResetOnLoad: true,
         bodyPadding : 5,
-        plugins: {
-            ptype: 'datatip'
-        },
         defaults : {
             bodyPadding : 5
         },

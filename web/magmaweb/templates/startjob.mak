@@ -40,7 +40,6 @@ Ext.require([
   'Ext.toolbar.Spacer',
   'Ext.container.Viewport',
   'Ext.layout.container.Border',
-  'Ext.ux.DataTip',
   'Esc.magmaweb.view.scan.UploadFieldSet',
   'Esc.magmaweb.view.metabolite.AddFieldSet',
   'Esc.magmaweb.view.metabolite.MetabolizeFieldSet',
@@ -60,9 +59,6 @@ Ext.onReady(function() {
     	type: 'hbox',
     	align: 'stretch'
     },
-    plugins: {
-        ptype: 'datatip'
-    },
     defaults: {
     	flex: 1,
     	bodyPadding: 5,
@@ -71,6 +67,7 @@ Ext.onReady(function() {
     items:[{
     	items: [{
         	title: 'Molecules',
+        	margin: '0 0 10 0',
             xtype : 'addstructurefieldset'
         }, {
         	title: 'MS Data',
@@ -79,6 +76,7 @@ Ext.onReady(function() {
     }, {
     	items: [{
             xtype : 'metabolizefieldset',
+            margin: '0 0 10 0',
             checkboxToggle: true,
             checkboxName: 'metabolize',
             collapsed : true,
