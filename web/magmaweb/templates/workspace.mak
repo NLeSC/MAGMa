@@ -211,7 +211,7 @@ Ext.onReady(function() {
       border: false,
       bodyPadding: 5,
       autoScroll: true,
-      defaults: { bodyPadding: 5 },
+      defaults: { bodyPadding: 5 }
     }]
   });
 });
