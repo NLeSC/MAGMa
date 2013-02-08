@@ -4,7 +4,7 @@
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
-	extend : 'Ext.form.FieldSet',
+	extend : 'Ext.form.Panel',
     alias: 'widget.uploadmsdatafieldset',
     requires: [
          'Esc.form.field.TextareaTab',
@@ -13,6 +13,8 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
          'Ext.form.field.File',
          'Ext.container.Container'
     ],
+    frame: true,
+    bodyPadding: '5',
 	defaults : {
 	    labelWidth : 200
 	},
@@ -31,30 +33,30 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         height : 200,
         width : 500
     }, {
+        xtype: 'container',
+        layout: 'hbox',
+        items: [{
+            xtype: 'button',
+            text: 'Load chlorogenic acid example',
+            tooltip: 'Loads chlorogenic acid example ms data set and configuration which gives well annotated result',
+            action: 'loadmsdataexample'
+        }, {
+            xtype : 'displayfield',
+            flex: 1,
+            value : '&nbsp;<a href="help/example">Information on example</a>'
+        }]
+    }, {
         xtype : 'displayfield',
-        value : 'or'
+        value : '<br>or'
     }, {
         name: 'ms_data_file',
         xtype: 'filefield',
         emptyText: 'Upload MS/MS data file',
         width: 300
     }, {
-        xtype : 'displayfield',
-        value : 'or'
+        xtype: 'displayfield',
+        value: '<br>Filter options:'
     }, {
-    	xtype: 'container',
-    	layout: 'hbox',
-    	items: [{
-        	xtype: 'button',
-	    	text: 'Load chlorogenic acid example',
-			tooltip: 'Loads chlorogenic acid example ms data set and configuration which gives well annotated result',
-	    	action: 'loadmsdataexample'
-	    }, {
-            xtype : 'displayfield',
-	        flex: 1,
-	        value : '&nbsp;<a href="help/example">Information on example</a>'
-    	}]
-    },{
         xtype: 'numberfield',
         name: 'max_ms_level',
         labelSeparator: '',
@@ -68,9 +70,9 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
     }, {
         xtype: 'numberfield',
         name: 'abs_peak_cutoff',
-        fieldLabel: 'Noise level',
+        fieldLabel: 'Noise filter',
         labelSeparator: '',
-        afterLabelTextTpl: '<span class="relation">&ge;</span>',
+        afterLabelTextTpl: '<span class="relation">&lt;</span>',
         tooltip: 'Absolute intensity threshold for storing peaks in database',
         allowBlank: false,
         decimalPrecision: 5
