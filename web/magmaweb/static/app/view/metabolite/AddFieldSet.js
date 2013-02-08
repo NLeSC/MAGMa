@@ -20,18 +20,21 @@
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
-	extend: 'Ext.form.FieldSet',
+	extend: 'Ext.form.Panel',
 	alias : 'widget.addstructurefieldset',
 	requires : ['Ext.form.field.File',
 	            'Esc.form.field.TextareaTab',
 	            'Ext.form.field.ComboBox',
 	            'Ext.form.field.Display',
 	            'Ext.tab.Panel'],
+    frame: true,
+    bodyPadding: '5',
 	items: [{
 	    xtype: 'tabpanel',
 	    activeTab : 0,
 	    defaults : {
 			border: false,
+            frame: true,
 	        bodyPadding : 5
 	    },
 	    plain : true,
@@ -44,14 +47,14 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
 		    },
 	    	items: [{
 	    		xtype: 'combo',
-                fieldLabel: '&nbsp;',
+                fieldLabel: 'Chemical structure database',
                 labelSeparator: '',
 	    		name: 'structure_database',
 	    		emptyText: 'No database selected',
                 store: [
                     ['pubchem', 'PubChem'],
                     ['kegg', 'Kegg'],
-                    ['hmdb', 'Human Metabolome Database']
+                    ['hmdb', 'HMDB']
                 ],
                 listeners: {
                     /**
@@ -66,6 +69,9 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                     }
                 }
 	    	}, {
+                xtype: 'displayfield',
+                value: '<br>Filter options:'
+            }, {
     			xtype: 'numberfield',
                 fieldLabel: 'PubChem reference score',
                 labelSeparator: '',
@@ -101,7 +107,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
 	                    xtype : 'textareatab',
 	                    name : 'structures',
 	                    id : 'structures_area',
-	                    emptyText : 'Enter smiles strings followed by space and name on each line',
+	                    emptyText : 'Enter SDF, or smiles strings followed by space and name on each line',
 	                    height : 200,
 	                    width : 500,
 	                    /**

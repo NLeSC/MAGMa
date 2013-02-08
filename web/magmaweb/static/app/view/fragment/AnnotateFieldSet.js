@@ -4,13 +4,15 @@
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
-    extend : 'Ext.form.FieldSet',
+    extend : 'Ext.form.Panel',
     alias : 'widget.annotatefieldset',
     requires : [
         'Ext.form.field.Number', 'Ext.form.RadioGroup',
         'Ext.form.field.Checkbox', 'Ext.form.field.Radio'
     ],
     title : 'Annotate',
+    frame: true,
+    bodyPadding: '5',
     defaults : {
         labelWidth : 200
     },
@@ -30,40 +32,42 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
                 }]
     }, {
         xtype: 'displayfield',
-        value: 'Substructure options:'
+        value: '<br>Substructure options:'
     }, {
         fieldLabel: 'Bond breaks',
-        tooltip : 'Maximum number of bond breaks to generate substructures',
+        labelAttrTpl: 'data-qtip="Maximum number of bond breaks to generate substructures"',
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         name : 'max_broken_bonds',
         xtype : 'numberfield',
         allowBlank : false,
-        maxValue : 10,
+        maxValue : 4,
         minValue : 0,
         decimalPrecision : 0
     }, {
         fieldLabel: 'Additional water losses',
-        tooltip : 'Maximum number of additional neutral water losses',
+        labelAttrTpl: 'data-qtip="Maximum number of additional neutral water losses"',
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         name : 'max_water_losses',
         xtype : 'numberfield',
         allowBlank : false,
-        maxValue : 10,
+        maxValue : 4,
         minValue : 0,
         decimalPrecision : 0
     }, {
         xtype: 'displayfield',
-        value: 'Precision:'
+        value: '<br>Precision:'
     }, {
         xtype : 'numberfield',
         name : 'mz_precision',
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         fieldLabel: 'Relative (ppm)',
-        tooltip : 'Mass precision (ppm) for matching calculated masses with peaks',
+        labelAttrTpl: 'data-qtip="Mass precision (ppm) for matching calculated masses with peaks"',
         allowBlank : false,
+        maxValue : 1000,
+        minValue : 0,
         decimalPrecision : 5
     }, {
         xtype : 'numberfield',
@@ -71,8 +75,10 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         fieldLabel: 'Absolute (Da)',
-        tooltip : 'Mass precision (Da) for matching calculated masses with peaks',
+        labelAttrTpl: 'data-qtip="Mass precision (Da) for matching calculated masses with peaks"',
         allowBlank : false,
+        maxValue : 1,
+        minValue : 0,
         decimalPrecision : 5
     },{
         xtype: 'numberfield',
@@ -80,12 +86,14 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         fieldLabel: 'Precursor m/z (Da)',
-        tooltip: 'Mass precision for matching peaks and precursor ions',
+        labelAttrTpl: 'data-qtip="Mass precision for matching peaks and precursor ions"',
         allowBlank: false,
+        maxValue : 1,
+        minValue : 0,
         decimalPrecision: 5
     }, {
         xtype: 'displayfield',
-        value: 'Intensity thresholds:'
+        value: '<br>Intensity thresholds:'
     }, {
         xtype : 'numberfield',
         name : 'ms_intensity_cutoff',
