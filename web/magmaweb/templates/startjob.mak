@@ -56,11 +56,10 @@ Ext.onReady(function() {
     defaults: { bodyPadding: 5 },
     autoScroll: true,
     layout: {
-    	type: 'hbox',
-    	align: 'stretch'
+    	type: 'column'
     },
     defaults: {
-    	flex: 1,
+    	columnWidth: 0.5,
     	bodyPadding: 5,
     	border: false
     },
