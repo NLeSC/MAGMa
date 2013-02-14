@@ -99,7 +99,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
             hidden: true,
             xtype: 'templatecolumn', tpl: '<ol><tpl for="reactionsequence"><li style="list-style:decimal;list-style-position:inside;">{.}</li></tpl></ol>'
         },
-        {text: 'Probability', dataIndex: 'probability', filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
+        {text: 'Refscore', dataIndex: 'probability', filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: ['0','1','2','3'] }, hidden:true},
         {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Reference', dataIndex: 'reference', filter: { type: 'string' }, sortable: false },
