@@ -330,9 +330,9 @@ class MsDataEngine(object):
         scanid=self.global_scanid
         npeaks=0
         while len(tree_list)>0 and tree_list[0]!=')':
-            #print tree_list[0]
-            if tree_list[0].find(':')>=0:
-                mz,intensity=tree_list.pop(0).split(':')
+            tree_item=tree_list.pop(0)
+            if tree_item.find(':')>=0:
+                mz,intensity=tree_item.split(':')
                 self.db_session.add(Peak(scanid=scanid,mz=mz,intensity=intensity))
                 npeaks+=1
                 if lowmz==None or mz<lowmz:
@@ -342,12 +342,11 @@ class MsDataEngine(object):
                 if basepeakintensity==None or intensity>basepeakintensity:
                     basepeakmz=mz
                     basepeakintensity=intensity
-            if tree_list[0]=='(':
-                tree_list.pop(0)
+            elif tree_item=='(':
                 self.global_scanid+=1
                 self.store_manual_subtree(tree_list,scanid,mz,intensity,mslevel+1)
-            if tree_list[0]==',' or tree_list[0]=='':
-                tree_list.pop(0)
+            elif tree_item!=',' and tree_item!='':
+                exit('Corrupt Tree format ...')
         if npeaks>0:
             self.db_session.add(Scan(
                 scanid=scanid,
