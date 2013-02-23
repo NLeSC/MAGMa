@@ -6,10 +6,11 @@ import pars
 
 
 class FragmentEngine(object):
-    def __init__(self,mol,max_broken_bonds,max_water_losses):
+    def __init__(self,mol,max_broken_bonds,max_water_losses,ionisation_mode):
         self.mol=Chem.MolFromMolBlock(str(mol))
         self.max_broken_bonds=max_broken_bonds
         self.max_water_losses=max_water_losses
+        self.ionisation_mode=ionisation_mode
         self.natoms=Chem.natoms(self.mol)  # number of atoms in the molecule
         self.atom_masses=[]
         self.neutral_loss_atoms=[]
@@ -18,7 +19,7 @@ class FragmentEngine(object):
         self.bondscore={}
         self.new_fragment=0
         self.template_fragment=0
-        self.fragment_masses=((max_broken_bonds+max_water_losses)*2+3)*[0]
+        self.fragment_masses=((max_broken_bonds+max_water_losses)*2+1)*[0]
         self.fragment_info=[[0,0,0]]
         self.avg_score=None
 
@@ -124,12 +125,12 @@ class FragmentEngine(object):
 
     def add_fragment(self, fragment, fragmentmass, score, bondbreaks):
         self.fragment_masses+=((self.max_broken_bonds+self.max_water_losses-bondbreaks)*[0]+\
-                                  list(numpy.arange(-bondbreaks-1,bondbreaks+2)*pars.Hmass+fragmentmass)+\
+                                  list(numpy.arange(-bondbreaks+self.ionisation_mode,bondbreaks+self.ionisation_mode+1)*pars.Hmass+fragmentmass)+\
                                   (self.max_broken_bonds+self.max_water_losses-bondbreaks)*[0])
         self.fragment_info.append([fragment,score,bondbreaks])
     
     def convert_fragments_table(self):
-        self.fragment_masses_np=numpy.array(self.fragment_masses).reshape(len(self.fragment_info),(self.max_broken_bonds+self.max_water_losses)*2+3)
+        self.fragment_masses_np=numpy.array(self.fragment_masses).reshape(len(self.fragment_info),(self.max_broken_bonds+self.max_water_losses)*2+1)
 
     def calc_avg_score(self):
         # self.avg_score = sum([i[1] for i in self.info])/len(self.info)
@@ -145,8 +146,8 @@ class FragmentEngine(object):
         for i in range(len(result[0])):
             fid=result[0][i]
             fragment_set.append(self.fragment_info[fid]+\
-                                 [self.fragment_masses_np[fid][self.max_broken_bonds+self.max_water_losses+1]]+\
-                                 [self.max_broken_bonds+self.max_water_losses+1-result[1][i]])
+                                 [self.fragment_masses_np[fid][self.max_broken_bonds+self.max_water_losses-self.ionisation_mode]]+\
+                                 [self.max_broken_bonds+self.max_water_losses-self.ionisation_mode-result[1][i]])
         return fragment_set
     
     def get_fragment_info(self,fragment):
