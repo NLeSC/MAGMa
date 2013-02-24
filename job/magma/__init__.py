@@ -95,7 +95,7 @@ class StructureEngine(object):
         molecule=types.MoleculeType(molblock,name,prob,level,sequence,isquery,mim,natoms,inchikey,molform,reference,logp)
         self.add_molecule(molecule,mass_filter)
 
-    def add_molecule(self,molecule,mass_filter=9999,check_duplicates=True):
+    def add_molecule(self,molecule,mass_filter=9999,check_duplicates=True,merge=False):
         if molecule.mim > mass_filter:
             return
         metab=Metabolite(
@@ -116,19 +116,21 @@ class StructureEngine(object):
         if check_duplicates: 
             dups=self.db_session.query(Metabolite).filter_by(smiles=molecule.inchikey).all()
             if len(dups)>0:
-                metab=dups[0]
-                metab.origin=unicode(str(metab.origin)+'</br>'+molecule.name, 'utf-8', 'xmlcharrefreplace')
-                metab.reference=molecule.reference
-                metab.probability=molecule.probability
-#            if dupid.probability < prob:
-#                self.db_session.delete(dupid)
-#                metab.metid=dupid.metid
-#                self.db_session.add(metab)
-#                sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - old one removed\n')
-#                # TODO remove any fragments related to this structure as well
-#            else:
-#                sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - kept old one\n')
-#                return
+                if merge:
+                    metab=dups[0]
+                    metab.origin=unicode(str(metab.origin)+'</br>'+molecule.name, 'utf-8', 'xmlcharrefreplace')
+                    metab.reference=molecule.reference
+                    metab.probability=molecule.probability
+                else:
+                    if dups[0].probability < molecule.probability:
+                        metab.metid=dups[0].metid
+                        self.db_session.delete(dups[0])
+                        #self.db_session.add(metab)
+                        sys.stderr.write('Duplicate structure: - old one removed\n')
+                    # TODO remove any fragments related to this structure as well
+                    else:
+                        sys.stderr.write('Duplicate structure: - kept old one\n')
+                        return
         self.db_session.add(metab)
         #sys.stderr.write('Added: '+name+'\n')
         self.db_session.flush()
