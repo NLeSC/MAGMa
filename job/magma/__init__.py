@@ -554,6 +554,7 @@ class AnnotateEngine(object):
             for metid, in self.db_session.query(Metabolite.metid).all():
                 metids.add(metid)
         # annotate metids in chunks of 500 to avoid errors in db_session.query and memory problems during parallel processing
+        total_frags=0
         while len(metids)>0:
             ids=set([])
             while len(ids)<500 and len(metids)>0:
@@ -600,9 +601,10 @@ class AnnotateEngine(object):
                                )))
             for structure,job in jobs:
                 raw_result=job(raw_result=True)
-                hits,sout = pickle.loads(raw_result)
+                (hits,frags),sout = pickle.loads(raw_result)
                 #print sout
-                sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin.encode('utf8'))+'\n')
+                total_frags+=frags
+                sys.stderr.write('Metabolite '+str(structure.metid)+' -> '+str(frags)+' fragments: '+str(structure.origin.encode('utf8'))+'\n')
                 structure.nhits=len(hits)
                 self.db_session.add(structure)
                 for hit in hits:
@@ -613,6 +615,7 @@ class AnnotateEngine(object):
                     self.store_hit(hit,structure.metid,0)
                 self.db_session.flush()
             self.db_session.commit()
+        print total_frags,'fragments in total.'
 
     def store_hit(self,hit,metid,parentfragid):
         global fragid
@@ -842,6 +845,7 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
 # for peak in self.db_session.query(Peak).filter(Scan.mslevel)==1.filter(Peak.intensity>MSfilter)
     Fragmented=False
     hits=[]
+    frags=0
     for peak in peaks:
         if not ((not use_all_peaks) and peak.childscan==None):
             protonation=ionisation_mode-(molformula.find('+')>=0)*1
@@ -853,14 +857,14 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
                     fragment_engine=Fragmentation.FragmentEngine(mol,max_broken_bonds,max_water_losses,ionisation_mode)
                     #fragment_engine=GrowingEngine(mol)
                     if fragment_engine.accepted():
-                        fragment_engine.generate_fragments()
+                        frags=fragment_engine.generate_fragments()
                     #sys.stderr.write('N fragments kept: '+str(len(fragment_engine.fragments))+"\n")
                     Fragmented=True
                 if fragment_engine.accepted():
                     hit=gethit(peak,(1<<fragment_engine.get_natoms())-1,0,0,mim,-deltaH)
                     add_fragment_data_to_hit(hit)
                     hits.append(hit)
-    return hits
+    return (hits,frags)
 
 
 
