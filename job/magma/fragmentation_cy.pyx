@@ -135,6 +135,7 @@ cdef class FragmentEngine(object):
                                 if bbsp.score < (pars.missingfragmentpenalty+5):
                                     self.add_fragment(frag,self.calc_fragment_mass(frag),bbsp.score,bbsp.breaks)
         self.convert_fragments_table()
+        return len(self.fragment_info)
 
     cdef bond_breaks_score_pair score_fragment(self,unsigned long long fragment):
         cdef int b,bondbreaks

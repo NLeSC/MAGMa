@@ -97,6 +97,7 @@ class FragmentEngine(object):
                                 if score < (pars.missingfragmentpenalty+5):
                                     self.add_fragment(frag,self.calc_fragment_mass(frag),score,bondbreaks)
         self.convert_fragments_table()
+        return len(self.fragment_info)
 
     def score_fragment(self,fragment):
         score=0
