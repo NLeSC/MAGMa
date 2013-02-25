@@ -397,6 +397,8 @@ class AnnotateEngine(object):
                  ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,
                  precursor_mz_precision,use_all_peaks):
         self.db_session = db_session
+        mz_precision_abs=max(mz_precision_abs,0.000001)
+        # a small mz_precision_abs is required, even when matching theoretical masses, because of finite floating point precision
         try:
             rundata=self.db_session.query(Run).one()
         except:
@@ -541,8 +543,8 @@ class AnnotateEngine(object):
         # build non-overlapping set of queries around these masses
         queries=[[0,0]]
         for mz in mzs:
-            ql=int(1e6*(mz/self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass)))
-            qh=int(1e6*(mz*self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass)))
+            ql=int(1e6*(min(mz/self.precision,mz-self.mz_precision_abs)-self.ionisation_mode*(pars.Hmass-pars.elmass)))
+            qh=int(1e6*(max(mz*self.precision,mz+self.mz_precision_abs)-self.ionisation_mode*(pars.Hmass-pars.elmass)))
             if ql < mmim:
                 if qh > mmim:
                     qh == mmim
@@ -823,9 +825,10 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
         Fragmentation=magma.fragmentation_py
 
     def massmatch(peak,mim,low,high):
+        lowmz=min(peak.mz/precision,peak.mz-mz_precision_abs)
+        highmz=max(peak.mz*precision,peak.mz+mz_precision_abs)
         for x in range(low,high+1):
-            #if self.mz-me.mz_precision < mim+x*Hmass < self.mz+me.mz_precision:
-            if peak.mz/precision <= mim+x*pars.Hmass-ionisation_mode*pars.elmass <= peak.mz*precision:
+            if lowmz <= mim+x*pars.Hmass-ionisation_mode*pars.elmass <= highmz:
                 return x
         else:
             return False
