@@ -231,7 +231,7 @@ class MsDataEngine(object):
 #        self.rel_peak_cutoff=rundata.rel_peak_cutoff
         self.max_ms_level=rundata.max_ms_level
 
-    def store_mzxml_file(self,mzxml_file):
+    def store_mzxml_file(self,mzxml_file,scan_filter=None):
         logging.warn('Store mzxml file')
         rundata=self.db_session.query(Run).one()
         if rundata.ms_filename == None:
@@ -241,8 +241,10 @@ class MsDataEngine(object):
             tree=etree.parse(mzxml_file)
             root=tree.getroot()
             namespace='{'+root.nsmap[None]+'}'
-            for mzxmlScan in root.findall(namespace+"msRun/"+namespace+"scan"):
-            # mzxmlScan = root.findall(namespace+"msRun/"+namespace+"scan")[0]
+            mzxml_query=namespace+"msRun/"+namespace+"scan"
+            if scan_filter != None:
+                mzxml_query+="[@num='"+scan_filter+"']"
+            for mzxmlScan in root.findall(mzxml_query):
                 self.store_mzxml_scan(mzxmlScan,0,namespace)
         else:
             sys.exit('Attempt to read MS data twice')
