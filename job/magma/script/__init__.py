@@ -69,7 +69,7 @@ class MagmaCommand(object):
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # read_ms_data arguments
         sc.add_argument('ms_data', type=argparse.FileType('r'), help="file with MS/MS data")
-        sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml", "tree"])
+        sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml", "mass_tree","form_tree_pos","form_tree_neg"])
         sc.add_argument('-l', '--max_ms_level', help="Maximum MS level to be processsed (default: %(default)s)", default=10,type=int)
         sc.add_argument('-a', '--abs_peak_cutoff', help="Absolute intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
         # sc.add_argument('-r', '--rel_peak_cutoff', help="fraction of basepeak intensity threshold for storing peaks in database (default: %(default)s)", default=0.01,type=float)
@@ -192,8 +192,9 @@ class MagmaCommand(object):
             max_ms_level=args.max_ms_level)
         if args.ms_data_format == "mzxml":
             ms_data_engine.store_mzxml_file(args.ms_data.name)
-        elif args.ms_data_format == "tree":
-            ms_data_engine.store_manual_tree(args.ms_data.name)
+        else:
+            tree_type={"mass_tree":0,"form_tree_neg":-1,"form_tree_pos":1}[args.ms_data_format]
+            ms_data_engine.store_manual_tree(args.ms_data.name,tree_type)
 
     def annotate(self, args, magma_session=None):
         if magma_session == None:

@@ -318,13 +318,14 @@ class MsDataEngine(object):
             self.db_session.add(Peak(scanid=scanid+1,mz=peak[0],intensity=peak[1]))
         self.db_session.commit()
 
-    def store_manual_tree(self,manual_tree):
+    def store_manual_tree(self,manual_tree,tree_type):
+        # tree_type: 0 for mass tree, -1 and 1 for formula trees with negative or positive ionisation mode respectively
         tree_string=''.join(open(manual_tree).read().split()) # remove whitespaces (' ','\t','\n',etc) from tree_string
         tree_list=re.split('([\,\(\)])',tree_string)
         self.global_scanid = 1
-        self.store_manual_subtree(tree_list,0,0,0,1)
+        self.store_manual_subtree(tree_list,0,0,0,1,tree_type)
 
-    def store_manual_subtree(self,tree_list,precursor_scanid,precursor_mz,precursor_intensity,mslevel):
+    def store_manual_subtree(self,tree_list,precursor_scanid,precursor_mz,precursor_intensity,mslevel,tree_type):
         lowmz=None
         highmz=None
         basepeakmz=None
@@ -335,6 +336,8 @@ class MsDataEngine(object):
             tree_item=tree_list.pop(0)
             if tree_item.find(':')>=0:
                 mz,intensity=tree_item.split(':')
+                if tree_type != 0:
+                    mz=self.mass_from_formula(mz)-tree_type*pars.elmass
                 self.db_session.add(Peak(scanid=scanid,mz=mz,intensity=intensity))
                 npeaks+=1
                 if lowmz==None or mz<lowmz:
@@ -346,7 +349,7 @@ class MsDataEngine(object):
                     basepeakintensity=intensity
             elif tree_item=='(':
                 self.global_scanid+=1
-                self.store_manual_subtree(tree_list,scanid,mz,intensity,mslevel+1)
+                self.store_manual_subtree(tree_list,scanid,mz,intensity,mslevel+1,tree_type)
             elif tree_item!=',' and tree_item!='':
                 exit('Corrupt Tree format ...')
         if npeaks>0:
@@ -365,6 +368,27 @@ class MsDataEngine(object):
         if len(tree_list)>0:
             tree_list.pop(0)
 
+    def mass_from_formula(self,form):
+        mass=0.0
+        while len(form)>0:
+            if form[:2] in pars.mims:
+                m=pars.mims[form[:2]]
+                form=form[2:]
+            elif form[:1] in pars.mims:
+                m=pars.mims[form[:1]]
+                form=form[1:]
+            else:
+                exit('Element not allowed in formula tree: '+form)
+            x=0
+            while len(form)>x and form[x] in '0123456789':
+                x+=1
+            if x>0:
+                n=int(form[:x])
+            else:
+                n=1
+            mass+=m*n
+            form=form[x:]
+        return mass
 
 class AnnotateEngine(object):
     def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
