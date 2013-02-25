@@ -25,6 +25,8 @@ cdef class FragmentEngine(object):
     cdef float[128] bondscore
     cdef numpy.ndarray fragment_masses_np
     cdef list fragment_masses,fragment_info
+    cdef int[64] atomHs
+    cdef dict atom_elements
     #cdef rdkit_mol mol
     
     
@@ -41,6 +43,7 @@ cdef class FragmentEngine(object):
             self.ionisation_mode=ionisation_mode
             self.nbonds=Chem.nbonds(mol)
             self.neutral_loss_atoms=[]
+            self.atom_elements={}
             # self.atom_masses=[]
             # self.bonded_atoms=[]           # [[list of atom numbers]]
             # self.bonds=set([])
@@ -54,6 +57,8 @@ cdef class FragmentEngine(object):
             for x in range(self.natoms):
                 self.bonded_atoms[x].nbonds=0
                 self.atom_masses[x]=Chem.GetExtendedAtomMass(mol,x)
+                self.atomHs[x]=Chem.GetAtomHs(mol,x)
+                self.atom_elements[x]=Chem.GetAtomSymbol(mol,x)
                 if Chem.GetAtomSymbol(mol,x) == 'O' and Chem.GetAtomHs(mol,x) == 1 and Chem.GetNBonds(mol,x)==1:
                     self.neutral_loss_atoms.append(x)
             for x in range(self.nbonds):
@@ -202,15 +207,26 @@ cdef class FragmentEngine(object):
                                  [self.max_broken_bonds+self.max_water_losses-self.ionisation_mode-result[1][i]])
         return fragment_set
     
-    def get_fragment_info(self,unsigned long long fragment):
+    def get_fragment_info(self,unsigned long long fragment,deltaH):
         cdef int atom
         atomstring=""
         atomlist=[]
+        elements={'C':0,'H':0,'N':0,'O':0,'F':0,'P':0,'S':0,'Cl':0,'Br':0,'I':0}
         for atom in range(self.natoms):
             if ((1ULL<<atom) & fragment):
                 atomstring+=','+str(atom)
                 atomlist.append(atom)
-        return atomstring,atomlist
+                elements[self.atom_elements[atom]]+=1
+                elements['H']+=self.atomHs[atom]
+        elements['H']-=deltaH
+        formula=''
+        for el in ('C','H','N','O','F','P','S','Cl','Br','I'):
+            nel=elements[el]
+            if nel>0:
+                formula+=el
+            if nel>1:
+                formula+=str(nel)
+        return atomstring,atomlist,formula
     
     def get_natoms(self):
         return self.natoms
