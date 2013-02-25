@@ -151,14 +151,25 @@ class FragmentEngine(object):
                                  [self.max_broken_bonds+self.max_water_losses-self.ionisation_mode-result[1][i]])
         return fragment_set
     
-    def get_fragment_info(self,fragment):
+    def get_fragment_info(self,fragment,deltaH):
         atomstring=""
         atomlist=[]
+        elements={'C':0,'H':0,'N':0,'O':0,'F':0,'P':0,'S':0,'Cl':0,'Br':0,'I':0}
         for atom in range(self.natoms):
             if ((1<<atom) & fragment):
                 atomstring+=','+str(atom)
                 atomlist.append(atom)
-        return atomstring,atomlist # ,Chem.FragmentToInchiKey(self.mol,atomlist)
+                elements[Chem.GetAtomSymbol(self.mol,atom)]+=1
+                elements['H']+=Chem.GetAtomHs(self.mol,atom)
+        elements['H']-=deltaH
+        formula=''
+        for el in ('C','H','N','O','F','P','S','Cl','Br','I'):
+            nel=elements[el]
+            if nel>0:
+                formula+=el
+            if nel>1:
+                formula+=str(nel)
+        return atomstring,atomlist,formula # ,Chem.FragmentToInchiKey(self.mol,atomlist)
 
     def get_natoms(self):
         return self.natoms

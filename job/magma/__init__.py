@@ -627,8 +627,9 @@ class AnnotateEngine(object):
                                )))
             for structure,job in jobs:
                 raw_result=job(raw_result=True)
-                (hits,frags),sout = pickle.loads(raw_result)
+                result,sout = pickle.loads(raw_result)
                 #print sout
+                (hits,frags)=result
                 total_frags+=frags
                 sys.stderr.write('Metabolite '+str(structure.metid)+' -> '+str(frags)+' fragments: '+str(structure.origin.encode('utf8'))+'\n')
                 structure.nhits=len(hits)
@@ -663,7 +664,8 @@ class AnnotateEngine(object):
             atoms=hit.atomstring,
             inchikey=hit.inchikey,
             deltah=hit.deltaH,
-            deltappm=deltappm
+            deltappm=deltappm,
+            formula=hit.formula
             ))
         if len(hit.besthits)>0:
             for childhit in hit.besthits:
@@ -860,7 +862,7 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
 
     def add_fragment_data_to_hit(hit):
         if hit.fragment != 0:
-            hit.atomstring,hit.atomlist=fragment_engine.get_fragment_info(hit.fragment)
+            hit.atomstring,hit.atomlist,hit.formula=fragment_engine.get_fragment_info(hit.fragment,hit.deltaH)
             #except:
             #    exit('failed inchi for: '+atomstring+'--'+str(hit.fragment))
             if len(hit.besthits)>0:

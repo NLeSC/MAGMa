@@ -76,6 +76,7 @@ class Fragment(Base):
     deltah = Column(Float)
     deltappm = Column(Float)
     inchikey = Column(Unicode)
+    formula = Column(Unicode)
     #: A fragment can have child fragments
     children = relationship('Fragment', backref=backref('parent', remote_side=[fragid]), lazy='joined', join_depth=1)
     __table_args__ = (ForeignKeyConstraint(['scanid', 'mz'],
