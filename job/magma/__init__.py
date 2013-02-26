@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys,base64,subprocess,StringIO,time,re
+import sys,base64,subprocess,StringIO,time,re,os
 import sqlite3,struct,zlib,gzip,copy
 import pkg_resources
 import numpy
@@ -11,6 +11,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from models import Base, Metabolite, Scan, Peak, Fragment, Run
+import requests,functools,macauthlib #required to update callback url
+from requests.auth import AuthBase
 import pp
 import cPickle as pickle
 import types
@@ -64,16 +66,44 @@ class MagmaSession(object):
                  mz_precision=5.0,
                  mz_precision_abs=0.001,
                  precursor_mz_precision=0.005,
-                 use_all_peaks=False
+                 use_all_peaks=False,
+                 call_back_url=None
                  ):
         return AnnotateEngine(self.db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
-                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,use_all_peaks)
+                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,use_all_peaks,call_back_url)
     def get_data_analysis_engine(self):
         return DataAnalysisEngine(self.db_session)
+    def get_call_back_engine(self,
+                 id,
+                 key
+                 ):
+        return CallBackEngine(id,key)
     def commit(self):
         self.db_session.commit()
     def close(self):
         self.db_session.close()
+
+class CallBackEngine(object):
+    def __init__(self, url):
+        self.access_token="eyJzYWx0IjogIjdmNzkwYiIsICJleHBpcmVzIjogMTM4OTg3NTU4Ni42MzEyNSwgInVzZXJpZCI6ICJqb2JsYXVuY2hlciJ98zFwBaXdkQpAl0Bizan7qQ1_T6w="
+        self.mac_key="u2P6nmreOWRmZXSCa2WTR0ntrTU="
+        self.url=url
+        self.url="http://localhost:6543/magma/status/"+os.getcwd().split('/')[-1]+".json"
+        print os.getcwd()
+        print self.url
+    def update_callback_url(self,status):
+        class HTTPMacAuth(AuthBase):
+            """Attaches HTTP Basic Authentication to the given Request object."""
+            def __init__(self, id, key):
+                self.id = id
+                self.key = key
+            def __call__(self, r):
+                r.headers['Authorization'] = macauthlib.sign_request(r, id=self.id, key=self.key)
+                return r
+        
+        print status
+        r = requests.put(self.url, status, auth=HTTPMacAuth(self.access_token, self.mac_key))
+        print r
 
 class StructureEngine(object):
     def __init__(self,db_session,metabolism_types,n_reaction_steps):
@@ -395,7 +425,7 @@ class MsDataEngine(object):
 class AnnotateEngine(object):
     def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
                  ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,
-                 precursor_mz_precision,use_all_peaks):
+                 precursor_mz_precision,use_all_peaks,call_back_url=None):
         self.db_session = db_session
         mz_precision_abs=max(mz_precision_abs,0.000001)
         # a small mz_precision_abs is required, even when matching theoretical masses, because of finite floating point precision
@@ -438,6 +468,11 @@ class AnnotateEngine(object):
         self.use_all_peaks=rundata.use_all_peaks
 
         self.scans=[]
+        
+        if call_back_url == None: #!=None
+            self.call_back_engine=CallBackEngine(call_back_url)
+        else:
+            self.call_back_engine=None
 
     def build_spectrum(self,dbscan):
         scan=types.ScanType(dbscan.scanid,dbscan.mslevel)
@@ -583,6 +618,8 @@ class AnnotateEngine(object):
                 metids.add(metid)
         # annotate metids in chunks of 500 to avoid errors in db_session.query and memory problems during parallel processing
         total_frags=0
+        total_metids = len(metids)
+        start_time=time.time()
         while len(metids)>0:
             ids=set([])
             while len(ids)<500 and len(metids)>0:
@@ -627,22 +664,28 @@ class AnnotateEngine(object):
                                   fragmentation_module
                                   )
                                )))
+            count=0
             for structure,job in jobs:
                 raw_result=job(raw_result=True)
                 result,sout = pickle.loads(raw_result)
                 #print sout
                 (hits,frags)=result
                 total_frags+=frags
-                sys.stderr.write('Metabolite '+str(structure.metid)+' -> '+str(frags)+' fragments: '+str(structure.origin.encode('utf8'))+'\n')
+                #sys.stderr.write('Metabolite '+str(structure.metid)+' -> '+str(frags)+' fragments: '+str(structure.origin.encode('utf8'))+'\n')
                 structure.nhits=len(hits)
                 self.db_session.add(structure)
                 for hit in hits:
-                    sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
-                    # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
-                    sys.stderr.write('Score: '+str(hit.score)+'\n')
-                    # outfile.write("\t"+str(hit.score/fragment_store.get_avg_score()))
+                    #sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
+                    #sys.stderr.write('Score: '+str(hit.score)+'\n')
                     self.store_hit(hit,structure.metid,0)
                 self.db_session.flush()
+                count+=1
+                if self.call_back_engine != None:
+                    elapsed_time=time.time()-start_time
+                    if elapsed_time > 5: # update status every 5 seconds
+                        update_string=str(total_metids-len(metids)-len(ids)+count)+" / "+str(total_metids)+" compounds processed ..."
+                        self.call_back_engine.update_callback_url(update_string)
+                        start_time = start_time + elapsed_time//5*5
             self.db_session.commit()
         print total_frags,'fragments in total.'
 
