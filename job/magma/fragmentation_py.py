@@ -1,13 +1,20 @@
-import rdkit_engine as Chem
-# import cdk_engine               # Use cdk_engine
-# Chem=cdk_engine.engine()
 import numpy
 import pars
+if pars.fragmentation_engine=="rdkit":
+    import rdkit_engine as Chem     # Use rdkit_engine
+elif pars.fragmentation_engine=="cdk":
+    import cdk_engine               # Use cdk_engine
+    Chem=cdk_engine.engine()
 
 
 class FragmentEngine(object):
     def __init__(self,mol,max_broken_bonds,max_water_losses,ionisation_mode):
-        self.mol=Chem.MolFromMolBlock(str(mol))
+        try:
+            self.mol=Chem.MolFromMolBlock(str(mol))
+            self.accept=True
+        except:
+            self.accept=False
+            return
         self.max_broken_bonds=max_broken_bonds
         self.max_water_losses=max_water_losses
         self.ionisation_mode=ionisation_mode
@@ -175,4 +182,4 @@ class FragmentEngine(object):
         return self.natoms
 
     def accepted(self):
-        return True
+        return self.accept

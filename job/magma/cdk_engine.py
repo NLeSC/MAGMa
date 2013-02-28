@@ -92,7 +92,7 @@ class engine(object):
     def GetAtomSymbol(self,mol,atom):
         return mol.getAtom(atom).getSymbol()
     def GetAtomHs(self,mol,atom):
-        return mol.getAtom(atom).getImplicitHydrogenCount()
+        return mol.getAtom(atom).getImplicitHydrogenCount().intValue()
     def nbonds(self,mol):
         return mol.getBondCount()
     def GetBondAtoms(self,mol,bond):
