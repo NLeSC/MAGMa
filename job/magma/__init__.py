@@ -15,9 +15,11 @@ import pp
 import cPickle as pickle
 import types
 import pars
-import rdkit_engine as Chem     # Use rdkit_engine
-# import cdk_engine               # Use cdk_engine
-# Chem=cdk_engine.engine()
+if pars.fragmentation_engine=="rdkit":
+    import rdkit_engine as Chem     # Use rdkit_engine
+elif pars.fragmentation_engine=="cdk":
+    import cdk_engine               # Use cdk_engine
+    Chem=cdk_engine.engine()
 
 """
 RDkit dependencies:
@@ -816,9 +818,11 @@ class DataAnalysisEngine(object):
             print '$$$$'
 
 def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast):
-    # Chem=magma.cdk_engine.engine()      # Use cdk_engine
-    Chem=magma.rdkit_engine             # Use rdkit_engine
     pars=magma.pars
+    if pars.fragmentation_engine=="rdkit":
+        Chem=magma.rdkit_engine             # Use rdkit_engine
+    elif pars.fragmentation_engine=="cdk":
+        Chem=magma.cdk_engine.engine()      # Use cdk_engine
     if fast:
         Fragmentation=magma.fragmentation_cy
     else:
