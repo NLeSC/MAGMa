@@ -366,6 +366,46 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         self.assertIsInstance(response, Forbidden)
 
+    @patch('magmaweb.views.remember')
+    @patch('magmaweb.views.User')
+    def test_login_auto_register(self, user, remember):
+        user.generate.return_value = User('bob', 'bob dob', 'bob.dob@example.com')
+        from pyramid.httpexceptions import HTTPFound
+        self.config.add_route('home', '/')
+        self.config.add_route('login', '/login')
+        request = testing.DummyRequest()
+        request.user = None
+        request.url = 'http://example.com/startjob'
+        request.registry.settings['auto_register'] = True
+        views = Views(request)
+
+        response = views.login()
+
+        self.assertIsInstance(response, HTTPFound)
+        self.assertEqual(response.location, 'http://example.com/startjob')
+        user.generate.assert_called_with()
+        remember.assert_called_with(request, 'bob')
+
+    @patch('magmaweb.views.remember')
+    @patch('magmaweb.views.User')
+    def test_login_auto_register_from_login(self, user, remember):
+        user.generate.return_value = User('bob', 'bob dob', 'bob.dob@example.com')
+        from pyramid.httpexceptions import HTTPFound
+        self.config.add_route('home', '/')
+        self.config.add_route('login', '/login')
+        request = testing.DummyRequest()
+        request.user = None
+        request.url = 'http://example.com/login'
+        request.registry.settings['auto_register'] = True
+        views = Views(request)
+
+        response = views.login()
+
+        self.assertIsInstance(response, HTTPFound)
+        self.assertEqual(response.location, 'http://example.com/')
+        user.generate.assert_called_with()
+        remember.assert_called_with(request, 'bob')
+
     @patch('magmaweb.views.forget')
     def test_logout(self, forget):
         self.config.add_route('home', '/')

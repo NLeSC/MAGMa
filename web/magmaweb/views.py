@@ -1,6 +1,7 @@
 """Module with views for the magma web application"""
 import json
 import time
+import transaction
 from pyramid.response import Response
 from pyramid.view import forbidden_view_config
 from pyramid.view import view_config
@@ -19,7 +20,7 @@ from magmaweb.job import make_job_factory
 from magmaweb.job import Job
 from magmaweb.job import JobQuery
 from magmaweb.job import JobSubmissionError
-from magmaweb.user import User
+from magmaweb.user import User, DBSession
 
 
 class Views(object):
@@ -164,9 +165,30 @@ class Views(object):
                                     or home if came_from=login
         -- POST -> unauthenticated -> login page
 
+        Or if auto_register=True then generates user and redirects back to request.url
         """
-        if self.request.user is not None:
+        is_authenticated = self.request.user is not None
+        if is_authenticated:
             return self.request.exception
+
+        auto_register = self.request.registry.settings.get('auto_register', False)
+        if auto_register:
+            user = User.generate()
+            userid = user.userid
+            # Force committing as this is an exception handler
+            # which causes pyramid_tm to do a rollback instead of commit
+            try:
+                transaction.commit()
+            except:
+                pass
+
+            referrer = self.request.url
+            if referrer == self.request.route_url('login'):
+                # never use the login form itself as came_from
+                referrer = self.request.route_url('home')
+            headers = remember(self.request, userid)
+            return HTTPFound(location=referrer,
+                             headers=headers)
         else:
             login_url = self.request.route_url('login')
             referrer = self.request.url

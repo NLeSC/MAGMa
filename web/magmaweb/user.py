@@ -5,6 +5,7 @@ Contains db schema for users and jobs.
 import uuid
 import datetime
 import bcrypt
+import transaction
 from sqlalchemy import Column
 from sqlalchemy import Unicode
 from sqlalchemy import String
@@ -110,6 +111,15 @@ class User(Base):
         session = DBSession()
         session.add(user)
         session.flush()
+
+    @classmethod
+    def generate(cls, displayname='Temporary user', email='example@example.com'):
+        """Generates a user with a uuid as userid and adds it to the db and commits
+        """
+        userid = str(uuid.uuid4())
+        user = User(userid, displayname, email)
+        cls.add(user)
+        return user
 
 
 class JobMeta(Base):

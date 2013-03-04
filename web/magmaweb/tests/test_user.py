@@ -114,6 +114,20 @@ class TestUser(unittest.TestCase):
 
         destroy_user_db()
 
+    def test_generate(self):
+        init_user_db()
+
+        u = user.User.generate()
+
+        self.assertEqual(u, user.User(u.userid, 'Temporary user', 'example@example.com'))
+
+        session = user.DBSession()
+        u2 = session.query(user.User).get(u.userid)
+        self.assertEqual(u, u2)
+
+        destroy_user_db()
+
+
 
 class TestJobMeta(unittest.TestCase):
     def setUp(self):
