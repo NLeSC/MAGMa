@@ -136,15 +136,17 @@ Ext.onReady(function() {
   });
   // change settings when tree ms data format is chosen.
   var ms_data_format_combo = form.down('component[name=ms_data_format]');
-  var filters_before_tree = {};
+  var filters_before_tree = undefined;
   ms_data_format_combo.addListener('change', function(field, value) {
-	if (value == 'tree') {
+    if (value.indexOf('tree') > -1) {
 		var values = form.getForm().getValues();
-		filters_before_tree = {
-            'ms_intensity_cutoff': values['ms_intensity_cutoff'],
-            'msms_intensity_cutoff': values['msms_intensity_cutoff'],
-            'abs_peak_cutoff': values['abs_peak_cutoff']
-        };
+		if (!filters_before_tree) {
+			filters_before_tree = {
+	            'ms_intensity_cutoff': values['ms_intensity_cutoff'],
+	            'msms_intensity_cutoff': values['msms_intensity_cutoff'],
+	            'abs_peak_cutoff': values['abs_peak_cutoff']
+	        };
+		}
 		form.getForm().setValues({
 		    'ms_intensity_cutoff': 0,
 		    'msms_intensity_cutoff': 0,
@@ -152,6 +154,7 @@ Ext.onReady(function() {
 		});
 	} else {
 		form.getForm().setValues(filters_before_tree);
+		filters_before_tree = undefined;
 	}
   });
 
