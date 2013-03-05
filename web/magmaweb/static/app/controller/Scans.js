@@ -401,19 +401,21 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   },
   /**
    * Called when MS data format is changed.
-   * When the 'tree' format is chosen the filtering is disabled.
+   * When a '*tree*' format is chosen the filtering is disabled.
    * When a non-'tree' format is chosen the filtering is restored
-   * to what it was before 'tree' format was chosen.
+   * to what it was before '*tree*' format was chosen.
    */
   changeMsDataFormat: function(field, value) {
 	  var form = this.getUploadForm().getForm();
-	  if (value == 'tree') {
+	  if (value.indexOf('tree') > -1) {
 		  var values = form.getValues();
-		  filters_before_tree = {
-		      'ms_intensity_cutoff': values['ms_intensity_cutoff'],
-		      'msms_intensity_cutoff': values['msms_intensity_cutoff'],
-	          'abs_peak_cutoff': values['abs_peak_cutoff']
-		  };
+          if (!filters_before_tree) {
+                filters_before_tree = {
+                    'ms_intensity_cutoff': values['ms_intensity_cutoff'],
+                    'msms_intensity_cutoff': values['msms_intensity_cutoff'],
+                    'abs_peak_cutoff': values['abs_peak_cutoff']
+                };
+          }
 	      form.setValues({
 			  'ms_intensity_cutoff': 0,
 			  'msms_intensity_cutoff': 0,
@@ -421,6 +423,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
 	      });
 	  } else {
 		  form.setValues(filters_before_tree);
+		  filters_before_tree = undefined;
 	  }
   }
 });
