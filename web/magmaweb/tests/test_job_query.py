@@ -399,7 +399,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         self.assertEqual(query, expected_query)
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
 
-    def formatTest(self, format):
+    def formatTest(self, ms_data_format, params=None):
         import tempfile
         from cgi import FieldStorage
         msfile = tempfile.TemporaryFile()
@@ -407,15 +407,16 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         msfile.flush()
         msfield = FieldStorage()
         msfield.file = msfile
-        params = {'ms_data_format': format,
-                  'ms_data_file': msfield,
-                  'max_ms_level': 3,
-                  'abs_peak_cutoff': 1000,
-                  }
+        if params is None:
+            params = {'ms_data_format': ms_data_format,
+                      'ms_data_file': msfield,
+                      'max_ms_level': 3,
+                      'abs_peak_cutoff': 1000,
+                      }
 
         query = self.jobquery.add_ms_data(params)
 
-        script = "{magma} read_ms_data --ms_data_format '"+format+"'"
+        script = "{magma} read_ms_data --ms_data_format '"+ms_data_format+"'"
         script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': ['ms_data.dat'],
@@ -433,6 +434,33 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
     def test_with_form_tree_neg_format(self):
         self.formatTest('form_tree_neg')
 
+    def test_mzxml_with_scan(self):
+        params = {'ms_data_format': 'mzxml',
+                  'ms_data': 'foo',
+                  'scan': 5,
+                  'max_ms_level': 3,
+                  'abs_peak_cutoff': 1000,
+                  }
+
+        query = self.jobquery.add_ms_data(params)
+
+        script = "{magma} read_ms_data --ms_data_format 'mzxml'"
+        script += " -l '3' -a '1000.0' --scan '5' ms_data.dat {db}\n"
+        expected_query = JobQuery(**{'directory': self.jobdir,
+                                     'prestaged': ['ms_data.dat'],
+                                     'script': script
+                                     })
+        self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
+
+    def test_mass_tree_with_scan(self):
+        params = {'ms_data_format': 'mass_tree',
+                  'ms_data': 'foo',
+                  'scan': 5,
+                  'max_ms_level': 3,
+                  'abs_peak_cutoff': 1000,
+                  }
+        self.formatTest('mass_tree', params)
 
 class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 

@@ -27,7 +27,19 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         matchFieldWidth: false,
         fieldLabel: 'Format',
         name: 'ms_data_format',
-        value: 'mzxml'
+        value: 'mzxml',
+        listeners: {
+            /**
+             * Only show 'Scan' when 'mzxml' is selected.
+             *
+             * @param t
+             * @param value
+             */
+            change: function(t, value) {
+                var scan = this.up('form').down('numberfield[name="scan"]');
+                scan.setVisible(value == 'mzxml');
+            }
+        }
     }, {
         xtype : 'textareatab',
         name : 'ms_data',
@@ -69,7 +81,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         allowBlank: false,
         minValue: 1,
         maxValue: 15,
-        decimalPrecision: 0
+        allowDecimals: false
     }, {
         xtype: 'numberfield',
         name: 'abs_peak_cutoff',
@@ -79,5 +91,14 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         labelAttrTpl: 'data-qtip="Absolute intensity threshold for storing peaks in database"',
         allowBlank: false,
         decimalPrecision: 5
+    }, {
+        xtype: 'numberfield',
+        fieldLabel: 'Single spectral tree (MS1 scan number)',
+        labelSeparator: '',
+        labelAttrTpl: 'data-qtip="Read only spectral tree specified by MS1 scan number"',
+        name: 'scan',
+        allowBlank: true,
+        minValue: 0,
+        allowDecimals: false
     }]
 });
