@@ -329,6 +329,10 @@ class JobQuery(object):
         schema.add(colander.SchemaNode(colander.Float(),
                                        validator=colander.Range(min=0),
                                        name='abs_peak_cutoff'))
+        schema.add(colander.SchemaNode(colander.Integer(),
+                                       missing=colander.null,
+                                       validator=colander.Range(min=0),
+                                       name='scan'))
         if has_metabolites:
             self._addAnnotateSchema(schema)
         params = schema.deserialize(params)
@@ -347,15 +351,20 @@ class JobQuery(object):
             msfile.write(params['ms_data'])
         msfile.close()
 
-        script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}' "
-        script += "-l '{max_ms_level}' "
-        script += "-a '{abs_peak_cutoff}' "
-        script += "ms_data.dat {{db}}\n"
         script__substitution = {
             'ms_data_format': self.escape(params['ms_data_format']),
             'max_ms_level': self.escape(params['max_ms_level']),
             'abs_peak_cutoff': self.escape(params['abs_peak_cutoff'])
         }
+        script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}' "
+        script += "-l '{max_ms_level}' "
+        script += "-a '{abs_peak_cutoff}' "
+
+        is_mzxml = params['ms_data_format'] == 'mzxml'
+        if params['scan'] is not colander.null and is_mzxml:
+            script += "--scan '{scan}' "
+            script__substitution['scan'] = self.escape(params['scan'])
+        script += "ms_data.dat {{db}}\n"
         self.script += script.format(**script__substitution)
 
         self.prestaged.append('ms_data.dat')
