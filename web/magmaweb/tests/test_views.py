@@ -406,6 +406,9 @@ class ViewsTestCase(AbstractViewsTestCase):
         user.generate.assert_called_with()
         remember.assert_called_with(request, 'bob')
 
+    def test_login_auto_register_mac_challenge(self):
+        self.fail('Joblauncher can not update status in auto_register mode')
+
     @patch('magmaweb.views.forget')
     def test_logout(self, forget):
         self.config.add_route('home', '/')
