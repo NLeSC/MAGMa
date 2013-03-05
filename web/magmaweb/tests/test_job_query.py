@@ -399,7 +399,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         self.assertEqual(query, expected_query)
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
 
-    def test_with_mass_tree_format(self):
+    def formatTest(self, format):
         import tempfile
         from cgi import FieldStorage
         msfile = tempfile.TemporaryFile()
@@ -407,7 +407,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         msfile.flush()
         msfield = FieldStorage()
         msfield.file = msfile
-        params = {'ms_data_format': 'mass_tree',
+        params = {'ms_data_format': format,
                   'ms_data_file': msfield,
                   'max_ms_level': 3,
                   'abs_peak_cutoff': 1000,
@@ -415,7 +415,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.add_ms_data(params)
 
-        script = "{magma} read_ms_data --ms_data_format 'mass_tree'"
+        script = "{magma} read_ms_data --ms_data_format '"+format+"'"
         script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': ['ms_data.dat'],
@@ -423,6 +423,15 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                                      })
         self.assertEqual(query, expected_query)
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
+
+    def test_with_mass_tree_format(self):
+        self.formatTest('mass_tree')
+
+    def test_with_form_tree_pos_format(self):
+        self.formatTest('form_tree_pos')
+
+    def test_with_form_tree_neg_format(self):
+        self.formatTest('form_tree_neg')
 
 
 class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
