@@ -88,9 +88,6 @@ class CallBackEngine(object):
         self.access_token="eyJzYWx0IjogIjdmNzkwYiIsICJleHBpcmVzIjogMTM4OTg3NTU4Ni42MzEyNSwgInVzZXJpZCI6ICJqb2JsYXVuY2hlciJ98zFwBaXdkQpAl0Bizan7qQ1_T6w="
         self.mac_key="u2P6nmreOWRmZXSCa2WTR0ntrTU="
         self.url=url
-        self.url="http://localhost:6543/magma/status/"+os.getcwd().split('/')[-1]+".json"
-        print os.getcwd()
-        print self.url
     def update_callback_url(self,status):
         class HTTPMacAuth(AuthBase):
             """Attaches HTTP Basic Authentication to the given Request object."""
@@ -101,9 +98,8 @@ class CallBackEngine(object):
                 r.headers['Authorization'] = macauthlib.sign_request(r, id=self.id, key=self.key)
                 return r
         
-        print status
         r = requests.put(self.url, status, auth=HTTPMacAuth(self.access_token, self.mac_key))
-        print r
+        #print r
 
 class StructureEngine(object):
     def __init__(self,db_session,metabolism_types,n_reaction_steps):
@@ -469,7 +465,7 @@ class AnnotateEngine(object):
 
         self.scans=[]
         
-        if call_back_url == None: #!=None
+        if call_back_url != None:
             self.call_back_engine=CallBackEngine(call_back_url)
         else:
             self.call_back_engine=None
@@ -620,6 +616,7 @@ class AnnotateEngine(object):
         total_frags=0
         total_metids = len(metids)
         start_time=time.time()
+        update_time=1 #send update to call_back_url every second
         while len(metids)>0:
             ids=set([])
             while len(ids)<500 and len(metids)>0:
@@ -671,21 +668,21 @@ class AnnotateEngine(object):
                 #print sout
                 (hits,frags)=result
                 total_frags+=frags
-                #sys.stderr.write('Metabolite '+str(structure.metid)+' -> '+str(frags)+' fragments: '+str(structure.origin.encode('utf8'))+'\n')
+                sys.stderr.write('Metabolite '+str(structure.metid)+' -> '+str(frags)+' fragments: '+str(structure.origin.encode('utf8'))+'\n')
                 structure.nhits=len(hits)
                 self.db_session.add(structure)
                 for hit in hits:
-                    #sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
-                    #sys.stderr.write('Score: '+str(hit.score)+'\n')
+                    sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
+                    sys.stderr.write('Score: '+str(hit.score)+'\n')
                     self.store_hit(hit,structure.metid,0)
                 self.db_session.flush()
                 count+=1
                 if self.call_back_engine != None:
                     elapsed_time=time.time()-start_time
-                    if elapsed_time > 5: # update status every 5 seconds
-                        update_string=str(total_metids-len(metids)-len(ids)+count)+" / "+str(total_metids)+" compounds processed ..."
+                    if elapsed_time > update_time: # update status every second
+                        update_string=str(total_metids-len(metids)-len(ids)+count)+" / "+str(total_metids)+" candidate molecules processed ..."
                         self.call_back_engine.update_callback_url(update_string)
-                        start_time = start_time + elapsed_time//5*5
+                        start_time = start_time + elapsed_time//update_time*update_time
             self.db_session.commit()
         print total_frags,'fragments in total.'
 
