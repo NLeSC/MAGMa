@@ -516,7 +516,7 @@ describe('Scans controller', function() {
   });
 
   describe('changeMsDataFormat', function() {
-	it('tree', function() {
+	it('mass_tree', function() {
 		var filter_init = {
 				'ms_intensity_cutoff': 1,
 			    'msms_intensity_cutoff': 2,
@@ -525,7 +525,7 @@ describe('Scans controller', function() {
 		spyOn(mocked_form, 'getValues').andReturn(filter_init);
 		spyOn(mocked_form, 'setValues');
 
-		ctrl.changeMsDataFormat(null, 'tree');
+		ctrl.changeMsDataFormat(null, 'mass_tree');
 
 		var filter_off = {
 			'ms_intensity_cutoff': 0,
@@ -535,7 +535,7 @@ describe('Scans controller', function() {
 		expect(mocked_form.setValues).toHaveBeenCalledWith(filter_off);
 	});
 
-	it('non-tree', function() {
+	it('mzxml', function() {
 		var filter_init = {
 				'ms_intensity_cutoff': 1,
 			    'msms_intensity_cutoff': 2,
@@ -543,7 +543,7 @@ describe('Scans controller', function() {
 		};
 		spyOn(mocked_form, 'getValues').andReturn(filter_init);
 		spyOn(mocked_form, 'setValues');
-		ctrl.changeMsDataFormat(null, 'tree');
+		ctrl.changeMsDataFormat(null, 'mass_tree');
 
 		ctrl.changeMsDataFormat(null, 'mzxml');
 

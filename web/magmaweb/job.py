@@ -301,7 +301,11 @@ class JobQuery(object):
         schema = colander.SchemaNode(colander.Mapping(),
                                      validator=textarea_or_file)
 
-        valid_formats = colander.OneOf(['mzxml', 'tree'])
+        valid_formats = colander.OneOf(['mzxml',
+                                        'mass_tree',
+                                        'form_tree_pos',
+                                        'form_tree_neg',
+                                        ])
         schema.add(colander.SchemaNode(colander.String(),
                                        validator=valid_formats,
                                        name='ms_data_format'
@@ -636,7 +640,7 @@ class JobQuery(object):
             '    )'
         ]
         return dict(ms_data="\n".join(example_tree),
-                    ms_data_format='tree',
+                    ms_data_format='mass_tree',
                     ionisation_mode=-1,
                     )
 
