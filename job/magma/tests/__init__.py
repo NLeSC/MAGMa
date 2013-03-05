@@ -265,7 +265,94 @@ class TestStructureEngine(unittest.TestCase):
         se.metabolize.assert_called_with(parent_metid, u'phase1', 1)
 
 class TestMsDataEngine(unittest.TestCase):
-    pass
+    def setUp(self):
+        engine = create_engine('sqlite://')
+        Base.metadata.create_all(engine)
+        self.db_session = sessionmaker(bind=engine)()
+
+    def test_store_manual_subtree_corrupt_endlessloop(self):
+        mde = magma.MsDataEngine(self.db_session, 1000, 1, 3)
+        # create corrupt manual tree file
+        import tempfile, os
+        treefile = tempfile.NamedTemporaryFile(delete=False)
+        treefile.write("""320.2: 999 (
+    123.12    1
+    135.2    3
+    139.2    3
+    145.18    2
+    147.04    1
+    149.136    39
+    149.92    1
+    150.32    2
+    150.56    1
+    150.88    1
+    151.28    1
+    153.36    1
+    155.04    2
+    155.296    2
+    159.1    1
+    161.28    5
+    162.64    1
+    163.155    43
+    167.145    230
+    167.808    4
+    168.4    5
+    169.06    7
+    169.68    1
+    175.177    8
+    175.52    1
+    177.12    4
+    179.114    92
+    179.509    5
+    179.74    1
+    179.92    2
+    180.168    5
+    181.04    1
+    181.44    1
+    189.28    2
+    191.12    1
+    195.04    3
+    195.28    2
+    203.235    23
+    203.44    3
+    205.2    1
+    205.68    1
+    206.96    4
+    207.2    4
+    207.36    1
+    208.088    13
+    219.232    14
+    220.88    1
+    221.12    4
+    223.28    1
+    229.12    5
+    257.283    254
+    257.92    4
+    258.32    2
+    258.733    3
+    259.32    1
+    273.12    3
+    275.268    97
+    282.88    1
+    283.23    4
+    291.251    9
+    291.52    3
+    301.242    254
+    302    3
+    302.4    2
+    319.155    999
+    319.8    2
+)
+        """)
+        treefile.close()
+
+        with self.assertRaises(SystemExit) as cm:
+            mde.store_manual_tree(treefile.name)
+
+        self.assertEqual(cm.exception.code, 'Corrupt Tree format ...')
+
+        os.remove(treefile.name)
+
 
 class TestAnnotateEngine(unittest.TestCase):
     pass
