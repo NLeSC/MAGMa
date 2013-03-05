@@ -20,8 +20,11 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
 	},
     items: [{
         xtype: 'combo',
-        store: [['mzxml','mzXML'], ['tree', 'Tree']],
+        store: [['mzxml','mzXML'], ['mass_tree', 'Mass Tree'],
+                ['form_tree_pos', 'Formula Tree (Positive ionisation)'],
+                ['form_tree_neg', 'Formula Tree (Negative ionisation)']],
         allowBlank: false,
+        matchFieldWidth: false,
         fieldLabel: 'Format',
         name: 'ms_data_format',
         value: 'mzxml'
@@ -29,7 +32,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         xtype : 'textareatab',
         name : 'ms_data',
         id: 'ms_data_area',
-        emptyText : 'Enter MS data in Tree format or mzXML',
+        emptyText : 'Enter MS data in a Tree format or mzXML',
         height : 200,
         width : 500
     }, {
