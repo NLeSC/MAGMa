@@ -111,6 +111,7 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
         { text: 'MS Level', dataIndex: 'mslevel', xtype: 'treecolumn'},
         { text: 'Scan', dataIndex: 'scanid', hidden: true},
         { text: 'M/z', dataIndex: 'mz', xtype: 'numbercolumn', format: '0.00000'},
+        { text: 'Formula', dataIndex: 'formula', hidden: false},
         { text: 'ID', dataIndex: 'fragid', hidden: true},
         fmolcol,
         { text: 'Molecule ID', dataIndex: 'metid', hidden: true},
