@@ -4,7 +4,7 @@
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
-	extend : 'Ext.form.Panel',
+    extend : 'Ext.form.Panel',
     alias: 'widget.uploadmsdatafieldset',
     requires: [
          'Esc.form.field.TextareaTab',
@@ -93,7 +93,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         decimalPrecision: 5
     }, {
         xtype: 'numberfield',
-        fieldLabel: 'Single spectral tree (MS1 scan number)',
+        fieldLabel: 'MS1 scan number',
         labelSeparator: '',
         labelAttrTpl: 'data-qtip="Read only spectral tree specified by MS1 scan number"',
         name: 'scan',
