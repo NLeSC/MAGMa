@@ -78,7 +78,8 @@ def populateTestingDB(session):
         parentfragid=0,
         atoms="0,1,2,3,4,5,6,7",
         deltah=-1.0,
-        deltappm=-1.84815979523607e-08
+        deltappm=-1.84815979523607e-08,
+        formula="C5H4",
     ))
     # fragments of metid=352 + scanid=870
     session.add(Metabolite(
@@ -121,22 +122,26 @@ def populateTestingDB(session):
         fragid=1707, metid=352, scanid=870, mass=208.0735588736,
         mz=207.066284179688, score=100, parentfragid=0,
         atoms="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14", deltah=-1,
-        deltappm=-8.18675317722029e-09
+        deltappm=-8.18675317722029e-09,
+        formula="C3H5O3",
     ), Fragment(
         fragid=1708, metid=352, scanid=871, mass=123.0446044689,
         mz=123.04508972167969, score=201, parentfragid=1707,
         atoms="6,7,8,9,10,11,12,13,14", deltah=0,
-        deltappm=3.943698856902144e-12
+        deltappm=3.943698856902144e-12,
+        formula="C3H5O3",
     ), Fragment(
         fragid=1709, metid=352, scanid=871, mass=164.08372962939995,
         mz=163.07623291015625, score=65, parentfragid=1707,
         atoms="3,4,5,6,7,8,9,10,11,12,13,14", deltah=-1,
-        deltappm=-1.235815738001507e-08
+        deltappm=-1.235815738001507e-08,
+        formula="C3H5O3",
     ), Fragment(
         fragid=1710, scanid=872, metid=352, mass=116.0626002568,
         mz=119.08654022216797, score=4, parentfragid=1709,
         atoms="4,5,6,7,8,9,11,13,14", deltah=3,
-        deltappm=5.0781684060061766e-08
+        deltappm=5.0781684060061766e-08,
+        formula="C3H5O3",
     )])
 
     session.flush()
@@ -219,7 +224,8 @@ def populateWithUseAllPeaks(session):
         parentfragid=0,
         atoms='0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
         deltah=-1.0,
-        deltappm=-7.046696487857745e-09
+        deltappm=-7.046696487857745e-09,
+        formula="C4H6O2",
     ), Fragment(
         fragid=18,
         metid=12,
@@ -230,7 +236,8 @@ def populateWithUseAllPeaks(session):
         parentfragid=0,
         atoms='0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
         deltah=-1.0,
-        deltappm=-7.020570507205176e-09
+        deltappm=-7.020570507205176e-09,
+        formula="C4H6O2",
     ), Fragment(
         fragid=19,
         metid=12,
@@ -241,7 +248,8 @@ def populateWithUseAllPeaks(session):
         parentfragid=18,
         atoms='0,1,2,3,4,5,6,7,8,9,10,11,12,13,14',
         deltah=0.0,
-        deltappm=2.3630267823129625e-12
+        deltappm=2.3630267823129625e-12,
+        formula="C4H6O2",
     ), Fragment(
         fragid=20,
         metid=12,
@@ -252,7 +260,8 @@ def populateWithUseAllPeaks(session):
         parentfragid=18,
         atoms='0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
         deltah=-1.0,
-        deltappm=-7.021641217476223e-09
+        deltappm=-7.021641217476223e-09,
+        formula="C4H6O2",
     )])
 
 
@@ -1387,6 +1396,7 @@ class JobFragmentsTestCase(JobDbTestCaseAbstract):
                 'mass': 110.0367794368,
                 'metid': 72,
                 'mol': u'Molfile',
+                'formula': u'C5H4',
                 'mslevel': 1,
                 'mz': 109.0295639038086,
                 'scanid': 641,
@@ -1415,6 +1425,7 @@ class JobFragmentsTestCase(JobDbTestCaseAbstract):
                     'mz': 123.04508972167969,
                     'scanid': 871,
                     'score': 201,
+                    'formula': 'C3H5O3',
                 }, {
                     'atoms': "3,4,5,6,7,8,9,10,11,12,13,14",
                     'deltah': -1,
@@ -1428,7 +1439,8 @@ class JobFragmentsTestCase(JobDbTestCaseAbstract):
                     'mslevel': 2,
                     'mz': 163.07623291015625,
                     'scanid': 871,
-                    'score': 65
+                    'score': 65,
+                    'formula': 'C3H5O3',
                 }],
                 'deltah': -1,
                 'deltappm': -8.18675317722029e-09,
@@ -1442,7 +1454,8 @@ class JobFragmentsTestCase(JobDbTestCaseAbstract):
                 'mz': 207.066284179688,
                 'scanid': 870,
                 'score': 100,
-                'isAssigned': False
+                'isAssigned': False,
+                'formula': 'C3H5O3',
             }], 'expanded': True
         })
 
@@ -1461,7 +1474,8 @@ class JobFragmentsTestCase(JobDbTestCaseAbstract):
             'mz': 119.08654022216797,
             'scanid': 872,
             'score': 4,
-            'deltappm': 5.0781684060061766e-08
+            'deltappm': 5.0781684060061766e-08,
+            'formula': 'C3H5O3',
         }])
 
     def test_metabolitewithassignedpeak(self):
@@ -1484,6 +1498,7 @@ class JobFragmentsTestCase(JobDbTestCaseAbstract):
                 'scanid': 641,
                 'score': 200.0,
                 'isAssigned': True,
+                'formula': "C5H4",
             }], 'expanded': True
         })
 
@@ -1540,7 +1555,8 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                 'mz': 287.015686035156,
                 'scanid': 1,
                 'score': 0.0,
-                'isAssigned': False
+                'isAssigned': False,
+                'formula': "C4H6O2",
             }, {
                 'atoms': u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
                 'deltah': -1.0,
@@ -1556,6 +1572,7 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                 'scanid': 1,
                 'score': 0.5,
                 'isAssigned': False,
+                'formula': "C4H6O2",
                 'children': [{
                     'fragid': 19,
                     'metid': 12,
@@ -1569,7 +1586,8 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                     'leaf': True,
                     'mslevel': 2,
                     'deltah': 0.0,
-                    'deltappm': 2.3630267823129625e-12
+                    'deltappm': 2.3630267823129625e-12,
+                    'formula': "C4H6O2",
                 }, {
                     'fragid': 20,
                     'metid': 12,
@@ -1583,7 +1601,8 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                     'leaf': True,
                     'mslevel': 2,
                     'deltah': -1.0,
-                    'deltappm': -7.021641217476223e-09
+                    'deltappm': -7.021641217476223e-09,
+                    'formula': "C4H6O2",
                 }]
             }], 'expanded': True
         })
