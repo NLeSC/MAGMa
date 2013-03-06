@@ -95,7 +95,7 @@ class StructureEngine(object):
         molecule=types.MoleculeType(molblock,name,prob,level,sequence,isquery,mim,natoms,inchikey,molform,reference,logp)
         self.add_molecule(molecule,mass_filter)
 
-    def add_molecule(self,molecule,mass_filter=9999,check_duplicates=True):
+    def add_molecule(self,molecule,mass_filter=9999,check_duplicates=True,merge=False):
         if molecule.mim > mass_filter:
             return
         metab=Metabolite(
@@ -116,19 +116,21 @@ class StructureEngine(object):
         if check_duplicates: 
             dups=self.db_session.query(Metabolite).filter_by(smiles=molecule.inchikey).all()
             if len(dups)>0:
-                metab=dups[0]
-                metab.origin=unicode(str(metab.origin)+'</br>'+molecule.name, 'utf-8', 'xmlcharrefreplace')
-                metab.reference=molecule.reference
-                metab.probability=molecule.probability
-#            if dupid.probability < prob:
-#                self.db_session.delete(dupid)
-#                metab.metid=dupid.metid
-#                self.db_session.add(metab)
-#                sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - old one removed\n')
-#                # TODO remove any fragments related to this structure as well
-#            else:
-#                sys.stderr.write('Duplicate structure: '+sequence+' '+inchikey+' - kept old one\n')
-#                return
+                if merge:
+                    metab=dups[0]
+                    metab.origin=unicode(str(metab.origin)+'</br>'+molecule.name, 'utf-8', 'xmlcharrefreplace')
+                    metab.reference=molecule.reference
+                    metab.probability=molecule.probability
+                else:
+                    if dups[0].probability < molecule.probability:
+                        metab.metid=dups[0].metid
+                        self.db_session.delete(dups[0])
+                        #self.db_session.add(metab)
+                        sys.stderr.write('Duplicate structure: - old one removed\n')
+                    # TODO remove any fragments related to this structure as well
+                    else:
+                        sys.stderr.write('Duplicate structure: - kept old one\n')
+                        return
         self.db_session.add(metab)
         #sys.stderr.write('Added: '+name+'\n')
         self.db_session.flush()
@@ -229,7 +231,7 @@ class MsDataEngine(object):
 #        self.rel_peak_cutoff=rundata.rel_peak_cutoff
         self.max_ms_level=rundata.max_ms_level
 
-    def store_mzxml_file(self,mzxml_file):
+    def store_mzxml_file(self,mzxml_file,scan_filter=None):
         logging.warn('Store mzxml file')
         rundata=self.db_session.query(Run).one()
         if rundata.ms_filename == None:
@@ -239,8 +241,10 @@ class MsDataEngine(object):
             tree=etree.parse(mzxml_file)
             root=tree.getroot()
             namespace='{'+root.nsmap[None]+'}'
-            for mzxmlScan in root.findall(namespace+"msRun/"+namespace+"scan"):
-            # mzxmlScan = root.findall(namespace+"msRun/"+namespace+"scan")[0]
+            mzxml_query=namespace+"msRun/"+namespace+"scan"
+            if scan_filter != None:
+                mzxml_query+="[@num='"+scan_filter+"']"
+            for mzxmlScan in root.findall(mzxml_query):
                 self.store_mzxml_scan(mzxmlScan,0,namespace)
         else:
             sys.exit('Attempt to read MS data twice')
@@ -316,13 +320,14 @@ class MsDataEngine(object):
             self.db_session.add(Peak(scanid=scanid+1,mz=peak[0],intensity=peak[1]))
         self.db_session.commit()
 
-    def store_manual_tree(self,manual_tree):
+    def store_manual_tree(self,manual_tree,tree_type):
+        # tree_type: 0 for mass tree, -1 and 1 for formula trees with negative or positive ionisation mode respectively
         tree_string=''.join(open(manual_tree).read().split()) # remove whitespaces (' ','\t','\n',etc) from tree_string
         tree_list=re.split('([\,\(\)])',tree_string)
         self.global_scanid = 1
-        self.store_manual_subtree(tree_list,0,0,0,1)
+        self.store_manual_subtree(tree_list,0,0,0,1,tree_type)
 
-    def store_manual_subtree(self,tree_list,precursor_scanid,precursor_mz,precursor_intensity,mslevel):
+    def store_manual_subtree(self,tree_list,precursor_scanid,precursor_mz,precursor_intensity,mslevel,tree_type):
         lowmz=None
         highmz=None
         basepeakmz=None
@@ -333,6 +338,8 @@ class MsDataEngine(object):
             tree_item=tree_list.pop(0)
             if tree_item.find(':')>=0:
                 mz,intensity=tree_item.split(':')
+                if tree_type != 0:
+                    mz=self.mass_from_formula(mz)-tree_type*pars.elmass
                 self.db_session.add(Peak(scanid=scanid,mz=mz,intensity=intensity))
                 npeaks+=1
                 if lowmz==None or mz<lowmz:
@@ -344,7 +351,7 @@ class MsDataEngine(object):
                     basepeakintensity=intensity
             elif tree_item=='(':
                 self.global_scanid+=1
-                self.store_manual_subtree(tree_list,scanid,mz,intensity,mslevel+1)
+                self.store_manual_subtree(tree_list,scanid,mz,intensity,mslevel+1,tree_type)
             elif tree_item!=',' and tree_item!='':
                 exit('Corrupt Tree format ...')
         if npeaks>0:
@@ -363,12 +370,35 @@ class MsDataEngine(object):
         if len(tree_list)>0:
             tree_list.pop(0)
 
+    def mass_from_formula(self,form):
+        mass=0.0
+        while len(form)>0:
+            if form[:2] in pars.mims:
+                m=pars.mims[form[:2]]
+                form=form[2:]
+            elif form[:1] in pars.mims:
+                m=pars.mims[form[:1]]
+                form=form[1:]
+            else:
+                exit('Element not allowed in formula tree: '+form)
+            x=0
+            while len(form)>x and form[x] in '0123456789':
+                x+=1
+            if x>0:
+                n=int(form[:x])
+            else:
+                n=1
+            mass+=m*n
+            form=form[x:]
+        return mass
 
 class AnnotateEngine(object):
     def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
                  ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,
                  precursor_mz_precision,use_all_peaks):
         self.db_session = db_session
+        mz_precision_abs=max(mz_precision_abs,0.000001)
+        # a small mz_precision_abs is required, even when matching theoretical masses, because of finite floating point precision
         try:
             rundata=self.db_session.query(Run).one()
         except:
@@ -513,8 +543,8 @@ class AnnotateEngine(object):
         # build non-overlapping set of queries around these masses
         queries=[[0,0]]
         for mz in mzs:
-            ql=int(1e6*(mz/self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass)))
-            qh=int(1e6*(mz*self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass)))
+            ql=int(1e6*(min(mz/self.precision,mz-self.mz_precision_abs)-self.ionisation_mode*(pars.Hmass-pars.elmass)))
+            qh=int(1e6*(max(mz*self.precision,mz+self.mz_precision_abs)-self.ionisation_mode*(pars.Hmass-pars.elmass)))
             if ql < mmim:
                 if qh > mmim:
                     qh == mmim
@@ -552,6 +582,7 @@ class AnnotateEngine(object):
             for metid, in self.db_session.query(Metabolite.metid).all():
                 metids.add(metid)
         # annotate metids in chunks of 500 to avoid errors in db_session.query and memory problems during parallel processing
+        total_frags=0
         while len(metids)>0:
             ids=set([])
             while len(ids)<500 and len(metids)>0:
@@ -598,9 +629,11 @@ class AnnotateEngine(object):
                                )))
             for structure,job in jobs:
                 raw_result=job(raw_result=True)
-                hits,sout = pickle.loads(raw_result)
+                result,sout = pickle.loads(raw_result)
                 #print sout
-                sys.stderr.write('Metabolite '+str(structure.metid)+': '+str(structure.origin.encode('utf8'))+'\n')
+                (hits,frags)=result
+                total_frags+=frags
+                sys.stderr.write('Metabolite '+str(structure.metid)+' -> '+str(frags)+' fragments: '+str(structure.origin.encode('utf8'))+'\n')
                 structure.nhits=len(hits)
                 self.db_session.add(structure)
                 for hit in hits:
@@ -611,6 +644,7 @@ class AnnotateEngine(object):
                     self.store_hit(hit,structure.metid,0)
                 self.db_session.flush()
             self.db_session.commit()
+        print total_frags,'fragments in total.'
 
     def store_hit(self,hit,metid,parentfragid):
         global fragid
@@ -632,7 +666,8 @@ class AnnotateEngine(object):
             atoms=hit.atomstring,
             inchikey=hit.inchikey,
             deltah=hit.deltaH,
-            deltappm=deltappm
+            deltappm=deltappm,
+            formula=hit.formula
             ))
         if len(hit.besthits)>0:
             for childhit in hit.besthits:
@@ -790,9 +825,10 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
         Fragmentation=magma.fragmentation_py
 
     def massmatch(peak,mim,low,high):
+        lowmz=min(peak.mz/precision,peak.mz-mz_precision_abs)
+        highmz=max(peak.mz*precision,peak.mz+mz_precision_abs)
         for x in range(low,high+1):
-            #if self.mz-me.mz_precision < mim+x*Hmass < self.mz+me.mz_precision:
-            if peak.mz/precision <= mim+x*pars.Hmass-ionisation_mode*pars.elmass <= peak.mz*precision:
+            if lowmz <= mim+x*pars.Hmass-ionisation_mode*pars.elmass <= highmz:
                 return x
         else:
             return False
@@ -829,7 +865,7 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
 
     def add_fragment_data_to_hit(hit):
         if hit.fragment != 0:
-            hit.atomstring,hit.atomlist=fragment_engine.get_fragment_info(hit.fragment)
+            hit.atomstring,hit.atomlist,hit.formula=fragment_engine.get_fragment_info(hit.fragment,hit.deltaH)
             #except:
             #    exit('failed inchi for: '+atomstring+'--'+str(hit.fragment))
             if len(hit.besthits)>0:
@@ -840,6 +876,7 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
 # for peak in self.db_session.query(Peak).filter(Scan.mslevel)==1.filter(Peak.intensity>MSfilter)
     Fragmented=False
     hits=[]
+    frags=0
     for peak in peaks:
         if not ((not use_all_peaks) and peak.childscan==None):
             protonation=ionisation_mode-(molformula.find('+')>=0)*1
@@ -848,17 +885,17 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
                 if not Fragmented:
                     #sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+' '+str(structure.reactionsequence)+'\n')
                     #sys.stderr.write('Mim: '+str(structure.mim)+'\n')
-                    fragment_engine=Fragmentation.FragmentEngine(mol,max_broken_bonds,max_water_losses)
+                    fragment_engine=Fragmentation.FragmentEngine(mol,max_broken_bonds,max_water_losses,ionisation_mode)
                     #fragment_engine=GrowingEngine(mol)
                     if fragment_engine.accepted():
-                        fragment_engine.generate_fragments()
+                        frags=fragment_engine.generate_fragments()
                     #sys.stderr.write('N fragments kept: '+str(len(fragment_engine.fragments))+"\n")
                     Fragmented=True
                 if fragment_engine.accepted():
                     hit=gethit(peak,(1<<fragment_engine.get_natoms())-1,0,0,mim,-deltaH)
                     add_fragment_data_to_hit(hit)
                     hits.append(hit)
-    return hits
+    return (hits,frags)
 
 
 

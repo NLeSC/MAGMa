@@ -6,10 +6,11 @@ import pars
 
 
 class FragmentEngine(object):
-    def __init__(self,mol,max_broken_bonds,max_water_losses):
+    def __init__(self,mol,max_broken_bonds,max_water_losses,ionisation_mode):
         self.mol=Chem.MolFromMolBlock(str(mol))
         self.max_broken_bonds=max_broken_bonds
         self.max_water_losses=max_water_losses
+        self.ionisation_mode=ionisation_mode
         self.natoms=Chem.natoms(self.mol)  # number of atoms in the molecule
         self.atom_masses=[]
         self.neutral_loss_atoms=[]
@@ -18,7 +19,7 @@ class FragmentEngine(object):
         self.bondscore={}
         self.new_fragment=0
         self.template_fragment=0
-        self.fragment_masses=((max_broken_bonds+max_water_losses)*2+3)*[0]
+        self.fragment_masses=((max_broken_bonds+max_water_losses)*2+1)*[0]
         self.fragment_info=[[0,0,0]]
         self.avg_score=None
 
@@ -96,6 +97,7 @@ class FragmentEngine(object):
                                 if score < (pars.missingfragmentpenalty+5):
                                     self.add_fragment(frag,self.calc_fragment_mass(frag),score,bondbreaks)
         self.convert_fragments_table()
+        return len(self.fragment_info)
 
     def score_fragment(self,fragment):
         score=0
@@ -124,12 +126,12 @@ class FragmentEngine(object):
 
     def add_fragment(self, fragment, fragmentmass, score, bondbreaks):
         self.fragment_masses+=((self.max_broken_bonds+self.max_water_losses-bondbreaks)*[0]+\
-                                  list(numpy.arange(-bondbreaks-1,bondbreaks+2)*pars.Hmass+fragmentmass)+\
+                                  list(numpy.arange(-bondbreaks+self.ionisation_mode,bondbreaks+self.ionisation_mode+1)*pars.Hmass+fragmentmass)+\
                                   (self.max_broken_bonds+self.max_water_losses-bondbreaks)*[0])
         self.fragment_info.append([fragment,score,bondbreaks])
     
     def convert_fragments_table(self):
-        self.fragment_masses_np=numpy.array(self.fragment_masses).reshape(len(self.fragment_info),(self.max_broken_bonds+self.max_water_losses)*2+3)
+        self.fragment_masses_np=numpy.array(self.fragment_masses).reshape(len(self.fragment_info),(self.max_broken_bonds+self.max_water_losses)*2+1)
 
     def calc_avg_score(self):
         # self.avg_score = sum([i[1] for i in self.info])/len(self.info)
@@ -145,18 +147,29 @@ class FragmentEngine(object):
         for i in range(len(result[0])):
             fid=result[0][i]
             fragment_set.append(self.fragment_info[fid]+\
-                                 [self.fragment_masses_np[fid][self.max_broken_bonds+self.max_water_losses+1]]+\
-                                 [self.max_broken_bonds+self.max_water_losses+1-result[1][i]])
+                                 [self.fragment_masses_np[fid][self.max_broken_bonds+self.max_water_losses-self.ionisation_mode]]+\
+                                 [self.max_broken_bonds+self.max_water_losses-self.ionisation_mode-result[1][i]])
         return fragment_set
     
-    def get_fragment_info(self,fragment):
+    def get_fragment_info(self,fragment,deltaH):
         atomstring=""
         atomlist=[]
+        elements={'C':0,'H':0,'N':0,'O':0,'F':0,'P':0,'S':0,'Cl':0,'Br':0,'I':0}
         for atom in range(self.natoms):
             if ((1<<atom) & fragment):
                 atomstring+=','+str(atom)
                 atomlist.append(atom)
-        return atomstring,atomlist # ,Chem.FragmentToInchiKey(self.mol,atomlist)
+                elements[Chem.GetAtomSymbol(self.mol,atom)]+=1
+                elements['H']+=Chem.GetAtomHs(self.mol,atom)
+        elements['H']-=deltaH
+        formula=''
+        for el in ('C','H','N','O','F','P','S','Cl','Br','I'):
+            nel=elements[el]
+            if nel>0:
+                formula+=el
+            if nel>1:
+                formula+=str(nel)
+        return atomstring,atomlist,formula # ,Chem.FragmentToInchiKey(self.mol,atomlist)
 
     def get_natoms(self):
         return self.natoms
