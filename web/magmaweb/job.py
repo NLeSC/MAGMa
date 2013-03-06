@@ -1457,7 +1457,8 @@ class JobDb(object):
             'mass': frag.mass,
             'deltah': frag.deltah,
             'mslevel': mslevel,
-            'deltappm': frag.deltappm
+            'deltappm': frag.deltappm,
+            'formula': frag.formula,
         }
         if (len(frag.children) > 0):
             f['expanded'] = False
