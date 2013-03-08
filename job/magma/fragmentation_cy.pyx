@@ -21,7 +21,7 @@ cdef class FragmentEngine(object):
     cdef unsigned long long new_fragment,template_fragment
     cdef int max_broken_bonds,max_water_losses,ionisation_mode
     cdef bonded_atom[64] bonded_atoms
-    cdef float[64] atom_masses
+    cdef double[64] atom_masses
     cdef list neutral_loss_atoms
     cdef int nbonds, natoms, accept
     cdef unsigned long long[128] bonds
@@ -181,15 +181,15 @@ cdef class FragmentEngine(object):
                 score+=self.bondscore[b]
         return score
     
-    cdef float calc_fragment_mass(self, unsigned long long fragment):
+    cdef double calc_fragment_mass(self, unsigned long long fragment):
         cdef int atom
-        cdef float fragment_mass=0.0
+        cdef double fragment_mass=0.0
         for atom in range(self.natoms):
             if fragment & (1ULL<<atom):
                 fragment_mass+=self.atom_masses[atom]
         return fragment_mass
 
-    def add_fragment(self,unsigned long long fragment,float fragmentmass,score,int bondbreaks):
+    def add_fragment(self,unsigned long long fragment,double fragmentmass,score,int bondbreaks):
         self.fragment_masses+=((self.max_broken_bonds+self.max_water_losses-bondbreaks)*[0]+\
                                   list(numpy.arange(-bondbreaks+self.ionisation_mode,bondbreaks+self.ionisation_mode+1)*pars.Hmass+fragmentmass)+\
                                   (self.max_broken_bonds+self.max_water_losses-bondbreaks)*[0])

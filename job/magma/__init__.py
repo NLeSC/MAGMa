@@ -426,6 +426,7 @@ class AnnotateEngine(object):
                  precursor_mz_precision,use_all_peaks,call_back_url=None):
         self.db_session = db_session
         mz_precision_abs=max(mz_precision_abs,0.000001)
+        precursor_mz_precision=max(precursor_mz_precision,0.000001)
         # a small mz_precision_abs is required, even when matching theoretical masses, because of finite floating point precision
         try:
             rundata=self.db_session.query(Run).one()
