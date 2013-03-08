@@ -303,8 +303,7 @@ class JobQuery(object):
 
         valid_formats = colander.OneOf(['mzxml',
                                         'mass_tree',
-                                        'form_tree_pos',
-                                        'form_tree_neg',
+                                        'form_tree',
                                         ])
         schema.add(colander.SchemaNode(colander.String(),
                                        validator=valid_formats,
@@ -335,6 +334,7 @@ class JobQuery(object):
                                        name='scan'))
         if has_metabolites:
             self._addAnnotateSchema(schema)
+        orig_params = params
         params = schema.deserialize(params)
 
         msfile = file(os.path.join(self.dir, 'ms_data.dat'), 'w')
@@ -350,6 +350,18 @@ class JobQuery(object):
         else:
             msfile.write(params['ms_data'])
         msfile.close()
+
+        if params['ms_data_format'] == 'form_tree':
+            if 'ionisation_mode' in orig_params:
+                if orig_params['ionisation_mode'] == 1:
+                    params['ms_data_format'] = 'form_tree_pos'
+                elif orig_params['ionisation_mode'] == -1:
+                    params['ms_data_format'] = 'form_tree_neg'
+            else:
+                sd = colander.SchemaNode(colander.String(),
+                                         name='ms_data_format')
+                msg = 'Require ionisation_mode when ms_data_format=form_tree'
+                raise colander.Invalid(sd, msg)
 
         script__substitution = {
             'ms_data_format': self.escape(params['ms_data_format']),
