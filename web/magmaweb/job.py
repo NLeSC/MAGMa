@@ -603,7 +603,7 @@ class JobQuery(object):
                     msms_intensity_cutoff=10,
                     mz_precision=5.0,
                     mz_precision_abs=0.001,
-                    abs_peak_cutoff=1000,
+                    abs_peak_cutoff=5000,
                     max_ms_level=10,
                     precursor_mz_precision=0.005,
                     max_broken_bonds=3,
