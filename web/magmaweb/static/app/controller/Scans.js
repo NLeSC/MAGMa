@@ -406,36 +406,71 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * to what it was before '*tree*' format was chosen.
    */
   changeMsDataFormat: function(field, value) {
-	  var form = this.getUploadForm().getForm();
-	  if (value == 'mass_tree') {
-		  var values = form.getValues();
-          if (!filters_before_tree) {
-                filters_before_tree = {
-                    'ms_intensity_cutoff': values['ms_intensity_cutoff'],
-                    'msms_intensity_cutoff': values['msms_intensity_cutoff'],
-                    'abs_peak_cutoff': values['abs_peak_cutoff']
-                };
-          }
-	      form.setValues({
-			  'msms_intensity_cutoff': 0,
-	      });
-	  } else if (value == 'form_tree') {
-          var values = form.getValues();
-          if (!filters_before_tree) {
-                filters_before_tree = {
-                    'ms_intensity_cutoff': values['ms_intensity_cutoff'],
-                    'msms_intensity_cutoff': values['msms_intensity_cutoff'],
-                    'abs_peak_cutoff': values['abs_peak_cutoff']
-                };
-          }
-          form.setValues({
-              'ms_intensity_cutoff': 0,
-              'msms_intensity_cutoff': 0,
-              'abs_peak_cutoff': 0
+      var me = this;
+      // form fields with name as key
+      var fields = {};
+      var form = field.up('form(true)').getForm();
+      form.getFields().each(function(field) {
+          fields[field.getName()] = field;
+      });
+
+      function show_form_fields(names) {
+          Ext.Array.forEach(names, function(name) {
+              var field = fields[name];
+              if (me.filters_before_tree[name] === undefined) {
+                  me.filters_before_tree[name] = field.getValue();
+              }
+              field.setValue(0);
+              field.hide();
           });
-	  } else {
-		  form.setValues(filters_before_tree);
-		  filters_before_tree = undefined;
+      }
+      function hide_form_fields(names) {
+          Ext.Array.forEach(names, function(name) {
+              var field = fields[name];
+              if (me.filters_before_tree[name] === undefined) {
+                  me.filters_before_tree[name] = field.getValue();
+              }
+              field.setValue(0);
+              field.hide();
+          });
+      }
+
+      if (!this.filters_before_tree) {
+          this.filters_before_tree = {};
+      } else {
+          // show possibly hidden form fields
+          show_form_fields([
+              'abs_peak_cutoff',
+              'precision_heading',
+              'mz_precision',
+              'mz_precision_abs',
+              'precursor_mz_precision',
+              'intensity_heading',
+              'ms_intensity_cutoff',
+              'msms_intensity_cutoff'
+          ]);
+      }
+	  if (value == 'mass_tree') {
+	      // hide form fields not required for mass_tree
+	      hide_form_fields([
+              'abs_peak_cutoff',
+              'precision_heading',
+		      'mz_precision',
+              'mz_precision_abs',
+              'precursor_mz_precision',
+              'intensity_heading',
+              'ms_intensity_cutoff',
+              'msms_intensity_cutoff'
+          ]);
+	  } else if (value == 'form_tree') {
+          // hide form fields not required for form_tree
+	      hide_form_fields([
+              'abs_peak_cutoff',
+              'precursor_mz_precision',
+              'intensity_heading',
+              'ms_intensity_cutoff',
+              'msms_intensity_cutoff'
+          ]);
 	  }
   }
 });
