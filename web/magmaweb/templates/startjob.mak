@@ -55,6 +55,7 @@ Ext.onReady(function() {
     bodyPadding: 5,
     defaults: { bodyPadding: 5 },
     autoScroll: true,
+    trackResetOnLoad: true,
     layout: {
     	type: 'column'
     },
