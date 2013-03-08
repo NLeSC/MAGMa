@@ -22,7 +22,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         xtype: 'combo',
         store: [['mzxml','mzXML'],
                 ['mass_tree', 'Mass Tree'],
-                ['form_tree_neg', 'Formula Tree']],
+                ['form_tree', 'Formula Tree']],
         allowBlank: false,
         fieldLabel: 'Format',
         name: 'ms_data_format',

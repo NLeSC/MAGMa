@@ -407,7 +407,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    */
   changeMsDataFormat: function(field, value) {
 	  var form = this.getUploadForm().getForm();
-	  if (value.indexOf('tree') > -1) {
+	  if (value == 'mass_tree') {
 		  var values = form.getValues();
           if (!filters_before_tree) {
                 filters_before_tree = {
@@ -417,10 +417,22 @@ Ext.define('Esc.magmaweb.controller.Scans', {
                 };
           }
 	      form.setValues({
-			  'ms_intensity_cutoff': 0,
 			  'msms_intensity_cutoff': 0,
-			  'abs_peak_cutoff': 0
 	      });
+	  } else if (value == 'form_tree') {
+          var values = form.getValues();
+          if (!filters_before_tree) {
+                filters_before_tree = {
+                    'ms_intensity_cutoff': values['ms_intensity_cutoff'],
+                    'msms_intensity_cutoff': values['msms_intensity_cutoff'],
+                    'abs_peak_cutoff': values['abs_peak_cutoff']
+                };
+          }
+          form.setValues({
+              'ms_intensity_cutoff': 0,
+              'msms_intensity_cutoff': 0,
+              'abs_peak_cutoff': 0
+          });
 	  } else {
 		  form.setValues(filters_before_tree);
 		  filters_before_tree = undefined;
