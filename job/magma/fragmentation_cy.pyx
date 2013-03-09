@@ -2,9 +2,13 @@
 import numpy
 cimport numpy
 import pars
-if pars.fragmentation_engine=="rdkit":
+import ConfigParser, os
+config = ConfigParser.ConfigParser()
+config.read(['magma_job.ini', os.path.expanduser('~/magma_job.ini')])
+
+if config.get('magma job','chemical_engine')=="rdkit":
     import rdkit_engine as Chem     # Use rdkit_engine
-elif pars.fragmentation_engine=="cdk":
+elif config.get('magma job','chemical_engine')=="cdk":
     import cdk_engine               # Use cdk_engine
     Chem=cdk_engine.engine()
 

@@ -19,5 +19,3 @@ mims={'H':1.0078250321,\
 
 Hmass=mims['H']     # Mass of hydrogen atom
 elmass=0.0005486
-
-fragmentation_engine='rdkit' # choose rdkit or cdk

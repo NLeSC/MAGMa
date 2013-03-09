@@ -17,9 +17,14 @@ import pp
 import cPickle as pickle
 import types
 import pars
-if pars.fragmentation_engine=="rdkit":
+
+import ConfigParser
+config = ConfigParser.ConfigParser()
+config.read(['magma_job.ini', os.path.expanduser('~/magma_job.ini')])
+
+if config.get('magma job','chemical_engine')=="rdkit":
     import rdkit_engine as Chem     # Use rdkit_engine
-elif pars.fragmentation_engine=="cdk":
+elif config.get('magma job','chemical_engine')=="cdk":
     import cdk_engine               # Use cdk_engine
     Chem=cdk_engine.engine()
 
@@ -87,8 +92,8 @@ class MagmaSession(object):
 
 class CallBackEngine(object):
     def __init__(self, url):
-        self.access_token="eyJzYWx0IjogIjdmNzkwYiIsICJleHBpcmVzIjogMTM4OTg3NTU4Ni42MzEyNSwgInVzZXJpZCI6ICJqb2JsYXVuY2hlciJ98zFwBaXdkQpAl0Bizan7qQ1_T6w="
-        self.mac_key="u2P6nmreOWRmZXSCa2WTR0ntrTU="
+        self.access_token=config.get('magma job','macs.id')
+        self.mac_key=config.get('magma job','macs.key')
         self.url=url
     def update_callback_url(self,status):
         class HTTPMacAuth(AuthBase):
@@ -657,7 +662,8 @@ class AnnotateEngine(object):
                                   self.mz_precision_abs,
                                   self.use_all_peaks,
                                   self.ionisation_mode,
-                                  (fast and structure.natoms<=64)
+                                  (fast and structure.natoms<=64),
+                                  config.get('magma job','chemical_engine')
                                   ),(),(
                                   "magma.types",
                                   "magma.pars",
@@ -720,7 +726,7 @@ class AnnotateEngine(object):
 class PubChemEngine(object):
     def __init__(self,dbfilename='',max_64atoms=False,min_refscore=''):
         if dbfilename=='':
-            dbfilename='/media/MAGMa_pubchem/Pubchem_MAGMa.db'
+            dbfilename=config.get('magma job','structure_database.pubchem')
         self.where=''
         if min_refscore!='':
             self.where += ' AND refscore >= '+min_refscore
@@ -753,7 +759,7 @@ class PubChemEngine(object):
 class KeggEngine(object):
     def __init__(self,dbfilename='',max_64atoms=False):
         if dbfilename=='':
-            dbfilename='/media/MAGMa_pubchem/Pubchem_MAGMa_Kegg.db'
+            dbfilename=config.get('magma job','structure_database.kegg')
         self.where=''
         if max_64atoms==True:
             self.where += ' AND natoms <= 64'
@@ -787,7 +793,7 @@ class KeggEngine(object):
 class HmdbEngine(object):
     def __init__(self,dbfilename='',max_64atoms=False):
         if dbfilename=='':
-            dbfilename='/home/ridderl/hmdb/HMDB_MAGMa.db'
+            dbfilename=config.get('magma job','structure_database.hmdb')
         self.where=''
         if max_64atoms==True:
             self.where += ' AND natoms <= 64'
@@ -858,11 +864,11 @@ class DataAnalysisEngine(object):
                     print '> <'+column+'>\n'+str(molecule.__getattribute__(column))+'\n'
             print '$$$$'
 
-def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast):
+def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast,chem_engine):
     pars=magma.pars
-    if pars.fragmentation_engine=="rdkit":
+    if chem_engine=="rdkit":
         Chem=magma.rdkit_engine             # Use rdkit_engine
-    elif pars.fragmentation_engine=="cdk":
+    elif chem_engine=="cdk":
         Chem=magma.cdk_engine.engine()      # Use cdk_engine
     if fast:
         Fragmentation=magma.fragmentation_cy
