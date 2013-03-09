@@ -41,7 +41,7 @@ class JobQueryTestCase(unittest.TestCase):
                         msms_intensity_cutoff=10,
                         mz_precision=5.0,
                         mz_precision_abs=0.001,
-                        abs_peak_cutoff=1000,
+                        abs_peak_cutoff=5000,
                         max_ms_level=10,
                         precursor_mz_precision=0.005,
                         max_broken_bonds=3,
@@ -429,10 +429,38 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         self.formatTest('mass_tree')
 
     def test_with_form_tree_pos_format(self):
-        self.formatTest('form_tree_pos')
+        params = {'ms_data_format': 'form_tree',
+                  'ionisation_mode': 1,
+                  'ms_data': 'foo',
+                  'scan': 5,
+                  'max_ms_level': 3,
+                  'abs_peak_cutoff': 1000,
+                  }
+        self.formatTest('form_tree_pos', params)
 
     def test_with_form_tree_neg_format(self):
-        self.formatTest('form_tree_neg')
+        params = {'ms_data_format': 'form_tree',
+                  'ionisation_mode': -1,
+                  'ms_data': 'foo',
+                  'scan': 5,
+                  'max_ms_level': 3,
+                  'abs_peak_cutoff': 1000,
+                  }
+        self.formatTest('form_tree_neg', params)
+
+    def test_with_form_tree_noion_format(self):
+        params = {'ms_data_format': 'form_tree',
+                  'ms_data': 'foo',
+                  'scan': 5,
+                  'max_ms_level': 3,
+                  'abs_peak_cutoff': 1000,
+                  }
+        from colander import Invalid
+        with self.assertRaises(Invalid) as e:
+            self.jobquery.add_ms_data(params)
+
+        msg = 'Require ionisation_mode when ms_data_format=form_tree'
+        self.assertEquals(e.exception.msg, msg)
 
     def test_mzxml_with_scan(self):
         params = {'ms_data_format': 'mzxml',
