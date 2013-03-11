@@ -523,7 +523,8 @@ class JobQuery(object):
         script += " -c '{ms_intensity_cutoff}' -d '{msms_intensity_cutoff}'"
         script += " -i '{ionisation_mode}' -b '{max_broken_bonds}'"
         script += " --precursor_mz_precision '{precursor_mz_precision}'"
-        script += " --max_water_losses '{max_water_losses}' "
+        script += " --max_water_losses '{max_water_losses}'"
+        script += " --call_back_url '{call_back_url}' "
         pmzp = params['precursor_mz_precision']
         ms_ic = params['ms_intensity_cutoff']
         msms_ic = params['msms_intensity_cutoff']
@@ -536,6 +537,7 @@ class JobQuery(object):
             'ionisation_mode': self.escape(params['ionisation_mode']),
             'max_broken_bonds': self.escape(params['max_broken_bonds']),
             'max_water_losses': self.escape(params['max_water_losses']),
+            'call_back_url': self.status_callback_url,
         }
 
         if params['structure_database'] is not colander.null:
