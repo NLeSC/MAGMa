@@ -401,9 +401,12 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   },
   /**
    * Called when MS data format is changed.
-   * When a '*tree*' format is chosen the filtering is disabled.
-   * When a non-'tree' format is chosen the filtering is restored
-   * to what it was before '*tree*' format was chosen.
+   * @param {Ext.form.field.Field} field
+   * @param {String} value
+   *
+   * If value is mzxml then shows ms data filters and annotate precision and intensity thresholds.
+   * If value is mass_tree then hides ms data filters and annotate precision and intensity thresholds.
+   * If vaule is form_tree then hides ms data filters and annotate precursor precision and intensity thresholds.
    */
   changeMsDataFormat: function(field, value) {
       var me = this;
@@ -417,43 +420,39 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       function show_form_fields(names) {
           Ext.Array.forEach(names, function(name) {
               var field = fields[name];
-              if (me.filters_before_tree[name] === undefined) {
-                  me.filters_before_tree[name] = field.getValue();
-              }
-              field.setValue(0);
-              field.hide();
+              field.enable();
+              field.show();
           });
       }
       function hide_form_fields(names) {
           Ext.Array.forEach(names, function(name) {
               var field = fields[name];
-              if (me.filters_before_tree[name] === undefined) {
-                  me.filters_before_tree[name] = field.getValue();
-              }
-              field.setValue(0);
+              field.disable();
               field.hide();
           });
       }
 
-      if (!this.filters_before_tree) {
-          this.filters_before_tree = {};
-      } else {
-          // show possibly hidden form fields
-          show_form_fields([
-              'abs_peak_cutoff',
-              'precision_heading',
-              'mz_precision',
-              'mz_precision_abs',
-              'precursor_mz_precision',
-              'intensity_heading',
-              'ms_intensity_cutoff',
-              'msms_intensity_cutoff'
-          ]);
-      }
+      // show possibly hidden form fields
+      show_form_fields([
+          'filter_heading',
+          'max_ms_level',
+          'abs_peak_cutoff',
+          'scan',
+          'precision_heading',
+          'mz_precision',
+          'mz_precision_abs',
+          'precursor_mz_precision',
+          'intensity_heading',
+          'ms_intensity_cutoff',
+          'msms_intensity_cutoff'
+      ]);
 	  if (value == 'mass_tree') {
 	      // hide form fields not required for mass_tree
 	      hide_form_fields([
+              'filter_heading',
+	          'max_ms_level',
               'abs_peak_cutoff',
+              'scan',
               'precision_heading',
 		      'mz_precision',
               'mz_precision_abs',
@@ -465,6 +464,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
 	  } else if (value == 'form_tree') {
           // hide form fields not required for form_tree
 	      hide_form_fields([
+              'filter_heading',
+	          'max_ms_level',
+              'scan',
               'abs_peak_cutoff',
               'precursor_mz_precision',
               'intensity_heading',
