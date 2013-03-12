@@ -122,17 +122,22 @@ class JobQuery(object):
 
     def _addAnnotateSchema(self, schema):
         schema.add(colander.SchemaNode(colander.Float(),
+                                       missing=0.0,
                                        validator=colander.Range(0, 1),
                                        name='precursor_mz_precision'))
         schema.add(colander.SchemaNode(colander.Float(),
+                                       missing=0.0,
                                        validator=colander.Range(0, 1000),
                                        name='mz_precision'))
         schema.add(colander.SchemaNode(colander.Float(),
+                                       missing=0.0,
                                        validator=colander.Range(0, 1),
                                        name='mz_precision_abs'))
         schema.add(colander.SchemaNode(colander.Float(),
+                                       missing=0.0,
                                        name='ms_intensity_cutoff'))
         schema.add(colander.SchemaNode(colander.Float(),
+                                       missing=0.0,
                                        name='msms_intensity_cutoff'))
         schema.add(colander.SchemaNode(colander.Integer(),
                                        validator=colander.OneOf([-1, 1]),
@@ -323,9 +328,11 @@ class JobQuery(object):
         schema.add(msdata_fileSchema)
 
         schema.add(colander.SchemaNode(colander.Integer(),
+                                       missing=0,
                                        validator=colander.Range(min=0),
                                        name='max_ms_level'))
         schema.add(colander.SchemaNode(colander.Float(),
+                                       missing=0.0,
                                        validator=colander.Range(min=0),
                                        name='abs_peak_cutoff'))
         schema.add(colander.SchemaNode(colander.Integer(),

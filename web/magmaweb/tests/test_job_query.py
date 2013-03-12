@@ -399,61 +399,56 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         self.assertEqual(query, expected_query)
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
 
-    def formatTest(self, ms_data_format, params=None):
-        import tempfile
-        from cgi import FieldStorage
-        msfile = tempfile.TemporaryFile()
-        msfile.write('foo')
-        msfile.flush()
-        msfield = FieldStorage()
-        msfield.file = msfile
-        if params is None:
-            params = {'ms_data_format': ms_data_format,
-                      'ms_data_file': msfield,
-                      'max_ms_level': 3,
-                      'abs_peak_cutoff': 1000,
-                      }
+    def test_with_mass_tree_format(self):
+        params = {'ms_data_format': 'mass_tree',
+                  'ms_data': 'foo',
+                  }
 
         query = self.jobquery.add_ms_data(params)
 
-        script = "{magma} read_ms_data --ms_data_format '"+ms_data_format+"'"
-        script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
+        script = "{magma} read_ms_data --ms_data_format 'mass_tree'"
+        script += " -l '0' -a '0.0' ms_data.dat {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': ['ms_data.dat'],
                                      'script': script
                                      })
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
-
-    def test_with_mass_tree_format(self):
-        self.formatTest('mass_tree')
 
     def test_with_form_tree_pos_format(self):
         params = {'ms_data_format': 'form_tree',
                   'ionisation_mode': 1,
                   'ms_data': 'foo',
-                  'scan': 5,
-                  'max_ms_level': 3,
-                  'abs_peak_cutoff': 1000,
                   }
-        self.formatTest('form_tree_pos', params)
+
+        query = self.jobquery.add_ms_data(params)
+
+        script = "{magma} read_ms_data --ms_data_format 'form_tree_pos'"
+        script += " -l '0' -a '0.0' ms_data.dat {db}\n"
+        expected_query = JobQuery(**{'directory': self.jobdir,
+                                     'prestaged': ['ms_data.dat'],
+                                     'script': script
+                                     })
+        self.assertEqual(query, expected_query)
 
     def test_with_form_tree_neg_format(self):
         params = {'ms_data_format': 'form_tree',
                   'ionisation_mode': -1,
                   'ms_data': 'foo',
-                  'scan': 5,
-                  'max_ms_level': 3,
-                  'abs_peak_cutoff': 1000,
                   }
-        self.formatTest('form_tree_neg', params)
+
+        query = self.jobquery.add_ms_data(params)
+
+        script = "{magma} read_ms_data --ms_data_format 'form_tree_neg'"
+        script += " -l '0' -a '0.0' ms_data.dat {db}\n"
+        expected_query = JobQuery(**{'directory': self.jobdir,
+                                     'prestaged': ['ms_data.dat'],
+                                     'script': script
+                                     })
+        self.assertEqual(query, expected_query)
 
     def test_with_form_tree_noion_format(self):
         params = {'ms_data_format': 'form_tree',
                   'ms_data': 'foo',
-                  'scan': 5,
-                  'max_ms_level': 3,
-                  'abs_peak_cutoff': 1000,
                   }
         from colander import Invalid
         with self.assertRaises(Invalid) as e:
@@ -481,14 +476,21 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         self.assertEqual(query, expected_query)
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
 
-    def test_mass_tree_with_scan(self):
+    def test_non_mzxml_with_scan(self):
         params = {'ms_data_format': 'mass_tree',
                   'ms_data': 'foo',
                   'scan': 5,
-                  'max_ms_level': 3,
-                  'abs_peak_cutoff': 1000,
                   }
-        self.formatTest('mass_tree', params)
+
+        query = self.jobquery.add_ms_data(params)
+
+        script = "{magma} read_ms_data --ms_data_format 'mass_tree'"
+        script += " -l '0' -a '0.0' ms_data.dat {db}\n"
+        expected_query = JobQuery(**{'directory': self.jobdir,
+                                     'prestaged': ['ms_data.dat'],
+                                     'script': script
+                                     })
+        self.assertEqual(query, expected_query)
 
 class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 
@@ -588,7 +590,7 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
 class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
-    def test_it(self):
+    def test_all_params(self):
         params = {'precursor_mz_precision': 0.005,
                   'mz_precision': 5.0,
                   'mz_precision_abs': 0.001,
@@ -604,6 +606,24 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
         script = "{magma} annotate -p '5.0' -q '0.001' -c '200000.0' -d '10.0'"
         script += " -i '1'"
         script += " -b '4' --precursor_mz_precision '0.005'"
+        script += " --max_water_losses '1' --fast {db}\n"
+        expected_query = JobQuery(**{'directory': self.jobdir,
+                                     'prestaged': [],
+                                     'script': script
+                                     })
+        self.assertEqual(query, expected_query)
+
+    def test_missing_params(self):
+        params = {'ionisation_mode': 1,
+                  'max_broken_bonds': 4,
+                  'max_water_losses': 1,
+                  }
+
+        query = self.jobquery.annotate(params)
+
+        script = "{magma} annotate -p '0.0' -q '0.0' -c '0.0' -d '0.0'"
+        script += " -i '1'"
+        script += " -b '4' --precursor_mz_precision '0.0'"
         script += " --max_water_losses '1' --fast {db}\n"
         expected_query = JobQuery(**{'directory': self.jobdir,
                                      'prestaged': [],
