@@ -687,6 +687,10 @@
                "path" : "static/extjs-4.2.0/src/layout/container/"
             },
             {
+               "name" : "Column.js",
+               "path" : "static/extjs-4.2.0/src/layout/container/"
+            },
+            {
                "name" : "Card.js",
                "path" : "static/extjs-4.2.0/src/layout/container/"
             },
