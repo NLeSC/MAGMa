@@ -488,7 +488,6 @@ class JobQuery(object):
     def annotate(self,
                  params,
                  from_subset=False,
-                 structure_database_location=None,
                  ):
         """Configure job query to annotate.
 
@@ -508,9 +507,6 @@ class JobQuery(object):
         * max_mz, only used when ``structure_database_location`` is given
 
         If ``from_subset`` is True then metids are read from stdin
-
-        ``structure_database_location``
-           location of structure database to search for candidate molecules
 
         Uses fast option by default.
         """
@@ -541,18 +537,12 @@ class JobQuery(object):
         }
 
         if params['structure_database'] is not colander.null:
-            if structure_database_location is None:
-                sd = colander.SchemaNode(colander.String(),
-                                         name='structure_database')
-                msg = 'Unable to locate structure database'
-                raise colander.Invalid(sd, msg)
             script += "--structure_database '{structure_database}'"
             script += " --db_options "
-            script += "'{db_filename},{max_mim},{max_64atoms},{min_refscore}' "
+            script += "',{max_mim},{max_64atoms},{min_refscore}' "
             sd = self.escape(params['structure_database'])
             script_substitutions['structure_database'] = sd
-            db_options = {'db_filename': structure_database_location,
-                          'max_mim': self.escape(params['max_mz']),
+            db_options = {'max_mim': self.escape(params['max_mz']),
                           'min_refscore': self.escape(params['min_refscore']),
                           'max_64atoms': False
                           }
@@ -568,13 +558,10 @@ class JobQuery(object):
 
         return self
 
-    def allinone(self, params, structure_database_location=None):
+    def allinone(self, params):
         """Configure job query to do all sub commands in one go.
 
         ``params`` is a MultiDict
-
-        ``structure_database_location``
-           location of structure database to search for candidate molecules
 
         See
         :meth:`~magmaweb.job.JobQuery.add_ms_data`,
@@ -606,7 +593,7 @@ class JobQuery(object):
                 raise e
         if metabolize:
             allin = allin.metabolize(params)
-        return allin.annotate(params, False, structure_database_location)
+        return allin.annotate(params, False)
 
     @classmethod
     def defaults(cls, selection=None):
