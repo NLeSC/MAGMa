@@ -401,29 +401,78 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   },
   /**
    * Called when MS data format is changed.
-   * When a '*tree*' format is chosen the filtering is disabled.
-   * When a non-'tree' format is chosen the filtering is restored
-   * to what it was before '*tree*' format was chosen.
+   * @param {Ext.form.field.Field} field
+   * @param {String} value
+   *
+   * If value is mzxml then shows ms data filters and annotate precision and intensity thresholds.
+   * If value is mass_tree then hides ms data filters and annotate precision and intensity thresholds.
+   * If vaule is form_tree then hides ms data filters and annotate precursor precision and intensity thresholds.
    */
   changeMsDataFormat: function(field, value) {
-	  var form = this.getUploadForm().getForm();
-	  if (value.indexOf('tree') > -1) {
-		  var values = form.getValues();
-          if (!filters_before_tree) {
-                filters_before_tree = {
-                    'ms_intensity_cutoff': values['ms_intensity_cutoff'],
-                    'msms_intensity_cutoff': values['msms_intensity_cutoff'],
-                    'abs_peak_cutoff': values['abs_peak_cutoff']
-                };
-          }
-	      form.setValues({
-			  'ms_intensity_cutoff': 0,
-			  'msms_intensity_cutoff': 0,
-			  'abs_peak_cutoff': 0
-	      });
-	  } else {
-		  form.setValues(filters_before_tree);
-		  filters_before_tree = undefined;
+      var me = this;
+      // form fields with name as key
+      var fields = {};
+      var form = field.up('form(true)').getForm();
+      form.getFields().each(function(field) {
+          fields[field.getName()] = field;
+      });
+
+      function show_form_fields(names) {
+          Ext.Array.forEach(names, function(name) {
+              var field = fields[name];
+              field.enable();
+              field.show();
+          });
+      }
+      function hide_form_fields(names) {
+          Ext.Array.forEach(names, function(name) {
+              var field = fields[name];
+              field.disable();
+              field.hide();
+          });
+      }
+
+      // show possibly hidden form fields
+      show_form_fields([
+          'filter_heading',
+          'max_ms_level',
+          'abs_peak_cutoff',
+          'scan',
+          'precision_heading',
+          'mz_precision',
+          'mz_precision_abs',
+          'precursor_mz_precision',
+          'intensity_heading',
+          'ms_intensity_cutoff',
+          'msms_intensity_cutoff'
+      ]);
+	  if (value == 'mass_tree') {
+	      // hide form fields not required for mass_tree
+	      hide_form_fields([
+              'filter_heading',
+	          'max_ms_level',
+              'abs_peak_cutoff',
+              'scan',
+              'precision_heading',
+		      'mz_precision',
+              'mz_precision_abs',
+              'precursor_mz_precision',
+              'intensity_heading',
+              'ms_intensity_cutoff',
+              'msms_intensity_cutoff'
+          ]);
+	  } else if (value == 'form_tree') {
+          // hide form fields not required for form_tree
+	      hide_form_fields([
+              'filter_heading',
+	          'max_ms_level',
+              'scan',
+              'abs_peak_cutoff',
+              'precursor_mz_precision',
+              'intensity_heading',
+              'ms_intensity_cutoff',
+              'msms_intensity_cutoff'
+          ]);
 	  }
   }
 });
