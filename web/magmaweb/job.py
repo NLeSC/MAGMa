@@ -360,9 +360,9 @@ class JobQuery(object):
 
         if params['ms_data_format'] == 'form_tree':
             if 'ionisation_mode' in orig_params:
-                if orig_params['ionisation_mode'] == 1:
+                if orig_params['ionisation_mode'] == "1":
                     params['ms_data_format'] = 'form_tree_pos'
-                elif orig_params['ionisation_mode'] == -1:
+                elif orig_params['ionisation_mode'] == "-1":
                     params['ms_data_format'] = 'form_tree_neg'
             else:
                 sd = colander.SchemaNode(colander.String(),

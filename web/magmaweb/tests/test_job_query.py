@@ -416,7 +416,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
 
     def test_with_form_tree_pos_format(self):
         params = {'ms_data_format': 'form_tree',
-                  'ionisation_mode': 1,
+                  'ionisation_mode': "1",
                   'ms_data': 'foo',
                   }
 
@@ -432,7 +432,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
 
     def test_with_form_tree_neg_format(self):
         params = {'ms_data_format': 'form_tree',
-                  'ionisation_mode': -1,
+                  'ionisation_mode': "-1",
                   'ms_data': 'foo',
                   }
 
