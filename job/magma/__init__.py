@@ -20,6 +20,10 @@ import pars
 
 import ConfigParser
 config = ConfigParser.ConfigParser()
+# default to using rdkit if no config can be found
+config.add_section('magma job')
+config.set('magma job', 'chemical_engine', 'rdkit')
+# read config file from current working directory or users home dir
 config.read(['magma_job.ini', os.path.expanduser('~/magma_job.ini')])
 
 if config.get('magma job','chemical_engine')=="rdkit":
@@ -104,7 +108,7 @@ class CallBackEngine(object):
             def __call__(self, r):
                 r.headers['Authorization'] = macauthlib.sign_request(r, id=self.id, key=self.key)
                 return r
-        
+
         r = requests.put(self.url, status, auth=HTTPMacAuth(self.access_token, self.mac_key))
         #print r
 
@@ -123,7 +127,7 @@ class StructureEngine(object):
         self.db_session.commit()
         self.metabolism_types=rundata.metabolism_types.split(',')
         self.n_reaction_steps=rundata.n_reaction_steps
-    
+
     def add_structure(self,molblock,name,prob,level,sequence,isquery,mim=None,natoms=None,inchikey=None,molform=None,reference=None,logp=None,mass_filter=9999):
         molecule=types.MoleculeType(molblock,name,prob,level,sequence,isquery,mim,natoms,inchikey,molform,reference,logp)
         self.add_molecule(molecule,mass_filter)
@@ -146,7 +150,7 @@ class StructureEngine(object):
             reference=molecule.reference,
             logp=molecule.logp
             )
-        if check_duplicates: 
+        if check_duplicates:
             dups=self.db_session.query(Metabolite).filter_by(smiles=molecule.inchikey).all()
             if len(dups)>0:
                 if merge:
@@ -472,7 +476,7 @@ class AnnotateEngine(object):
         self.use_all_peaks=rundata.use_all_peaks
 
         self.scans=[]
-        
+
         if call_back_url != None:
             self.call_back_engine=CallBackEngine(call_back_url)
         else:

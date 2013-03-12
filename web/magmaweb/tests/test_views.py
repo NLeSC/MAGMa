@@ -96,50 +96,6 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(job.ms_filename, 'Uploaded as text')
         job.jobquery.assert_called_with('http://example.com/status/foo.json')
 
-    def test_allinone_with_structure_database(self):
-        post = {'ms_data': 'somexml',
-                'ms_data_file': '',
-                'structure_database': 'pubchem'
-                }
-        request = testing.DummyRequest(post=post)
-        s = request.registry.settings
-        s['structure_database.pubchem'] = 'data/pubchem.db'
-        request.user = User('bob', 'Bob Example', 'bob@example.com')
-        job = self.fake_job()
-        jobquery = Mock(JobQuery)
-        job.jobquery.return_value = jobquery
-        views = Views(request)
-        views.job_factory = Mock(JobFactory)
-        views.job_factory.fromScratch = Mock(return_value=job)
-
-        response = views.allinone()
-
-        views.job_factory.fromScratch.assert_called_with('bob')
-        jobquery.allinone.assert_called_with(post, 'data/pubchem.db')
-        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(),
-                                                         job)
-        self.assertEqual(response, {'success': True, 'jobid': 'foo'})
-        self.assertEqual(job.ms_filename, 'Uploaded as text')
-        job.jobquery.assert_called_with('http://example.com/status/foo.json')
-
-    def test_allinone_with_empty_structure_database(self):
-        post = {'ms_data': 'somexml',
-                'ms_data_file': '',
-                'structure_database': ''
-                }
-        request = testing.DummyRequest(post=post)
-        request.user = User('bob', 'Bob Example', 'bob@example.com')
-        job = self.fake_job()
-        jobquery = Mock(JobQuery)
-        job.jobquery.return_value = jobquery
-        views = Views(request)
-        views.job_factory = Mock(JobFactory)
-        views.job_factory.fromScratch = Mock(return_value=job)
-
-        views.allinone()
-
-        jobquery.allinone.assert_called_with(post)
-
     def test_allinone_no_jobmanager(self):
         from magmaweb.job import JobSubmissionError
         from pyramid.httpexceptions import HTTPInternalServerError

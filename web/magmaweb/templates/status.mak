@@ -6,9 +6,9 @@
  % if status == 'STOPPED':
 <meta http-equiv="refresh" content="0;url=${request.route_url('results',jobid=jobid)}" />
 % else:
-<meta http-equiv="refresh" content="10" />
+<meta http-equiv="refresh" content="2" />
 % endif
 </head>
-<body>Job is in '${status}' status. This page will reload every 10 seconds.
-</body>
+<body><h2>Status: ${status}
+</h2></body>
 </html>
