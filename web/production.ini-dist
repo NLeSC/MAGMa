@@ -44,13 +44,6 @@ jobfactory.tarball = /home/stefanv/workspace/magma/job/Magma-1.1.tar.gz
 # To submit job to local installation of MAGMaJob
 jobfactory.init_script = . /home/stefanv/workspace/magma/env/bin/activate
 
-# Location of structure database to fetch candidate molecules to match against ms peak trees
-# db is expected to be available at where job is executed
-structure_database.pubchem = %(here)s/data/Pubchem_MAGMa.db
-#structure_database.chebi = %(here)s/data/ChEBI_complete_3star.sqlite
-structure_database.kegg = %(here)s/data/kegg.sqlite
-structure_database.hmdb = %(here)s/data/hmdb-3.0.sqlite
-
 [server:main]
 use = egg:waitress#main
 host = 0.0.0.0

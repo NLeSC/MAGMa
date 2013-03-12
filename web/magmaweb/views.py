@@ -55,22 +55,10 @@ class Views(object):
             job.ms_filename = self.request.POST['ms_data_file'].filename
         except AttributeError:
             job.ms_filename = 'Uploaded as text'
-        import logging
-        logger = logging.getLogger('magmaweb')
-        logger.info(self.request.POST)
         status_url = self.request.route_url('status.json', jobid=job.id)
         jobquery = job.jobquery(status_url)
 
-        if ('structure_database' in self.request.POST
-                and self.request.POST['structure_database']):
-            # add structure database location when
-            # structure_database is selected
-            key = 'structure_database.'
-            key += self.request.POST['structure_database']
-            str_db_loc = self.request.registry.settings[key]
-            jobquery = jobquery.allinone(self.request.POST, str_db_loc)
-        else:
-            jobquery = jobquery.allinone(self.request.POST)
+        jobquery = jobquery.allinone(self.request.POST)
 
         try:
             self.job_factory.submitQuery(jobquery, job)
