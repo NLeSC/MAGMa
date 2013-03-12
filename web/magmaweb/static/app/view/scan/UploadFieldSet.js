@@ -22,23 +22,11 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         xtype: 'combo',
         store: [['mzxml','mzXML'],
                 ['mass_tree', 'Mass Tree'],
-                ['form_tree_neg', 'Formula Tree']],
+                ['form_tree', 'Formula Tree']],
         allowBlank: false,
         fieldLabel: 'Format',
         name: 'ms_data_format',
-        value: 'mzxml',
-        listeners: {
-            /**
-             * Only show 'Scan' when 'mzxml' is selected.
-             *
-             * @param t
-             * @param value
-             */
-            change: function(t, value) {
-                var scan = this.up('form').down('numberfield[name="scan"]');
-                scan.setVisible(value == 'mzxml');
-            }
-        }
+        value: 'mzxml'
     }, {
         xtype : 'textareatab',
         name : 'ms_data',
@@ -69,6 +57,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         width: 300
     }, {
         xtype: 'displayfield',
+        name: 'filter_heading',
         value: '<br>Filter options:'
     }, {
         xtype: 'numberfield',

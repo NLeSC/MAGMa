@@ -516,38 +516,114 @@ describe('Scans controller', function() {
   });
 
   describe('changeMsDataFormat', function() {
+    var ms_data_format_field = null;
+
+    beforeEach(function() {
+        var names = [
+            'filter_heading',
+            'max_ms_level',
+            'abs_peak_cutoff',
+            'scan',
+            'precision_heading',
+            'mz_precision',
+            'mz_precision_abs',
+            'precursor_mz_precision',
+            'intensity_heading',
+            'ms_intensity_cutoff',
+            'msms_intensity_cutoff'
+        ];
+        mocked_form.fields =  new Ext.util.MixedCollection();
+        var i = 0;
+        Ext.Array.forEach(names, function(name) {
+            var f= {
+                name: name,
+                getName: function() {return this.name},
+                disabled: false,
+                hidden: false,
+                enable: function() {this.disabled=false},
+                disable: function() {this.disabled=true},
+                show: function() {this.hidden=false},
+                hide: function() {this.hidden=true}
+            };
+            mocked_form.fields.add(i++, f);
+        });
+        mocked_form.getFields = function() {
+            return this.fields;
+        };
+        mocked_form.getFieldStates = function() {
+            var state = {};
+            this.fields.each(function(f) {
+                state[f.getName()] = {
+                        hidden: f.hidden,
+                        disabled: f.disabled
+                };
+            });
+            return state;
+        };
+
+        ms_data_format_field = {};
+        ms_data_format_field.up = function() {
+            return mocked_form_panel;
+        };
+    });
+
 	it('mass_tree', function() {
-		var filter_init = {
-				'ms_intensity_cutoff': 1,
-			    'msms_intensity_cutoff': 2,
-			    'abs_peak_cutoff': 3
-		};
-		spyOn(mocked_form, 'getValues').andReturn(filter_init);
-		spyOn(mocked_form, 'setValues');
+		ctrl.changeMsDataFormat(ms_data_format_field, 'mass_tree');
 
-		ctrl.changeMsDataFormat(null, 'mass_tree');
-
-		var filter_off = {
-			'ms_intensity_cutoff': 0,
-		    'msms_intensity_cutoff': 0,
-		    'abs_peak_cutoff': 0
+		var estates =  {
+		    filter_heading : { hidden : true, disabled : true },
+		    max_ms_level : { hidden : true, disabled : true },
+		    abs_peak_cutoff : { hidden : true, disabled : true },
+		    scan : { hidden : true, disabled : true },
+		    precision_heading : { hidden : true, disabled : true },
+		    mz_precision : { hidden : true, disabled : true },
+		    mz_precision_abs : { hidden : true, disabled : true },
+		    precursor_mz_precision : { hidden : true, disabled : true },
+		    intensity_heading : { hidden : true, disabled : true },
+		    ms_intensity_cutoff : { hidden : true, disabled : true },
+		    msms_intensity_cutoff : { hidden : true, disabled : true }
 		};
-		expect(mocked_form.setValues).toHaveBeenCalledWith(filter_off);
+		expect(mocked_form.getFieldStates()).toEqual(estates);
 	});
 
+   it('form_tree', function() {
+        ctrl.changeMsDataFormat(ms_data_format_field, 'form_tree');
+
+        var estates = {
+            filter_heading : { hidden : true, disabled : true },
+            max_ms_level : { hidden : true, disabled : true },
+            abs_peak_cutoff : { hidden : true, disabled : true },
+            scan : { hidden : true, disabled : true },
+            precision_heading : { hidden : false, disabled : false },
+            mz_precision : { hidden : false, disabled : false },
+            mz_precision_abs : { hidden : false, disabled : false },
+            precursor_mz_precision : { hidden : true, disabled : true },
+            intensity_heading : { hidden : true, disabled : true },
+            ms_intensity_cutoff : { hidden : true, disabled : true },
+            msms_intensity_cutoff : { hidden : true, disabled : true }
+        };
+        expect(mocked_form.getFieldStates()).toEqual(estates);
+    });
+
 	it('mzxml', function() {
-		var filter_init = {
-				'ms_intensity_cutoff': 1,
-			    'msms_intensity_cutoff': 2,
-			    'abs_peak_cutoff': 3
-		};
-		spyOn(mocked_form, 'getValues').andReturn(filter_init);
-		spyOn(mocked_form, 'setValues');
-		ctrl.changeMsDataFormat(null, 'mass_tree');
+		ctrl.changeMsDataFormat(ms_data_format_field, 'mass_tree');
 
-		ctrl.changeMsDataFormat(null, 'mzxml');
+		ctrl.changeMsDataFormat(ms_data_format_field, 'mzxml');
 
-		expect(mocked_form.setValues).toHaveBeenCalledWith(filter_init);
+        var estates = {
+            filter_heading : { hidden : false, disabled : false },
+            max_ms_level : { hidden : false, disabled : false },
+            abs_peak_cutoff : { hidden : false, disabled : false },
+            scan : { hidden : false, disabled : false },
+            precision_heading : { hidden : false, disabled : false },
+            mz_precision : { hidden : false, disabled : false },
+            mz_precision_abs : { hidden : false, disabled : false },
+            precursor_mz_precision : { hidden : false, disabled : false },
+            intensity_heading : { hidden : false, disabled : false },
+            ms_intensity_cutoff : { hidden : false, disabled : false },
+            msms_intensity_cutoff : { hidden : false, disabled : false }
+        };
+        expect(mocked_form.getFieldStates()).toEqual(estates);
 	});
   });
 });
