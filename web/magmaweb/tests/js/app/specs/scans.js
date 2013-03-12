@@ -567,8 +567,8 @@ describe('Scans controller', function() {
         };
     });
 
-	it('mass_tree', function() {
-		ctrl.changeMsDataFormat(ms_data_format_field, 'mass_tree');
+	it('form_tree', function() {
+		ctrl.changeMsDataFormat(ms_data_format_field, 'form_tree');
 
 		var estates =  {
 		    filter_heading : { hidden : true, disabled : true },
@@ -586,8 +586,8 @@ describe('Scans controller', function() {
 		expect(mocked_form.getFieldStates()).toEqual(estates);
 	});
 
-   it('form_tree', function() {
-        ctrl.changeMsDataFormat(ms_data_format_field, 'form_tree');
+   it('mass_tree', function() {
+        ctrl.changeMsDataFormat(ms_data_format_field, 'mass_tree');
 
         var estates = {
             filter_heading : { hidden : true, disabled : true },
@@ -606,7 +606,7 @@ describe('Scans controller', function() {
     });
 
 	it('mzxml', function() {
-		ctrl.changeMsDataFormat(ms_data_format_field, 'mass_tree');
+		ctrl.changeMsDataFormat(ms_data_format_field, 'form_tree');
 
 		ctrl.changeMsDataFormat(ms_data_format_field, 'mzxml');
 

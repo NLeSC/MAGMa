@@ -405,8 +405,8 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * @param {String} value
    *
    * If value is mzxml then shows ms data filters and annotate precision and intensity thresholds.
-   * If value is mass_tree then hides ms data filters and annotate precision and intensity thresholds.
-   * If vaule is form_tree then hides ms data filters and annotate precursor precision and intensity thresholds.
+   * If value is form_tree then hides ms data filters and annotate precision and intensity thresholds.
+   * If vaule is mass_tree then hides ms data filters and annotate precursor precision and intensity thresholds.
    */
   changeMsDataFormat: function(field, value) {
       var me = this;
@@ -446,8 +446,8 @@ Ext.define('Esc.magmaweb.controller.Scans', {
           'ms_intensity_cutoff',
           'msms_intensity_cutoff'
       ]);
-	  if (value == 'mass_tree') {
-	      // hide form fields not required for mass_tree
+	  if (value == 'form_tree') {
+	      // hide form fields not required for form_tree
 	      hide_form_fields([
               'filter_heading',
 	          'max_ms_level',
@@ -461,8 +461,8 @@ Ext.define('Esc.magmaweb.controller.Scans', {
               'ms_intensity_cutoff',
               'msms_intensity_cutoff'
           ]);
-	  } else if (value == 'form_tree') {
-          // hide form fields not required for form_tree
+	  } else if (value == 'mass_tree') {
+          // hide form fields not required for mass_tree
 	      hide_form_fields([
               'filter_heading',
 	          'max_ms_level',
