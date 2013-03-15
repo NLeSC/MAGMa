@@ -118,28 +118,37 @@ Ext.onReady(function() {
     }, {
       text: 'Reset',
       handler: function() {
-        this.up('form').getForm().reset();
+          this.up('form').getForm().reset();
+          this.up('form').getForm().load({
+              url: '${request.route_url('defaults.json')}',
+              method: 'GET',
+              waitMsg: 'Fetching default settings'
+          });
       }
     }]
   });
   form.load({
       url: '${request.route_url('defaults.json')}',
       method: 'GET',
-      waitMsg: 'Fetching defaults'
-  });
-  // hook up example action
-  var example_button = form.down('component[action=loadmsdataexample]');
-  example_button.addListener('click', function() {
-	  form.load({
-	      url: '${request.route_url('defaults.json', _query={'selection': 'example'})}',
-	      method: 'GET',
-	      waitMsg: 'Fetching example settings'
-	  });
+      waitMsg: 'Fetching defaults',
+      failure: function(form, action) {
+          Ext.Error.raise(action.response.responseText);
+      }
   });
   // change settings when tree ms data format is chosen.
   var ms_data_format_combo = form.down('component[name=ms_data_format]');
   scan_controller = Ext.create('Esc.magmaweb.controller.Scans');
+  scan_controller.getUploadForm = function() {
+    return form;
+  };
+  scan_controller.application = {};
+  scan_controller.application.runInfoUrl = function() {
+      return '${request.route_path('defaults.json')}';
+  };
   ms_data_format_combo.addListener('change', scan_controller.changeMsDataFormat);
+  // hook up example action
+  form.down('component[action=loadmsdataexample]').addListener('click', scan_controller.loadExample, scan_controller);
+  form.down('component[action=loadmsdataexample2]').addListener('click', scan_controller.loadExample2, scan_controller);
 
   var header = {
     border: false,
