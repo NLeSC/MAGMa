@@ -38,14 +38,17 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         xtype: 'container',
         layout: 'hbox',
         items: [{
+        	xtype: 'displayfield',
+            value : '<a title="Information on examples" href="help/example">Examples:</a>'
+        }, {
             xtype: 'button',
-            text: 'Load chlorogenic acid example',
-            tooltip: 'Loads chlorogenic acid example ms data set and configuration which gives well annotated result',
+            margin: '0 5 0 5',
+            text: 'Chlorogenic acid (Mass Tree)',
             action: 'loadmsdataexample'
         }, {
-            xtype : 'displayfield',
-            flex: 1,
-            value : '&nbsp;<a href="help/example">Information on example</a>'
+            xtype: 'button',
+            text: 'Chlorogenic acid (Formula Tree)',
+            action: 'loadmsdataexample2'
         }]
     }, {
         xtype : 'displayfield',
