@@ -10,6 +10,7 @@ from sqlalchemy import Unicode
 from sqlalchemy import String
 from sqlalchemy import ForeignKey
 from sqlalchemy import DateTime
+from sqlalchemy import Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import backref
@@ -122,19 +123,22 @@ class JobMeta(Base):
     state = Column(Unicode, nullable=False)  # queued/running/ready etc.
     owner = Column(Unicode, ForeignKey('user.userid'), nullable=False)
     created_at = Column(DateTime, nullable=False)
+    is_public = Column(Boolean, default=False)
     children = relationship('JobMeta',
                             backref=backref('parent', remote_side=[jobid]))
 
     def __init__(self, jobid, owner,
                  description=u'', parentjobid=None,
                  state=u'STOPPED', ms_filename='',
-                 created_at=None):
+                 created_at=None,
+                 is_public=False):
         self.jobid = jobid
         self.owner = owner
         self.description = description
         self.parentjobid = parentjobid
         self.state = state
         self.ms_filename = ms_filename
+        self.is_public = is_public
         if created_at is None:
             self.created_at = datetime.datetime.utcnow()
         else:
@@ -212,14 +216,17 @@ class JobIdFactory(RootFactory):
     def __getitem__(self, jobid):
         try:
             job = self.job_factory.fromId(uuid.UUID(jobid))
-            # for acl inheritance add a parent,
-            # this is not the parent job where this job is derived from
-            job.__parent__ = self
-            # owner may run calculations or perform changes
+            # owner may view and run calculations or perform changes
             monitor_user = self.request.registry.settings['monitor_user']
-            job.__acl__ = [(Allow, job.owner, 'run'),
+            job.__acl__ = [(Allow, job.owner, ('run', 'view')),
                            # monitor user may monitor this job
-                           (Allow, monitor_user, 'monitor')]
+                           (Allow, monitor_user, 'monitor'),
+                           (Deny, Everyone, ALL_PERMISSIONS),
+                           ]
+            # if job has been marked public it can be viewed
+            # by all authenticated users if they know the job url.
+            if job.is_public:
+                job.__acl__.insert(0, (Allow, Authenticated, 'view'))
         except JobNotFound:
             # TODO to fetch job state job's db can be absent
             raise HTTPNotFound()

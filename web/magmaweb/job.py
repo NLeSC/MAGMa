@@ -1087,6 +1087,19 @@ class Job(object):
 
     ms_filename = property(get_ms_filename, set_ms_filename)
 
+    def get_is_public(self):
+        """Whether job is public or not"""
+        return self.meta.is_public
+
+    def set_is_public(self, is_public):
+        """Set whether job is public or not
+
+        True is public and False is private
+        """
+        self.meta.is_public = is_public
+
+    is_public = property(get_is_public, set_is_public)
+
     def delete(self):
         """Deletes job from user database and deletes job directory"""
         magmaweb.user.JobMeta.delete(self.meta)

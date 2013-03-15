@@ -192,7 +192,8 @@ class ViewsTestCase(AbstractViewsTestCase):
         created_at = datetime.datetime(2012, 11, 14, 10, 48, 26, 504478)
         jobs = [JobMeta(uuid.UUID('11111111-1111-1111-1111-111111111111'),
                         'bob', description='My job', created_at=created_at,
-                        ms_filename='F1234.mzxml')]
+                        ms_filename='F1234.mzxml',
+                        is_public=False,)]
         request.user.jobs = jobs
         views = Views(request)
 
@@ -203,6 +204,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         expected_jobs = [{'id': '11111111-1111-1111-1111-111111111111',
                           'url': url1,
                           'description': 'My job',
+                          'is_public': False,
                           'ms_filename': 'F1234.mzxml',
                           'created_at': '2012-11-14T10:48:26'}]
         self.assertEqual(response, {'jobs': expected_jobs})
@@ -732,6 +734,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                     'data': dict(n_reaction_steps=2,
                                                  metabolism_types=['phase1',
                                                                    'phase2'],
+                                                 ms_data_area='',
+                                                 ms_data_format='mzxml',
                                                  ionisation_mode=-1,
                                                  ms_intensity_cutoff=200000.0,
                                                  msms_intensity_cutoff=50,
@@ -759,6 +763,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                     'data': dict(n_reaction_steps=2,
                                                  metabolism_types=['phase1',
                                                                    'phase2'],
+                                                 ms_data_area='',
+                                                 ms_data_format='mzxml',
                                                  ionisation_mode=1,
                                                  ms_intensity_cutoff=1000000.0,
                                                  msms_intensity_cutoff=10,
@@ -784,6 +790,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                     'data': dict(n_reaction_steps=2,
                                                  metabolism_types=['phase1',
                                                                    'phase2'],
+                                                 ms_data_area='',
+                                                 ms_data_format='mzxml',
                                                  ionisation_mode=1,
                                                  ms_intensity_cutoff=1000000.0,
                                                  msms_intensity_cutoff=10,
@@ -803,6 +811,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                              "description": "New description",
                              "ms_filename": "F12345.mzxml",
                              "created_at": "1999-12-17T13:45:04",
+                             "is_public": True,
                              }
         job = self.fake_job()
         expected_id = job.id
@@ -817,6 +826,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(job.description, 'New description')
         self.assertEqual(job.ms_filename, 'F12345.mzxml')
         self.assertEqual(job.created_at, execpted_ca)
+        self.assertEqual(job.is_public, True)
 
     def test_deletejson(self):
         request = testing.DummyRequest()
