@@ -194,9 +194,9 @@ class Views(object):
     def help(self):
         return {}
 
-@view_defaults(context=Job, permission='view')
-class JobViews(object):
-    """Views for pyramid based web application with job"""
+
+class InCompleteJobViews(object):
+    """Views for pyramid based web application with running/failed job"""
     def __init__(self, job, request):
         self.request = request
         self.job = job
@@ -233,6 +233,16 @@ class JobViews(object):
         jobstate = self.request.body
         self.job.state = jobstate
         return dict(status=jobstate, jobid=str(jobid))
+
+
+@view_defaults(context=Job, permission='view')
+class JobViews(object):
+    """Views for pyramid based web application with completed job"""
+    def __init__(self, job, request):
+        self.request = request
+        self.job = job
+        if job.state != 'STOPPED':
+            raise HTTPFound(location=request.route_url('status', jobid=job.id))
 
     @view_config(route_name='results',
                  renderer='results.mak',
