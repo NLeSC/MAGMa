@@ -6,9 +6,9 @@ import sqlite3
 import time
 import sys
 
-inputdir="/media/PubChem/"
+inputdir="/media/PubChem_/"
 pubchemdir=inputdir+"ftp.ebi.ac.uk/pub/databases/pubchem/Compound/CURRENT-Full/SDF/"
-outputdir="/media/MAGMa_pubchem/"
+outputdir="/media/PubChem/"
 # /media/PubChem$ wget --mirror --accept "*.sdf.gz" ftp://ftp.ebi.ac.uk/pub/databases/pubchem/Compound/CURRENT-Full/SDF/
 # download: ftp://ftp.ebi.ac.uk/pub/databases/pubchem/Compound/Extras/CID-SID.gz
 # download: ftp://ftp.ebi.ac.uk/pub/databases/pubchem/Compound/Extras/CID-Synonym-filtered.gz
@@ -38,7 +38,7 @@ print len(kegg),'kegg compound names read'
 
 conn1 = sqlite3.connect(outputdir+"Pubchem_Names.db")
 c1 = conn1.cursor()
-if True:
+try:
     c1.execute("CREATE TABLE names (cid INTEGER PRIMARY KEY, name TEXT, refscore INTEGER)")
     #currently using a Synonym db created with Stefans java script
     #could be generated with something like:
@@ -64,7 +64,7 @@ if True:
         #if names_count==1:
         #    print curr_cid,name,sid_count,names_count,sid_count*names_count
     conn1.commit()
-else:
+except:
     print ("Pubchem_Names.db already exists (or error creating it)")
 
 conn2 = sqlite3.connect(outputdir+'Pubchem_Listing.db')
@@ -148,7 +148,7 @@ while not ready:
             if int(line[:3]) in hatoms or int(line[3:6]) in hatoms:
                 hbonds+=1
                 continue # remove bonds involving hydrogens
-            record.append(line[:12]+'\n')
+            record.append(line[:9]+'  0\n') # use bonds with stereoflags set to zero
         while line != 'M  END\n' and line != '':
             line=sdfile.readline()
             record.append(line)
@@ -286,8 +286,8 @@ memstore_kegg={}
 print "Creating index ..."
 c3.execute('PRAGMA temp_store = 2')
 c3.execute('CREATE INDEX idx_cover ON molecules (mim,natoms,refscore,molform,inchikey,name,molblock,logp)')
+conn3.commit()
 c4.execute('PRAGMA temp_store = 2')
 c4.execute('CREATE INDEX idx_cover ON molecules (mim,natoms,reference,molform,inchikey,name,molblock,logp)')
-conn3.commit()
 conn4.commit()
 
