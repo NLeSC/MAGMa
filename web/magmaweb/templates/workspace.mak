@@ -40,6 +40,7 @@ Ext.require([
   'Ext.form.Panel',
   'Ext.grid.Panel',
   'Ext.grid.column.Date',
+  'Ext.grid.column.Boolean',
   'Ext.grid.column.Action',
   'Ext.grid.plugin.CellEditing',
   'Ext.data.proxy.Rest',
@@ -83,7 +84,8 @@ Ext.onReady(function() {
         'description',
         'ms_filename',
         {name: 'created_at', type: 'date'},
-        'url'
+        'url',
+        'is_public'
       ],
       proxy: {
         type: 'rest',
@@ -129,6 +131,14 @@ Ext.onReady(function() {
       text: 'MS filename', dataIndex: 'ms_filename',
       editor: {
         xtype: 'textfield'
+      }
+    }, {
+      text: 'Public?', dataIndex: 'is_public', width: 70,
+      xtype: 'booleancolumn',
+      trueText: 'Public',
+      falseText: 'Private',
+      editor: {
+        xtype: 'checkbox'
       }
     }, {
       text: 'Created at', dataIndex: 'created_at', width: 120,

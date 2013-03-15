@@ -542,7 +542,9 @@ class JobTestCase(unittest.TestCase):
                                parentjobid=self.parentjobid,
                                owner='bob',
                                created_at=self.created_at,
-                               ms_filename='F1234.mzxml')
+                               ms_filename='F1234.mzxml',
+                               is_public=False,
+                               )
         self.db = Mock(JobDb)
         self.jobdir = tempfile.mkdtemp()
         stderr = open(os.path.join(self.jobdir, 'stderr.txt'), 'w')
@@ -656,6 +658,14 @@ class JobTestCase(unittest.TestCase):
         self.job.db.session.remove.assert_called_with()
         shutl.rmtree.assert_called_with(self.jobdir)
         jm.delete.assert_called_with(self.meta)
+
+    def test_is_public(self):
+        self.assertEquals(self.job.is_public, False)
+
+    def test_set_is_public(self):
+        self.job.is_public = True
+
+        self.assertEquals(self.job.is_public, True)
 
 
 class JobDbTestCaseAbstract(unittest.TestCase):
