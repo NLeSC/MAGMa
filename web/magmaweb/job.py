@@ -603,9 +603,13 @@ class JobQuery(object):
         """
         if selection == 'example':
             return cls._example()
+        elif selection == 'example2':
+            return cls._example2()
 
         return dict(n_reaction_steps=2,
                     metabolism_types=['phase1', 'phase2'],
+                    ms_data_format='mzxml',
+                    ms_data_area='',
                     ionisation_mode=1,
                     ms_intensity_cutoff=1000000.0,
                     msms_intensity_cutoff=10,
@@ -658,6 +662,49 @@ class JobQuery(object):
         ]
         return dict(ms_data="\n".join(example_tree),
                     ms_data_format='mass_tree',
+                    ionisation_mode=-1,
+                    )
+
+    @classmethod
+    def _example2(cls):
+        """Returns dictionary with params for example MS data set"""
+        example_tree = [
+            'C16H17O9: 69989984 (',
+            '    C7H11O6: 54674544 (',
+            '        C4H5O2: 2596121,',
+            '        C6H5O: 1720164,',
+            '        C6H5O2: 917026,',
+            '        C6H7O2: 1104891 (',
+            '            C5H5O: 28070,',
+            '            C4H3O2: 7618,',
+            '            C5H7O: 25471,',
+            '            C6H5O: 36300,',
+            '            C5H4O2: 8453',
+            '            ),',
+            '        C6H7O3: 2890439 (',
+            '            C3H5O: 16911,',
+            '            C5H5O: 41459,',
+            '            C5H7O: 35131,',
+            '            C4H5O2: 236887,',
+            '            C5H7O2: 73742,',
+            '            C6H5O2: 78094',
+            '            ),',
+            '        C7H7O5: 905226,',
+            '        C7H9O5: 2285841 (',
+            '            C3H3O2: 27805,',
+            '            C6H5O: 393710,',
+            '            C5H3O3: 26219,',
+            '            C6H7O2: 339595,',
+            '            C7H5O3: 27668,',
+            '            C7H7O4: 145773',
+            '            ),',
+            '        C7H11O6: 17000514',
+            '        ),',
+            '    C16H17O9: 4146696',
+            '    )',
+        ]
+        return dict(ms_data="\n".join(example_tree),
+                    ms_data_format='form_tree',
                     ionisation_mode=-1,
                     )
 
@@ -1039,6 +1086,19 @@ class Job(object):
             run.ms_filename = ms_filename
 
     ms_filename = property(get_ms_filename, set_ms_filename)
+
+    def get_is_public(self):
+        """Whether job is public or not"""
+        return self.meta.is_public
+
+    def set_is_public(self, is_public):
+        """Set whether job is public or not
+
+        True is public and False is private
+        """
+        self.meta.is_public = is_public
+
+    is_public = property(get_is_public, set_is_public)
 
     def delete(self):
         """Deletes job from user database and deletes job directory"""

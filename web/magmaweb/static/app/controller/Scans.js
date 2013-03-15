@@ -69,6 +69,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       'scanuploadform component[action=loadmsdataexample]': {
         click: this.loadExample
       },
+      'scanuploadform component[action=loadmsdataexample2]': {
+          click: this.loadExample2
+      },
 	  'scanuploadform component[name=ms_data_format]': {
 	    change: this.changeMsDataFormat
 	  }
@@ -387,9 +390,15 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   /**
    * In MS Data upload forms loads the example data set.
    */
-  loadExample: function() {
+  loadExample: function(field) {
+	  this._loadExample('example');
+  },
+  loadExample2: function(field) {
+	  this._loadExample('example2');
+  },
+  _loadExample: function(example_name) {
 	  var form = this.getUploadForm().getForm();
-	  var example_url = this.application.runInfoUrl()+'?selection=example';
+	  var example_url = this.application.runInfoUrl()+'?selection='+example_name;
 	  form.load({
 		  url: example_url,
 	      method: 'GET',

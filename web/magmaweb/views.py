@@ -114,6 +114,7 @@ class Views(object):
                          'description': jobmeta.description,
                          'ms_filename': jobmeta.ms_filename,
                          'created_at': created_at,
+                         'is_public': jobmeta.is_public,
                          })
 
         return {'jobs': jobs}
@@ -261,6 +262,7 @@ class JobViews(object):
         job = self.job
         job.description = body['description']
         job.ms_filename = body['ms_filename']
+        job.is_public = body['is_public']
         return {'success': True, 'message': 'Updated job'}
 
     @view_config(route_name='results',
