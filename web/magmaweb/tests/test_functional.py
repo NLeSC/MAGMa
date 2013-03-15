@@ -116,6 +116,7 @@ class FunctionalTests(unittest.TestCase):
                                "description": "New description",
                                "ms_filename": "F6789.mzxml",
                                "created_at": "1999-12-17T13:45:04",
+                               "is_public": False,
                                })
         self.testapp.put(req_url, req_body)
 
@@ -123,6 +124,7 @@ class FunctionalTests(unittest.TestCase):
                                 "description": "New description 2",
                                 "ms_filename": "F6789.mzxml 2",
                                 "created_at": "1999-12-17T13:45:04",
+                                "is_public": False,
                                 })
 
         self.testapp.put(req_url, req_body2)
