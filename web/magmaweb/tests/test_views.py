@@ -2,7 +2,7 @@ import unittest
 import datetime
 from pyramid import testing
 from mock import Mock, patch
-from magmaweb.views import Views, JobViews
+from magmaweb.views import Views, JobViews, InCompleteJobViews
 from magmaweb.job import JobFactory, Job, JobDb, JobQuery
 from magmaweb.user import User, JobMeta
 
@@ -24,6 +24,7 @@ class AbstractViewsTestCase(unittest.TestCase):
         job.description = ""
         job.ms_filename = ""
         job.dir = '/somedir/foo'
+        job.state = 'STOPPED'
         job.db = Mock(JobDb)
         job.db.runInfo.return_value = 'bla'
         job.db.maxMSLevel.return_value = 3
@@ -374,9 +375,39 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         self.assertEqual(response, {})
 
+class InCompleteJobViewsTestCase(AbstractViewsTestCase):
+    """Test case for magmaweb.views.InCompleteJobViews"""
+    def test_jobstatus(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'RUNNING'
+        views = InCompleteJobViews(job, request)
+
+        response = views.job_status()
+
+        self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
+
+    def test_set_jobstatus(self):
+        request = testing.DummyRequest()
+        request.body = 'STOPPED'
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'RUNNING'
+        views = InCompleteJobViews(job, request)
+
+        response = views.set_job_status()
+
+        self.assertEqual(response, dict(status='STOPPED', jobid='bla'))
+        self.assertEqual(job.state, 'STOPPED')
+
 
 class JobViewsTestCase(AbstractViewsTestCase):
     """ Test case for magmaweb.views.JobViews"""
+
+    def setUp(self):
+        AbstractViewsTestCase.setUp(self)
+        self.config.add_route('status', '/status/{jobid}')
 
     @patch('magmaweb.views.has_permission')
     def test_resuls_canrun(self, has_permission):
@@ -385,7 +416,6 @@ class JobViewsTestCase(AbstractViewsTestCase):
         request = testing.DummyRequest()
         job = self.fake_job()
         views = JobViews(job, request)
-
         response = views.results()
 
         self.assertEqual(response, dict(jobid='foo',
@@ -415,29 +445,18 @@ class JobViewsTestCase(AbstractViewsTestCase):
         self.assertDictEqual(response, exp_response)
         has_permission.assert_called_with('run', job, request)
 
-    def test_jobstatus(self):
-        request = testing.DummyRequest()
+    def test_incompletejob(self):
+        request = testing.DummyRequest(params={'start': 0,
+                                               'limit': 10
+                                               })
         job = self.fake_job()
-        job.id = 'bla'
-        job.state = 'RUNNING'
-        views = JobViews(job, request)
+        job.state = 'INITIAL'
 
-        response = views.job_status()
+        from pyramid.httpexceptions import HTTPFound
+        with self.assertRaises(HTTPFound) as e:
+            JobViews(job, request)
 
-        self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
-
-    def test_set_jobstatus(self):
-        request = testing.DummyRequest()
-        request.body = 'STOPPED'
-        job = self.fake_job()
-        job.id = 'bla'
-        job.state = 'RUNNING'
-        views = JobViews(job, request)
-
-        response = views.set_job_status()
-
-        self.assertEqual(response, dict(status='STOPPED', jobid='bla'))
-        self.assertEqual(job.state, 'STOPPED')
+        self.assertEqual(e.exception.location, 'http://example.com/status/foo')
 
     def test_metabolitesjson_return(self):
         request = testing.DummyRequest(params={'start': 0,
