@@ -226,6 +226,10 @@ describe('Metabolites', function() {
        expect(mockedstore.setScanFilter).toHaveBeenCalledWith(scanid);
        expect(mockedstore.sorters.indexOfKey('score')).toEqual(0);
        expect(mockedstore.sorters.getByKey('score').direction).toEqual('ASC');
+       expect(mockedstore.sorters.indexOfKey('probability')).toEqual(1);
+       expect(mockedstore.sorters.getByKey('probability').direction).toEqual('DESC');
+       expect(mockedstore.sorters.indexOfKey('metid')).toEqual(2);
+       expect(mockedstore.sorters.getByKey('metid').direction).toEqual('ASC');
      });
 
      describe('clear scan filter', function() {
@@ -245,10 +249,9 @@ describe('Metabolites', function() {
            mockedstore = {
                setScanFilter: function() {},
                removeScanFilter: function() {},
-               sorters: {
-                   removeAtKey: function() {},
-                   insert: function() {}
-               }
+               sorters: new Ext.util.AbstractMixedCollection(false, function(item) {
+                   return item.id || item.property;
+               })
            };
            spyOn(ctrl, 'getMetabolitesStore').andReturn(mockedstore);
            spyOn(mockedstore, 'setScanFilter');
@@ -267,7 +270,6 @@ describe('Metabolites', function() {
        });
 
        it('with score filter and sort', function() {
-           mockedstore.sorters = new Ext.util.MixedCollection();
            mockedstore.sorters.add('score', [1, 2, 3]);
            mockedstore.filters = new Ext.util.MixedCollection();
            mockedstore.filters.add('score', [4, 5, 6]);

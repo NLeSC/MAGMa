@@ -56,22 +56,10 @@ class Views(object):
             job.ms_filename = self.request.POST['ms_data_file'].filename
         except AttributeError:
             job.ms_filename = 'Uploaded as text'
-        import logging
-        logger = logging.getLogger('magmaweb')
-        logger.info(self.request.POST)
         status_url = self.request.route_url('status.json', jobid=job.id)
         jobquery = job.jobquery(status_url)
 
-        if ('structure_database' in self.request.POST
-                and self.request.POST['structure_database']):
-            # add structure database location when
-            # structure_database is selected
-            key = 'structure_database.'
-            key += self.request.POST['structure_database']
-            str_db_loc = self.request.registry.settings[key]
-            jobquery = jobquery.allinone(self.request.POST, str_db_loc)
-        else:
-            jobquery = jobquery.allinone(self.request.POST)
+        jobquery = jobquery.allinone(self.request.POST)
 
         try:
             self.job_factory.submitQuery(jobquery, job)
@@ -127,6 +115,7 @@ class Views(object):
                          'description': jobmeta.description,
                          'ms_filename': jobmeta.ms_filename,
                          'created_at': created_at,
+                         'is_public': jobmeta.is_public,
                          })
 
         return {'jobs': jobs}
@@ -227,9 +216,9 @@ class Views(object):
     def help(self):
         return {}
 
-@view_defaults(context=Job, permission='view')
-class JobViews(object):
-    """Views for pyramid based web application with job"""
+
+class InCompleteJobViews(object):
+    """Views for pyramid based web application with running/failed job"""
     def __init__(self, job, request):
         self.request = request
         self.job = job
@@ -267,6 +256,16 @@ class JobViews(object):
         self.job.state = jobstate
         return dict(status=jobstate, jobid=str(jobid))
 
+
+@view_defaults(context=Job, permission='view')
+class JobViews(object):
+    """Views for pyramid based web application with completed job"""
+    def __init__(self, job, request):
+        self.request = request
+        self.job = job
+        if job.state != 'STOPPED':
+            raise HTTPFound(location=request.route_url('status', jobid=job.id))
+
     @view_config(route_name='results',
                  renderer='results.mak',
                  request_method='GET'
@@ -295,6 +294,7 @@ class JobViews(object):
         job = self.job
         job.description = body['description']
         job.ms_filename = body['ms_filename']
+        job.is_public = body['is_public']
         return {'success': True, 'message': 'Updated job'}
 
     @view_config(route_name='results',

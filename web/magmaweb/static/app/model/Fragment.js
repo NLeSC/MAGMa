@@ -31,6 +31,8 @@ Ext.define('Esc.magmaweb.model.Fragment', {
     name: 'mslevel'
   }, {
     name: 'isAssigned'
+  }, {
+	name: 'formula'
   }],
   hasMany: { model: 'Fragment', name:'children' }
 });

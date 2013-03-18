@@ -69,10 +69,10 @@ class MagmaCommand(object):
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # read_ms_data arguments
         sc.add_argument('ms_data', type=argparse.FileType('r'), help="file with MS/MS data")
-        sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml", "tree"])
+        sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml", "mass_tree","form_tree_pos","form_tree_neg"])
         sc.add_argument('-l', '--max_ms_level', help="Maximum MS level to be processsed (default: %(default)s)", default=10,type=int)
         sc.add_argument('-a', '--abs_peak_cutoff', help="Absolute intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
-        # sc.add_argument('-r', '--rel_peak_cutoff', help="fraction of basepeak intensity threshold for storing peaks in database (default: %(default)s)", default=0.01,type=float)
+        sc.add_argument('-s', '--scan', help="Read only spectral tree specified by MS1 scan number (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.read_ms_data)
 
@@ -95,6 +95,7 @@ class MagmaCommand(object):
         sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,min_refscore(only for PubChem) (default: %(default)s)",default=",1200,False,",type=str)
         sc.add_argument('--ncpus', help="Number of parallel cpus to use for annotation (default: %(default)s)", default=1,type=int)
         sc.add_argument('--scans', help="Search in specified scans (default: %(default)s)", default="all",type=str)
+        sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
 
@@ -191,9 +192,10 @@ class MagmaCommand(object):
         ms_data_engine = magma_session.get_ms_data_engine(abs_peak_cutoff=args.abs_peak_cutoff,
             max_ms_level=args.max_ms_level)
         if args.ms_data_format == "mzxml":
-            ms_data_engine.store_mzxml_file(args.ms_data.name)
-        elif args.ms_data_format == "tree":
-            ms_data_engine.store_manual_tree(args.ms_data.name)
+            ms_data_engine.store_mzxml_file(args.ms_data.name,args.scan)
+        else:
+            tree_type={"mass_tree":0,"form_tree_neg":-1,"form_tree_pos":1}[args.ms_data_format]
+            ms_data_engine.store_manual_tree(args.ms_data.name,tree_type)
 
     def annotate(self, args, magma_session=None):
         if magma_session == None:
@@ -207,7 +209,8 @@ class MagmaCommand(object):
             mz_precision=args.mz_precision,
             mz_precision_abs=args.mz_precision_abs,
             precursor_mz_precision=args.precursor_mz_precision,
-            use_all_peaks=args.use_all_peaks)
+            use_all_peaks=args.use_all_peaks,
+            call_back_url=args.call_back_url)
         if args.scans == 'all':
             scans='all'
         else:
