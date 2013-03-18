@@ -42,6 +42,7 @@ class HitType(object):
         self.atomstring=''
         self.atomlist=[]
         self.inchikey=""
+        self.formula=""
         #print "childscan",peak.childscan
 
 class MoleculeType(object):

@@ -122,17 +122,22 @@ class JobQuery(object):
 
     def _addAnnotateSchema(self, schema):
         schema.add(colander.SchemaNode(colander.Float(),
+                                       missing=0.0,
                                        validator=colander.Range(0, 1),
                                        name='precursor_mz_precision'))
         schema.add(colander.SchemaNode(colander.Float(),
+                                       missing=0.0,
                                        validator=colander.Range(0, 1000),
                                        name='mz_precision'))
         schema.add(colander.SchemaNode(colander.Float(),
+                                       missing=0.0,
                                        validator=colander.Range(0, 1),
                                        name='mz_precision_abs'))
         schema.add(colander.SchemaNode(colander.Float(),
+                                       missing=0.0,
                                        name='ms_intensity_cutoff'))
         schema.add(colander.SchemaNode(colander.Float(),
+                                       missing=0.0,
                                        name='msms_intensity_cutoff'))
         schema.add(colander.SchemaNode(colander.Integer(),
                                        validator=colander.OneOf([-1, 1]),
@@ -301,7 +306,10 @@ class JobQuery(object):
         schema = colander.SchemaNode(colander.Mapping(),
                                      validator=textarea_or_file)
 
-        valid_formats = colander.OneOf(['mzxml', 'tree'])
+        valid_formats = colander.OneOf(['mzxml',
+                                        'mass_tree',
+                                        'form_tree',
+                                        ])
         schema.add(colander.SchemaNode(colander.String(),
                                        validator=valid_formats,
                                        name='ms_data_format'
@@ -320,13 +328,20 @@ class JobQuery(object):
         schema.add(msdata_fileSchema)
 
         schema.add(colander.SchemaNode(colander.Integer(),
+                                       missing=0,
                                        validator=colander.Range(min=0),
                                        name='max_ms_level'))
         schema.add(colander.SchemaNode(colander.Float(),
+                                       missing=0.0,
                                        validator=colander.Range(min=0),
                                        name='abs_peak_cutoff'))
+        schema.add(colander.SchemaNode(colander.Integer(),
+                                       missing=colander.null,
+                                       validator=colander.Range(min=0),
+                                       name='scan'))
         if has_metabolites:
             self._addAnnotateSchema(schema)
+        orig_params = params
         params = schema.deserialize(params)
 
         msfile = file(os.path.join(self.dir, 'ms_data.dat'), 'w')
@@ -343,15 +358,32 @@ class JobQuery(object):
             msfile.write(params['ms_data'])
         msfile.close()
 
-        script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}' "
-        script += "-l '{max_ms_level}' "
-        script += "-a '{abs_peak_cutoff}' "
-        script += "ms_data.dat {{db}}\n"
+        if params['ms_data_format'] == 'form_tree':
+            if 'ionisation_mode' in orig_params:
+                if orig_params['ionisation_mode'] == "1":
+                    params['ms_data_format'] = 'form_tree_pos'
+                elif orig_params['ionisation_mode'] == "-1":
+                    params['ms_data_format'] = 'form_tree_neg'
+            else:
+                sd = colander.SchemaNode(colander.String(),
+                                         name='ms_data_format')
+                msg = 'Require ionisation_mode when ms_data_format=form_tree'
+                raise colander.Invalid(sd, msg)
+
         script__substitution = {
             'ms_data_format': self.escape(params['ms_data_format']),
             'max_ms_level': self.escape(params['max_ms_level']),
             'abs_peak_cutoff': self.escape(params['abs_peak_cutoff'])
         }
+        script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}' "
+        script += "-l '{max_ms_level}' "
+        script += "-a '{abs_peak_cutoff}' "
+
+        is_mzxml = params['ms_data_format'] == 'mzxml'
+        if params['scan'] is not colander.null and is_mzxml:
+            script += "--scan '{scan}' "
+            script__substitution['scan'] = self.escape(params['scan'])
+        script += "ms_data.dat {{db}}\n"
         self.script += script.format(**script__substitution)
 
         self.prestaged.append('ms_data.dat')
@@ -456,7 +488,6 @@ class JobQuery(object):
     def annotate(self,
                  params,
                  from_subset=False,
-                 structure_database_location=None,
                  ):
         """Configure job query to annotate.
 
@@ -477,9 +508,6 @@ class JobQuery(object):
 
         If ``from_subset`` is True then metids are read from stdin
 
-        ``structure_database_location``
-           location of structure database to search for candidate molecules
-
         Uses fast option by default.
         """
         schema = colander.SchemaNode(colander.Mapping())
@@ -491,7 +519,8 @@ class JobQuery(object):
         script += " -c '{ms_intensity_cutoff}' -d '{msms_intensity_cutoff}'"
         script += " -i '{ionisation_mode}' -b '{max_broken_bonds}'"
         script += " --precursor_mz_precision '{precursor_mz_precision}'"
-        script += " --max_water_losses '{max_water_losses}' "
+        script += " --max_water_losses '{max_water_losses}'"
+        script += " --call_back_url '{call_back_url}' "
         pmzp = params['precursor_mz_precision']
         ms_ic = params['ms_intensity_cutoff']
         msms_ic = params['msms_intensity_cutoff']
@@ -504,21 +533,16 @@ class JobQuery(object):
             'ionisation_mode': self.escape(params['ionisation_mode']),
             'max_broken_bonds': self.escape(params['max_broken_bonds']),
             'max_water_losses': self.escape(params['max_water_losses']),
+            'call_back_url': self.status_callback_url,
         }
 
         if params['structure_database'] is not colander.null:
-            if structure_database_location is None:
-                sd = colander.SchemaNode(colander.String(),
-                                         name='structure_database')
-                msg = 'Unable to locate structure database'
-                raise colander.Invalid(sd, msg)
             script += "--structure_database '{structure_database}'"
             script += " --db_options "
-            script += "'{db_filename},{max_mim},{max_64atoms},{min_refscore}' "
+            script += "',{max_mim},{max_64atoms},{min_refscore}' "
             sd = self.escape(params['structure_database'])
             script_substitutions['structure_database'] = sd
-            db_options = {'db_filename': structure_database_location,
-                          'max_mim': self.escape(params['max_mz']),
+            db_options = {'max_mim': self.escape(params['max_mz']),
                           'min_refscore': self.escape(params['min_refscore']),
                           'max_64atoms': False
                           }
@@ -534,13 +558,10 @@ class JobQuery(object):
 
         return self
 
-    def allinone(self, params, structure_database_location=None):
+    def allinone(self, params):
         """Configure job query to do all sub commands in one go.
 
         ``params`` is a MultiDict
-
-        ``structure_database_location``
-           location of structure database to search for candidate molecules
 
         See
         :meth:`~magmaweb.job.JobQuery.add_ms_data`,
@@ -572,7 +593,7 @@ class JobQuery(object):
                 raise e
         if metabolize:
             allin = allin.metabolize(params)
-        return allin.annotate(params, False, structure_database_location)
+        return allin.annotate(params, False)
 
     @classmethod
     def defaults(cls, selection=None):
@@ -582,15 +603,19 @@ class JobQuery(object):
         """
         if selection == 'example':
             return cls._example()
+        elif selection == 'example2':
+            return cls._example2()
 
         return dict(n_reaction_steps=2,
                     metabolism_types=['phase1', 'phase2'],
+                    ms_data_format='mzxml',
+                    ms_data_area='',
                     ionisation_mode=1,
                     ms_intensity_cutoff=1000000.0,
                     msms_intensity_cutoff=10,
                     mz_precision=5.0,
                     mz_precision_abs=0.001,
-                    abs_peak_cutoff=1000,
+                    abs_peak_cutoff=5000,
                     max_ms_level=10,
                     precursor_mz_precision=0.005,
                     max_broken_bonds=3,
@@ -636,7 +661,50 @@ class JobQuery(object):
             '    )'
         ]
         return dict(ms_data="\n".join(example_tree),
-                    ms_data_format='tree',
+                    ms_data_format='mass_tree',
+                    ionisation_mode=-1,
+                    )
+
+    @classmethod
+    def _example2(cls):
+        """Returns dictionary with params for example MS data set"""
+        example_tree = [
+            'C16H17O9: 69989984 (',
+            '    C7H11O6: 54674544 (',
+            '        C4H5O2: 2596121,',
+            '        C6H5O: 1720164,',
+            '        C6H5O2: 917026,',
+            '        C6H7O2: 1104891 (',
+            '            C5H5O: 28070,',
+            '            C4H3O2: 7618,',
+            '            C5H7O: 25471,',
+            '            C6H5O: 36300,',
+            '            C5H4O2: 8453',
+            '            ),',
+            '        C6H7O3: 2890439 (',
+            '            C3H5O: 16911,',
+            '            C5H5O: 41459,',
+            '            C5H7O: 35131,',
+            '            C4H5O2: 236887,',
+            '            C5H7O2: 73742,',
+            '            C6H5O2: 78094',
+            '            ),',
+            '        C7H7O5: 905226,',
+            '        C7H9O5: 2285841 (',
+            '            C3H3O2: 27805,',
+            '            C6H5O: 393710,',
+            '            C5H3O3: 26219,',
+            '            C6H7O2: 339595,',
+            '            C7H5O3: 27668,',
+            '            C7H7O4: 145773',
+            '            ),',
+            '        C7H11O6: 17000514',
+            '        ),',
+            '    C16H17O9: 4146696',
+            '    )',
+        ]
+        return dict(ms_data="\n".join(example_tree),
+                    ms_data_format='form_tree',
                     ionisation_mode=-1,
                     )
 
@@ -1018,6 +1086,19 @@ class Job(object):
             run.ms_filename = ms_filename
 
     ms_filename = property(get_ms_filename, set_ms_filename)
+
+    def get_is_public(self):
+        """Whether job is public or not"""
+        return self.meta.is_public
+
+    def set_is_public(self, is_public):
+        """Set whether job is public or not
+
+        True is public and False is private
+        """
+        self.meta.is_public = is_public
+
+    is_public = property(get_is_public, set_is_public)
 
     def delete(self):
         """Deletes job from user database and deletes job directory"""
@@ -1444,7 +1525,8 @@ class JobDb(object):
             'mass': frag.mass,
             'deltah': frag.deltah,
             'mslevel': mslevel,
-            'deltappm': frag.deltappm
+            'deltappm': frag.deltappm,
+            'formula': frag.formula,
         }
         if (len(frag.children) > 0):
             f['expanded'] = False
