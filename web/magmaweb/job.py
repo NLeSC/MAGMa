@@ -89,6 +89,7 @@ class JobQuery(object):
                  script='',
                  prestaged=None,
                  status_callback_url=None,
+                 restricted=False,
                  ):
         """Contruct JobQuery
 
@@ -103,18 +104,25 @@ class JobQuery(object):
         self.script = script
         self.prestaged = prestaged or []
         self.status_callback_url = status_callback_url
+        self.restricted = restricted
 
     def __eq__(self, other):
         return (self.dir == other.dir and
                 self.script == other.script and
-                self.prestaged == other.prestaged)
+                self.prestaged == other.prestaged and
+                self.status_callback_url == other.status_callback_url and
+                self.restricted == other.restricted
+                )
 
     def __repr__(self):
         """Return a printable representation."""
         s = "JobQuery({!r}, script={!r}, "
-        s += "prestaged={!r}, status_callback_url={!r})"
+        s += "prestaged={!r}, status_callback_url={!r},"
+        s += "restricted={!r})"
         return s.format(self.dir, self.script,
-                        self.prestaged, self.status_callback_url)
+                        self.prestaged, self.status_callback_url,
+                        self.restricted,
+                        )
 
     def escape(self, string):
         """ Replaces single quote with its html escape sequence"""
@@ -365,8 +373,7 @@ class JobQuery(object):
                 elif orig_params['ionisation_mode'] == "-1":
                     params['ms_data_format'] = 'form_tree_neg'
             else:
-                sd = colander.SchemaNode(colander.String(),
-                                         name='ms_data_format')
+                sd = schema['ms_data_format']
                 msg = 'Require ionisation_mode when ms_data_format=form_tree'
                 raise colander.Invalid(sd, msg)
 
@@ -380,7 +387,12 @@ class JobQuery(object):
         script += "-a '{abs_peak_cutoff}' "
 
         is_mzxml = params['ms_data_format'] == 'mzxml'
-        if params['scan'] is not colander.null and is_mzxml:
+        empty_scan = params['scan'] is colander.null
+        if is_mzxml and self.restricted and empty_scan:
+            sd = schema['scan']
+            msg = 'Require MS1 scan number'
+            raise colander.Invalid(sd, msg)
+        if not empty_scan and is_mzxml:
             script += "--scan '{scan}' "
             script__substitution['scan'] = self.escape(params['scan'])
         script += "ms_data.dat {{db}}\n"
@@ -544,7 +556,7 @@ class JobQuery(object):
             script_substitutions['structure_database'] = sd
             db_options = {'max_mim': self.escape(params['max_mz']),
                           'min_refscore': self.escape(params['min_refscore']),
-                          'max_64atoms': False
+                          'max_64atoms': self.restricted,
                           }
             script_substitutions.update(db_options)
 
@@ -1009,13 +1021,16 @@ class Job(object):
         """
         return str(self.id)
 
-    def jobquery(self, status_callback_url):
+    def jobquery(self, status_callback_url, restricted):
         """Returns :class:`JobQuery`
 
         'status_callback_url' is the url to PUT status of job to.
+        'restricted' whether to build queries in restricted mode.
         """
         return JobQuery(self.dir,
-                        status_callback_url=status_callback_url)
+                        status_callback_url=status_callback_url,
+                        restricted=restricted,
+                        )
 
     def get_description(self):
         """Description string of job"""

@@ -11,6 +11,8 @@ class AbstractViewsTestCase(unittest.TestCase):
     def setUp(self):
         self.settings = {'jobfactory.root_dir': '/somedir',
                          'access_token.expires_in': 360,
+                         'auto_register': False,
+                         'restricted': False,
                          }
         self.config = testing.setUp(settings=self.settings)
         self.config.add_route('status.json', '/status/{jobid}.json')
@@ -74,7 +76,9 @@ class ViewsTestCase(AbstractViewsTestCase):
                                                          job)
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
         self.assertEqual(job.ms_filename, 'c:\bla\bla\F1234.mzxml')
-        job.jobquery.assert_called_with('http://example.com/status/foo.json')
+        job.jobquery.assert_called_with('http://example.com/status/foo.json',
+                                        False,
+                                        )
 
     def test_allinone_with_ms_data_as_text(self):
         post = {'ms_data': 'somexml', 'ms_data_file': ''}
@@ -95,7 +99,27 @@ class ViewsTestCase(AbstractViewsTestCase):
                                                          job)
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
         self.assertEqual(job.ms_filename, 'Uploaded as text')
-        job.jobquery.assert_called_with('http://example.com/status/foo.json')
+        job.jobquery.assert_called_with('http://example.com/status/foo.json',
+                                        False,
+                                        )
+
+    def test_allinone_restricted(self):
+        self.config.add_settings(restricted=True)
+        post = {'ms_data': 'somexml', 'ms_data_file': ''}
+        request = testing.DummyRequest(post=post)
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+        job = self.fake_job()
+        jobquery = Mock(JobQuery)
+        job.jobquery.return_value = jobquery
+        views = Views(request)
+        views.job_factory = Mock(JobFactory)
+        views.job_factory.fromScratch = Mock(return_value=job)
+
+        views.allinone()
+
+        job.jobquery.assert_called_with('http://example.com/status/foo.json',
+                                        True,
+                                        )
 
     def test_allinone_no_jobmanager(self):
         from magmaweb.job import JobSubmissionError
@@ -328,7 +352,10 @@ class ViewsTestCase(AbstractViewsTestCase):
     @patch('magmaweb.views.remember')
     @patch('magmaweb.views.User')
     def test_login_auto_register(self, user, remember):
-        user.generate.return_value = User('bob', 'bob dob', 'bob.dob@example.com')
+        user.generate.return_value = User('bob',
+                                          'bob dob',
+                                          'bob.dob@example.com'
+                                          )
         from pyramid.httpexceptions import HTTPFound
         self.config.add_route('home', '/')
         self.config.add_route('login', '/login')
@@ -348,7 +375,10 @@ class ViewsTestCase(AbstractViewsTestCase):
     @patch('magmaweb.views.remember')
     @patch('magmaweb.views.User')
     def test_login_auto_register_from_login(self, user, remember):
-        user.generate.return_value = User('bob', 'bob dob', 'bob.dob@example.com')
+        user.generate.return_value = User('bob',
+                                          'bob dob',
+                                          'bob.dob@example.com'
+                                          )
         from pyramid.httpexceptions import HTTPFound
         self.config.add_route('home', '/')
         self.config.add_route('login', '/login')
@@ -417,6 +447,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         response = views.help()
 
         self.assertEqual(response, {})
+
 
 class InCompleteJobViewsTestCase(AbstractViewsTestCase):
     """Test case for magmaweb.views.InCompleteJobViews"""

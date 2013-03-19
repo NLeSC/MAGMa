@@ -606,9 +606,26 @@ class JobTestCase(unittest.TestCase):
 
     def test_jobquery(self):
         status_cb_url = 'http://example/status/{}.json'.format(self.job.id)
-        jobquery = self.job.jobquery(status_cb_url)
+        jobquery = self.job.jobquery(status_cb_url, False)
+
+        ejobquery = JobQuery(self.jobdir,
+                             status_callback_url=status_cb_url,
+                             restricted=False,
+                             )
+
         self.assertIsInstance(jobquery, JobQuery)
-        self.assertEqual(jobquery.dir, self.job.dir)
+        self.assertEqual(jobquery, ejobquery)
+
+    def test_jobquery_restricted(self):
+        status_cb_url = 'http://example/status/{}.json'.format(self.job.id)
+        jobquery = self.job.jobquery(status_cb_url, True)
+
+        ejobquery = JobQuery(self.jobdir,
+                             status_callback_url=status_cb_url,
+                             restricted=True,
+                             )
+
+        self.assertEqual(jobquery, ejobquery)
 
     def test_state(self):
         self.assertEquals(self.job.state, 'STOPPED')
@@ -1616,5 +1633,3 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                 }]
             }], 'expanded': True
         })
-
-
