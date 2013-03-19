@@ -1,3 +1,4 @@
+"""Tests for magmaweb.job.JobQuery"""
 import unittest
 from magmaweb.job import JobQuery
 

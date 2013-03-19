@@ -24,6 +24,7 @@ from magmaweb.user import User
 
 
 class Views(object):
+    """Views for pyramid based web application which don't require a job"""
     def __init__(self, request):
         self.request = request
         self.job_factory = make_job_factory(request.registry.settings)
@@ -42,7 +43,7 @@ class Views(object):
     @view_config(route_name='defaults.json', renderer="json",
                  permission='view')
     def defaults(self):
-        """ Returns defaults settings to run a job"""
+        """Returns defaults settings to run a job"""
         selection = self.request.params.get('selection')
         return {'success': True,
                 'data': JobQuery.defaults(selection)}
@@ -50,6 +51,16 @@ class Views(object):
     @view_config(route_name='startjob', renderer='jsonhtml',
                  request_method='POST', permission='view')
     def allinone(self):
+        """Submits a job which:
+        * adds structures
+        * adds ms data
+        * metabolizes
+        * annotates
+
+        Returns a job identifier.
+
+        Raises HTTPInternalServerError when job submission fails
+        """
         owner = self.request.user.userid
         job = self.job_factory.fromScratch(owner)
         try:
@@ -104,6 +115,8 @@ class Views(object):
                  permission='view',
                  renderer='workspace.mak')
     def workspace(self):
+        """Returns list of jobs owned by current user
+        """
         jobs = []
         owner = self.request.user
         for jobmeta in owner.jobs:
@@ -215,12 +228,14 @@ class Views(object):
 
     @view_config(route_name='logout', permission='view')
     def logout(self):
+        """Forgets who was logged in and redirects to home page"""
         headers = forget(self.request)
         home = self.request.route_url('home')
         return HTTPFound(location=home, headers=headers)
 
     @view_config(route_name='help', renderer='help.mak')
     def help(self):
+        """Returns help page"""
         return {}
 
 
