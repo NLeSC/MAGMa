@@ -20,7 +20,7 @@ from magmaweb.job import make_job_factory
 from magmaweb.job import Job
 from magmaweb.job import JobQuery
 from magmaweb.job import JobSubmissionError
-from magmaweb.user import User, DBSession
+from magmaweb.user import User
 
 
 class Views(object):
