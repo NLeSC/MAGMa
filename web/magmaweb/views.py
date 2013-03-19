@@ -157,6 +157,7 @@ class Views(object):
 
         Or if auto_register=True then generates user
         and redirects back to request.url
+        except when route is PUT status.json then auto_register is ignored
         """
         is_authenticated = self.request.user is not None
         if is_authenticated:
@@ -169,18 +170,14 @@ class Views(object):
             referrer = self.request.route_url('home')
 
         auto_register = self.request.registry.settings['auto_register']
-        if auto_register:
-            # in anonymous mode we don't want the job status to be updated
-            # by anyone so return the login form
-            is_put = self.request.method == u'PUT'
-            route_name = self.request.matched_route.name
-            if route_name == 'status.json' and is_put:
-                self._add_mac_challenge()
-                return dict(came_from=self.request.url,
-                            userid='',
-                            password='',
-                            )
 
+        # in anonymous mode we don't want the job status to be updated
+        # by anyone so return the login form
+        is_put = self.request.method == u'PUT'
+        route_name = self.request.matched_route.name
+        status_update = route_name == 'status.json' and is_put
+
+        if auto_register and not status_update:
             user = User.generate()
             userid = user.userid
             # Force committing as this is an exception handler
@@ -207,17 +204,14 @@ class Views(object):
                     return HTTPFound(location=came_from,
                                      headers=headers)
             else:
-                self._add_mac_challenge()
+                self.request.response.status_int = 401
+                # Add MAC challenge
+                self.request.response.headers["WWW-Authenticate"] = "MAC"
 
             return dict(came_from=came_from,
                         userid=userid,
                         password=password,
                         )
-
-    def _add_mac_challenge(self):
-        self.request.response.status_int = 401
-        # Add MAC challenge
-        self.request.response.headers["WWW-Authenticate"] = "MAC"
 
     @view_config(route_name='logout', permission='view')
     def logout(self):
