@@ -586,7 +586,7 @@ describe('Fragments', function() {
     });
 
     it('canassign', function() {
-  	  ctrl.application.canAssign = true;
+  	  ctrl.application.features.assign = true;
       assignbut = jasmine.createSpyObj('abut', [ 'hide']);
       spyOn(ctrl,'getAssignStruct2PeakButton').andReturn(assignbut);
 
@@ -596,7 +596,7 @@ describe('Fragments', function() {
     });
 
     it('cantassign', function() {
-  	  ctrl.application.canAssign = false;
+  	  ctrl.application.features.assign = false;
       assignbut = jasmine.createSpyObj('abut', [ 'hide']);
       spyOn(ctrl,'getAssignStruct2PeakButton').andReturn(assignbut);
 

@@ -104,21 +104,25 @@ Ext.onReady(function() {
     items: [header, form]
   });
 
+  function user_authenticated(authenticated, anonymous) {
+    if (authenticated || anonymous) {
+      Ext.ComponentQuery.query('component[text=Login]')[0].hide();
+      if (anonymous) {
+        // anonymous authenticated can not logout
+        Ext.ComponentQuery.query('component[text=Logout]')[0].hide();
+      }
+    } else {
+      Ext.ComponentQuery.query('component[text=Workspace]')[0].hide();
+      Ext.ComponentQuery.query('component[text=Logout]')[0].hide();
+    }
+  };
+
   <%!
   import json
   %>
-  function user_authenticated(toggle) {
-     if (toggle) {
-    	 // hide login
-    	 Ext.ComponentQuery.query('component[text=Login]')[0].hide();
-     } else {
-    	 // hide workspace+logout
-         Ext.ComponentQuery.query('component[text=Workspace]')[0].hide();
-         Ext.ComponentQuery.query('component[text=Logout]')[0].hide();
-     }
-  };
-
-  user_authenticated(${json.dumps(request.user is not None)});
+  var authenticated = ${json.dumps(request.user is not None)};
+  var anonymous = ${json.dumps(request.registry.settings.get('auto_register', False))|n};
+  user_authenticated(authenticated, anonymous);
 
 });
 </script>
