@@ -57,7 +57,8 @@ class Views(object):
         except AttributeError:
             job.ms_filename = 'Uploaded as text'
         status_url = self.request.route_url('status.json', jobid=job.id)
-        jobquery = job.jobquery(status_url)
+        restricted = self.request.registry.settings['restricted']
+        jobquery = job.jobquery(status_url, restricted)
 
         jobquery = jobquery.allinone(self.request.POST)
 
@@ -154,13 +155,14 @@ class Views(object):
                                     or home if came_from=login
         -- POST -> unauthenticated -> login page
 
-        Or if auto_register=True then generates user and redirects back to request.url
+        Or if auto_register=True then generates user
+        and redirects back to request.url
         """
         is_authenticated = self.request.user is not None
         if is_authenticated:
             return self.request.exception
 
-        auto_register = self.request.registry.settings.get('auto_register', False)
+        auto_register = self.request.registry.settings['auto_register']
         if auto_register:
             user = User.generate()
             userid = user.userid
