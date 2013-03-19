@@ -10,6 +10,7 @@ from magmaweb.user import JobMeta, User
 class RpcViewsTestCase(unittest.TestCase):
     def setUp(self):
         self.settings = {'jobfactory.root_dir': '/somedir',
+                         'restricted': False,
                          }
         self.config = testing.setUp(settings=self.settings)
         self.config.add_route('status.json', '/status/{jobid}.json')
@@ -41,7 +42,7 @@ class RpcViewsTestCase(unittest.TestCase):
     def _assert_status_callback_url(self):
         expected_cb_url = 'http://example.com/status/'
         expected_cb_url += 'fe144547-cf16-44bb-8e97-e2ffe5675154.json'
-        self.job2.jobquery.assert_called_with(expected_cb_url)
+        self.job2.jobquery.assert_called_with(expected_cb_url, False)
 
     def test_construct(self):
         request = testing.DummyRequest()
