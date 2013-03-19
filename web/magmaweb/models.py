@@ -143,6 +143,8 @@ class Fragment(Base):
     # (mz+deltah*1.007825032-mass)/(mz*1e6)  as deltappm
     deltappm = Column(Float)
     inchikey = Column(Unicode)
+    # molecular formula of fragment
+    formula = Column(Unicode)
     #: A fragment can have child fragments
     children_backref = backref('parent', remote_side=[fragid])
     children = relationship('Fragment', backref=children_backref,

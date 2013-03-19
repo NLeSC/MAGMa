@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys,base64,subprocess,StringIO,time,re
+import sys,base64,subprocess,StringIO,time,re,os
 import sqlite3,struct,zlib,gzip,copy
 import pkg_resources
 import numpy
@@ -11,13 +11,26 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from models import Base, Metabolite, Scan, Peak, Fragment, Run
+import requests,functools,macauthlib #required to update callback url
+from requests.auth import AuthBase
 import pp
 import cPickle as pickle
 import types
 import pars
-import rdkit_engine as Chem     # Use rdkit_engine
-# import cdk_engine               # Use cdk_engine
-# Chem=cdk_engine.engine()
+
+import ConfigParser
+config = ConfigParser.ConfigParser()
+# default to using rdkit if no config can be found
+config.add_section('magma job')
+config.set('magma job', 'chemical_engine', 'rdkit')
+# read config file from current working directory or users home dir
+config.read(['magma_job.ini', os.path.expanduser('~/magma_job.ini')])
+
+if config.get('magma job','chemical_engine')=="rdkit":
+    import rdkit_engine as Chem     # Use rdkit_engine
+elif config.get('magma job','chemical_engine')=="cdk":
+    import cdk_engine               # Use cdk_engine
+    Chem=cdk_engine.engine()
 
 """
 RDkit dependencies:
@@ -64,16 +77,40 @@ class MagmaSession(object):
                  mz_precision=5.0,
                  mz_precision_abs=0.001,
                  precursor_mz_precision=0.005,
-                 use_all_peaks=False
+                 use_all_peaks=False,
+                 call_back_url=None
                  ):
         return AnnotateEngine(self.db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
-                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,use_all_peaks)
+                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,use_all_peaks,call_back_url)
     def get_data_analysis_engine(self):
         return DataAnalysisEngine(self.db_session)
+    def get_call_back_engine(self,
+                 id,
+                 key
+                 ):
+        return CallBackEngine(id,key)
     def commit(self):
         self.db_session.commit()
     def close(self):
         self.db_session.close()
+
+class CallBackEngine(object):
+    def __init__(self, url):
+        self.access_token=config.get('magma job','macs.id')
+        self.mac_key=config.get('magma job','macs.key')
+        self.url=url
+    def update_callback_url(self,status):
+        class HTTPMacAuth(AuthBase):
+            """Attaches HTTP Basic Authentication to the given Request object."""
+            def __init__(self, id, key):
+                self.id = id
+                self.key = key
+            def __call__(self, r):
+                r.headers['Authorization'] = macauthlib.sign_request(r, id=self.id, key=self.key)
+                return r
+
+        r = requests.put(self.url, status, auth=HTTPMacAuth(self.access_token, self.mac_key))
+        #print r
 
 class StructureEngine(object):
     def __init__(self,db_session,metabolism_types,n_reaction_steps):
@@ -90,7 +127,7 @@ class StructureEngine(object):
         self.db_session.commit()
         self.metabolism_types=rundata.metabolism_types.split(',')
         self.n_reaction_steps=rundata.n_reaction_steps
-    
+
     def add_structure(self,molblock,name,prob,level,sequence,isquery,mim=None,natoms=None,inchikey=None,molform=None,reference=None,logp=None,mass_filter=9999):
         molecule=types.MoleculeType(molblock,name,prob,level,sequence,isquery,mim,natoms,inchikey,molform,reference,logp)
         self.add_molecule(molecule,mass_filter)
@@ -113,7 +150,7 @@ class StructureEngine(object):
             reference=molecule.reference,
             logp=molecule.logp
             )
-        if check_duplicates: 
+        if check_duplicates:
             dups=self.db_session.query(Metabolite).filter_by(smiles=molecule.inchikey).all()
             if len(dups)>0:
                 if merge:
@@ -395,9 +432,10 @@ class MsDataEngine(object):
 class AnnotateEngine(object):
     def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
                  ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,
-                 precursor_mz_precision,use_all_peaks):
+                 precursor_mz_precision,use_all_peaks,call_back_url=None):
         self.db_session = db_session
         mz_precision_abs=max(mz_precision_abs,0.000001)
+        precursor_mz_precision=max(precursor_mz_precision,0.000001)
         # a small mz_precision_abs is required, even when matching theoretical masses, because of finite floating point precision
         try:
             rundata=self.db_session.query(Run).one()
@@ -438,6 +476,11 @@ class AnnotateEngine(object):
         self.use_all_peaks=rundata.use_all_peaks
 
         self.scans=[]
+
+        if call_back_url != None:
+            self.call_back_engine=CallBackEngine(call_back_url)
+        else:
+            self.call_back_engine=None
 
     def build_spectrum(self,dbscan):
         scan=types.ScanType(dbscan.scanid,dbscan.mslevel)
@@ -583,6 +626,9 @@ class AnnotateEngine(object):
                 metids.add(metid)
         # annotate metids in chunks of 500 to avoid errors in db_session.query and memory problems during parallel processing
         total_frags=0
+        total_metids = len(metids)
+        start_time=time.time()
+        update_time=1 #send update to call_back_url every second
         while len(metids)>0:
             ids=set([])
             while len(ids)<500 and len(metids)>0:
@@ -620,13 +666,15 @@ class AnnotateEngine(object):
                                   self.mz_precision_abs,
                                   self.use_all_peaks,
                                   self.ionisation_mode,
-                                  (fast and structure.natoms<=64)
+                                  (fast and structure.natoms<=64),
+                                  config.get('magma job','chemical_engine')
                                   ),(),(
                                   "magma.types",
                                   "magma.pars",
                                   fragmentation_module
                                   )
                                )))
+            count=0
             for structure,job in jobs:
                 raw_result=job(raw_result=True)
                 result,sout = pickle.loads(raw_result)
@@ -638,11 +686,16 @@ class AnnotateEngine(object):
                 self.db_session.add(structure)
                 for hit in hits:
                     sys.stderr.write('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - ')
-                    # storeFragment(metabolite.metid,scan.precursorscanid,scan.precursorpeakmz,2**len(metabolite.atombits)-1,deltaH)
                     sys.stderr.write('Score: '+str(hit.score)+'\n')
-                    # outfile.write("\t"+str(hit.score/fragment_store.get_avg_score()))
                     self.store_hit(hit,structure.metid,0)
                 self.db_session.flush()
+                count+=1
+                if self.call_back_engine != None:
+                    elapsed_time=time.time()-start_time
+                    if elapsed_time > update_time: # update status every second
+                        update_string=str(total_metids-len(metids)-len(ids)+count)+" / "+str(total_metids)+" candidate molecules processed ..."
+                        self.call_back_engine.update_callback_url(update_string)
+                        start_time = start_time + elapsed_time//update_time*update_time
             self.db_session.commit()
         print total_frags,'fragments in total.'
 
@@ -677,7 +730,7 @@ class AnnotateEngine(object):
 class PubChemEngine(object):
     def __init__(self,dbfilename='',max_64atoms=False,min_refscore=''):
         if dbfilename=='':
-            dbfilename='/media/MAGMa_pubchem/Pubchem_MAGMa.db'
+            dbfilename=config.get('magma job','structure_database.pubchem')
         self.where=''
         if min_refscore!='':
             self.where += ' AND refscore >= '+min_refscore
@@ -710,7 +763,7 @@ class PubChemEngine(object):
 class KeggEngine(object):
     def __init__(self,dbfilename='',max_64atoms=False):
         if dbfilename=='':
-            dbfilename='/media/MAGMa_pubchem/Pubchem_MAGMa_Kegg.db'
+            dbfilename=config.get('magma job','structure_database.kegg')
         self.where=''
         if max_64atoms==True:
             self.where += ' AND natoms <= 64'
@@ -744,7 +797,7 @@ class KeggEngine(object):
 class HmdbEngine(object):
     def __init__(self,dbfilename='',max_64atoms=False):
         if dbfilename=='':
-            dbfilename='/home/ridderl/hmdb/HMDB_MAGMa.db'
+            dbfilename=config.get('magma job','structure_database.hmdb')
         self.where=''
         if max_64atoms==True:
             self.where += ' AND natoms <= 64'
@@ -815,10 +868,12 @@ class DataAnalysisEngine(object):
                     print '> <'+column+'>\n'+str(molecule.__getattribute__(column))+'\n'
             print '$$$$'
 
-def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast):
-    # Chem=magma.cdk_engine.engine()      # Use cdk_engine
-    Chem=magma.rdkit_engine             # Use rdkit_engine
+def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast,chem_engine):
     pars=magma.pars
+    if chem_engine=="rdkit":
+        Chem=magma.rdkit_engine             # Use rdkit_engine
+    elif chem_engine=="cdk":
+        Chem=magma.cdk_engine.engine()      # Use cdk_engine
     if fast:
         Fragmentation=magma.fragmentation_cy
     else:

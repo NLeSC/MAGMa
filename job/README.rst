@@ -30,6 +30,32 @@ Annotate a tree file using PubChem database:
    magma read_ms_data --ms_data_format tree -l 5 -a 0  example.tree results.db
    magma annotate -p5 -q0 -c0 -d0 -b3 -i -1 -s pubchem -o ../pubchem/Pubchem_MAGMa_new.db,0,9999 -f results.db
 
+Configuration
+-------------
+
+Configuration is optional.
+Defaults to using 'rdkit' as chemical engine.
+
+A 'magma_job.ini' config file is read from current working directory or from users home directory (~/).
+
+Exampe config file ::
+
+.. code-block:: INI
+
+   [magma job]
+   # Location of structure database to fetch candidate molecules to match against ms peak trees
+   # db is expected to be available at where job is executed
+   structure_database.pubchem = /media/PubChem/Pubchem_MAGMa.db
+   structure_database.kegg = /media/PubChem/Pubchem_MAGMa_kegg.db
+   structure_database.hmdb = /home/ridderl/hmdb/HMDB_MAGMa.db
+
+   # MACS authentication, used for sending progress reports to MAGMa web application
+   macs.id = <MAC key identifier>
+   macs.key = <MAC key>
+
+   # choose cdk or rdkit as chemical engine
+   chemical_engine = rdkit
+
 Running on cluster
 ------------------
 

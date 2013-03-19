@@ -2,7 +2,7 @@ import unittest
 import datetime
 from pyramid import testing
 from mock import Mock, patch
-from magmaweb.views import Views, JobViews
+from magmaweb.views import Views, JobViews, InCompleteJobViews
 from magmaweb.job import JobFactory, Job, JobDb, JobQuery
 from magmaweb.user import User, JobMeta
 
@@ -24,6 +24,7 @@ class AbstractViewsTestCase(unittest.TestCase):
         job.description = ""
         job.ms_filename = ""
         job.dir = '/somedir/foo'
+        job.state = 'STOPPED'
         job.db = Mock(JobDb)
         job.db.runInfo.return_value = 'bla'
         job.db.maxMSLevel.return_value = 3
@@ -95,50 +96,6 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
         self.assertEqual(job.ms_filename, 'Uploaded as text')
         job.jobquery.assert_called_with('http://example.com/status/foo.json')
-
-    def test_allinone_with_structure_database(self):
-        post = {'ms_data': 'somexml',
-                'ms_data_file': '',
-                'structure_database': 'pubchem'
-                }
-        request = testing.DummyRequest(post=post)
-        s = request.registry.settings
-        s['structure_database.pubchem'] = 'data/pubchem.db'
-        request.user = User('bob', 'Bob Example', 'bob@example.com')
-        job = self.fake_job()
-        jobquery = Mock(JobQuery)
-        job.jobquery.return_value = jobquery
-        views = Views(request)
-        views.job_factory = Mock(JobFactory)
-        views.job_factory.fromScratch = Mock(return_value=job)
-
-        response = views.allinone()
-
-        views.job_factory.fromScratch.assert_called_with('bob')
-        jobquery.allinone.assert_called_with(post, 'data/pubchem.db')
-        views.job_factory.submitQuery.assert_called_with(jobquery.allinone(),
-                                                         job)
-        self.assertEqual(response, {'success': True, 'jobid': 'foo'})
-        self.assertEqual(job.ms_filename, 'Uploaded as text')
-        job.jobquery.assert_called_with('http://example.com/status/foo.json')
-
-    def test_allinone_with_empty_structure_database(self):
-        post = {'ms_data': 'somexml',
-                'ms_data_file': '',
-                'structure_database': ''
-                }
-        request = testing.DummyRequest(post=post)
-        request.user = User('bob', 'Bob Example', 'bob@example.com')
-        job = self.fake_job()
-        jobquery = Mock(JobQuery)
-        job.jobquery.return_value = jobquery
-        views = Views(request)
-        views.job_factory = Mock(JobFactory)
-        views.job_factory.fromScratch = Mock(return_value=job)
-
-        views.allinone()
-
-        jobquery.allinone.assert_called_with(post)
 
     def test_allinone_no_jobmanager(self):
         from magmaweb.job import JobSubmissionError
@@ -236,7 +193,8 @@ class ViewsTestCase(AbstractViewsTestCase):
         created_at = datetime.datetime(2012, 11, 14, 10, 48, 26, 504478)
         jobs = [JobMeta(uuid.UUID('11111111-1111-1111-1111-111111111111'),
                         'bob', description='My job', created_at=created_at,
-                        ms_filename='F1234.mzxml')]
+                        ms_filename='F1234.mzxml',
+                        is_public=False,)]
         request.user.jobs = jobs
         views = Views(request)
 
@@ -247,6 +205,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         expected_jobs = [{'id': '11111111-1111-1111-1111-111111111111',
                           'url': url1,
                           'description': 'My job',
+                          'is_public': False,
                           'ms_filename': 'F1234.mzxml',
                           'created_at': '2012-11-14T10:48:26'}]
         self.assertEqual(response, {'jobs': expected_jobs})
@@ -459,9 +418,39 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         self.assertEqual(response, {})
 
+class InCompleteJobViewsTestCase(AbstractViewsTestCase):
+    """Test case for magmaweb.views.InCompleteJobViews"""
+    def test_jobstatus(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'RUNNING'
+        views = InCompleteJobViews(job, request)
+
+        response = views.job_status()
+
+        self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
+
+    def test_set_jobstatus(self):
+        request = testing.DummyRequest()
+        request.body = 'STOPPED'
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'RUNNING'
+        views = InCompleteJobViews(job, request)
+
+        response = views.set_job_status()
+
+        self.assertEqual(response, dict(status='STOPPED', jobid='bla'))
+        self.assertEqual(job.state, 'STOPPED')
+
 
 class JobViewsTestCase(AbstractViewsTestCase):
     """ Test case for magmaweb.views.JobViews"""
+
+    def setUp(self):
+        AbstractViewsTestCase.setUp(self)
+        self.config.add_route('status', '/status/{jobid}')
 
     @patch('magmaweb.views.has_permission')
     def test_resuls_canrun(self, has_permission):
@@ -470,7 +459,6 @@ class JobViewsTestCase(AbstractViewsTestCase):
         request = testing.DummyRequest()
         job = self.fake_job()
         views = JobViews(job, request)
-
         response = views.results()
 
         self.assertEqual(response, dict(jobid='foo',
@@ -500,29 +488,18 @@ class JobViewsTestCase(AbstractViewsTestCase):
         self.assertDictEqual(response, exp_response)
         has_permission.assert_called_with('run', job, request)
 
-    def test_jobstatus(self):
-        request = testing.DummyRequest()
+    def test_incompletejob(self):
+        request = testing.DummyRequest(params={'start': 0,
+                                               'limit': 10
+                                               })
         job = self.fake_job()
-        job.id = 'bla'
-        job.state = 'RUNNING'
-        views = JobViews(job, request)
+        job.state = 'INITIAL'
 
-        response = views.job_status()
+        from pyramid.httpexceptions import HTTPFound
+        with self.assertRaises(HTTPFound) as e:
+            JobViews(job, request)
 
-        self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
-
-    def test_set_jobstatus(self):
-        request = testing.DummyRequest()
-        request.body = 'STOPPED'
-        job = self.fake_job()
-        job.id = 'bla'
-        job.state = 'RUNNING'
-        views = JobViews(job, request)
-
-        response = views.set_job_status()
-
-        self.assertEqual(response, dict(status='STOPPED', jobid='bla'))
-        self.assertEqual(job.state, 'STOPPED')
+        self.assertEqual(e.exception.location, 'http://example.com/status/foo')
 
     def test_metabolitesjson_return(self):
         request = testing.DummyRequest(params={'start': 0,
@@ -819,6 +796,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                     'data': dict(n_reaction_steps=2,
                                                  metabolism_types=['phase1',
                                                                    'phase2'],
+                                                 ms_data_area='',
+                                                 ms_data_format='mzxml',
                                                  ionisation_mode=-1,
                                                  ms_intensity_cutoff=200000.0,
                                                  msms_intensity_cutoff=50,
@@ -846,6 +825,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                     'data': dict(n_reaction_steps=2,
                                                  metabolism_types=['phase1',
                                                                    'phase2'],
+                                                 ms_data_area='',
+                                                 ms_data_format='mzxml',
                                                  ionisation_mode=1,
                                                  ms_intensity_cutoff=1000000.0,
                                                  msms_intensity_cutoff=10,
@@ -871,12 +852,14 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                     'data': dict(n_reaction_steps=2,
                                                  metabolism_types=['phase1',
                                                                    'phase2'],
+                                                 ms_data_area='',
+                                                 ms_data_format='mzxml',
                                                  ionisation_mode=1,
                                                  ms_intensity_cutoff=1000000.0,
                                                  msms_intensity_cutoff=10,
                                                  mz_precision=5.0,
                                                  mz_precision_abs=0.001,
-                                                 abs_peak_cutoff=1000,
+                                                 abs_peak_cutoff=5000,
                                                  max_ms_level=10,
                                                  precursor_mz_precision=0.005,
                                                  max_broken_bonds=3,
@@ -890,6 +873,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                              "description": "New description",
                              "ms_filename": "F12345.mzxml",
                              "created_at": "1999-12-17T13:45:04",
+                             "is_public": True,
                              }
         job = self.fake_job()
         expected_id = job.id
@@ -904,6 +888,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(job.description, 'New description')
         self.assertEqual(job.ms_filename, 'F12345.mzxml')
         self.assertEqual(job.created_at, execpted_ca)
+        self.assertEqual(job.is_public, True)
 
     def test_deletejson(self):
         request = testing.DummyRequest()

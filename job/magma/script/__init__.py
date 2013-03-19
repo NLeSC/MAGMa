@@ -95,6 +95,7 @@ class MagmaCommand(object):
         sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,min_refscore(only for PubChem) (default: %(default)s)",default=",1200,False,",type=str)
         sc.add_argument('--ncpus', help="Number of parallel cpus to use for annotation (default: %(default)s)", default=1,type=int)
         sc.add_argument('--scans', help="Search in specified scans (default: %(default)s)", default="all",type=str)
+        sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
 
@@ -208,7 +209,8 @@ class MagmaCommand(object):
             mz_precision=args.mz_precision,
             mz_precision_abs=args.mz_precision_abs,
             precursor_mz_precision=args.precursor_mz_precision,
-            use_all_peaks=args.use_all_peaks)
+            use_all_peaks=args.use_all_peaks,
+            call_back_url=args.call_back_url)
         if args.scans == 'all':
             scans='all'
         else:
