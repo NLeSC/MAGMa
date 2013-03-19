@@ -39,6 +39,7 @@ class RpcViews(object):
             raise HTTPInternalServerError(body=json.dumps(body))
 
     def _status_url(self, job):
+        """Returns status url of `job`"""
         return self.request.route_url('status.json', jobid=job.id)
 
     @view_config(route_name='rpc.add_structures', renderer='jsonhtml')
@@ -54,7 +55,7 @@ class RpcViews(object):
         params = self.request.POST
         try:
             jobquery = jobquery.add_structures(params, has_scans)
-        except Invalid as e:
+        except Invalid as exc:
             # no structures given
             if (has_scans and 'structure_database' in params
                     and params['structure_database']):
@@ -62,11 +63,11 @@ class RpcViews(object):
                 # database lookup during extra annotate
                 pass
             else:
-                sd = SchemaNode(String(), name='structure_database')
+                node = SchemaNode(String(), name='structure_database')
                 msg = 'Either structures or structures_file '
                 msg += 'or structure_database must be set'
-                e.add(Invalid(sd, msg))
-                raise e
+                exc.add(Invalid(node, msg))
+                raise exc
 
         if (has_scans and 'structure_database' in params
                 and params['structure_database']):
@@ -139,6 +140,8 @@ class RpcViews(object):
 
     @view_config(route_name='rpc.assign', renderer='json')
     def assign_metabolite2peak(self):
+        """Assigns molecule with `metid` to peak `mz` in scan `scanid`.
+        """
         job = self.job
         scanid = self.request.POST['scanid']
         mz = self.request.POST['mz']
@@ -148,6 +151,8 @@ class RpcViews(object):
 
     @view_config(route_name='rpc.unassign', renderer='json')
     def unassign_metabolite2peak(self):
+        """Unassigns any molecule from peak `mz` in scan `scanid`.
+        """
         job = self.job
         scanid = self.request.POST['scanid']
         mz = self.request.POST['mz']
