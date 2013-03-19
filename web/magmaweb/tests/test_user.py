@@ -272,10 +272,11 @@ class TestJobIdFactory(unittest.TestCase):
         destroy_user_db()
         testing.tearDown()
 
-    def test_getJob(self):
+    def test_getPrivateJob(self):
         from magmaweb.job import Job
         mjob = Mock(Job)
         mjob.owner = 'bob'
+        mjob.is_public = False
         jif = user.JobIdFactory(self.request)
         jif.job_factory.fromId = Mock(return_value=mjob)
         job_id = uuid.UUID('11111111-1111-1111-1111-111111111111')
@@ -284,9 +285,29 @@ class TestJobIdFactory(unittest.TestCase):
 
         jif.job_factory.fromId.assert_called_once_with(job_id)
         self.assertEqual(job, mjob)
-        self.assertEqual(job.__parent__, jif)
-        self.assertEqual(job.__acl__, [(Allow, 'bob', 'run'),
-                                       (Allow, 'jobmanager', 'monitor')])
+        self.assertEqual(job.__acl__, [(Allow, 'bob', ('run', 'view')),
+                                       (Allow, 'jobmanager', 'monitor'),
+                                       (Deny, Everyone, ALL_PERMISSIONS),
+                                       ])
+
+    def test_getPublicJob(self):
+        from magmaweb.job import Job
+        mjob = Mock(Job)
+        mjob.owner = 'bob'
+        mjob.is_public = True
+        jif = user.JobIdFactory(self.request)
+        jif.job_factory.fromId = Mock(return_value=mjob)
+        job_id = uuid.UUID('11111111-1111-1111-1111-111111111111')
+
+        job = jif[str(job_id)]
+
+        jif.job_factory.fromId.assert_called_once_with(job_id)
+        self.assertEqual(job, mjob)
+        self.assertEqual(job.__acl__, [(Allow, Authenticated, 'view'),
+                                       (Allow, 'bob', ('run', 'view')),
+                                       (Allow, 'jobmanager', 'monitor'),
+                                       (Deny, Everyone, ALL_PERMISSIONS),
+                                       ])
 
     def test_getJobNotFound(self):
         from magmaweb.job import JobNotFound
@@ -297,3 +318,4 @@ class TestJobIdFactory(unittest.TestCase):
 
         with self.assertRaises(HTTPNotFound):
             jif[str(jobid)]
+

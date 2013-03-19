@@ -57,6 +57,7 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         decimalPrecision : 0
     }, {
         xtype: 'displayfield',
+        name: 'precision_heading',
         value: '<br>Precision:'
     }, {
         xtype : 'numberfield',
@@ -93,6 +94,7 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         decimalPrecision: 5
     }, {
         xtype: 'displayfield',
+        name: 'intensity_heading',
         value: '<br>Intensity thresholds:'
     }, {
         xtype : 'numberfield',

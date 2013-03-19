@@ -4,7 +4,7 @@
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
-	extend : 'Ext.form.Panel',
+    extend : 'Ext.form.Panel',
     alias: 'widget.uploadmsdatafieldset',
     requires: [
          'Esc.form.field.TextareaTab',
@@ -20,11 +20,10 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
 	},
     items: [{
         xtype: 'combo',
-        store: [['mzxml','mzXML'], ['mass_tree', 'Mass Tree'],
-                ['form_tree_pos', 'Formula Tree (Positive ionisation)'],
-                ['form_tree_neg', 'Formula Tree (Negative ionisation)']],
+        store: [['mzxml','mzXML'],
+                ['mass_tree', 'Mass Tree'],
+                ['form_tree', 'Formula Tree']],
         allowBlank: false,
-        matchFieldWidth: false,
         fieldLabel: 'Format',
         name: 'ms_data_format',
         value: 'mzxml'
@@ -39,14 +38,17 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         xtype: 'container',
         layout: 'hbox',
         items: [{
+        	xtype: 'displayfield',
+            value : '<a title="Information on examples" href="help/example">Examples:</a>'
+        }, {
             xtype: 'button',
-            text: 'Load chlorogenic acid example',
-            tooltip: 'Loads chlorogenic acid example ms data set and configuration which gives well annotated result',
+            margin: '0 5 0 5',
+            text: 'Chlorogenic acid (Mass Tree)',
             action: 'loadmsdataexample'
         }, {
-            xtype : 'displayfield',
-            flex: 1,
-            value : '&nbsp;<a href="help/example">Information on example</a>'
+            xtype: 'button',
+            text: 'Chlorogenic acid (Formula Tree)',
+            action: 'loadmsdataexample2'
         }]
     }, {
         xtype : 'displayfield',
@@ -58,6 +60,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         width: 300
     }, {
         xtype: 'displayfield',
+        name: 'filter_heading',
         value: '<br>Filter options:'
     }, {
         xtype: 'numberfield',
@@ -69,7 +72,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         allowBlank: false,
         minValue: 1,
         maxValue: 15,
-        decimalPrecision: 0
+        allowDecimals: false
     }, {
         xtype: 'numberfield',
         name: 'abs_peak_cutoff',
@@ -79,5 +82,14 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         labelAttrTpl: 'data-qtip="Absolute intensity threshold for storing peaks in database"',
         allowBlank: false,
         decimalPrecision: 5
+    }, {
+        xtype: 'numberfield',
+        fieldLabel: 'MS1 scan number',
+        labelSeparator: '',
+        labelAttrTpl: 'data-qtip="Read only spectral tree specified by MS1 scan number"',
+        name: 'scan',
+        allowBlank: true,
+        minValue: 0,
+        allowDecimals: false
     }]
 });

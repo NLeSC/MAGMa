@@ -1,9 +1,16 @@
 #### cython: profile=True
-import rdkit_engine as Chem
 import numpy
 cimport numpy
 import pars
+import ConfigParser, os
+config = ConfigParser.ConfigParser()
+config.read(['magma_job.ini', os.path.expanduser('~/magma_job.ini')])
 
+if config.get('magma job','chemical_engine')=="rdkit":
+    import rdkit_engine as Chem     # Use rdkit_engine
+elif config.get('magma job','chemical_engine')=="cdk":
+    import cdk_engine               # Use cdk_engine
+    Chem=cdk_engine.engine()
 
 ctypedef struct bonded_atom:
     int nbonds
@@ -16,11 +23,11 @@ ctypedef struct bond_breaks_score_pair:
 cdef class FragmentEngine(object):
 
     cdef unsigned long long new_fragment,template_fragment
-    cdef int max_broken_bonds,max_water_losses,ionisation_mode,natoms
+    cdef int max_broken_bonds,max_water_losses,ionisation_mode
     cdef bonded_atom[64] bonded_atoms
-    cdef float[64] atom_masses
+    cdef double[64] atom_masses
     cdef list neutral_loss_atoms
-    cdef int nbonds
+    cdef int nbonds, natoms, accept
     cdef unsigned long long[128] bonds
     cdef float[128] bondscore
     cdef numpy.ndarray fragment_masses_np
@@ -35,42 +42,49 @@ cdef class FragmentEngine(object):
         cdef float bondscore
         cdef int x,a1,a2
         
-        mol=Chem.MolFromMolBlock(str(mol))
+        try:
+            mol=Chem.MolFromMolBlock(str(mol))
+            self.accept=1
+        except:
+            self.accept=0
+            return
         self.natoms=Chem.natoms(mol)  # number of atoms in the molecule
-        if self.natoms<=64:
-            self.max_broken_bonds=max_broken_bonds
-            self.max_water_losses=max_water_losses
-            self.ionisation_mode=ionisation_mode
-            self.nbonds=Chem.nbonds(mol)
-            self.neutral_loss_atoms=[]
-            self.atom_elements={}
-            # self.atom_masses=[]
-            # self.bonded_atoms=[]           # [[list of atom numbers]]
-            # self.bonds=set([])
-            # self.bondscore={}
-            self.new_fragment=0
-            self.template_fragment=0
-            self.fragment_masses=((max_broken_bonds+max_water_losses)*2+1)*[0]
-            self.fragment_info=[[0,0,0]]
-            # self.avg_score=None
-            
-            for x in range(self.natoms):
-                self.bonded_atoms[x].nbonds=0
-                self.atom_masses[x]=Chem.GetExtendedAtomMass(mol,x)
-                self.atomHs[x]=Chem.GetAtomHs(mol,x)
-                self.atom_elements[x]=Chem.GetAtomSymbol(mol,x)
-                if Chem.GetAtomSymbol(mol,x) == 'O' and Chem.GetAtomHs(mol,x) == 1 and Chem.GetNBonds(mol,x)==1:
-                    self.neutral_loss_atoms.append(x)
-            for x in range(self.nbonds):
-                a1,a2 = Chem.GetBondAtoms(mol,x)
-                self.bonded_atoms[a1].atoms[self.bonded_atoms[a1].nbonds]=a2
-                self.bonded_atoms[a1].nbonds+=1
-                self.bonded_atoms[a2].atoms[self.bonded_atoms[a2].nbonds]=a1
-                self.bonded_atoms[a2].nbonds+=1
-                bond = (1ULL<<a1) | (1ULL<<a2)
-                bondscore = pars.typew[Chem.GetBondType(mol,x)]*pars.heterow[Chem.GetAtomSymbol(mol,a1) != 'C' or Chem.GetAtomSymbol(mol,a2) != 'C']
-                self.bonds[x]=bond
-                self.bondscore[x]=bondscore
+        if self.natoms>64:
+            self.accept=0
+            return
+        self.max_broken_bonds=max_broken_bonds
+        self.max_water_losses=max_water_losses
+        self.ionisation_mode=ionisation_mode
+        self.nbonds=Chem.nbonds(mol)
+        self.neutral_loss_atoms=[]
+        self.atom_elements={}
+        # self.atom_masses=[]
+        # self.bonded_atoms=[]           # [[list of atom numbers]]
+        # self.bonds=set([])
+        # self.bondscore={}
+        self.new_fragment=0
+        self.template_fragment=0
+        self.fragment_masses=((max_broken_bonds+max_water_losses)*2+1)*[0]
+        self.fragment_info=[[0,0,0]]
+        # self.avg_score=None
+        
+        for x in range(self.natoms):
+            self.bonded_atoms[x].nbonds=0
+            self.atom_masses[x]=Chem.GetExtendedAtomMass(mol,x)
+            self.atomHs[x]=Chem.GetAtomHs(mol,x)
+            self.atom_elements[x]=Chem.GetAtomSymbol(mol,x)
+            if Chem.GetAtomSymbol(mol,x) == 'O' and Chem.GetAtomHs(mol,x) == 1 and Chem.GetNBonds(mol,x)==1:
+                self.neutral_loss_atoms.append(x)
+        for x in range(self.nbonds):
+            a1,a2 = Chem.GetBondAtoms(mol,x)
+            self.bonded_atoms[a1].atoms[self.bonded_atoms[a1].nbonds]=a2
+            self.bonded_atoms[a1].nbonds+=1
+            self.bonded_atoms[a2].atoms[self.bonded_atoms[a2].nbonds]=a1
+            self.bonded_atoms[a2].nbonds+=1
+            bond = (1ULL<<a1) | (1ULL<<a2)
+            bondscore = pars.typew[Chem.GetBondType(mol,x)]*pars.heterow[Chem.GetAtomSymbol(mol,a1) != 'C' or Chem.GetAtomSymbol(mol,a2) != 'C']
+            self.bonds[x]=bond
+            self.bondscore[x]=bondscore
                 
     cdef void extend(self,int atom):
         cdef int a,bonded_a
@@ -171,15 +185,15 @@ cdef class FragmentEngine(object):
                 score+=self.bondscore[b]
         return score
     
-    cdef float calc_fragment_mass(self, unsigned long long fragment):
+    cdef double calc_fragment_mass(self, unsigned long long fragment):
         cdef int atom
-        cdef float fragment_mass=0.0
+        cdef double fragment_mass=0.0
         for atom in range(self.natoms):
             if fragment & (1ULL<<atom):
                 fragment_mass+=self.atom_masses[atom]
         return fragment_mass
 
-    def add_fragment(self,unsigned long long fragment,float fragmentmass,score,int bondbreaks):
+    def add_fragment(self,unsigned long long fragment,double fragmentmass,score,int bondbreaks):
         self.fragment_masses+=((self.max_broken_bonds+self.max_water_losses-bondbreaks)*[0]+\
                                   list(numpy.arange(-bondbreaks+self.ionisation_mode,bondbreaks+self.ionisation_mode+1)*pars.Hmass+fragmentmass)+\
                                   (self.max_broken_bonds+self.max_water_losses-bondbreaks)*[0])
@@ -232,4 +246,4 @@ cdef class FragmentEngine(object):
         return self.natoms
     
     def accepted(self):
-        return (self.natoms<=64)
+        return (self.accept==1)
