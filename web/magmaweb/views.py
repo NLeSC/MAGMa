@@ -162,8 +162,25 @@ class Views(object):
         if is_authenticated:
             return self.request.exception
 
+        referrer = self.request.url
+        login_url = self.request.route_url('login')
+        if referrer == login_url:
+            # never use the login form itself as came_from
+            referrer = self.request.route_url('home')
+
         auto_register = self.request.registry.settings['auto_register']
         if auto_register:
+            # in anonymous mode we don't want the job status to be updated
+            # by anyone so return the login form
+            is_put = self.request.method == u'PUT'
+            route_name = self.request.matched_route.name
+            if route_name == 'status.json' and is_put:
+                self._add_mac_challenge()
+                return dict(came_from=self.request.url,
+                            userid='',
+                            password='',
+                            )
+
             user = User.generate()
             userid = user.userid
             # Force committing as this is an exception handler
@@ -173,19 +190,10 @@ class Views(object):
             except:
                 pass
 
-            referrer = self.request.url
-            if referrer == self.request.route_url('login'):
-                # never use the login form itself as came_from
-                referrer = self.request.route_url('home')
             headers = remember(self.request, userid)
             return HTTPFound(location=referrer,
                              headers=headers)
         else:
-            login_url = self.request.route_url('login')
-            referrer = self.request.url
-            if referrer == login_url:
-                # never use the login form itself as came_from
-                referrer = self.request.route_url('home')
             came_from = self.request.params.get('came_from', referrer)
             userid = ''
             password = ''
@@ -199,14 +207,17 @@ class Views(object):
                     return HTTPFound(location=came_from,
                                      headers=headers)
             else:
-                self.request.response.status_int = 401
-                # Add MAC challenge
-                self.request.response.headers["WWW-Authenticate"] = "MAC"
+                self._add_mac_challenge()
 
             return dict(came_from=came_from,
                         userid=userid,
                         password=password,
                         )
+
+    def _add_mac_challenge(self):
+        self.request.response.status_int = 401
+        # Add MAC challenge
+        self.request.response.headers["WWW-Authenticate"] = "MAC"
 
     @view_config(route_name='logout', permission='view')
     def logout(self):
