@@ -262,6 +262,8 @@ class ViewsTestCase(AbstractViewsTestCase):
         request = testing.DummyRequest()
         request.user = None
         request.url = 'http://example.com/login'
+        route_mapper = self.config.get_routes_mapper()
+        request.matched_route = route_mapper.get_route('login')
         views = Views(request)
 
         response = views.login()
@@ -277,9 +279,12 @@ class ViewsTestCase(AbstractViewsTestCase):
     def test_login_get(self):
         self.config.add_route('home', '/')
         self.config.add_route('login', '/login')
+        self.config.add_route('startjob', '/start')
         request = testing.DummyRequest()
         request.user = None
         request.url = 'http://example.com/startjob'
+        route_mapper = self.config.get_routes_mapper()
+        request.matched_route = route_mapper.get_route('startjob')
         views = Views(request)
 
         response = views.login()
@@ -300,11 +305,14 @@ class ViewsTestCase(AbstractViewsTestCase):
         u.validate_password.return_value = True
         user.by_id.return_value = u
         self.config.add_route('login', '/login')
+        self.config.add_route('startjob', '/start')
         post = {'userid': 'bob',
                 'password': 'mypw'}
         params = {'came_from': 'http://example.com/startjob'}
         request = testing.DummyRequest(post=post, params=params)
         request.user = None
+        route_mapper = self.config.get_routes_mapper()
+        request.matched_route = route_mapper.get_route('startjob')
         views = Views(request)
 
         response = views.login()
@@ -321,11 +329,15 @@ class ViewsTestCase(AbstractViewsTestCase):
         u.validate_password.return_value = False
         user.by_id.return_value = u
         self.config.add_route('login', '/login')
+        self.config.add_route('startjob', '/start')
         post = {'userid': 'bob',
                 'password': 'mypw'}
         params = {'came_from': 'http://example.com/startjob'}
         request = testing.DummyRequest(post=post, params=params)
         request.user = None
+        route_mapper = self.config.get_routes_mapper()
+        request.matched_route = route_mapper.get_route('startjob')
+
         views = Views(request)
 
         response = views.login()

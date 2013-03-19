@@ -399,6 +399,7 @@ class Job(object):
         return self.meta.parentjobid
 
     def set_parent(self, parent):
+        """Set parent of job"""
         self.meta.parentjobid = parent
 
     parent = property(get_parent, set_parent)
@@ -408,6 +409,7 @@ class Job(object):
         return self.meta.owner
 
     def set_owner(self, userid):
+        """Set owner of job"""
         self.meta.owner = userid
 
     owner = property(get_owner, set_owner)
@@ -420,6 +422,7 @@ class Job(object):
         return self.meta.state
 
     def set_state(self, newstate):
+        """Set state of job"""
         self.meta.state = newstate
 
     state = property(get_state, set_state)
@@ -501,22 +504,23 @@ class JobDb(object):
         """
         if (afilter['type'] == 'numeric'):
             if (afilter['comparison'] == 'eq'):
-                return q.filter(column == afilter['value'])
+                efilter = q.filter(column == afilter['value'])
             if (afilter['comparison'] == 'gt'):
-                return q.filter(column > afilter['value'])
+                efilter = q.filter(column > afilter['value'])
             if (afilter['comparison'] == 'lt'):
-                return q.filter(column < afilter['value'])
+                efilter = q.filter(column < afilter['value'])
         elif (afilter['type'] == 'string'):
-            return q.filter(column.contains(afilter['value']))
+            efilter = q.filter(column.contains(afilter['value']))
         elif (afilter['type'] == 'list'):
-            return q.filter(column.in_(afilter['value']))
+            efilter = q.filter(column.in_(afilter['value']))
         elif (afilter['type'] == 'boolean'):
-            return q.filter(column == afilter['value'])
+            efilter = q.filter(column == afilter['value'])
         elif (afilter['type'] == 'null'):
             if not afilter['value']:
-                return q.filter(column == null())  # IS NULL
+                efilter = q.filter(column == null())  # IS NULL
             else:
-                return q.filter(column != null())  # IS NOT NULL
+                efilter = q.filter(column != null())  # IS NOT NULL
+        return efilter
 
     def _metabolitesQuery2Rows(self, start, limit, q):
         mets = []

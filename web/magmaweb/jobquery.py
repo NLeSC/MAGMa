@@ -226,23 +226,7 @@ class JobQuery(object):
 
         return self
 
-    def add_ms_data(self, params, has_metabolites=False):
-        """Configure job query to add ms data from params.
-
-        ``params`` is a dict from which the following keys are used:
-
-        * ms_data_format
-        * ms_data, string with MS data
-        * ms_data_file, file-like object with MS data
-        * max_ms_level
-        * abs_peak_cutoff
-
-        If ``has_metabolites`` is True then
-            :meth:`~magmaweb.job.JobQuery.annotate` will be called.
-
-        If both ``ms_data`` and ``ms_data_file`` is filled then
-            ``ms_data`` is ignored.
-        """
+    def _getMsDataSchema(self):
         def textarea_or_file(node, value):
             """Validator that either textarea or file upload is filled"""
             if not(not value['ms_data'] is colander.null or
@@ -289,11 +273,9 @@ class JobQuery(object):
                                        missing=colander.null,
                                        validator=colander.Range(min=0),
                                        name='scan'))
-        if has_metabolites:
-            self._addAnnotateSchema(schema)
-        orig_params = params
-        params = schema.deserialize(params)
+        return schema
 
+    def _writeMsFile(self, params):
         msfile = file(os.path.join(self.dir, 'ms_data.dat'), 'w')
         if not params['ms_data_file'] is colander.null:
             msf = params['ms_data_file'].file
@@ -308,6 +290,7 @@ class JobQuery(object):
             msfile.write(params['ms_data'])
         msfile.close()
 
+    def _addIonisationToFormulaTree(self, params, schema, orig_params):
         if params['ms_data_format'] == 'form_tree':
             if 'ionisation_mode' in orig_params:
                 if orig_params['ionisation_mode'] == "1":
@@ -318,6 +301,34 @@ class JobQuery(object):
                 sd = schema['ms_data_format']
                 msg = 'Require ionisation_mode when ms_data_format=form_tree'
                 raise colander.Invalid(sd, msg)
+
+    def add_ms_data(self, params, has_metabolites=False):
+        """Configure job query to add ms data from params.
+
+        ``params`` is a dict from which the following keys are used:
+
+        * ms_data_format
+        * ms_data, string with MS data
+        * ms_data_file, file-like object with MS data
+        * max_ms_level
+        * abs_peak_cutoff
+
+        If ``has_metabolites`` is True then
+            :meth:`~magmaweb.job.JobQuery.annotate` will be called.
+
+        If both ``ms_data`` and ``ms_data_file`` is filled then
+            ``ms_data`` is ignored.
+        """
+        schema = self._getMsDataSchema()
+
+        if has_metabolites:
+            self._addAnnotateSchema(schema)
+        orig_params = params
+        params = schema.deserialize(params)
+
+        self._writeMsFile(params)
+
+        self._addIonisationToFormulaTree(params, schema, orig_params)
 
         script__substitution = {
             'ms_data_format': self.escape(params['ms_data_format']),
@@ -337,6 +348,7 @@ class JobQuery(object):
         if not empty_scan and is_mzxml:
             script += "--scan '{scan}' "
             script__substitution['scan'] = self.escape(params['scan'])
+
         script += "ms_data.dat {{db}}\n"
         self.script += script.format(**script__substitution)
 
