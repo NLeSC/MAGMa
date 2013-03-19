@@ -12,6 +12,11 @@ pyramid.default_locale_name = en
 
 mako.directories = magmaweb:templates
 
+# when true users don't have to registered and don't have to login
+auto_register = false
+# force restriction to make calculation go faster
+restricted = false
+
 # secret for cookie signing
 cookie.secret = agh7ahfixeiwieCh6Oovei1faecao4ee
 cookie.path = /magma

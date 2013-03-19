@@ -378,14 +378,21 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   },
   /**
    * Apply role to user interface.
-   * Checks canRun and if false removes all action buttons.
+   * Checks run feature and if false removes all action buttons.
    */
   applyRole: function() {
-	  if (this.application.canRun) {
-		  return;
+	  if (!this.application.features.run && this.actionsMenu) {
+	      this.actionsMenu.hideUploadAction();
 	  }
-	  this.actionsMenu.hideUploadAction();
-	  // TODO change tooltip of gears tool
+	  if (this.application.features.restricted) {
+	      this.forceSingleScan();
+	  }
+      // TODO change tooltip of gears tool
+  },
+  forceSingleScan: function() {
+      // Force 1 spectral tree when mzxml has been selected.
+      var form = this.getUploadForm().getForm();
+      form.findField('scan').allowBlank = false;
   },
   /**
    * In MS Data upload forms loads the example data set.
@@ -418,7 +425,6 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * If vaule is mass_tree then hides ms data filters and annotate precursor precision and intensity thresholds.
    */
   changeMsDataFormat: function(field, value) {
-      var me = this;
       // form fields with name as key
       var fields = {};
       var form = field.up('form(true)').getForm();
