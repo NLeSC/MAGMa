@@ -24,6 +24,7 @@ from magmaweb.user import User
 
 
 class Views(object):
+    """Views for pyramid based web application which don't require a job"""
     def __init__(self, request):
         self.request = request
         self.job_factory = make_job_factory(request.registry.settings)
@@ -42,7 +43,7 @@ class Views(object):
     @view_config(route_name='defaults.json', renderer="json",
                  permission='view')
     def defaults(self):
-        """ Returns defaults settings to run a job"""
+        """Returns defaults settings to run a job"""
         selection = self.request.params.get('selection')
         return {'success': True,
                 'data': JobQuery.defaults(selection)}
@@ -50,6 +51,16 @@ class Views(object):
     @view_config(route_name='startjob', renderer='jsonhtml',
                  request_method='POST', permission='view')
     def allinone(self):
+        """Submits a job which:
+        * adds structures
+        * adds ms data
+        * metabolizes
+        * annotates
+
+        Returns a job identifier.
+
+        Raises HTTPInternalServerError when job submission fails
+        """
         owner = self.request.user.userid
         job = self.job_factory.fromScratch(owner)
         try:
@@ -57,7 +68,8 @@ class Views(object):
         except AttributeError:
             job.ms_filename = 'Uploaded as text'
         status_url = self.request.route_url('status.json', jobid=job.id)
-        jobquery = job.jobquery(status_url)
+        restricted = self.request.registry.settings['restricted']
+        jobquery = job.jobquery(status_url, restricted)
 
         jobquery = jobquery.allinone(self.request.POST)
 
@@ -103,6 +115,8 @@ class Views(object):
                  permission='view',
                  renderer='workspace.mak')
     def workspace(self):
+        """Returns list of jobs owned by current user
+        """
         jobs = []
         owner = self.request.user
         for jobmeta in owner.jobs:
@@ -154,14 +168,29 @@ class Views(object):
                                     or home if came_from=login
         -- POST -> unauthenticated -> login page
 
-        Or if auto_register=True then generates user and redirects back to request.url
+        Or if auto_register=True then generates user
+        and redirects back to request.url
+        except when route is PUT status.json then auto_register is ignored
         """
         is_authenticated = self.request.user is not None
         if is_authenticated:
             return self.request.exception
 
-        auto_register = self.request.registry.settings.get('auto_register', False)
-        if auto_register:
+        referrer = self.request.url
+        login_url = self.request.route_url('login')
+        if referrer == login_url:
+            # never use the login form itself as came_from
+            referrer = self.request.route_url('home')
+
+        auto_register = self.request.registry.settings['auto_register']
+
+        # in anonymous mode we don't want the job status to be updated
+        # by anyone so return the login form
+        is_put = self.request.method == u'PUT'
+        route_name = self.request.matched_route.name
+        status_update = route_name == 'status.json' and is_put
+
+        if auto_register and not status_update:
             user = User.generate()
             userid = user.userid
             # Force committing as this is an exception handler
@@ -171,19 +200,10 @@ class Views(object):
             except:
                 pass
 
-            referrer = self.request.url
-            if referrer == self.request.route_url('login'):
-                # never use the login form itself as came_from
-                referrer = self.request.route_url('home')
             headers = remember(self.request, userid)
             return HTTPFound(location=referrer,
                              headers=headers)
         else:
-            login_url = self.request.route_url('login')
-            referrer = self.request.url
-            if referrer == login_url:
-                # never use the login form itself as came_from
-                referrer = self.request.route_url('home')
             came_from = self.request.params.get('came_from', referrer)
             userid = ''
             password = ''
@@ -208,12 +228,14 @@ class Views(object):
 
     @view_config(route_name='logout', permission='view')
     def logout(self):
+        """Forgets who was logged in and redirects to home page"""
         headers = forget(self.request)
         home = self.request.route_url('home')
         return HTTPFound(location=home, headers=headers)
 
     @view_config(route_name='help', renderer='help.mak')
     def help(self):
+        """Returns help page"""
         return {}
 
 

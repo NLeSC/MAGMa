@@ -119,14 +119,14 @@ class TestUser(unittest.TestCase):
 
         u = user.User.generate()
 
-        self.assertEqual(u, user.User(u.userid, 'Temporary user', 'example@example.com'))
+        eu = user.User(u.userid, 'Temporary user', 'example@example.com')
+        self.assertEqual(u, eu)
 
         session = user.DBSession()
         u2 = session.query(user.User).get(u.userid)
         self.assertEqual(u, u2)
 
         destroy_user_db()
-
 
 
 class TestJobMeta(unittest.TestCase):
@@ -318,4 +318,3 @@ class TestJobIdFactory(unittest.TestCase):
 
         with self.assertRaises(HTTPNotFound):
             jif[str(jobid)]
-

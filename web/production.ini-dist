@@ -21,6 +21,8 @@ cookie.path = /magma
 # A route requiring permission will create a guest account with an unique id.
 # The login/logout button will be hidden as they have no function
 auto_register = false
+# force restriction so calculations go faster
+restricted = false
 
 macauth.master_secret = aeloor3kie2Loch9su3ooj9ALae9Os1e
 # token valid for a year
