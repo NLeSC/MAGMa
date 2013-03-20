@@ -18,6 +18,7 @@ class RpcViews(object):
         self.job = job
         self.request = request
         self.job_factory = make_job_factory(request.registry.settings)
+        self.restricted = self.request.registry.settings['restricted']
 
     def new_job(self):
         """Returns clone of job of current request"""
@@ -38,6 +39,7 @@ class RpcViews(object):
             raise HTTPInternalServerError(body=json.dumps(body))
 
     def _status_url(self, job):
+        """Returns status url of `job`"""
         return self.request.route_url('status.json', jobid=job.id)
 
     @view_config(route_name='rpc.add_structures', renderer='jsonhtml')
@@ -48,12 +50,12 @@ class RpcViews(object):
         Annotation is performed if current job has ms data
         """
         job = self.new_job()
-        jobquery = job.jobquery(self._status_url(job))
+        jobquery = job.jobquery(self._status_url(job), self.restricted)
         has_scans = job.db.maxMSLevel() > 0
         params = self.request.POST
         try:
             jobquery = jobquery.add_structures(params, has_scans)
-        except Invalid as e:
+        except Invalid as exc:
             # no structures given
             if (has_scans and 'structure_database' in params
                     and params['structure_database']):
@@ -61,11 +63,11 @@ class RpcViews(object):
                 # database lookup during extra annotate
                 pass
             else:
-                sd = SchemaNode(String(), name='structure_database')
+                node = SchemaNode(String(), name='structure_database')
                 msg = 'Either structures or structures_file '
                 msg += 'or structure_database must be set'
-                e.add(Invalid(sd, msg))
-                raise e
+                exc.add(Invalid(node, msg))
+                raise exc
 
         if (has_scans and 'structure_database' in params
                 and params['structure_database']):
@@ -92,7 +94,7 @@ class RpcViews(object):
         except AttributeError:
             job.ms_filename = 'Uploaded as text'
         has_metabolites = job.db.metabolitesTotalCount() > 0
-        jobquery = job.jobquery(self._status_url(job))
+        jobquery = job.jobquery(self._status_url(job), self.restricted)
         jobquery = jobquery.add_ms_data(self.request.POST, has_metabolites)
         self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}
@@ -104,7 +106,7 @@ class RpcViews(object):
         Annotation is performed if current job has ms data
         """
         job = self.new_job()
-        jobquery = job.jobquery(self._status_url(job))
+        jobquery = job.jobquery(self._status_url(job), self.restricted)
         has_scans = job.db.maxMSLevel() > 0
         jobquery = jobquery.metabolize(self.request.POST, has_scans)
         self.submit_query(jobquery, job)
@@ -120,7 +122,7 @@ class RpcViews(object):
         """
         job = self.new_job()
         has_scans = job.db.maxMSLevel() > 0
-        jobquery = job.jobquery(self._status_url(job))
+        jobquery = job.jobquery(self._status_url(job), self.restricted)
         jobquery = jobquery.metabolize_one(self.request.POST, has_scans)
         self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}
@@ -131,13 +133,15 @@ class RpcViews(object):
 
         """
         job = self.new_job()
-        jobquery = job.jobquery(self._status_url(job))
+        jobquery = job.jobquery(self._status_url(job), self.restricted)
         jobquery = jobquery.annotate(self.request.POST)
         self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.assign', renderer='json')
     def assign_metabolite2peak(self):
+        """Assigns molecule with `metid` to peak `mz` in scan `scanid`.
+        """
         job = self.job
         scanid = self.request.POST['scanid']
         mz = self.request.POST['mz']
@@ -147,6 +151,8 @@ class RpcViews(object):
 
     @view_config(route_name='rpc.unassign', renderer='json')
     def unassign_metabolite2peak(self):
+        """Unassigns any molecule from peak `mz` in scan `scanid`.
+        """
         job = self.job
         scanid = self.request.POST['scanid']
         mz = self.request.POST['mz']

@@ -473,15 +473,14 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
   },
   /**
    * Apply role to user interface.
-   * Checks canRun and if false removes all action buttons.
+   * Checks run feature and if false removes all action buttons.
    */
   applyRole: function() {
-	  if (this.application.canRun) {
-		  return;
+	  if (!this.application.features.run) {
+	      this.actionsMenu.getComponent('addstructuresaction').hide();
+	      this.actionsMenu.getComponent('metabolizeaction').hide();
+	      this.getMetaboliteList().hideCommandsColumn();
 	  }
-	  this.actionsMenu.getComponent('addstructuresaction').hide();
-	  this.actionsMenu.getComponent('metabolizeaction').hide();
-	  this.getMetaboliteList().hideCommandsColumn();
   }
 });
 

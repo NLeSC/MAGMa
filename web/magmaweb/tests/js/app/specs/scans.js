@@ -199,7 +199,7 @@ describe('Scans controller', function() {
   });
 
   describe('selectScan', function() {
-  	var f;
+  	var f = null;
 
   	beforeEach(function() {
 	    f = { callback: function() {} };
@@ -233,7 +233,7 @@ describe('Scans controller', function() {
         // mock metabolite store
         var data = { rawData: { scans: [1,2] }};
         var proxy = { getReader: function() { return data; }};
-        var store = { getProxy: function() { return proxy; }, getTotalCount: function() { return 1 }};
+        var store = { getProxy: function() { return proxy; }, getTotalCount: function() { return 1;}};
         spyOn(ctrl, 'setScans');
 
         ctrl.setScansOfMetabolites(store);
@@ -247,7 +247,7 @@ describe('Scans controller', function() {
         // mock metabolite store
         var data = { rawData: { scans: [] }};
         var proxy = { getReader: function() { return data; }};
-        var store = { getProxy: function() { return proxy; }, getTotalCount: function() { return 0 }};
+        var store = { getProxy: function() { return proxy; }, getTotalCount: function() { return 0;}};
         spyOn(ctrl, 'setScans');
 
         ctrl.setScansOfMetabolites(store);
@@ -479,25 +479,56 @@ describe('Scans controller', function() {
 		ctrl.onZoomDirectionChange('z', true);
 
 		expect(mocked_chromatogram.setZoom).toHaveBeenCalledWith('z', true);
-	})
+	});
   });
 
-  it('canrun', function() {
-	  ctrl.application.canRun = true;
-	  spyOn(ctrl.actionsMenu, 'hideUploadAction');
+  describe('applyRole', function() {
+      it('canrun', function() {
+    	  ctrl.application.features.run = true;
+    	  spyOn(ctrl.actionsMenu, 'hideUploadAction');
 
-	  ctrl.applyRole();
+    	  ctrl.applyRole();
 
-	  expect(ctrl.actionsMenu.hideUploadAction).not.toHaveBeenCalledWith();
+    	  expect(ctrl.actionsMenu.hideUploadAction).not.toHaveBeenCalledWith();
+      });
+
+      it('cantrun', function() {
+    	  ctrl.application.features.run = false;
+    	  spyOn(ctrl.actionsMenu, 'hideUploadAction');
+
+    	  ctrl.applyRole();
+
+    	  expect(ctrl.actionsMenu.hideUploadAction).toHaveBeenCalledWith();
+      });
+
+      it('unrestricted', function() {
+          ctrl.application.features.restricted = false;
+          spyOn(ctrl, 'forceSingleScan');
+
+          ctrl.applyRole();
+
+          expect(ctrl.forceSingleScan).not.toHaveBeenCalledWith();
+      });
+
+      it('restricted', function() {
+          ctrl.application.features.restricted = true;
+          spyOn(ctrl, 'forceSingleScan');
+
+          ctrl.applyRole();
+
+          expect(ctrl.forceSingleScan).toHaveBeenCalledWith();
+      });
   });
 
-  it('cantrun', function() {
-	  ctrl.application.canRun = false;
-	  spyOn(ctrl.actionsMenu, 'hideUploadAction');
+  it('forceSingleScan', function() {
+      var field = { allowBlank: true };
+      mocked_form.findField = function() {return field;};
+      spyOn(mocked_form, 'findField').andCallThrough();
 
-	  ctrl.applyRole();
+      ctrl.forceSingleScan();
 
-	  expect(ctrl.actionsMenu.hideUploadAction).toHaveBeenCalledWith();
+      expect(mocked_form.findField).toHaveBeenCalledWith('scan');
+      expect(field.allowBlank).toBeFalsy();
   });
 
   it('loadExample', function() {
@@ -537,13 +568,13 @@ describe('Scans controller', function() {
         Ext.Array.forEach(names, function(name) {
             var f= {
                 name: name,
-                getName: function() {return this.name},
+                getName: function() {return this.name;},
                 disabled: false,
                 hidden: false,
-                enable: function() {this.disabled=false},
-                disable: function() {this.disabled=true},
-                show: function() {this.hidden=false},
-                hide: function() {this.hidden=true}
+                enable: function() {this.disabled=false;},
+                disable: function() {this.disabled=true;},
+                show: function() {this.hidden=false;},
+                hide: function() {this.hidden=true;}
             };
             mocked_form.fields.add(i++, f);
         });

@@ -1,8 +1,9 @@
 """Magma pyramid web app"""
 import json
-from pyramid.config import Configurator
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.authentication import AuthTktAuthenticationPolicy
+from pyramid.config import Configurator
+from pyramid.settings import asbool
 from pyramid_macauth import MACAuthenticationPolicy
 from pyramid_multiauth import MultiAuthenticationPolicy
 from sqlalchemy import engine_from_config
@@ -84,11 +85,20 @@ def main(global_config, **settings):
     add_job_route('rpc.assign', '/rpc/{jobid}/assign')
     add_job_route('rpc.unassign', '/rpc/{jobid}/unassign')
 
+    # find view_config decorations
+    config.scan('magmaweb')
+
+    # add config defaults and
+    # cast config parameter to boolean
+    auto_register = asbool(settings.get('auto_register', False))
+    config.add_settings(auto_register=auto_register)
+    restricted = asbool(settings.get('restricted', False))
+    config.add_settings(restricted=restricted)
+
     # Setup connection to user database
     engine = engine_from_config(settings)
     init_user_db(engine)
 
-    config.scan('magmaweb')
     return config.make_wsgi_app()
 
 
