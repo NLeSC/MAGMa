@@ -178,6 +178,24 @@ class JobMeta(Base):
         session = DBSession()
         session.delete(jobmeta)
 
+def get_user(request):
+    """Returns None when there is no authenticatied userid or
+    if user is not found in user db
+    """
+    userid = authenticated_userid(request)
+    if userid is not None:
+        return request.user
+    else:
+        return None
+
+def groupfinder(userid, request):
+    # can not use user from request, causes inf loop
+    user = User.by_id(userid)
+    request.user = user
+    if user is None:
+        return None
+    return []
+
 
 class RootFactory(object):
     """Context factory which sets default acl"""
@@ -201,21 +219,9 @@ class RootFactory(object):
         self.request.extjsroot = self.request.static_url(extjsroot)
 
     def user(self):
-        """Adds :class:`User` as request.user
-
-        Returns None when there is no authenticatied userid or
-        if user is not found in user db
-        """
-
-        def userid2user(request):
-            userid = authenticated_userid(request)
-            if userid is not None:
-                return User.by_id(userid)
-            else:
-                return None
-
+        """Adds :class:`User` as request.user"""
         # make request.user property lazy
-        self.request.set_property(userid2user, 'user', reify=True)
+        self.request.set_property(get_user, 'user', reify=True)
 
 
 class JobIdFactory(RootFactory):
