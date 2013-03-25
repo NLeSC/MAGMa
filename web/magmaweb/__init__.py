@@ -8,6 +8,7 @@ from pyramid_macauth import MACAuthenticationPolicy
 from pyramid_multiauth import MultiAuthenticationPolicy
 from sqlalchemy import engine_from_config
 from magmaweb.user import init_user_db, RootFactory, JobIdFactory
+from magmaweb.user import groupfinder
 
 
 def main(global_config, **settings):
@@ -22,11 +23,13 @@ def main(global_config, **settings):
         secret=settings['cookie.secret'],
         path=settings['cookie.path'],
         hashalg='sha512',
+        callback=groupfinder,
     )
 
     # for service consumers
     # See http://www.rfk.id.au/blog/entry/securing-pyramid-persona-macauth/
     authn_policy2 = MACAuthenticationPolicy.from_settings(settings)
+    authn_policy2.find_groups = groupfinder
 
     auth_policies = [authn_policy1, authn_policy2, ]
     authn_policy = MultiAuthenticationPolicy(auth_policies)

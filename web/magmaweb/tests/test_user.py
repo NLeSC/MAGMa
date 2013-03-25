@@ -199,6 +199,51 @@ class TestJobMeta(unittest.TestCase):
         self.assertEqual(self.session.query(user.JobMeta).count(), 0)
 
 
+class TestGetUser(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+        self.request = testing.DummyRequest()
+
+    def tearDown(self):
+        testing.tearDown()
+
+    @patch('magmaweb.user.authenticated_userid')
+    def test_it(self, uau):
+        uau.return_value = 'bob'
+        self.request.user = 'User.bob'
+
+        rf = user.get_user(self.request)
+
+        self.assertEqual(rf, 'User.bob')
+
+    @patch('magmaweb.user.authenticated_userid')
+    def test_unauth(self, uau):
+        uau.return_value = None
+
+        rf = user.get_user(self.request)
+
+        self.assertIsNone(rf)
+
+class TestGroupFinder(unittest.TestCase):
+    def setUp(self):
+        self.request = testing.DummyRequest()
+
+    @patch('magmaweb.user.User.by_id')
+    def test_it(self, bi):
+        bi.return_value = 'User.bob'
+
+        principals = user.groupfinder('bob', self.request)
+
+        self.assertEqual(principals, [])
+
+    @patch('magmaweb.user.User.by_id')
+    def test_notindb(self, bi):
+        bi.return_value = None
+
+        principals = user.groupfinder('bob', self.request)
+
+        self.assertIsNone(principals)
+
 class TestRootFactory(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()
@@ -207,7 +252,6 @@ class TestRootFactory(unittest.TestCase):
         self.request.registry.settings = {'extjsroot': 'extjsroot'}
 
     def tearDown(self):
-        destroy_user_db()
         testing.tearDown()
 
     def test_acl(self):
@@ -224,31 +268,6 @@ class TestRootFactory(unittest.TestCase):
 
         self.assertEqual(rf.request.extjsroot,
                          'http://example.com/static/extjsroot')
-
-    def test_user_nologin(self):
-        rf = user.RootFactory(self.request)
-
-        self.assertIsNone(rf.request.user)
-
-    @patch('magmaweb.user.authenticated_userid')
-    def test_user_notindb(self, uau):
-        uau.return_value = 'bob'
-        init_user_db()
-
-        rf = user.RootFactory(self.request)
-
-        self.assertIsNone(rf.request.user)
-
-    @patch('magmaweb.user.authenticated_userid')
-    def test_user(self, uau):
-        uau.return_value = 'bob'
-        init_user_db()
-        u = user.User('bob', 'Bobs name', 'bob@example.com')
-        user.DBSession().add(u)
-
-        rf = user.RootFactory(self.request)
-
-        self.assertEqual(rf.request.user, u)
 
 
 class TestJobIdFactory(unittest.TestCase):
