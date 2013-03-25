@@ -85,7 +85,8 @@ Ext.onReady(function() {
         'ms_filename',
         {name: 'created_at', type: 'date'},
         'url',
-        'is_public'
+        'is_public',
+        'state'
       ],
       proxy: {
         type: 'rest',
@@ -140,6 +141,8 @@ Ext.onReady(function() {
       editor: {
         xtype: 'checkbox'
       }
+    }, {
+      text: 'State', dataIndex: 'state'
     }, {
       text: 'Created at', dataIndex: 'created_at', width: 120,
       xtype: 'datecolumn', format: "Y-m-d H:i:s"

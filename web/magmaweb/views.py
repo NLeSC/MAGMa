@@ -20,6 +20,8 @@ from magmaweb.job import make_job_factory
 from magmaweb.job import Job
 from magmaweb.job import JobQuery
 from magmaweb.job import JobSubmissionError
+from magmaweb.job import JobError
+from magmaweb.job import JobIncomplete
 from magmaweb.user import User
 
 
@@ -130,6 +132,7 @@ class Views(object):
                          'ms_filename': jobmeta.ms_filename,
                          'created_at': created_at,
                          'is_public': jobmeta.is_public,
+                         'state': jobmeta.state,
                          })
 
         return {'jobs': jobs}
@@ -252,6 +255,10 @@ class InCompleteJobViews(object):
                  renderer='json',
                  permission='run',
                  request_method='GET')
+    @view_config(context=JobIncomplete,
+                 renderer='status.mak',
+                 permission='run',
+                 )
     def job_status(self):
         """Returns status of a job
 
@@ -278,32 +285,17 @@ class InCompleteJobViews(object):
         self.job.state = jobstate
         return dict(status=jobstate, jobid=str(jobid))
 
-
-@view_defaults(context=Job, permission='view')
-class JobViews(object):
-    """Views for pyramid based web application with completed job"""
-    def __init__(self, job, request):
-        self.request = request
-        self.job = job
-        if job.state != 'STOPPED':
-            raise HTTPFound(location=request.route_url('status', jobid=job.id))
-
     @view_config(route_name='results',
-                 renderer='results.mak',
-                 request_method='GET'
+                 renderer='json',
+                 request_method='DELETE',
+                 permission='run',
                  )
-    def results(self):
-        """Returns results page"""
-        db = self.job.db
-        # determine if Run buttons should be shown
-        canRun = has_permission('run', self.job, self.request)
-        return dict(run=db.runInfo(),
-                    maxmslevel=db.maxMSLevel(),
-                    jobid=self.job.id,
-                    # coerce pyramid.security.Allowed|Denied to boolean
-                    canRun=bool(canRun),
-                    job=self.job,
-                    )
+    def deletejson(self):
+        """Delete job from user database and deletes job directory"""
+        self.job.delete()
+        del self.job
+        self.request.response.status_int = 204
+        return {'success': True, 'message': 'Deleted job'}
 
     @view_config(route_name='results',
                  renderer='json',
@@ -320,16 +312,52 @@ class JobViews(object):
         return {'success': True, 'message': 'Updated job'}
 
     @view_config(route_name='results',
-                 renderer='json',
-                 request_method='DELETE',
+                 renderer='results.mak',
+                 request_method='GET',
+                 )
+    def results(self):
+        """Returns results page or
+        if job has error shows error page
+        or if job in progress shows status page
+        """
+        # results() was part of JobViews, but got 'predicate mismatch for view' error when
+        # PUT, DELETE, GET of same route are in different classes
+        # so moved GET to InCompleteJobViews
+        jv = JobViews(self.job, self.request)
+        return jv.results()
+
+    @view_config(context=JobError, renderer='error.mak')
+    def error(self):
+        return {'exception': self.job}
+
+    @view_config(context=JobIncomplete,
+                 renderer='status.mak',
                  permission='run',
                  )
-    def deletejson(self):
-        """Delete job from user database and deletes job directory"""
-        self.job.delete()
-        del self.job
-        self.request.response.status_int = 204
-        return {'success': True, 'message': 'Deleted job'}
+    def job_incomplete(self):
+        self.job = self.job.job
+        return self.job_status()
+
+@view_defaults(context=Job, permission='view')
+class JobViews(object):
+    """Views for pyramid based web application with completed job"""
+    def __init__(self, job, request):
+        self.request = request
+        self.job = job
+        job.is_complete()
+
+    def results(self):
+        """Returns results page"""
+        db = self.job.db
+        # determine if Run buttons should be shown
+        canRun = has_permission('run', self.job, self.request)
+        return dict(run=db.runInfo(),
+                    maxmslevel=db.maxMSLevel(),
+                    jobid=self.job.id,
+                    # coerce pyramid.security.Allowed|Denied to boolean
+                    canRun=bool(canRun),
+                    job=self.job,
+                    )
 
     @view_config(route_name='metabolites.json', renderer='json')
     def metabolitesjson(self):
