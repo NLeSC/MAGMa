@@ -2,7 +2,7 @@ import unittest
 import datetime
 from pyramid import testing
 from mock import Mock, patch
-from magmaweb.views import Views, JobViews
+from magmaweb.views import Views, JobViews, InCompleteJobViews
 from magmaweb.job import JobFactory, Job, JobDb, JobQuery
 from magmaweb.user import User, JobMeta
 
@@ -11,6 +11,8 @@ class AbstractViewsTestCase(unittest.TestCase):
     def setUp(self):
         self.settings = {'jobfactory.root_dir': '/somedir',
                          'access_token.expires_in': 360,
+                         'auto_register': False,
+                         'restricted': False,
                          }
         self.config = testing.setUp(settings=self.settings)
         self.config.add_route('status.json', '/status/{jobid}.json')
@@ -24,6 +26,7 @@ class AbstractViewsTestCase(unittest.TestCase):
         job.description = ""
         job.ms_filename = ""
         job.dir = '/somedir/foo'
+        job.state = 'STOPPED'
         job.db = Mock(JobDb)
         job.db.runInfo.return_value = 'bla'
         job.db.maxMSLevel.return_value = 3
@@ -73,7 +76,9 @@ class ViewsTestCase(AbstractViewsTestCase):
                                                          job)
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
         self.assertEqual(job.ms_filename, 'c:\bla\bla\F1234.mzxml')
-        job.jobquery.assert_called_with('http://example.com/status/foo.json')
+        job.jobquery.assert_called_with('http://example.com/status/foo.json',
+                                        False,
+                                        )
 
     def test_allinone_with_ms_data_as_text(self):
         post = {'ms_data': 'somexml', 'ms_data_file': ''}
@@ -94,7 +99,27 @@ class ViewsTestCase(AbstractViewsTestCase):
                                                          job)
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
         self.assertEqual(job.ms_filename, 'Uploaded as text')
-        job.jobquery.assert_called_with('http://example.com/status/foo.json')
+        job.jobquery.assert_called_with('http://example.com/status/foo.json',
+                                        False,
+                                        )
+
+    def test_allinone_restricted(self):
+        self.config.add_settings(restricted=True)
+        post = {'ms_data': 'somexml', 'ms_data_file': ''}
+        request = testing.DummyRequest(post=post)
+        request.user = User('bob', 'Bob Example', 'bob@example.com')
+        job = self.fake_job()
+        jobquery = Mock(JobQuery)
+        job.jobquery.return_value = jobquery
+        views = Views(request)
+        views.job_factory = Mock(JobFactory)
+        views.job_factory.fromScratch = Mock(return_value=job)
+
+        views.allinone()
+
+        job.jobquery.assert_called_with('http://example.com/status/foo.json',
+                                        True,
+                                        )
 
     def test_allinone_no_jobmanager(self):
         from magmaweb.job import JobSubmissionError
@@ -237,6 +262,8 @@ class ViewsTestCase(AbstractViewsTestCase):
         request = testing.DummyRequest()
         request.user = None
         request.url = 'http://example.com/login'
+        route_mapper = self.config.get_routes_mapper()
+        request.matched_route = route_mapper.get_route('login')
         views = Views(request)
 
         response = views.login()
@@ -252,9 +279,12 @@ class ViewsTestCase(AbstractViewsTestCase):
     def test_login_get(self):
         self.config.add_route('home', '/')
         self.config.add_route('login', '/login')
+        self.config.add_route('startjob', '/start')
         request = testing.DummyRequest()
         request.user = None
         request.url = 'http://example.com/startjob'
+        route_mapper = self.config.get_routes_mapper()
+        request.matched_route = route_mapper.get_route('startjob')
         views = Views(request)
 
         response = views.login()
@@ -275,11 +305,14 @@ class ViewsTestCase(AbstractViewsTestCase):
         u.validate_password.return_value = True
         user.by_id.return_value = u
         self.config.add_route('login', '/login')
+        self.config.add_route('startjob', '/start')
         post = {'userid': 'bob',
                 'password': 'mypw'}
         params = {'came_from': 'http://example.com/startjob'}
         request = testing.DummyRequest(post=post, params=params)
         request.user = None
+        route_mapper = self.config.get_routes_mapper()
+        request.matched_route = route_mapper.get_route('startjob')
         views = Views(request)
 
         response = views.login()
@@ -296,11 +329,15 @@ class ViewsTestCase(AbstractViewsTestCase):
         u.validate_password.return_value = False
         user.by_id.return_value = u
         self.config.add_route('login', '/login')
+        self.config.add_route('startjob', '/start')
         post = {'userid': 'bob',
                 'password': 'mypw'}
         params = {'came_from': 'http://example.com/startjob'}
         request = testing.DummyRequest(post=post, params=params)
         request.user = None
+        route_mapper = self.config.get_routes_mapper()
+        request.matched_route = route_mapper.get_route('startjob')
+
         views = Views(request)
 
         response = views.login()
@@ -323,6 +360,80 @@ class ViewsTestCase(AbstractViewsTestCase):
         response = views.login()
 
         self.assertIsInstance(response, Forbidden)
+
+    @patch('magmaweb.views.remember')
+    @patch('magmaweb.views.User')
+    def test_login_auto_register(self, user, remember):
+        user.generate.return_value = User('bob',
+                                          'bob dob',
+                                          'bob.dob@example.com'
+                                          )
+        from pyramid.httpexceptions import HTTPFound
+        self.config.add_route('home', '/')
+        self.config.add_route('login', '/login')
+        self.config.add_route('startjob', '/start')
+        request = testing.DummyRequest()
+        request.user = None
+        request.url = 'http://example.com/startjob'
+        route_mapper = self.config.get_routes_mapper()
+        request.matched_route = route_mapper.get_route('startjob')
+        request.registry.settings['auto_register'] = True
+        views = Views(request)
+
+        response = views.login()
+
+        self.assertIsInstance(response, HTTPFound)
+        self.assertEqual(response.location, 'http://example.com/startjob')
+        user.generate.assert_called_with()
+        remember.assert_called_with(request, 'bob')
+
+    @patch('magmaweb.views.remember')
+    @patch('magmaweb.views.User')
+    def test_login_auto_register_from_login(self, user, remember):
+        user.generate.return_value = User('bob',
+                                          'bob dob',
+                                          'bob.dob@example.com'
+                                          )
+        from pyramid.httpexceptions import HTTPFound
+        self.config.add_route('home', '/')
+        self.config.add_route('login', '/login')
+        request = testing.DummyRequest()
+        request.user = None
+        request.url = 'http://example.com/login'
+        route_mapper = self.config.get_routes_mapper()
+        request.matched_route = route_mapper.get_route('login')
+        request.registry.settings['auto_register'] = True
+        views = Views(request)
+
+        response = views.login()
+
+        self.assertIsInstance(response, HTTPFound)
+        self.assertEqual(response.location, 'http://example.com/')
+        user.generate.assert_called_with()
+        remember.assert_called_with(request, 'bob')
+
+    def test_login_auto_register_mac_challenge(self):
+        self.config.add_route('status.json', '/status')
+        self.config.add_route('home', '/')
+        self.config.add_route('login', '/login')
+        request = testing.DummyRequest()
+        request.user = None
+        request.url = 'http://example.com/status'
+        request.method = u'PUT'
+        route_mapper = self.config.get_routes_mapper()
+        request.matched_route = route_mapper.get_route('status.json')
+        request.registry.settings['auto_register'] = True
+        views = Views(request)
+
+        response = views.login()
+
+        expected_response = {'came_from': 'http://example.com/status',
+                             'userid': '',
+                             'password': ''
+                             }
+        self.assertDictEqual(response, expected_response)
+        self.assertEqual(request.response.headers['WWW-Authenticate'], 'MAC')
+        self.assertEqual(request.response.status_int, 401)
 
     @patch('magmaweb.views.forget')
     def test_logout(self, forget):
@@ -375,8 +486,39 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(response, {})
 
 
+class InCompleteJobViewsTestCase(AbstractViewsTestCase):
+    """Test case for magmaweb.views.InCompleteJobViews"""
+    def test_jobstatus(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'RUNNING'
+        views = InCompleteJobViews(job, request)
+
+        response = views.job_status()
+
+        self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
+
+    def test_set_jobstatus(self):
+        request = testing.DummyRequest()
+        request.body = 'STOPPED'
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'RUNNING'
+        views = InCompleteJobViews(job, request)
+
+        response = views.set_job_status()
+
+        self.assertEqual(response, dict(status='STOPPED', jobid='bla'))
+        self.assertEqual(job.state, 'STOPPED')
+
+
 class JobViewsTestCase(AbstractViewsTestCase):
     """ Test case for magmaweb.views.JobViews"""
+
+    def setUp(self):
+        AbstractViewsTestCase.setUp(self)
+        self.config.add_route('status', '/status/{jobid}')
 
     @patch('magmaweb.views.has_permission')
     def test_resuls_canrun(self, has_permission):
@@ -385,7 +527,6 @@ class JobViewsTestCase(AbstractViewsTestCase):
         request = testing.DummyRequest()
         job = self.fake_job()
         views = JobViews(job, request)
-
         response = views.results()
 
         self.assertEqual(response, dict(jobid='foo',
@@ -415,29 +556,18 @@ class JobViewsTestCase(AbstractViewsTestCase):
         self.assertDictEqual(response, exp_response)
         has_permission.assert_called_with('run', job, request)
 
-    def test_jobstatus(self):
-        request = testing.DummyRequest()
+    def test_incompletejob(self):
+        request = testing.DummyRequest(params={'start': 0,
+                                               'limit': 10
+                                               })
         job = self.fake_job()
-        job.id = 'bla'
-        job.state = 'RUNNING'
-        views = JobViews(job, request)
+        job.state = 'INITIAL'
 
-        response = views.job_status()
+        from pyramid.httpexceptions import HTTPFound
+        with self.assertRaises(HTTPFound) as e:
+            JobViews(job, request)
 
-        self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
-
-    def test_set_jobstatus(self):
-        request = testing.DummyRequest()
-        request.body = 'STOPPED'
-        job = self.fake_job()
-        job.id = 'bla'
-        job.state = 'RUNNING'
-        views = JobViews(job, request)
-
-        response = views.set_job_status()
-
-        self.assertEqual(response, dict(status='STOPPED', jobid='bla'))
-        self.assertEqual(job.state, 'STOPPED')
+        self.assertEqual(e.exception.location, 'http://example.com/status/foo')
 
     def test_metabolitesjson_return(self):
         request = testing.DummyRequest(params={'start': 0,

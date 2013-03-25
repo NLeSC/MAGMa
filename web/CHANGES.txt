@@ -1,4 +1,60 @@
-0.0
----
+0.0 (Viewer release)
+====================
 
--  Initial version
+Able to view pre-calculated results.
+
+1.0 (Jan 2013 release)
+======================
+
+Able to run jobs.
+
+Features
+--------
+
+- Added authentication, authentication and user management
+
+- Added Pubchem database as source of molecules
+
+- Added WUR and NMC logos
+
+Backwards Incompatibilities
+---------------------------
+
+- Job result model changes:
+
+    * Added natoms column to Metabolites table
+
+- User database model changes:
+
+    * Added create_at column to Job table
+
+- Switched to rdkit instead of cdk.
+
+2.0 (Mar 2013 release)
+======================
+
+Able to run web application in anonymous/restricted mode.
+
+Features
+--------
+
+- Added tree format with molecular formulas
+
+- Able to select a single scan from a mzxml file
+
+- Able to mark job results as public or private.
+  Public jobs can be seen by every logged in user who know the url
+
+- MAGMa job updates status of job. Gives finer grain progress during annotation.
+
+Backwards Incompatibilities
+---------------------------
+
+- Job result model changes:
+
+    * Added formula column to Fragment table
+
+- User database model changes:
+
+    * Added is_public column to Job table
+
