@@ -611,7 +611,7 @@ class AnnotateEngine(object):
         self.db_session.commit()
         return metids
 
-    def search_structures(self,metids=None,ncpus=1,fast=False):
+    def search_structures(self,metids=None,ncpus=1,fast=False,time_limit=None):
         logging.warn('Searching structures')
         global fragid
         fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
@@ -621,14 +621,14 @@ class AnnotateEngine(object):
         logging.warn('calculating on '+str(ncpus)+' cpus !!!')
         job_server = pp.Server(ncpus, ppservers=ppservers)
         if metids==None:
-            metids=set([])
-            for metid, in self.db_session.query(Metabolite.metid).all():
-                metids.add(metid)
+            metabdata=self.db_session.query(Metabolite.metid,Metabolite.probability).all()
+            metids=[x[0] for x in sorted(metabdata, key=lambda meta: meta[1])]
         # annotate metids in chunks of 500 to avoid errors in db_session.query and memory problems during parallel processing
         total_frags=0
         total_metids = len(metids)
         start_time=time.time()
-        update_time=1 #send update to call_back_url every second
+        update_time=start_time
+        update_interval=1 #send update to call_back_url every second
         while len(metids)>0:
             ids=set([])
             while len(ids)<500 and len(metids)>0:
@@ -690,12 +690,19 @@ class AnnotateEngine(object):
                     self.store_hit(hit,structure.metid,0)
                 self.db_session.flush()
                 count+=1
+                elapsed_time=time.time()-start_time
                 if self.call_back_engine != None:
-                    elapsed_time=time.time()-start_time
-                    if elapsed_time > update_time: # update status every second
+                    update_last=time.time()-update_time
+                    if update_last > update_interval: # update status every second
                         update_string=str(total_metids-len(metids)-len(ids)+count)+" / "+str(total_metids)+" candidate molecules processed ..."
+                        if time_limit != None:
+                            update_string+=".... Elapsed time: "+str(int(elapsed_time/time_limit/60*100))+"% of "+str(time_limit)+" minutes"
                         self.call_back_engine.update_callback_url(update_string)
-                        start_time = start_time + elapsed_time//update_time*update_time
+                        update_time = update_time + update_last//update_interval*update_interval
+                if time_limit and elapsed_time > time_limit * 60:
+                    metids=[] # break out of while-loop
+                    sys.stderr.write('\nThe time limit of '+str(time_limit)+' minutes has been exceeded!\n\n')
+                    break
             self.db_session.commit()
         print total_frags,'fragments in total.'
 
