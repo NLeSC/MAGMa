@@ -224,6 +224,20 @@ Ext.onReady(function() {
       defaults: { bodyPadding: 5 }
     }]
   });
+
+  function user_authenticated(authenticated, anonymous) {
+      if (authenticated && anonymous) {
+          // anonymous authenticated can not logout
+          Ext.ComponentQuery.query('component[text=Logout]')[0].hide();
+      }
+    };
+
+    <%!
+    import json
+    %>
+    var authenticated = ${json.dumps(request.user is not None)};
+    var anonymous = ${json.dumps(request.registry.settings.get('auto_register', False))|n};
+    user_authenticated(authenticated, anonymous);
 });
 </script>
 </head>

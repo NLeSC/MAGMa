@@ -160,7 +160,7 @@ Ext.onReady(function() {
 	},
 	items: [{
 	  xtype: 'buttongroup',
-	  columns: 3,
+	  columns: 2,
 	  items: [{
         text: 'Home',
     	href: "${request.route_url('home')}",
@@ -180,6 +180,7 @@ Ext.onReady(function() {
         hrefTarget: '_self'
       }, {
         text: 'Logout',
+        hidden: true,
         href: "${request.route_url('logout')}",
         hrefTarget: '_self'
       }, {
@@ -208,26 +209,40 @@ Ext.onReady(function() {
     items: [header, form]
   });
 
+  function applyRole(features) {
+      if (features.authenticated || features.anonymous) {
+          Ext.ComponentQuery.query('component[text=Login]')[0].hide();
+          if (!features.anonymous) {
+            // non-anonymous authenticated can logout
+            Ext.ComponentQuery.query('component[text=Logout]')[0].show();
+          }
+      } else {
+          Ext.ComponentQuery.query('component[text=Workspace]')[0].hide();
+      }
+      if (!features.run) {
+          // hide interactive job run starting points
+          Ext.ComponentQuery.query('component[title=Generate metabolite options]')[0].hide();
+          Ext.ComponentQuery.query('component[text=Start from scratch]')[0].hide();
+          Ext.ComponentQuery.query('component[text=Upload result]')[0].hide();
+      }
+      scan_controller.application.features = features;
+      scan_controller.applyRole();
+  }
   <%!
   import json
   %>
-  function user_authenticated(toggle) {
-     if (toggle) {
-         // hide login
-         Ext.ComponentQuery.query('component[text=Login]')[0].hide();
-     } else {
-         // hide workspace+logout
-         Ext.ComponentQuery.query('component[text=Workspace]')[0].hide();
-         Ext.ComponentQuery.query('component[text=Logout]')[0].hide();
-     }
+  var features = {
+      // should run buttons (upload ms data, upload molecules, metabolize (one molecule), annotate) be shown
+      run: false,
+      // should logout button be shown
+      authenticated: ${json.dumps(request.user is not None)},
+      // should login button be hidden and workspace be shown
+      anonymous: ${json.dumps(request.registry.settings.get('auto_register', False))|n},
+      // should restrictions be applied ie force one spectral tree
+      restricted: ${json.dumps(request.registry.settings.get('restricted', False))|n}
   };
+  applyRole(features);
 
-  user_authenticated(${json.dumps(request.user is not None)});
-
-  // hide interactive job run starting points
-  Ext.ComponentQuery.query('component[title=Generate metabolite options]')[0].hide();
-  Ext.ComponentQuery.query('component[text=Start from scratch]')[0].hide();
-  Ext.ComponentQuery.query('component[text=Upload result]')[0].disable();
 });
 </script>
 </head>
