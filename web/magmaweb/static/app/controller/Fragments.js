@@ -394,12 +394,11 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
   },
   /**
    * Apply role to user interface.
-   * Checks canAssign and if false removes all assign action buttons.
+   * Checks assign feature and if false removes all assign action buttons.
    */
   applyRole: function() {
-	  if (this.application.canAssign) {
-		  return;
+	  if (!this.application.features.assign) {
+	      this.getAssignStruct2PeakButton().hide();
 	  }
-	  this.getAssignStruct2PeakButton().hide();
   }
 });

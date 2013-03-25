@@ -49,20 +49,36 @@ Ext.define('Esc.magmaweb.resultsApp', {
      */
     jobid: null,
     /**
-     * Whether user has rights to run actions like add structures or re-annotate.
-     * @cfg {Boolean}
+     * Feature toggles.
+     * @cfg {Object}
      */
-    canRun: true,
-    /**
-     * Whether user has rights to (un)assign a peak to a structure.
-     * @cfg {Boolean}
-     */
-    canAssign: true,
-    /**
-     * Whether user is logged in, shows login or logout button.
-     * @cfg {Boolean}
-     */
-    is_authenticated_user: true,
+    features: {
+        /**
+         * Whether user has rights to (un)assign a peak to a structure.
+         * @cfg {Boolean}
+         */
+        run: false,
+        /**
+         * Whether user has rights to (un)assign a peak to a structure.
+         * @cfg {Boolean}
+         */
+        assign: true,
+        /**
+         * Whether user is logged in, shows login or logout button.
+         * @cfg {Boolean}
+         */
+        authenticated: true,
+        /**
+         * Whether user is needs to be logged in, shows login or logout button.
+         * @cfg {Boolean}
+         */
+        anonymous: false,
+        /**
+         * Whether restrictions should be applied ie force one spectral tree
+         * @cfg {Boolean}
+         */
+        restricted: false
+    },
     /**
      * Endpoints/templates for contacting server.
      * @cfg {Object}
@@ -239,7 +255,6 @@ Ext.define('Esc.magmaweb.resultsApp', {
     });
 
     this.applyRole();
-    this.user_authenticated(this.is_authenticated_user);
   },
   /**
    * Apply role to user interface.
@@ -247,19 +262,19 @@ Ext.define('Esc.magmaweb.resultsApp', {
    * All controllers should apply roles to user themselves if required.
    */
   applyRole: function() {
-	  if (this.canRun) {
-		  return;
-	  }
-	  Ext.ComponentQuery.query('component[id=annotateaction]')[0].hide();
-  },
-  user_authenticated: function(toggle) {
-     if (toggle) {
-    	 // hide login
-    	 Ext.ComponentQuery.query('component[text=Login]')[0].hide();
-     } else {
-    	 // hide workspace+logout
-         Ext.ComponentQuery.query('component[text=Workspace]')[0].hide();
-         Ext.ComponentQuery.query('component[text=Logout]')[0].hide();
-     }
+    var features = this.features;
+    if (!this.features.run) {
+        Ext.ComponentQuery.query('component[id=annotateaction]')[0].hide();
+    }
+    if (features.authenticated || features.anonymous) {
+        Ext.ComponentQuery.query('component[text=Login]')[0].hide();
+        if (features.anonymous) {
+          // non-anonymous authenticated can not logout
+          Ext.ComponentQuery.query('component[text=Logout]')[0].hide();
+        }
+    } else {
+        Ext.ComponentQuery.query('component[text=Logout]')[0].hide();
+        Ext.ComponentQuery.query('component[text=Workspace]')[0].hide();
+    }
   }
 });

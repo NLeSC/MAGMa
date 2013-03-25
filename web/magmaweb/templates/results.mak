@@ -80,9 +80,18 @@ Ext.onReady(function() {
     app = Ext.create('Esc.magmaweb.resultsApp', {
       maxmslevel: ${maxmslevel},
       jobid: '${jobid}',
-      canRun: false, // don't allow starting job runs from results page
-      canAssign: ${json.dumps(canRun)|n},
-      is_user_authenticated: ${json.dumps(request.user is not None)},
+      features: {
+        // should run buttons (upload ms data, upload molecules, metabolize (one molecule), annotate) be shown
+        run: false,
+        // should (un)assign buttons be shown
+        assign: ${json.dumps(canRun)|n},
+        // should logout button be shown
+        authenticated: ${json.dumps(request.user is not None)},
+        // should login button be hidden and workspace be shown
+        anonymous: ${json.dumps(request.registry.settings.get('auto_register', False))|n},
+        // should restrictions be applied ie force one spectral tree
+        restricted: ${json.dumps(request.registry.settings.get('restricted', False))|n},
+      },
       urls: {
         home: '${request.route_path('home')}',
         fragments: '${request.route_path('results',jobid=jobid)}/fragments/{0}/{1}.json',
