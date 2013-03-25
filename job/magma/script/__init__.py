@@ -95,6 +95,7 @@ class MagmaCommand(object):
         sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,min_refscore(only for PubChem) (default: %(default)s)",default=",1200,False,",type=str)
         sc.add_argument('--ncpus', help="Number of parallel cpus to use for annotation (default: %(default)s)", default=1,type=int)
         sc.add_argument('--scans', help="Search in specified scans (default: %(default)s)", default="all",type=str)
+        sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=int)
         sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
@@ -242,10 +243,10 @@ class MagmaCommand(object):
                 query_engine=magma.HmdbEngine(db_opts[0],(db_opts[2]=='True'))
             pubchem_metids=annotate_engine.get_db_candidates(query_engine,db_opts[1])
         if args.metids == None:
-            annotate_engine.search_structures(ncpus=args.ncpus,fast=args.fast)
+            annotate_engine.search_structures(ncpus=args.ncpus,fast=args.fast,time_limit=args.time_limit)
         else:
             metids=args.metids.split()+pubchem_metids
-            annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
+            annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast,time_limit=args.time_limit)
         magma_session.commit()
             # annotate_engine.search_some_structures(metids)
 
