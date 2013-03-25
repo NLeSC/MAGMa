@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os
+import os,re
 import zlib,gzip
 import sqlite3
 import time
@@ -40,16 +40,19 @@ conn1 = sqlite3.connect(outputdir+"Pubchem_Names.db")
 c1 = conn1.cursor()
 try:
     c1.execute("CREATE TABLE names (cid INTEGER PRIMARY KEY, name TEXT, refscore INTEGER)")
-    #currently using a Synonym db created with Stefans java script
-    #could be generated with something like:
-    namesfile=gzip.open(inputdir+'CID-Synonym-filtered.gz')
+    meshfile=open(inputdir+'CID-MeSH.txt')
+    mesh={}
+    for line in meshfile:
+        splitline=line.split('\t')
+        mesh[splitline[0]]=splitline[1]
+    meshfile.close()
+    namesfile=gzip.open(inputdir+'CID-Synonym-filtered.gz') # download from ftp://ftp.ncbi.nlm.nih.gov/pubchem/Compound/Extras/
     sidfile=gzip.open(inputdir+'CID-SID.gz')
     splitsid=sidfile.readline().split("\t")
     splitnames=namesfile.readline().split("\t")
     while splitsid != ['']:
         curr_cid=splitsid[0]
         sid_count=1
-        names_count=1
         name=''
         splitsid=sidfile.readline().split("\t")
         while splitsid[0]==curr_cid:
@@ -57,10 +60,13 @@ try:
             splitsid=sidfile.readline().split("\t")
         if splitnames[0]==curr_cid:
             name=splitnames[1][:-1]
+        if curr_cid in mesh:
+            name=mesh[curr_cid]
         while splitnames[0]==curr_cid:
-            names_count+=1
+            #if name=='' and re.search('[0-9][0-9]',splitnames[1]) == None and splitnames[1][:3] != 'AC':
+            #    name=splitnames[1]
             splitnames=namesfile.readline().split("\t")
-        c1.execute('INSERT INTO names (cid, name, refscore) VALUES (?,?,?)', (int(curr_cid),name,sid_count*names_count))
+        c1.execute('INSERT INTO names (cid, name, refscore) VALUES (?,?,?)', (int(curr_cid),name,sid_count))
         #if names_count==1:
         #    print curr_cid,name,sid_count,names_count,sid_count*names_count
     conn1.commit()
