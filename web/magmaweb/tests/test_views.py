@@ -3,7 +3,7 @@ import datetime
 from pyramid import testing
 from mock import Mock, patch
 from magmaweb.views import Views, JobViews, InCompleteJobViews
-from magmaweb.job import JobFactory, Job, JobDb, JobQuery
+from magmaweb.job import JobFactory, Job, JobDb, JobQuery, JobError
 from magmaweb.user import User, JobMeta
 
 
@@ -218,6 +218,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         jobs = [JobMeta(uuid.UUID('11111111-1111-1111-1111-111111111111'),
                         'bob', description='My job', created_at=created_at,
                         ms_filename='F1234.mzxml',
+                        state='STOPPED',
                         is_public=False,)]
         request.user.jobs = jobs
         views = Views(request)
@@ -231,6 +232,7 @@ class ViewsTestCase(AbstractViewsTestCase):
                           'description': 'My job',
                           'is_public': False,
                           'ms_filename': 'F1234.mzxml',
+                          'state': 'STOPPED',
                           'created_at': '2012-11-14T10:48:26'}]
         self.assertEqual(response, {'jobs': expected_jobs})
 
@@ -512,6 +514,63 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(response, dict(status='STOPPED', jobid='bla'))
         self.assertEqual(job.state, 'STOPPED')
 
+    def test_updatejson(self):
+        request = testing.DummyRequest()
+        request.json_body = {"id": "bar",
+                             "description": "New description",
+                             "ms_filename": "F12345.mzxml",
+                             "created_at": "1999-12-17T13:45:04",
+                             "is_public": True,
+                             }
+        job = self.fake_job()
+        expected_id = job.id
+        execpted_ca = job.created_at
+        views = InCompleteJobViews(job, request)
+
+        response = views.updatejson()
+
+        exp_response = {'success': True, 'message': 'Updated job'}
+        self.assertDictEqual(response, exp_response)
+        self.assertEqual(job.id, expected_id)
+        self.assertEqual(job.description, 'New description')
+        self.assertEqual(job.ms_filename, 'F12345.mzxml')
+        self.assertEqual(job.created_at, execpted_ca)
+        self.assertEqual(job.is_public, True)
+
+    def test_deletejson(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        views = InCompleteJobViews(job, request)
+
+        response = views.deletejson()
+
+        exp_response = {'success': True, 'message': 'Deleted job'}
+        self.assertDictEqual(response, exp_response)
+        job.delete.assert_called_with()
+        self.assertEquals(request.response.status_int, 204)
+
+    @patch('magmaweb.views.JobViews')
+    def test_results(self, jv):
+        mjv = Mock(JobViews)
+        jv.return_value = mjv
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        views = InCompleteJobViews(job, request)
+
+        views.results()
+
+        mjv.results.assert_called_with()
+
+    def test_error(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        exc = JobError(job)
+        views = InCompleteJobViews(exc, request)
+
+        response = views.error()
+
+        self.assertEqual(response, {'exception': exc})
+
 
 class JobViewsTestCase(AbstractViewsTestCase):
     """ Test case for magmaweb.views.JobViews"""
@@ -561,13 +620,11 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                'limit': 10
                                                })
         job = self.fake_job()
-        job.state = 'INITIAL'
+        job.is_complete = Mock()
 
-        from pyramid.httpexceptions import HTTPFound
-        with self.assertRaises(HTTPFound) as e:
-            JobViews(job, request)
+        JobViews(job, request)
 
-        self.assertEqual(e.exception.location, 'http://example.com/status/foo')
+        job.is_complete.assert_called_with()
 
     def test_metabolitesjson_return(self):
         request = testing.DummyRequest(params={'start': 0,
@@ -935,37 +992,3 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  )
                                     })
 
-    def test_updatejson(self):
-        request = testing.DummyRequest()
-        request.json_body = {"id": "bar",
-                             "description": "New description",
-                             "ms_filename": "F12345.mzxml",
-                             "created_at": "1999-12-17T13:45:04",
-                             "is_public": True,
-                             }
-        job = self.fake_job()
-        expected_id = job.id
-        execpted_ca = job.created_at
-        views = JobViews(job, request)
-
-        response = views.updatejson()
-
-        exp_response = {'success': True, 'message': 'Updated job'}
-        self.assertDictEqual(response, exp_response)
-        self.assertEqual(job.id, expected_id)
-        self.assertEqual(job.description, 'New description')
-        self.assertEqual(job.ms_filename, 'F12345.mzxml')
-        self.assertEqual(job.created_at, execpted_ca)
-        self.assertEqual(job.is_public, True)
-
-    def test_deletejson(self):
-        request = testing.DummyRequest()
-        job = self.fake_job()
-        views = JobViews(job, request)
-
-        response = views.deletejson()
-
-        exp_response = {'success': True, 'message': 'Deleted job'}
-        self.assertDictEqual(response, exp_response)
-        job.delete.assert_called_with()
-        self.assertEquals(request.response.status_int, 204)

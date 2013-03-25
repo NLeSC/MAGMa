@@ -8,6 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import transaction
 from magmaweb.job import JobFactory, Job, JobDb, make_job_factory, JobQuery
+from magmaweb.job import JobError, JobIncomplete
 from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
 import magmaweb.user as mu
 
@@ -684,3 +685,21 @@ class JobTestCase(unittest.TestCase):
         self.job.is_public = True
 
         self.assertEquals(self.job.is_public, True)
+
+    def test_is_complete(self):
+        self.assertTrue(self.job.is_complete())
+
+    def test_is_complete_running(self):
+        self.job.state = 'RUNNING'
+        with self.assertRaises(JobIncomplete) as e:
+            self.job.is_complete()
+
+        self.assertEqual(e.exception.job, self.job)
+
+    def test_is_complete_error(self):
+        self.job.state = 'ERROR'
+        with self.assertRaises(JobError) as e:
+            self.job.is_complete()
+
+        self.assertEqual(e.exception.job, self.job)
+
