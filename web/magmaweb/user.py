@@ -178,6 +178,7 @@ class JobMeta(Base):
         session = DBSession()
         session.delete(jobmeta)
 
+
 def get_user(request):
     """Returns None when there is no authenticatied userid or
     if user is not found in user db
@@ -187,6 +188,7 @@ def get_user(request):
         return request.user
     else:
         return None
+
 
 def groupfinder(userid, request):
     # can not use user from request, causes inf loop
