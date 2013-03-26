@@ -76,6 +76,16 @@ Alter owner of job
    Job.add(job)
    commit()
 
+Remove user and his/her jobs
+----------------------------
+
+   from magmaweb.job import JobFactory
+   factory = JobFactory('data/jobs')
+   for jobmeta in user.jobs:
+       factory.fromId(jobmeta.jobid).delete()
+   User.delete(user)
+   commit()
+
 Anonymous and restricted mode
 =============================
 
