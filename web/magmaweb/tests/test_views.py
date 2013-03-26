@@ -4,6 +4,7 @@ from pyramid import testing
 from mock import Mock, patch
 from magmaweb.views import Views, JobViews, InCompleteJobViews
 from magmaweb.job import JobFactory, Job, JobDb, JobQuery
+from magmaweb.job import JobError, JobIncomplete
 from magmaweb.user import User, JobMeta
 
 
@@ -218,6 +219,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         jobs = [JobMeta(uuid.UUID('11111111-1111-1111-1111-111111111111'),
                         'bob', description='My job', created_at=created_at,
                         ms_filename='F1234.mzxml',
+                        state='STOPPED',
                         is_public=False,)]
         request.user.jobs = jobs
         views = Views(request)
@@ -231,6 +233,7 @@ class ViewsTestCase(AbstractViewsTestCase):
                           'description': 'My job',
                           'is_public': False,
                           'ms_filename': 'F1234.mzxml',
+                          'state': 'STOPPED',
                           'created_at': '2012-11-14T10:48:26'}]
         self.assertEqual(response, {'jobs': expected_jobs})
 
@@ -512,13 +515,62 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(response, dict(status='STOPPED', jobid='bla'))
         self.assertEqual(job.state, 'STOPPED')
 
+    def test_updatejson(self):
+        request = testing.DummyRequest()
+        request.json_body = {"id": "bar",
+                             "description": "New description",
+                             "ms_filename": "F12345.mzxml",
+                             "created_at": "1999-12-17T13:45:04",
+                             "is_public": True,
+                             }
+        job = self.fake_job()
+        expected_id = job.id
+        execpted_ca = job.created_at
+        views = InCompleteJobViews(job, request)
 
-class JobViewsTestCase(AbstractViewsTestCase):
-    """ Test case for magmaweb.views.JobViews"""
+        response = views.updatejson()
 
-    def setUp(self):
-        AbstractViewsTestCase.setUp(self)
-        self.config.add_route('status', '/status/{jobid}')
+        exp_response = {'success': True, 'message': 'Updated job'}
+        self.assertDictEqual(response, exp_response)
+        self.assertEqual(job.id, expected_id)
+        self.assertEqual(job.description, 'New description')
+        self.assertEqual(job.ms_filename, 'F12345.mzxml')
+        self.assertEqual(job.created_at, execpted_ca)
+        self.assertEqual(job.is_public, True)
+
+    def test_deletejson(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        views = InCompleteJobViews(job, request)
+
+        response = views.deletejson()
+
+        exp_response = {'success': True, 'message': 'Deleted job'}
+        self.assertDictEqual(response, exp_response)
+        job.delete.assert_called_with()
+        self.assertEquals(request.response.status_int, 204)
+
+    def test_error(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        exc = JobError(job)
+        views = InCompleteJobViews(exc, request)
+
+        response = views.error()
+
+        self.assertEqual(response, {'exception': exc})
+
+    def test_job_incomplete(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'RUNNING'
+        exc = JobIncomplete(job)
+        views = InCompleteJobViews(exc, request)
+
+        response = views.job_incomplete()
+
+        self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
 
     @patch('magmaweb.views.has_permission')
     def test_resuls_canrun(self, has_permission):
@@ -526,7 +578,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
         has_permission.return_value = Allowed('Faked allowed')
         request = testing.DummyRequest()
         job = self.fake_job()
-        views = JobViews(job, request)
+        views = InCompleteJobViews(job, request)
         response = views.results()
 
         self.assertEqual(response, dict(jobid='foo',
@@ -543,7 +595,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
         has_permission.return_value = Denied('Faked denied')
         request = testing.DummyRequest()
         job = self.fake_job()
-        views = JobViews(job, request)
+        views = InCompleteJobViews(job, request)
 
         response = views.results()
 
@@ -556,18 +608,24 @@ class JobViewsTestCase(AbstractViewsTestCase):
         self.assertDictEqual(response, exp_response)
         has_permission.assert_called_with('run', job, request)
 
+
+class JobViewsTestCase(AbstractViewsTestCase):
+    """ Test case for magmaweb.views.JobViews"""
+
+    def setUp(self):
+        AbstractViewsTestCase.setUp(self)
+        self.config.add_route('status', '/status/{jobid}')
+
     def test_incompletejob(self):
         request = testing.DummyRequest(params={'start': 0,
                                                'limit': 10
                                                })
         job = self.fake_job()
-        job.state = 'INITIAL'
+        job.is_complete = Mock()
 
-        from pyramid.httpexceptions import HTTPFound
-        with self.assertRaises(HTTPFound) as e:
-            JobViews(job, request)
+        JobViews(job, request)
 
-        self.assertEqual(e.exception.location, 'http://example.com/status/foo')
+        job.is_complete.assert_called_with()
 
     def test_metabolitesjson_return(self):
         request = testing.DummyRequest(params={'start': 0,
@@ -934,38 +992,3 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  max_water_losses=1,
                                                  )
                                     })
-
-    def test_updatejson(self):
-        request = testing.DummyRequest()
-        request.json_body = {"id": "bar",
-                             "description": "New description",
-                             "ms_filename": "F12345.mzxml",
-                             "created_at": "1999-12-17T13:45:04",
-                             "is_public": True,
-                             }
-        job = self.fake_job()
-        expected_id = job.id
-        execpted_ca = job.created_at
-        views = JobViews(job, request)
-
-        response = views.updatejson()
-
-        exp_response = {'success': True, 'message': 'Updated job'}
-        self.assertDictEqual(response, exp_response)
-        self.assertEqual(job.id, expected_id)
-        self.assertEqual(job.description, 'New description')
-        self.assertEqual(job.ms_filename, 'F12345.mzxml')
-        self.assertEqual(job.created_at, execpted_ca)
-        self.assertEqual(job.is_public, True)
-
-    def test_deletejson(self):
-        request = testing.DummyRequest()
-        job = self.fake_job()
-        views = JobViews(job, request)
-
-        response = views.deletejson()
-
-        exp_response = {'success': True, 'message': 'Deleted job'}
-        self.assertDictEqual(response, exp_response)
-        job.delete.assert_called_with()
-        self.assertEquals(request.response.status_int, 204)

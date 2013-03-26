@@ -224,6 +224,7 @@ class TestGetUser(unittest.TestCase):
 
         self.assertIsNone(rf)
 
+
 class TestGroupFinder(unittest.TestCase):
     def setUp(self):
         self.request = testing.DummyRequest()
@@ -243,6 +244,7 @@ class TestGroupFinder(unittest.TestCase):
         principals = user.groupfinder('bob', self.request)
 
         self.assertIsNone(principals)
+
 
 class TestRootFactory(unittest.TestCase):
     def setUp(self):
