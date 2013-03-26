@@ -519,6 +519,9 @@ class JobQuery(object):
         if from_subset:
             script += '-j - '
 
+        if self.restricted:
+            script += '--time_limit 3 '
+
         script += "--fast {db}\n"
         self.script += script
 
