@@ -687,14 +687,17 @@ class JobTestCase(unittest.TestCase):
         self.assertEquals(self.job.is_public, True)
 
     def test_is_complete(self):
+        self.job.state = 'STOPPED'
         self.assertTrue(self.job.is_complete())
 
     def test_is_complete_running(self):
-        self.job.state = 'RUNNING'
-        with self.assertRaises(JobIncomplete) as e:
-            self.job.is_complete()
+        running_states = ('INITIAL', 'PRE_STAGING', 'RUNNING', 'POST_STAGING', 'Progress: 50%')
+        for running_state in running_states:
+            self.job.state = running_state
+            with self.assertRaises(JobIncomplete) as e:
+                self.job.is_complete()
 
-        self.assertEqual(e.exception.job, self.job)
+            self.assertEqual(e.exception.job, self.job)
 
     def test_is_complete_error(self):
         self.job.state = 'ERROR'
