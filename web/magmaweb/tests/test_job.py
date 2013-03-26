@@ -702,4 +702,3 @@ class JobTestCase(unittest.TestCase):
             self.job.is_complete()
 
         self.assertEqual(e.exception.job, self.job)
-

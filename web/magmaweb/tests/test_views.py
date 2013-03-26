@@ -3,7 +3,8 @@ import datetime
 from pyramid import testing
 from mock import Mock, patch
 from magmaweb.views import Views, JobViews, InCompleteJobViews
-from magmaweb.job import JobFactory, Job, JobDb, JobQuery, JobError
+from magmaweb.job import JobFactory, Job, JobDb, JobQuery
+from magmaweb.job import JobError, JobIncomplete
 from magmaweb.user import User, JobMeta
 
 
@@ -549,18 +550,6 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
         job.delete.assert_called_with()
         self.assertEquals(request.response.status_int, 204)
 
-    @patch('magmaweb.views.JobViews')
-    def test_results(self, jv):
-        mjv = Mock(JobViews)
-        jv.return_value = mjv
-        request = testing.DummyRequest()
-        job = self.fake_job()
-        views = InCompleteJobViews(job, request)
-
-        views.results()
-
-        mjv.results.assert_called_with()
-
     def test_error(self):
         request = testing.DummyRequest()
         job = self.fake_job()
@@ -571,13 +560,17 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
 
         self.assertEqual(response, {'exception': exc})
 
+    def test_job_incomplete(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'RUNNING'
+        exc = JobIncomplete(job)
+        views = InCompleteJobViews(exc, request)
 
-class JobViewsTestCase(AbstractViewsTestCase):
-    """ Test case for magmaweb.views.JobViews"""
+        response = views.job_incomplete()
 
-    def setUp(self):
-        AbstractViewsTestCase.setUp(self)
-        self.config.add_route('status', '/status/{jobid}')
+        self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
 
     @patch('magmaweb.views.has_permission')
     def test_resuls_canrun(self, has_permission):
@@ -585,7 +578,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
         has_permission.return_value = Allowed('Faked allowed')
         request = testing.DummyRequest()
         job = self.fake_job()
-        views = JobViews(job, request)
+        views = InCompleteJobViews(job, request)
         response = views.results()
 
         self.assertEqual(response, dict(jobid='foo',
@@ -602,7 +595,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
         has_permission.return_value = Denied('Faked denied')
         request = testing.DummyRequest()
         job = self.fake_job()
-        views = JobViews(job, request)
+        views = InCompleteJobViews(job, request)
 
         response = views.results()
 
@@ -614,6 +607,14 @@ class JobViewsTestCase(AbstractViewsTestCase):
                             )
         self.assertDictEqual(response, exp_response)
         has_permission.assert_called_with('run', job, request)
+
+
+class JobViewsTestCase(AbstractViewsTestCase):
+    """ Test case for magmaweb.views.JobViews"""
+
+    def setUp(self):
+        AbstractViewsTestCase.setUp(self)
+        self.config.add_route('status', '/status/{jobid}')
 
     def test_incompletejob(self):
         request = testing.DummyRequest(params={'start': 0,
@@ -991,4 +992,3 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  max_water_losses=1,
                                                  )
                                     })
-
