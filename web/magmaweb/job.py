@@ -490,16 +490,17 @@ class Job(object):
         self.db.session.remove()
         shutil.rmtree(self.dir)
 
-
     def is_complete(self):
         """Checks if job is complete
 
         Returns true or raises JobException or JobIncomplete
         """
         # TODO redirect to status page when job is in progress
-        # progress == ('INITIAL', 'PRE_STAGING', 'RUNNING', 'POST_STAGING' or contains 'candidate molecules processed ...'
+        # progress == ('INITIAL', 'PRE_STAGING', 'RUNNING', 'POST_STAGING'
+        # or contains 'candidate molecules processed ...'
         # TODO show error page when job.state == ERROR
-        # TODO show error page when interactive==false and job contains no molecules or no ms data
+        # TODO show error page when interactive==false
+        # and job contains no molecules or no ms data
 
         progress_states = ('INITIAL', 'PRE_STAGING', 'RUNNING', 'POST_STAGING')
         if self.state in progress_states or 'processed ...' in self.state:
@@ -508,6 +509,7 @@ class Job(object):
             raise JobError(self)
         else:
             return True
+
 
 class JobDb(object):
     """Database of a job"""

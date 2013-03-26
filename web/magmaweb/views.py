@@ -255,10 +255,6 @@ class InCompleteJobViews(object):
                  renderer='json',
                  permission='run',
                  request_method='GET')
-    @view_config(context=JobIncomplete,
-                 renderer='status.mak',
-                 permission='run',
-                 )
     def job_status(self):
         """Returns status of a job
 
@@ -320,34 +316,11 @@ class InCompleteJobViews(object):
         if job has error shows error page
         or if job in progress shows status page
         """
-        # results() was part of JobViews, but got 'predicate mismatch for view' error when
+        # results() was part of JobViews,
+        # but got 'predicate mismatch for view' error when
         # PUT, DELETE, GET of same route are in different classes
         # so moved GET to InCompleteJobViews
-        jv = JobViews(self.job, self.request)
-        return jv.results()
-
-    @view_config(context=JobError, renderer='error.mak')
-    def error(self):
-        return {'exception': self.job}
-
-    @view_config(context=JobIncomplete,
-                 renderer='status.mak',
-                 permission='run',
-                 )
-    def job_incomplete(self):
-        self.job = self.job.job
-        return self.job_status()
-
-@view_defaults(context=Job, permission='view')
-class JobViews(object):
-    """Views for pyramid based web application with completed job"""
-    def __init__(self, job, request):
-        self.request = request
-        self.job = job
-        job.is_complete()
-
-    def results(self):
-        """Returns results page"""
+        self.job.is_complete()
         db = self.job.db
         # determine if Run buttons should be shown
         canRun = has_permission('run', self.job, self.request)
@@ -358,6 +331,24 @@ class JobViews(object):
                     canRun=bool(canRun),
                     job=self.job,
                     )
+
+    @view_config(context=JobError, renderer='error.mak')
+    def error(self):
+        return {'exception': self.job}
+
+    @view_config(context=JobIncomplete, renderer='status.mak')
+    def job_incomplete(self):
+        self.job = self.job.job
+        return self.job_status()
+
+
+@view_defaults(context=Job, permission='view')
+class JobViews(object):
+    """Views for pyramid based web application with completed job"""
+    def __init__(self, job, request):
+        self.request = request
+        self.job = job
+        job.is_complete()
 
     @view_config(route_name='metabolites.json', renderer='json')
     def metabolitesjson(self):
