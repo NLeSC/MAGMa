@@ -785,7 +785,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
         script += " --max_water_losses '1' --call_back_url '/'"
         script += " --structure_database 'pubchem'"
         script += " --db_options ',1200,True,1'"
-        script += " --fast {db}\n"
+        script += " --time_limit 3 --fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=[],
                                   script=script,
