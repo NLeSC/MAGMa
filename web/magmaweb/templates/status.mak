@@ -9,6 +9,5 @@
 <meta http-equiv="refresh" content="2" />
 % endif
 </head>
-<body><h2>Status: ${status}
-</h2></body>
+<body>${status|n}</body>
 </html>

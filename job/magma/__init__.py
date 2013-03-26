@@ -694,9 +694,11 @@ class AnnotateEngine(object):
                 if self.call_back_engine != None:
                     update_last=time.time()-update_time
                     if update_last > update_interval: # update status every second
-                        update_string=str(total_metids-len(metids)-len(ids)+count)+" / "+str(total_metids)+" candidate molecules processed ..."
+                        update_string='<h1>Progress: %d / %d candidate molecules processed  (%d%%)</h1>' % (total_metids-len(metids)-len(ids)+count,total_metids,100.0*(total_metids-len(metids)-len(ids)+count)/total_metids)
+                        update_string+='<h3>Time: %02d:%02d:%02d' % (elapsed_time//3600,(elapsed_time%3600)//60,elapsed_time%60)
                         if time_limit != None:
-                            update_string+=".... Elapsed time: "+str(int(elapsed_time/time_limit/60*100))+"% of "+str(time_limit)+" minutes"
+                            update_string+=' / max. %02d:%02d:00 (%d%%)' % (time_limit//60,time_limit%60,elapsed_time/time_limit/60*100)
+                        update_string+='</h3>'
                         self.call_back_engine.update_callback_url(update_string)
                         update_time = update_time + update_last//update_interval*update_interval
                 if time_limit and elapsed_time > time_limit * 60:
