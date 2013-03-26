@@ -34,16 +34,32 @@ class FragmentNotFound(Exception):
     pass
 
 
-class JobNotFound(Exception):
-    """Raised when a job with a identifier is not found"""
-
+class JobIdException(Exception):
     def __init__(self, message, jobid):
         Exception.__init__(self, message)
         self.jobid = jobid
 
 
+class JobException(Exception):
+    def __init__(self, job):
+        Exception.__init__(self)
+        self.job = job
+
+
+class JobNotFound(JobIdException):
+    """Raised when a job with a identifier is not found"""
+
+
 class JobSubmissionError(IOError):
     """Raised when a job fails to be submitted"""
+
+
+class JobIncomplete(JobException):
+    """Raised when a complete job is required but job isnt"""
+
+
+class JobError(JobException):
+    """Job which failed during run"""
 
 
 def make_job_factory(params):
@@ -473,6 +489,26 @@ class Job(object):
         # disconnect from job results database before removing database file
         self.db.session.remove()
         shutil.rmtree(self.dir)
+
+    def is_complete(self):
+        """Checks if job is complete
+
+        Returns true or raises JobException or JobIncomplete
+        """
+        # TODO redirect to status page when job is in progress
+        # progress == ('INITIAL', 'PRE_STAGING', 'RUNNING', 'POST_STAGING'
+        # or contains 'candidate molecules processed ...'
+        # TODO show error page when job.state == ERROR
+        # TODO show error page when interactive==false
+        # and job contains no molecules or no ms data
+
+        progress_states = ('INITIAL', 'PRE_STAGING', 'RUNNING', 'POST_STAGING')
+        if self.state in progress_states or 'processed ...' in self.state:
+            raise JobIncomplete(self)
+        elif self.state == 'ERROR':
+            raise JobError(self)
+        else:
+            return True
 
 
 class JobDb(object):
