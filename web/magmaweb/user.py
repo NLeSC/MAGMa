@@ -113,9 +113,16 @@ class User(Base):
         session.flush()
 
     @classmethod
+    def delete(cls, user):
+        """Deletes :class:`User` from db"""
+        session = DBSession()
+        session.delete(user)
+        session.flush()
+
+    @classmethod
     def generate(cls,
                  displayname='Temporary user',
-                 email='example@example.com'
+                 email='example@example.com',
                  ):
         """Generates a user with a uuid as userid
         and adds it to the db and commits

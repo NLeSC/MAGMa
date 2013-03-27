@@ -6,26 +6,38 @@ from webtest import TestApp
 from magmaweb import main
 from magmaweb.user import DBSession, User
 from magmaweb.job import make_job_factory
-from test_job import populateTestingDB
+from magmaweb.tests.test_job import populateTestingDB
 
 
 class FunctionalTests(unittest.TestCase):
+    settings = {}
+
     def setUp(self):
         self.root_dir = tempfile.mkdtemp()
-        self.settings = {'jobfactory.root_dir': self.root_dir,
-                         'mako.directories': 'magmaweb:templates',
-                         'extjsroot': 'ext',
-                         'sqlalchemy.url': 'sqlite:///:memory:',
-                         'cookie.secret': 'aepeeV6aizaiph5Ae0Reimeequuluwoh',
-                         'cookie.path': '/magma',
-                         'monitor_user': 'jobmanager',
-                         }
-        # add REMOTE_ADDR to prevent ip auth
-        # treating requests as coming from localhost
-        env = dict(REMOTE_ADDR='1.2.3.4')
+        # default settings
+        settings = {'jobfactory.root_dir': self.root_dir,
+                    'mako.directories': 'magmaweb:templates',
+                    'extjsroot': 'ext',
+                    'sqlalchemy.url': 'sqlite:///:memory:',
+                    'cookie.secret': 'aepeeV6aizaiph5Ae0Reimeequuluwoh',
+                    'cookie.path': '/magma',
+                    'monitor_user': 'jobmanager',
+                    }
+        settings.update(self.settings)
+        self.settings = settings
         app = main({}, **self.settings)
-        self.testapp = TestApp(app, extra_environ=env)
+        self.testapp = TestApp(app)
 
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.root_dir)
+        del self.testapp
+        DBSession.remove()
+
+
+class FunctionalPrivateTests(FunctionalTests):
+    def setUp(self):
+        FunctionalTests.setUp(self)
         # Setup owner of job
         jf = make_job_factory(self.settings)
         with transaction.manager:
@@ -34,15 +46,9 @@ class FunctionalTests(unittest.TestCase):
             self.job = jf.fromScratch('bob')
             self.jobid = self.job.id
 
-    def tearDown(self):
-        import shutil
-        shutil.rmtree(self.root_dir)
-        del self.testapp
-        DBSession.remove()
-
-    def test_home(self):
-        res = self.testapp.get('/', status=200)
-        self.assertTrue('Welcome' in res.body)
+    def do_login(self):
+        params = {'userid': 'bob', 'password': 'mypassword'}
+        self.testapp.post('/login', params)
 
     def fake_jobid(self):
         """ Create job in self.root_dir filled with test db"""
@@ -50,9 +56,10 @@ class FunctionalTests(unittest.TestCase):
         self.job.db.session.commit()
         return self.jobid
 
-    def do_login(self):
-        params = {'userid': 'bob', 'password': 'mypassword'}
-        self.testapp.post('/login', params)
+    def test_home(self):
+        self.do_login()
+        res = self.testapp.get('/', status=200)
+        self.assertTrue('Submit' in res.body)
 
     def test_metabolites(self):
         self.do_login()
@@ -81,7 +88,6 @@ class FunctionalTests(unittest.TestCase):
                 'level': 0,
                 'mol': u'Molfile',
                 'molformula': u'C6H6O2',
-                'nhits': None,
                 'nhits': 1,
                 'origin': u'pyrocatechol',
                 'probability': 1.0,
@@ -94,7 +100,6 @@ class FunctionalTests(unittest.TestCase):
                 'isquery': True, 'level': 0, 'metid': 352,
                 'mol': "Molfile of dihydroxyphenyl-valerolactone",
                 'molformula': "C11H12O4",
-                'nhits': None,
                 'nhits': 1,
                 'origin': "dihydroxyphenyl-valerolactone",
                 'probability': 1,
@@ -128,3 +133,13 @@ class FunctionalTests(unittest.TestCase):
                                 })
 
         self.testapp.put(req_url, req_body2)
+
+
+class FunctionalPublicTests(FunctionalTests):
+    settings = {'auto_register': True}
+
+    def test_home(self):
+        # Visiting / redirects to /login
+        # which automatically registers/logins and redirects back to /
+        res = self.testapp.get('/', status=302).follow(status=200)
+        self.assertTrue('Submit' in res.body)
