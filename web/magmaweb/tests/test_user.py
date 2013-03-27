@@ -128,6 +128,20 @@ class TestUser(unittest.TestCase):
 
         destroy_user_db()
 
+    def test_delete(self):
+        init_user_db()
+
+        u = user.User('bob', 'Bob Smith', 'bob@smith.org')
+        user.User.add(u)
+
+        user.User.delete(u)
+
+        session = user.DBSession()
+        u2 = session.query(user.User).get('bob')
+        self.assertIsNone(u2)
+
+        destroy_user_db()
+
 
 class TestJobMeta(unittest.TestCase):
     def setUp(self):

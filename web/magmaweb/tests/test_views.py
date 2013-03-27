@@ -48,13 +48,6 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         self.assertEqual(response, {})
 
-    def test_startjob(self):
-        request = testing.DummyRequest()
-        views = Views(request)
-        response = views.startjob()
-
-        self.assertEqual(response, {})
-
     def test_allinone_with_ms_data_as_file(self):
         from cgi import FieldStorage
         ms_file = FieldStorage()
@@ -282,17 +275,17 @@ class ViewsTestCase(AbstractViewsTestCase):
     def test_login_get(self):
         self.config.add_route('home', '/')
         self.config.add_route('login', '/login')
-        self.config.add_route('startjob', '/start')
+        self.config.add_route('workspace', '/workspace')
         request = testing.DummyRequest()
         request.user = None
-        request.url = 'http://example.com/startjob'
+        request.url = 'http://example.com/workspace'
         route_mapper = self.config.get_routes_mapper()
-        request.matched_route = route_mapper.get_route('startjob')
+        request.matched_route = route_mapper.get_route('workspace')
         views = Views(request)
 
         response = views.login()
 
-        expected_response = {'came_from': 'http://example.com/startjob',
+        expected_response = {'came_from': 'http://example.com/workspace',
                              'userid': '',
                              'password': ''
                              }
@@ -308,20 +301,20 @@ class ViewsTestCase(AbstractViewsTestCase):
         u.validate_password.return_value = True
         user.by_id.return_value = u
         self.config.add_route('login', '/login')
-        self.config.add_route('startjob', '/start')
+        self.config.add_route('workspace', '/workspace')
         post = {'userid': 'bob',
                 'password': 'mypw'}
-        params = {'came_from': 'http://example.com/startjob'}
+        params = {'came_from': 'http://example.com/workspace'}
         request = testing.DummyRequest(post=post, params=params)
         request.user = None
         route_mapper = self.config.get_routes_mapper()
-        request.matched_route = route_mapper.get_route('startjob')
+        request.matched_route = route_mapper.get_route('workspace')
         views = Views(request)
 
         response = views.login()
 
         self.assertIsInstance(response, HTTPFound)
-        self.assertEqual(response.location, 'http://example.com/startjob')
+        self.assertEqual(response.location, 'http://example.com/workspace')
         u.validate_password.assert_called_with('mypw')
         remember.assert_called_with(request, 'bob')
 
@@ -332,20 +325,20 @@ class ViewsTestCase(AbstractViewsTestCase):
         u.validate_password.return_value = False
         user.by_id.return_value = u
         self.config.add_route('login', '/login')
-        self.config.add_route('startjob', '/start')
+        self.config.add_route('workspace', '/workspace')
         post = {'userid': 'bob',
                 'password': 'mypw'}
-        params = {'came_from': 'http://example.com/startjob'}
+        params = {'came_from': 'http://example.com/workspace'}
         request = testing.DummyRequest(post=post, params=params)
         request.user = None
         route_mapper = self.config.get_routes_mapper()
-        request.matched_route = route_mapper.get_route('startjob')
+        request.matched_route = route_mapper.get_route('workspace')
 
         views = Views(request)
 
         response = views.login()
 
-        expected_response = {'came_from': 'http://example.com/startjob',
+        expected_response = {'came_from': 'http://example.com/workspace',
                              'userid': 'bob',
                              'password': 'mypw'
                              }
@@ -374,19 +367,19 @@ class ViewsTestCase(AbstractViewsTestCase):
         from pyramid.httpexceptions import HTTPFound
         self.config.add_route('home', '/')
         self.config.add_route('login', '/login')
-        self.config.add_route('startjob', '/start')
+        self.config.add_route('workspace', '/workspace')
         request = testing.DummyRequest()
         request.user = None
-        request.url = 'http://example.com/startjob'
+        request.url = 'http://example.com/workspace'
         route_mapper = self.config.get_routes_mapper()
-        request.matched_route = route_mapper.get_route('startjob')
+        request.matched_route = route_mapper.get_route('workspace')
         request.registry.settings['auto_register'] = True
         views = Views(request)
 
         response = views.login()
 
         self.assertIsInstance(response, HTTPFound)
-        self.assertEqual(response.location, 'http://example.com/startjob')
+        self.assertEqual(response.location, 'http://example.com/workspace')
         user.generate.assert_called_with()
         remember.assert_called_with(request, 'bob')
 
