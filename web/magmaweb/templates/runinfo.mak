@@ -64,7 +64,7 @@
 				</td>
 			</tr>
 			<tr>
-				<td>Maximum number bond breaks to generate substructures:</td>
+				<td>Maximum number of bond breaks to generate substructures:</td>
 				<td>${run.max_broken_bonds}</td>
 			</tr>
             <tr>
@@ -72,9 +72,13 @@
                 <td>${run.max_water_losses}</td>
             </tr>
 			<tr>
-				<td>Mass precision for matching calculated masses with peaks:</td>
+				<td>Relative mass precision for matching peaks and precursor ions (ppm):</td>
 				<td>${run.mz_precision}</td>
 			</tr>
+            <tr>
+                <td>Absolute mass precision for matching peaks and precursor ions (Da):</td>
+                <td>${run.mz_precision_abs}</td>
+            </tr>
 			<tr>
 				<td>Mass precision for matching peaks and precursor ions:</td>
 				<td>${run.precursor_mz_precision}</td>
