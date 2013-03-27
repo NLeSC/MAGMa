@@ -44,7 +44,7 @@ try:
     mesh={}
     for line in meshfile:
         splitline=line.split('\t')
-        mesh[splitline[0]]=splitline[1]
+        mesh[splitline[0]]=splitline[1][:-1]
     meshfile.close()
     namesfile=gzip.open(inputdir+'CID-Synonym-filtered.gz') # download from ftp://ftp.ncbi.nlm.nih.gov/pubchem/Compound/Extras/
     sidfile=gzip.open(inputdir+'CID-SID.gz')
