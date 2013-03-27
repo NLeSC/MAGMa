@@ -676,12 +676,13 @@ class AnnotateEngine(object):
                                )))
             count=0
             for structure,job in jobs:
+                sys.stderr.write('Metabolite '+str(structure.metid))
                 raw_result=job(raw_result=True)
                 result,sout = pickle.loads(raw_result)
                 #print sout
                 (hits,frags)=result
                 total_frags+=frags
-                sys.stderr.write('Metabolite '+str(structure.metid)+' -> '+str(frags)+' fragments: '+str(structure.origin.encode('utf8'))+'\n')
+                sys.stderr.write(' -> '+str(frags)+' fragments: '+str(structure.origin.encode('utf8'))+'\n')
                 structure.nhits=len(hits)
                 self.db_session.add(structure)
                 for hit in hits:
