@@ -31,15 +31,13 @@ class Views(object):
         self.request = request
         self.job_factory = make_job_factory(request.registry.settings)
 
-    @view_config(route_name='home', renderer='home.mak')
+    @view_config(route_name='home',
+                 renderer='home.mak',
+                 request_method='GET',
+                 permission='view',
+                 )
     def home(self):
         """Returns homepage on GET. """
-        return {}
-
-    @view_config(route_name='startjob', renderer='startjob.mak',
-                 request_method='GET', permission='view')
-    def startjob(self):
-        """Returns startjob on GET. """
         return {}
 
     @view_config(route_name='defaults.json', renderer="json",
