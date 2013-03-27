@@ -84,7 +84,7 @@ class MagmaCommand(object):
         sc.add_argument('-c', '--ms_intensity_cutoff', help="Minimum intensity of level 1 peaks to be annotated (default: %(default)s)", default=1e6,type=float)
         sc.add_argument('-d', '--msms_intensity_cutoff', help="Minimum intensity of of fragment peaks to be annotated, as percentage of basepeak (default: %(default)s)", default=5,type=float)
         sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
-        sc.add_argument('-j', '--metids', type=argparse.FileType('rb'), help="File with structure ids")
+        sc.add_argument('-j', '--metids', help="structure ids, comma separated", type=str)
         sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bond breaks to generate substructures (default: %(default)s)", default=3,type=int)
         sc.add_argument('-w', '--max_water_losses', help="Maximum number of additional neutral water losses (default: %(default)s)", default=1,type=int)
         sc.add_argument('--precursor_mz_precision', help="Mass precision for matching peaks and precursor ions (default: %(default)s)", default=0.005,type=float)
@@ -245,7 +245,7 @@ class MagmaCommand(object):
         if args.metids == None:
             annotate_engine.search_structures(ncpus=args.ncpus,fast=args.fast,time_limit=args.time_limit)
         else:
-            metids=args.metids.split()+pubchem_metids
+            metids=args.metids.split(',')+pubchem_metids
             annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast,time_limit=args.time_limit)
         magma_session.commit()
             # annotate_engine.search_some_structures(metids)
