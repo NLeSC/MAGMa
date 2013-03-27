@@ -45,10 +45,10 @@ cdef class FragmentEngine(object):
         try:
             mol=Chem.MolFromMolBlock(str(mol))
             self.accept=1
+            self.natoms=Chem.natoms(mol)  # number of atoms in the molecule
         except:
             self.accept=0
             return
-        self.natoms=Chem.natoms(mol)  # number of atoms in the molecule
         if self.natoms>64:
             self.accept=0
             return

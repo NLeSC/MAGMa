@@ -15,13 +15,13 @@ class FragmentEngine(object):
         try:
             self.mol=Chem.MolFromMolBlock(str(mol))
             self.accept=True
+            self.natoms=Chem.natoms(self.mol)  # number of atoms in the molecule
         except:
             self.accept=False
             return
         self.max_broken_bonds=max_broken_bonds
         self.max_water_losses=max_water_losses
         self.ionisation_mode=ionisation_mode
-        self.natoms=Chem.natoms(self.mol)  # number of atoms in the molecule
         self.atom_masses=[]
         self.neutral_loss_atoms=[]
         self.bonded_atoms=[]           # [[list of atom numbers]]
