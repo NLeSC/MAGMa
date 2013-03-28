@@ -318,7 +318,7 @@ class InCompleteJobViews(object):
         # but got 'predicate mismatch for view' error when
         # PUT, DELETE, GET of same route are in different classes
         # so moved GET to InCompleteJobViews
-        self.job.is_complete()
+        self.job.is_complete(True)
         db = self.job.db
         # determine if Run buttons should be shown
         canRun = has_permission('run', self.job, self.request)
@@ -332,7 +332,10 @@ class InCompleteJobViews(object):
 
     @view_config(context=JobError, renderer='error.mak')
     def error(self):
-        return {'exception': self.job}
+        return {'exception': self.job,
+                'job': self.job.job,
+                'run': self.job.job.db.runInfo(),
+                }
 
     @view_config(context=JobIncomplete, renderer='status.mak')
     def job_incomplete(self):

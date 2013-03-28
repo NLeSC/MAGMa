@@ -551,7 +551,12 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
 
         response = views.error()
 
-        self.assertEqual(response, {'exception': exc})
+        eresponse = {'exception': exc,
+                     'job': job,
+                     'run': job.db.runInfo(),
+                     }
+
+        self.assertEqual(response, eresponse)
 
     def test_job_incomplete(self):
         request = testing.DummyRequest()

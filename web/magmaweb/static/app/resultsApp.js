@@ -253,8 +253,6 @@ Ext.define('Esc.magmaweb.resultsApp', {
     Ext.ComponentQuery.query('component[action=information]')[0].setHandler(function() {
         me.infoWindow.show();
     });
-
-    this.applyRole();
   },
   /**
    * Apply role to user interface.

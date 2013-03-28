@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import transaction
 from magmaweb.job import JobFactory, Job, JobDb, make_job_factory, JobQuery
-from magmaweb.job import JobError, JobIncomplete
+from magmaweb.job import JobError, JobIncomplete, MissingDataError
 from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
 import magmaweb.user as mu
 
@@ -705,3 +705,45 @@ class JobTestCase(unittest.TestCase):
             self.job.is_complete()
 
         self.assertEqual(e.exception.job, self.job)
+
+    def test_is_complete_filled(self):
+        self.job.db.hasMolecules.return_value = True
+        self.job.db.hasMspectras.return_value = True
+        self.job.db.hasFragments.return_value = True
+
+        complete = self.job.is_complete(True)
+
+        self.assertTrue(complete)
+
+    def test_is_complete_unfilled_molecules(self):
+        self.job.db.hasMolecules = Mock(return_value=False)
+        self.job.db.hasMspectras = Mock(return_value=True)
+        self.job.db.hasFragments = Mock(return_value=True)
+
+        with self.assertRaises(MissingDataError) as e:
+            self.job.is_complete(True)
+
+        self.assertEqual(e.exception.job, self.job)
+        self.assertEqual(e.exception.message, 'No molecules found')
+
+    def test_is_complete_unfilled_mspectra(self):
+        self.job.db.hasMolecules = Mock(return_value=True)
+        self.job.db.hasMspectras = Mock(return_value=False)
+        self.job.db.hasFragments = Mock(return_value=True)
+
+        with self.assertRaises(MissingDataError) as e:
+            self.job.is_complete(True)
+
+        self.assertEqual(e.exception.job, self.job)
+        self.assertEqual(e.exception.message, 'No mass spectras found')
+
+    def test_is_complete_unfilled_fragments(self):
+        self.job.db.hasMolecules = Mock(return_value=True)
+        self.job.db.hasMspectras = Mock(return_value=True)
+        self.job.db.hasFragments = Mock(return_value=False)
+
+        with self.assertRaises(MissingDataError) as e:
+            self.job.is_complete(True)
+
+        self.assertEqual(e.exception.job, self.job)
+        self.assertEqual(e.exception.message, 'No fragments found')
