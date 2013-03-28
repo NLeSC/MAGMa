@@ -41,8 +41,12 @@ class JobIdException(Exception):
 
 
 class JobException(Exception):
-    def __init__(self, job):
+    def __init__(self,
+                 job,
+                 message='Calculation failed for an unknown reason',
+                 ):
         Exception.__init__(self)
+        self.message = message
         self.job = job
 
 
@@ -60,6 +64,10 @@ class JobIncomplete(JobException):
 
 class JobError(JobException):
     """Job which failed during run"""
+
+
+class MissingDataError(JobError):
+    """Raised when job is missing data like molecules, peaks, or fragments"""
 
 
 def make_job_factory(params):
@@ -490,15 +498,21 @@ class Job(object):
         self.db.session.remove()
         shutil.rmtree(self.dir)
 
-    def is_complete(self):
+    def is_complete(self, mustBeFilled=False):
         """Checks if job is complete
 
-        Returns true or raises JobError or JobIncomplete
-        """
-        # TODO show error page when interactive==false
-        # and job contains no molecules or no ms data
+        If mustBeFilled==True then checks if jobs contains molecules, mspectras and fragments.
 
+        Returns true or raises JobError or JobIncomplete or MissingDataError
+        """
         if self.state == 'STOPPED':
+            if mustBeFilled:
+                if not self.db.hasMolecules():
+                    raise MissingDataError(self, 'No molecules found')
+                elif not self.db.hasMspectras():
+                    raise MissingDataError(self, 'No mass spectras found')
+                elif not self.db.hasFragments():
+                    raise MissingDataError(self, 'No fragments found')
             return True
         elif self.state == 'ERROR':
             raise JobError(self)
@@ -1011,3 +1025,15 @@ class JobDb(object):
         peak.assigned_metid = None
         self.session.add(peak)
         self.session.commit()
+
+    def hasMolecules(self):
+        """Does job database contain molecules"""
+        return self.session.query(Metabolite).count() > 0
+
+    def hasMspectras(self):
+        """Does job database contain mass spectra peaks"""
+        return self.session.query(Peak).count() > 0
+
+    def hasFragments(self):
+        """Does job database contain fragments"""
+        return self.session.query(Fragment).count() > 0
