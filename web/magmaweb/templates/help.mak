@@ -7,9 +7,7 @@
 <body>
 <h1>MAGMa Help page</h1>
 <h2>Home page</h2>
-Currently only contains the button to go to the start page.
-<h2>Start page</h2>
-The start page enables to run a new annotation. This requires three types of input:
+The home page enables to run a new annotation. This requires three types of input:
 <h3>Molecules</h3>
 Molecule can be imported by:
 <ul>
@@ -26,7 +24,7 @@ MS Data can be imported, either as file or via the text field, as:
 <li><a href="http://proteowizard.sourceforge.net/downloads.shtml">MSConvert</a> module from ProteoWizard</li>
 </ul>
 </li>
-<li>Tree: a custom format to enter a single spectral tree, e.g.<pre>
+<li>Mass Tree: a custom format to enter a single spectral tree based on m/z, e.g.<pre>
 MS1_peak_mz:MS1_peak_intensity (
 MS2_peak1_mz: MS2_peak1_intenstity,
 MS2_peak2_mz: MS2_peak2_intenstity (
@@ -37,11 +35,23 @@ MS2_peak2_mz: MS2_peak2_intenstity (
 MS2_peakX_mz: MS2_peakX_intenstity
 )
 </pre></li>
+<li>Formula Tree: a custom format to enter a single spectral tree based on molecular formulas, e.g.<pre>
+MS1_peak_formula:MS1_peak_intensity (
+MS2_peak1_formula: MS2_peak1_intenstity,
+MS2_peak2_formula: MS2_peak2_intenstity (
+    MS3_peak1_formula: MS3_peak1_intenstity,
+    MS3_peak2_formula: MS3_peak2_intenstity
+),
+…
+MS2_peakX_formula: MS2_peakX_intenstity
+)
+</pre></li>
 </ul>
 During import the (mzXML) data can be filtered on:
 <ul>
 <li>MS level: enables to ignore deeper levels in a spectrum</li>
 <li>Noise:  peaks below this intensity threshold are ignored</li>
+<li>MS1 scan number: Only read spectral tree with specified MS1 scan number</li>
 </ul>
 
 <h3>Annotate options</h3>
@@ -59,8 +69,8 @@ During import the (mzXML) data can be filtered on:
 </ul></li>
 <li>Intensity thresholds:
 <ul>
-<li>MS1 (abs): can be used to only annotate the most intense peaks in the Chromatogram</li>
-<li>MS2n>1 (% of base peak): threshold to filter fragment ion peaks</li>
+<li>MS<sup>1</sup> (abs): can be used to only annotate the most intense peaks in the Chromatogram</li>
+<li>MS<sup>2n>1</sup> (% of base peak): threshold to filter fragment ion peaks</li>
 </ul>
 </li>
 </ul>
@@ -120,6 +130,19 @@ Candidate (penalty) score: lower values indicate more likely candidates</li><li>
 With this button a selected candidate molecule can be assigned to an MS1 peak. The assignment can be undone by clicking the button again. The corresponding scan is highlighted in the Chromatochram panel. (To give some overview of all assignments), and the Assigned column in the Molecules table is updated.
 
 <h2>Workspace</h2>
-The workspace page gives a list of annotations that have performed. Old data can be removed by clicking the minus button in the right column. Double clicking the Description field allows typing a brief description of the purpose of the annotation.
+The workspace page gives a list of annotations that have performed. Old data can be removed by clicking the minus button in the right column.
+Fields of the job list can be edited by clicking them:
+<ul>
+<li>Description, allows typing a brief description for annotation purposes.</li>
+<li>MS filename, allows typing a file name of the MS data input file for annotation purposes.</li>
+<li>Public?, by default jobs are private. They can only be seen by the person who submitted it. The job can be toggled to Public.
+A public job can be seen by
+% if request.registry.settings.get('auto_register', False):
+another authenticated user
+% else:
+anyone
+% endif
+ knowing the job url.</li>
+</ul>
 </body>
 </html>
