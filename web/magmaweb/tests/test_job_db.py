@@ -1,7 +1,7 @@
 """Tests for magmaweb.job.JobDb"""
 import unittest
 from magmaweb.job import JobDb
-from magmaweb.models import Scan, Peak, Run
+from magmaweb.models import Scan, Peak, Run, Metabolite, Fragment
 from magmaweb.tests.test_job import initTestingDB
 
 
@@ -148,6 +148,27 @@ class JobDbTestCase(JobDbTestCaseAbstract):
         q = self.session.query(Peak.assigned_metid)
         q = q.filter(Peak.scanid == scanid)
         self.assertIsNone(q.filter(Peak.mz == mz).scalar())
+
+    def test_hasMolecules(self):
+        self.assertTrue(self.job.hasMolecules())
+
+    def test_hasNoMolecules(self):
+        self.job.session.query(Metabolite).delete()
+        self.assertFalse(self.job.hasMolecules())
+
+    def test_hasMspectras(self):
+        self.assertTrue(self.job.hasMspectras())
+
+    def test_hasNoMspectras(self):
+        self.job.session.query(Peak).delete()
+        self.assertFalse(self.job.hasMspectras())
+
+    def test_hasFragments(self):
+        self.assertTrue(self.job.hasFragments())
+
+    def test_hasNoFragments(self):
+        self.job.session.query(Fragment).delete()
+        self.assertFalse(self.job.hasFragments())
 
 
 class JobDbEmptyDatasetTestCase(unittest.TestCase):
