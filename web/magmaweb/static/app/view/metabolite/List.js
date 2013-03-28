@@ -89,7 +89,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         {text: 'Assigned', dataIndex: 'assigned', hidden: false, xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
         {text: 'Candidate score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
         molcol,
-        {text: 'Smiles', dataIndex: 'smiles', hidden:true},
+        {text: 'Inchikey', dataIndex: 'smiles', hidden:true},
         {text: 'Formula', dataIndex: 'molformula', filter: { type: 'string' }},
         {text: 'Monoisotopic mass', dataIndex: 'mim', filter: { type: 'numeric' }, hidden: false, xtype: 'numbercolumn', format: '0.00000'},
         {text: '&Delta;Mass (ppm)', dataIndex: 'deltappm', hidden: true, filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
