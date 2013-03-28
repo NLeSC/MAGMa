@@ -37,14 +37,7 @@ Ext.require([
   'Ext.layout.container.Border',
   'Ext.toolbar.Spacer',
   'Ext.container.ButtonGroup',
-  'Ext.form.Panel',
-  'Ext.grid.Panel',
-  'Ext.grid.column.Date',
-  'Ext.grid.column.Boolean',
-  'Ext.grid.column.Action',
-  'Ext.grid.plugin.CellEditing',
-  'Ext.data.proxy.Rest',
-  'Ext.window.MessageBox'
+  'Ext.window.Window'
 ]);
 
 Ext.onReady(function() {
