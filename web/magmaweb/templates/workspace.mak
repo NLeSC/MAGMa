@@ -50,6 +50,18 @@ Ext.require([
 Ext.onReady(function() {
   Ext.QuickTips.init();
 
+  <%!
+  import json
+  %>
+  var authenticated = ${json.dumps(request.user is not None)};
+  var anonymous = ${json.dumps(request.registry.settings.get('auto_register', False))|n};
+
+  % if not request.registry.settings.get('auto_register', False):
+  var access_token = Ext.create('Ext.button.Button', {
+      text: 'Generate access token for web services',
+      href: '${request.route_url('access_token')}'
+  });
+
   var form = Ext.create('Ext.form.Panel', {
     title: 'User',
     items:[{
@@ -70,12 +82,10 @@ Ext.onReady(function() {
     }],
     buttons: [{
       text: 'Update'
-    }]
+    }, access_token
+    ]
   });
-
-  <%!
-  import json
-  %>
+  % endif
 
   Ext.define('Job', {
       extend: 'Ext.data.Model',
@@ -211,16 +221,15 @@ Ext.onReady(function() {
     }]
   };
 
-  var access_token = Ext.create('Ext.button.Button', {
-    text: 'Generate access token for web services',
-    href: '${request.route_url('access_token')}'
-  });
-
   Ext.create('Ext.container.Viewport', {
     layout: 'border',
     items: [header, {
       region: 'center',
-      items: [form, access_token, job_grid, access_token],
+      % if not request.registry.settings.get('auto_register', False):
+      items: [form, job_grid],
+      % else:
+      items: [job_grid],
+      % endif
       border: false,
       bodyPadding: 5,
       autoScroll: true,
@@ -235,11 +244,6 @@ Ext.onReady(function() {
       }
     };
 
-    <%!
-    import json
-    %>
-    var authenticated = ${json.dumps(request.user is not None)};
-    var anonymous = ${json.dumps(request.registry.settings.get('auto_register', False))|n};
     user_authenticated(authenticated, anonymous);
 });
 </script>
