@@ -26,24 +26,24 @@ MS Data can be imported, either as file or via the text field, as:
 </li>
 <li>Mass Tree: a custom format to enter a single spectral tree based on m/z, e.g.<pre>
 MS1_peak_mz:MS1_peak_intensity (
-MS2_peak1_mz: MS2_peak1_intenstity,
-MS2_peak2_mz: MS2_peak2_intenstity (
-    MS3_peak1_mz: MS3_peak1_intenstity,
-    MS3_peak2_mz: MS3_peak2_intenstity
-),
-…
-MS2_peakX_mz: MS2_peakX_intenstity
+    MS2_peak1_mz: MS2_peak1_intenstity,
+    MS2_peak2_mz: MS2_peak2_intenstity (
+        MS3_peak1_mz: MS3_peak1_intenstity,
+        MS3_peak2_mz: MS3_peak2_intenstity
+    ),
+    …
+    MS2_peakX_mz: MS2_peakX_intenstity
 )
 </pre></li>
 <li>Formula Tree: a custom format to enter a single spectral tree based on molecular formulas, e.g.<pre>
 MS1_peak_formula:MS1_peak_intensity (
-MS2_peak1_formula: MS2_peak1_intenstity,
-MS2_peak2_formula: MS2_peak2_intenstity (
-    MS3_peak1_formula: MS3_peak1_intenstity,
-    MS3_peak2_formula: MS3_peak2_intenstity
-),
-…
-MS2_peakX_formula: MS2_peakX_intenstity
+    MS2_peak1_formula: MS2_peak1_intenstity,
+    MS2_peak2_formula: MS2_peak2_intenstity (
+        MS3_peak1_formula: MS3_peak1_intenstity,
+        MS3_peak2_formula: MS3_peak2_intenstity
+    ),
+    …
+    MS2_peakX_formula: MS2_peakX_intenstity
 )
 </pre></li>
 </ul>
@@ -51,7 +51,7 @@ During import the (mzXML) data can be filtered on:
 <ul>
 <li>MS level: enables to ignore deeper levels in a spectrum</li>
 <li>Noise:  peaks below this intensity threshold are ignored</li>
-<li>MS1 scan number: Only read spectral tree with specified MS1 scan number</li>
+<li>MS1 scan number: Only read spectral tree specified by MS1 scan number</li>
 </ul>
 
 <h3>Annotate options</h3>
