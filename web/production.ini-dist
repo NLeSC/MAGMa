@@ -15,6 +15,7 @@ mako.directories = magmaweb:templates
 # secret for cookie signing
 cookie.secret = agh7ahfixeiwieCh6Oovei1faecao4ee
 cookie.path = /magma
+cookie.path = magma
 
 # When auto_register is true then
 # It's not needed to create a user account
