@@ -24,6 +24,9 @@ def main(global_config, **settings):
         path=settings['cookie.path'],
         hashalg='sha512',
         callback=groupfinder,
+        cookie_name=settings.get('cookie.name', 'auth_tkt'),
+        wild_domain=False,
+        http_only=True,
     )
 
     # for service consumers
