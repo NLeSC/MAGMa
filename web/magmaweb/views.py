@@ -162,12 +162,13 @@ class Views(object):
     def login(self):
         """Login page
 
-        - Authenticated -> forbidden exception
-        - Unauthenticated
-        -- GET login page + MAC challenge
-        -- POST -> authenticated -> redirect came_from
-                                    or home if came_from=login
-        -- POST -> unauthenticated -> login page
+        * Authenticated -> forbidden exception
+        * Unauthenticated
+
+            * GET login page + MAC challenge
+            * POST -> authenticated -> redirect came_from
+                                        or home if came_from=login
+            * POST -> unauthenticated -> login page
 
         Or if auto_register=True then generates user
         and redirects back to request.url
