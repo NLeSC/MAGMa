@@ -34,3 +34,8 @@ API Documentation
 .. automodule:: magmaweb.job
     :members:
 
+:mod:`magmaweb.jobquery`
+------------------------
+
+.. automodule:: magmaweb.jobquery
+    :members:
