@@ -271,23 +271,28 @@ class MsDataEngine(object):
     def store_mzxml_file(self,mzxml_file,scan_filter=None):
         logging.warn('Store mzxml file')
         rundata=self.db_session.query(Run).one()
-        if rundata.ms_filename == None:
-            rundata.ms_filename=mzxml_file
-            self.db_session.add(rundata)
-            self.ms_filename=mzxml_file
-            tree=etree.parse(mzxml_file)
-            root=tree.getroot()
-            namespace='{'+root.nsmap[None]+'}'
-            mzxml_query=namespace+"msRun/"+namespace+"scan"
-            if scan_filter != None:
-                mzxml_query+="[@num='"+scan_filter+"']"
-            for mzxmlScan in root.findall(mzxml_query):
-                self.store_mzxml_scan(mzxmlScan,0,namespace)
-        else:
+        if rundata.ms_filename != None:
             sys.exit('Attempt to read MS data twice')
+        rundata.ms_filename=mzxml_file
+        self.db_session.add(rundata)
+        self.ms_filename=mzxml_file
+        tree=etree.parse(mzxml_file)
+        root=tree.getroot()
+        namespace='{'+root.nsmap[None]+'}'
+        mzxml_query=namespace+"msRun/"+namespace+"scan"
+        prec_scans=[] # in case of non-hierarchical mzXML, also find child scans
+        for mzxmlScan in root.findall(mzxml_query):
+            try:
+                if scan_filter == None or mzxmlScan.attrib['num'] == scan_filter or mzxmlScan.find(namespace+'precursorMz').attrib['precursorScanNum'] in prec_scans:
+                    self.store_mzxml_scan(mzxmlScan,0,namespace)
+                    prec_scans.append(mzxmlScan.attrib['num']) # in case of non-hierarchical mzXML, also find child scans
+            except:
+                pass
         self.db_session.commit()
 
     def store_mzxml_scan(self,mzxmlScan,precScan,namespace):
+        if mzxmlScan.attrib['peaksCount']=='0':
+            return
         scan=Scan(
             scanid=int(mzxmlScan.attrib['num']),
             mslevel=int(mzxmlScan.attrib['msLevel']),
@@ -306,7 +311,10 @@ class MsDataEngine(object):
                 if child.attrib.get('precursorScanNum') != None:
                     scan.precursorscanid=float(child.attrib['precursorScanNum'])
             if child.tag == namespace+'peaks':
-                self.store_mzxml_peaks(scan,child.text)
+                decoded = base64.decodestring(child.text)
+                if child.attrib['compressionType']=='zlib':
+                    decoded=zlib.decompress(decoded)
+                self.store_mzxml_peaks(scan,decoded)
             if child.tag == namespace+'scan' and int(child.attrib['msLevel'])<=self.max_ms_level:
 #                if scan.mslevel == 1:
 #                    cutoff=0.0
@@ -317,11 +325,10 @@ class MsDataEngine(object):
         self.db_session.add(scan)
         self.db_session.flush()
 
-    def store_mzxml_peaks(self,scan,line):
+    def store_mzxml_peaks(self,scan,decoded):
 #        dbpeak_cutoff=scan.basepeakintensity*self.rel_peak_cutoff
 #        if dbpeak_cutoff<self.abs_peak_cutoff:
 #            dbpeak_cutoff=self.abs_peak_cutoff
-        decoded = base64.decodestring(line)
         tmp_size = len(decoded)/4
         unpack_format1 = ">%df" % tmp_size
         unpacked = struct.unpack(unpack_format1,decoded)
