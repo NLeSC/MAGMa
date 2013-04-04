@@ -9,5 +9,8 @@ gat:
     localq.max.concurrent.jobs: 1
 http:
   port: 9998
+httpClient:
+  timeout: 60s
+  cookiesEnabled: true
 
 
