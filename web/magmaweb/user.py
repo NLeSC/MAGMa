@@ -37,6 +37,7 @@ def init_user_db(engine, create=True, fill=True):
     Set 'create' to False to skip createing tables.
     Set 'fill' to False to skip adding 'joblauncher' user.
     """
+    engine.execute('PRAGMA journal_mode=WAL')
     DBSession.configure(bind=engine)
     Base.metadata.bind = engine
     if create:
