@@ -312,8 +312,11 @@ class MsDataEngine(object):
                     scan.precursorscanid=float(child.attrib['precursorScanNum'])
             if child.tag == namespace+'peaks':
                 decoded = base64.decodestring(child.text)
-                if child.attrib['compressionType']=='zlib':
-                    decoded=zlib.decompress(decoded)
+                try:
+                    if child.attrib['compressionType']=='zlib':
+                        decoded=zlib.decompress(decoded)
+                except:
+                    pass
                 self.store_mzxml_peaks(scan,decoded)
             if child.tag == namespace+'scan' and int(child.attrib['msLevel'])<=self.max_ms_level:
 #                if scan.mslevel == 1:
