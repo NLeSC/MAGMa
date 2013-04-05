@@ -32,7 +32,7 @@ access_token.expires_in = 30758400
 monitor_user = joblauncher
 
 # user database
-sqlalchemy.url = sqlite:///%(here)s/data/users.db
+sqlalchemy.url = sqlite:///%(here)s/data/users.db?timeout=30
 
 # In magmaweb/static/ which ExtJS directory to use
 extjsroot = extjs-4.2.0
