@@ -631,8 +631,11 @@ class AnnotateEngine(object):
         logging.warn('calculating on '+str(ncpus)+' cpus !!!')
         job_server = pp.Server(ncpus, ppservers=ppservers)
         if metids==None:
-            metabdata=self.db_session.query(Metabolite.metid,Metabolite.probability).all()
-            metids=[x[0] for x in sorted(metabdata, key=lambda meta: meta[1])]
+            if time_limit == None:
+                metabdata=self.db_session.query(Metabolite.metid).order_by(desc(Metabolite.metid)).all()
+            else:
+                metabdata=self.db_session.query(Metabolite.metid).order_by(Metabolite.probability).all()
+            metids=[x[0] for x in metabdata]
         # annotate metids in chunks of 500 to avoid errors in db_session.query and memory problems during parallel processing
         total_frags=0
         total_metids = len(metids)
