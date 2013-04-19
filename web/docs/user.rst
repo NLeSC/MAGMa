@@ -79,6 +79,8 @@ Alter owner of job
 Remove user and his/her jobs
 ----------------------------
 
+.. code-block:: python
+
    from magmaweb.job import JobFactory
    factory = JobFactory('data/jobs')
    for jobmeta in user.jobs:
