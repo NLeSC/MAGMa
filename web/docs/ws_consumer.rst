@@ -3,7 +3,7 @@ Web service consumer
 ====================
 
 MAGMa has a nice web user interface.
-The user interface recieves/send data using a web service.
+The user interface recieves/sends data using a web service.
 The web service can also be used by other applications.
 Below is an example how to use the web service using ``curl``, a command line HTTP client.
 
