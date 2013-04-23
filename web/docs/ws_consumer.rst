@@ -117,6 +117,11 @@ Example response:
 
 Long values have been replaced with `....`.
 
+Fields:
+
+- ``metid`` is the molecule identifier.
+- ``origin`` is the name of the molecule.
+
 Fragments
 ---------
 
@@ -175,6 +180,12 @@ Example response:
       ]
    }
 
+Fields:
+
+- ``fragid`` is the fragment identifier.
+- ``metid`` is the molecule identifier.
+- ``scanid`` is the scan identifier.
+
 Chromatogram
 ------------
 
@@ -195,6 +206,12 @@ Example response:
          "id": 1
       }]
    }
+
+Fields:
+
+- ``rt`` is the retention time.
+- ``ap`` whether scan has molecules assigned to peaks
+- ``id`` is the scan identifier.
 
 Mass spectra
 ------------
@@ -223,6 +240,11 @@ Example response:
       "mslevel": 1
    }
 
+Fields:
+
+- ``precursor``, The precursor scan identifier and mz of current scan.
+- ``peaks``, list of peaks for current scan.
+
 Extracted ion chromatogram
 --------------------------
 
@@ -246,6 +268,11 @@ Example response:
          "id": 1
       }]
    }
+
+Fields:
+
+- ``chromatogram`` is list of intensities of selected molecule for each retention time.
+- ``scans`` is list of scan identifiers where selected molecule was fragmented.
 
 Delete job
 ==========
