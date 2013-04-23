@@ -57,8 +57,8 @@ Example response:
 Making job public
 =================
 
-By default jobs can only be seen by the user that submitted it.
-An additional command is needed to make it visible for anyone.
+By default, jobs can only be seen by the user that submitted it.
+An additional command is needed to make it visible for anyone (who knows the url).
 
 Query file (query.json):
 
@@ -75,7 +75,7 @@ Query file (query.json):
    curl -c cookie.jar -b cookie.jar -d @query.json -X PUT http://www.emetabolomics.org/magma/results/844bcea5-058b-4b7f-8d29-ba2cc131a568
 
 http://www.emetabolomics.org/magma/results/844bcea5-058b-4b7f-8d29-ba2cc131a568 can now be shared and shown in a web-browser.
-When job is not yet completed it will show a status page, after completion the results will be shown.
+When job is not yet completed it will show a status page, after completion the results will be automatically shown.
 
 Poll status
 ===========
