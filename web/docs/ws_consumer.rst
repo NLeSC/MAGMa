@@ -54,6 +54,29 @@ Example response:
       "id": "844bcea5-058b-4b7f-8d29-ba2cc131a568"
    }
 
+Making job public
+=================
+
+By default jobs can only be seen by the user that submitted it.
+An additional command is needed to make it visible for anyone.
+
+Query file (query.json):
+
+.. code-block:: javascript
+
+   {
+      "description": "New description",
+      "ms_filename": "New file name for MS data",
+      "is_public": true
+   }
+
+.. code-block:: bash
+
+   curl -c cookie.jar -b cookie.jar -d @query.json -X PUT http://www.emetabolomics.org/magma/results/844bcea5-058b-4b7f-8d29-ba2cc131a568
+
+http://www.emetabolomics.org/magma/results/844bcea5-058b-4b7f-8d29-ba2cc131a568 can now be shared and shown in a web-browser.
+When job is not yet completed it will show a status page, after completion the results will be shown.
+
 Poll status
 ===========
 
@@ -121,6 +144,21 @@ Fields:
 
 - ``metid`` is the molecule identifier.
 - ``origin`` is the name of the molecule.
+
+Molecules for one scan
+----------------------
+
+To fetch a ranked list of molecules which are annotated for a certain scan.
+
+.. code-block:: bash
+
+   curl -c cookie.jar -b cookie.jar 'http://www.emetabolomics.org/magma/results/844bcea5-058b-4b7f-8d29-ba2cc131a568/metabolites.json?start=0;limit=10;scanid=1;sort=%5B%7B%22property%22%3A%22score%22%2C%22direction%22%3A%22ASC%22%7D%5D'
+
+``%5B%7B%22property%22%3A%22score%22%2C%22direction%22%3A%22ASC%22%7D%5D``
+is the URL encoded (see http://www.faqs.org/rfcs/rfc3986) version of
+``[{"property":"score","direction":"ASC"}]`` and orders the molecules with the highest Candidate score first.
+
+Same response as above, but with additional ``score`` and ``deltappm`` fields.
 
 Fragments
 ---------
