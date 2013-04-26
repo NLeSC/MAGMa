@@ -851,6 +851,40 @@ class HmdbEngine(object):
                            ))
         return molecules
 
+class MetaCycEngine(object):
+    def __init__(self,dbfilename='',max_64atoms=False):
+        if dbfilename=='':
+            dbfilename=config.get('magma job','structure_database.metacyc')
+        self.where=''
+        if max_64atoms==True:
+            self.where += ' AND natoms <= 64'
+        self.conn = sqlite3.connect(dbfilename)
+        self.conn.text_factory=str
+        self.c = self.conn.cursor()
+    def query_on_mim(self,low,high):
+        result=self.c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ? %s' % self.where, (low,high))
+        molecules=[]
+        for (cid,mim,natoms,molblock,inchikey,molform,name,reference,logp) in result:
+            metacyc_ids=reference.split(',')
+            metacyc_refs='<a href="http://www.biocyc.org/META/NEW-IMAGE?type=COMPOUND&object='+metacyc_ids[0]+'" target="_blank">'+metacyc_ids[0]+' (MetaCyc)</a>'
+            for metacyc_id in metacyc_ids[1:]:
+                metacyc_refs+='<br><a href="http://www.biocyc.org/META/NEW-IMAGE?type=COMPOUND&object='+metacyc_id+'" target="_blank">'+metacyc_id+' (MetaCyc)</a>'
+            molecules.append(types.MoleculeType(
+                           molblock=zlib.decompress(molblock),
+                           name=name,
+                           mim=float(mim/1e6),
+                           natoms=natoms,
+                           molform=molform,
+                           inchikey=inchikey,
+                           prob=None,
+                           level=1,
+                           sequence="",
+                           isquery=1,
+                           reference=metacyc_refs,
+                           logp=float(logp)/10.0,
+                           ))
+        return molecules
+
 class DataAnalysisEngine(object):
     def __init__(self,db_session):
         self.db_session = db_session
