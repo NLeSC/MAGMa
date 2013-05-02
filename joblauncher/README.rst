@@ -9,7 +9,7 @@ Reports status of job to submitter using a callback url.
 Requirements
 ------------
 
-- JDK 7 (http://www.java.com) 
+- JDK 7 (http://www.java.com)
 - Maven 3 (http://maven.apache.org)
 - JavaGAT (http://www.cs.vu.nl/ibis/)
 - Program tarball, to execute on remote system
