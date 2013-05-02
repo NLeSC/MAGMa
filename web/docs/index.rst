@@ -6,16 +6,19 @@
 Welcome to MAGMaWeb's documentation!
 ====================================
 
-.. include:: ../README.rst
+By Stefan Verhoeven, Lars Ridder and Marijn Sanders.
 
-API
-===
+MAGMaWeb is the web application to start new MAGMa calculations and view the results.
+
+It’s a web application with the server-side written in Python using the Pyramid web framework and the client-side is written in ExtJS.
 
 .. toctree::
    :maxdepth: 1
 
+   Installation <install>
    Job Launcher <launcher>
    User management <user>
+   Web service consumer <ws_consumer>
    API Documentation <api>
 
 Indices and tables
