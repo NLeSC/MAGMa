@@ -94,7 +94,7 @@ class JobFactory(object):
                  script_fn='script.sh',
                  db_fn='results.db',
                  submit_url='http://localhost:9998',
-                 time_max=30):
+                 ):
         """
         root_dir
             Directory in which jobs are created, retrieved
@@ -116,16 +116,12 @@ class JobFactory(object):
         tarball
             Local absolute location of tarball which contains application
             which init_script will unpack and run
-
-        time_max
-            Maximum time in minutes a job can take (default 30)
         """
         self.root_dir = root_dir
         self.db_fn = db_fn
         self.submit_url = submit_url
         self.script_fn = script_fn
         self.tarball = tarball
-        self.time_max = time_max
         self.init_script = init_script
 
     def _makeJobSession(self, jobid):
@@ -318,7 +314,6 @@ class JobFactory(object):
             'poststaged': [self.db_fn],
             'stderr': 'stderr.txt',
             'stdout': 'stdout.txt',
-            'time_max': self.time_max,
             'arguments': [self.script_fn],
             'status_callback_url': query.status_callback_url
         }
@@ -359,6 +354,12 @@ class JobFactory(object):
         """Returns sqlalchemy url of sqlite db of job with jid """
         # 3rd / is for username:pw@host which sqlite does not need
         return 'sqlite:///' + self.id2db(jid)
+
+    def cancel(self, job):
+        """Cancel in-complete :class:`Job` on the job server
+        """
+        # TODO implement
+        pass
 
 
 class Job(object):

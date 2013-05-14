@@ -246,6 +246,7 @@ class InCompleteJobViews(object):
     def __init__(self, job, request):
         self.request = request
         self.job = job
+        self.job_factory = make_job_factory(request.registry.settings)
 
     @view_config(route_name='status',
                  renderer='status.mak',
@@ -285,8 +286,15 @@ class InCompleteJobViews(object):
                  request_method='DELETE',
                  permission='run',
                  )
-    def deletejson(self):
-        """Delete job from user database and deletes job directory"""
+    def delete(self):
+        """Deletes job from
+        job server if in-complete, user database and deletes job directory.
+        """
+        try:
+            self.job.is_complete()
+        except JobIncomplete:
+            self.job_factory.cancel(self.job)
+
         self.job.delete()
         del self.job
         self.request.response.status_int = 204
