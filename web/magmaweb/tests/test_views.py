@@ -531,17 +531,31 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(job.created_at, execpted_ca)
         self.assertEqual(job.is_public, True)
 
-    def test_deletejson(self):
+    def test_delete_completedjob(self):
         request = testing.DummyRequest()
         job = self.fake_job()
         views = InCompleteJobViews(job, request)
 
-        response = views.deletejson()
+        response = views.delete()
 
         exp_response = {'success': True, 'message': 'Deleted job'}
         self.assertDictEqual(response, exp_response)
         job.delete.assert_called_with()
         self.assertEquals(request.response.status_int, 204)
+
+    def test_delete_incompletejob(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        # make job incomplete
+        job.is_complete.side_effect = JobIncomplete(job)
+        views = InCompleteJobViews(job, request)
+        # see if cancel is called on job_factory
+        views.job_factory = Mock(JobFactory)
+
+        views.delete()
+
+        views.job_factory.cancel.assert_called_with(job)
+
 
     def test_error(self):
         request = testing.DummyRequest()

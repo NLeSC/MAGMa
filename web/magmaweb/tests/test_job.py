@@ -425,7 +425,6 @@ class JobFactoryTestCase(unittest.TestCase):
                             "poststaged": ['results.db'],
                             "stderr": "stderr.txt",
                             "stdout": "stdout.txt",
-                            "time_max": self.factory.time_max,
                             'arguments': [self.factory.script_fn],
                             'status_callback_url': status_cb_url
                             }
@@ -452,7 +451,6 @@ class JobFactoryTestCase(unittest.TestCase):
                             "poststaged": ['results.db'],
                             "stderr": "stderr.txt",
                             "stdout": "stdout.txt",
-                            "time_max": self.factory.time_max,
                             'arguments': [self.factory.script_fn],
                             'status_callback_url': status_cb_url
                             }
