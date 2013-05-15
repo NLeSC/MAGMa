@@ -4,7 +4,6 @@ import uuid
 import os
 import csv
 import StringIO
-import urllib2
 import json
 import shutil
 from sqlalchemy import create_engine, and_
