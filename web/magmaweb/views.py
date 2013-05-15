@@ -264,13 +264,19 @@ class InCompleteJobViews(object):
 
             {
                 "status" : "RUNNING",
+                "complete": False,
                 "jobid" : "b1eee101-dcc6-435e-baa8-d35e688c408e"
             }
 
         """
         jobid = self.job.id
         jobstate = self.job.state
-        return dict(status=jobstate, jobid=str(jobid))
+
+        try:
+            is_complete = self.job.is_complete()
+        except JobIncomplete:
+            is_complete = False
+        return dict(status=jobstate, jobid=str(jobid), is_complete=is_complete)
 
     @view_config(route_name='status.json', renderer='json',
                  permission='monitor',
@@ -354,6 +360,9 @@ class InCompleteJobViews(object):
 
     @view_config(context=JobIncomplete, renderer='status.mak')
     def job_incomplete(self):
+        """Catches JobIncomplete exception when results urls are tried
+        and returns status page
+        """
         self.job = self.job.job
         return self.job_status()
 
