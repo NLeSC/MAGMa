@@ -556,6 +556,22 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
 
         views.job_factory.cancel.assert_called_with(job)
 
+    def test_delete_unable2cancel(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        # make job incomplete
+        job.is_complete.side_effect = JobIncomplete(job)
+        views = InCompleteJobViews(job, request)
+        from requests.exceptions import ConnectionError
+        exc = ConnectionError('[Errno 111] Connection refused')
+        views.job_factory.cancel = Mock(side_effect=exc)
+        from pyramid.httpexceptions import HTTPInternalServerError
+
+        with self.assertRaises(HTTPInternalServerError) as e:
+            views.delete()
+
+        expected = '{"msg": "Failed to cancel job", "success": false}'
+        self.assertEquals(e.exception.body, expected)
 
     def test_error(self):
         request = testing.DummyRequest()

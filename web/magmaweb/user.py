@@ -145,6 +145,7 @@ class JobMeta(Base):
     owner = Column(Unicode, ForeignKey('user.userid'), nullable=False)
     created_at = Column(DateTime, nullable=False)
     is_public = Column(Boolean, default=False)
+    launcher_url = Column(Unicode)  # Url of job returned by job launcher
     children = relationship('JobMeta',
                             backref=backref('parent', remote_side=[jobid]))
 
@@ -152,7 +153,9 @@ class JobMeta(Base):
                  description=u'', parentjobid=None,
                  state=u'STOPPED', ms_filename='',
                  created_at=None,
-                 is_public=False):
+                 is_public=False,
+                 launcher_url='',
+                 ):
         self.jobid = jobid
         self.owner = owner
         self.description = description
@@ -160,6 +163,7 @@ class JobMeta(Base):
         self.state = state
         self.ms_filename = ms_filename
         self.is_public = is_public
+        self.launcher_url = launcher_url
         if created_at is None:
             self.created_at = datetime.datetime.utcnow()
         else:

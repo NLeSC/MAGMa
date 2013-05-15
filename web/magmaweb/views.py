@@ -293,7 +293,13 @@ class InCompleteJobViews(object):
         try:
             self.job.is_complete()
         except JobIncomplete:
-            self.job_factory.cancel(self.job)
+            try:
+                self.job_factory.cancel(self.job)
+            except Exception as e:
+                body = {'success': False,
+                        'msg': 'Failed to cancel job'
+                        }
+                raise HTTPInternalServerError(body=json.dumps(body))
 
         self.job.delete()
         del self.job
