@@ -168,16 +168,20 @@ class TestJobMeta(unittest.TestCase):
         self.assertIsNone(j.parentjobid)
         self.assertEqual(j.state, 'STOPPED')
         self.assertEqual(j.created_at, created_at)
+        self.assertEqual(j.launcher_url, '')
 
     def test_contstruct(self):
         jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
         pid = uuid.UUID('83198655-b287-427f-af0d-c6bc1ca566d8')
         created_at = datetime.datetime(2012, 11, 14, 10, 48, 26, 504478)
+        url = 'http://localhost:9998/job/70a00fe2-f698-41ed-b28c-b37c22f10440'
 
         j = user.JobMeta(jid, 'bob', description='My desc',
                          parentjobid=pid, state='RUNNING',
                          ms_filename='F00346.mzxml',
-                         created_at=created_at)
+                         created_at=created_at,
+                         launcher_url=url,
+                         )
 
         self.assertEqual(j.jobid, jid)
         self.assertEqual(j.owner, 'bob')
@@ -186,6 +190,7 @@ class TestJobMeta(unittest.TestCase):
         self.assertEqual(j.parentjobid, pid)
         self.assertEqual(j.state, 'RUNNING')
         self.assertEqual(j.created_at, created_at)
+        self.assertEqual(j.launcher_url, url)
 
     def test_add(self):
         jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')

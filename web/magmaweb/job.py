@@ -14,6 +14,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import desc, asc, null
 from sqlalchemy.orm.exc import NoResultFound
 import transaction
+import requests
 from magmaweb.models import Base, Metabolite, Scan, Peak, Fragment, Run
 import magmaweb.user
 from .jobquery import JobQuery
@@ -276,14 +277,18 @@ class JobFactory(object):
 
         body is a dict which is submitted as json.
 
-        returns job identifier of job submitted to job launcher
+        returns job url of job submitted to job launcher
         (not the same as job.id).
         """
-        request = urllib2.Request(self.submit_url,
-                                  json.dumps(body),
-                                  {'Content-Type': 'application/json',
-                                   'Accept': 'application/json'})
-        return urllib2.urlopen(request)
+        headers = {'Content-Type': 'application/json',
+                   'Accept': 'application/json',
+                   }
+        response = requests.post(self.submit_url,
+                                 data=json.dumps(body),
+                                 headers=headers,
+                                 )
+
+        return response.headers['Location']
 
     def submitQuery(self, query, job):
         """Writes job query script to job dir
@@ -291,6 +296,7 @@ class JobFactory(object):
 
         Changes the job state to 'INITIAL' or
         'SUBMISSION_ERROR' if job submission fails.
+        `job.launcher_url` gets filled with url returned by job launcher.
 
         query is a :class:`JobQuery` object
 
@@ -337,8 +343,10 @@ class JobFactory(object):
         job.meta = magmaweb.user.DBSession().merge(job.meta)
 
         try:
-            self.submitJob2Launcher(body)
-        except urllib2.URLError:
+            launcher_url = self.submitJob2Launcher(body)
+            # store launcher url so job can be cancelled later
+            job.launcher_url = launcher_url
+        except requests.exceptions.RequestException:
             job.state = 'SUBMISSION_ERROR'
             raise JobSubmissionError()
 
@@ -358,8 +366,8 @@ class JobFactory(object):
     def cancel(self, job):
         """Cancel in-complete :class:`Job` on the job server
         """
-        # TODO implement
-        pass
+        url = job.launcher_url
+        return requests.delete(url)
 
 
 class Job(object):
@@ -491,6 +499,16 @@ class Job(object):
         self.meta.is_public = is_public
 
     is_public = property(get_is_public, set_is_public)
+
+    def get_launcher_url(self):
+        """Url of job on joblauncher"""
+        return self.meta.launcher_url
+
+    def set_launcher_url(self, launcher_url):
+        """Set url of job on joblauncher"""
+        self.meta.launcher_url = launcher_url
+
+    launcher_url = property(get_launcher_url, set_launcher_url)
 
     def delete(self):
         """Deletes job from user database and deletes job directory"""

@@ -304,7 +304,9 @@ class JobFactoryTestCase(unittest.TestCase):
     def setUp(self):
         import tempfile
         self.root_dir = tempfile.mkdtemp()
-        self.factory = JobFactory(root_dir=self.root_dir)
+        self.factory = JobFactory(root_dir=self.root_dir,
+                                  submit_url='http://localhost:9998/job',
+                                  )
 
         # fill user db
         transaction.begin()
@@ -406,7 +408,9 @@ class JobFactoryTestCase(unittest.TestCase):
         status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
         jobquery.status_callback_url = status_cb_url
 
-        self.factory.submitJob2Launcher = Mock()
+        launcher_url = 'http://localhost:9998/job/'
+        launcher_url += '70a00fe2-f698-41ed-b28c-b37c22f10440'
+        self.factory.submitJob2Launcher = Mock(return_value=launcher_url)
 
         self.factory.submitQuery(jobquery, job)
 
@@ -430,6 +434,7 @@ class JobFactoryTestCase(unittest.TestCase):
                             }
         self.factory.submitJob2Launcher.assert_called_with(jobmanager_query)
         self.assertEqual(job.state, 'INITIAL')
+        self.assertEqual(job.launcher_url, launcher_url)
 
     def test_submitQuery_with_tarball(self):
         self.factory.tarball = 'Magma-1.1.tar.gz'
@@ -457,10 +462,10 @@ class JobFactoryTestCase(unittest.TestCase):
         self.factory.submitJob2Launcher.assert_called_with(jobmanager_query)
         self.assertEqual(job.state, 'INITIAL')
 
-    def test_submitQuery_no_jobmanager(self):
-        from urllib2 import URLError
+    def test_submitQuery_no_joblauncher(self):
+        from requests.exceptions import ConnectionError
         from magmaweb.job import JobSubmissionError
-        exc = URLError('[Errno 111] Connection refused')
+        exc = ConnectionError('[Errno 111] Connection refused')
         self.factory.submitJob2Launcher = Mock(side_effect=exc)
         job = self.factory.fromScratch('bob')
         jobquery = JobQuery(job.dir, "", [])
@@ -472,19 +477,45 @@ class JobFactoryTestCase(unittest.TestCase):
 
         self.assertEqual(job.state, 'SUBMISSION_ERROR')
 
-    @patch('urllib2.urlopen')
+    def test_submitQuery_invalid_joblauncher(self):
+        from requests.exceptions import HTTPError
+        from magmaweb.job import JobSubmissionError
+        exc = HTTPError('422 Client Error: Unprocessable Entity')
+        self.factory.submitJob2Launcher = Mock(side_effect=exc)
+        job = self.factory.fromScratch('bob')
+        jobquery = JobQuery(job.dir, "", [])
+        status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
+        jobquery.status_callback_url = status_cb_url
+
+        with self.assertRaises(JobSubmissionError):
+            self.factory.submitQuery(jobquery, job)
+
+        self.assertEqual(job.state, 'SUBMISSION_ERROR')
+
+    @patch('requests.post')
     def test_submitJob2Launcher(self, ua):
-        import json
+        from requests import Response
+        create_url = 'http://localhost:9998/job/'
+        create_url += '11111111-1111-1111-1111-111111111111'
+        uresp = Response()
+        uresp.status_code = 204
+        uresp.headers = {'Location': create_url}
+        ua.return_value = uresp
         body = {'foo': 'bar'}
 
-        self.factory.submitJob2Launcher(body)
+        resp = self.factory.submitJob2Launcher(body)
 
-        # TODO replace with ua.assert_called_once_with(<hamcrest matcher>)
-        req = ua.call_args[0][0]
-        self.assertEquals(req.get_data(), json.dumps(body))
-        self.assertEquals(req.get_full_url(), self.factory.submit_url)
-        self.assertEquals(req.get_header('Content-type'), 'application/json')
-        self.assertEquals(req.get_header('Accept'), 'application/json')
+        headers = {'Content-Type': 'application/json',
+                   'Accept': 'application/json',
+                   }
+        ua.assert_called_with('http://localhost:9998/job',
+                              data='{"foo": "bar"}',
+                              headers=headers,
+                              )
+
+        launcher_url = 'http://localhost:9998/job/'
+        launcher_url += '11111111-1111-1111-1111-111111111111'
+        self.assertEquals(resp, launcher_url)
 
     def test_fromScratch(self):
         # mock/stub private methods which do external calls
@@ -519,6 +550,16 @@ class JobFactoryTestCase(unittest.TestCase):
         self.assertEqual(job.meta.ms_filename, 'F123456.mzxml')
         self.assertEqual(job.meta.state, 'STOPPED')
         self.assertEqual(job.meta.parentjobid, oldjob.id)
+
+    @patch('requests.delete')
+    def test_cancel(self, ua):
+        job = self.factory.fromScratch('ed')
+        url = 'http://localhost:9998/job/70a00fe2-f698-41ed-b28c-b37c22f10440'
+        job.launcher_url = url
+
+        self.factory.cancel(job)
+
+        ua.assert_called_with(url)
 
 
 class JobNotFound(unittest.TestCase):
@@ -745,3 +786,10 @@ class JobTestCase(unittest.TestCase):
 
         self.assertEqual(e.exception.job, self.job)
         self.assertEqual(e.exception.message, 'No fragments found')
+
+    def test_launcher_url(self):
+        url = 'http://localhost:9998/job/70a00fe2-f698-41ed-b28c-b37c22f10440'
+        self.job.launcher_url = url
+
+        self.assertEqual(self.job.launcher_url, url)
+        self.assertEqual(self.job.meta.launcher_url, url)
