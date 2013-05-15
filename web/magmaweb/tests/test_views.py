@@ -484,16 +484,35 @@ class ViewsTestCase(AbstractViewsTestCase):
 
 class InCompleteJobViewsTestCase(AbstractViewsTestCase):
     """Test case for magmaweb.views.InCompleteJobViews"""
-    def test_jobstatus(self):
+    def test_jobstatus_complete(self):
         request = testing.DummyRequest()
         job = self.fake_job()
         job.id = 'bla'
         job.state = 'RUNNING'
+        job.is_complete.side_effect = JobIncomplete(job)
         views = InCompleteJobViews(job, request)
 
         response = views.job_status()
 
-        self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
+        self.assertEqual(response, dict(status='RUNNING',
+                                        jobid='bla',
+                                        is_complete=False,
+                                        ))
+
+    def test_jobstatus_incomplete(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'STOPPED'
+        job.is_complete.return_value = True
+        views = InCompleteJobViews(job, request)
+
+        response = views.job_status()
+
+        self.assertEqual(response, dict(status='STOPPED',
+                                        jobid='bla',
+                                        is_complete=True,
+                                        ))
 
     def test_set_jobstatus(self):
         request = testing.DummyRequest()
@@ -593,12 +612,16 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
         job = self.fake_job()
         job.id = 'bla'
         job.state = 'RUNNING'
+        job.is_complete.return_value = False
         exc = JobIncomplete(job)
         views = InCompleteJobViews(exc, request)
 
         response = views.job_incomplete()
 
-        self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
+        self.assertEqual(response, dict(status='RUNNING',
+                                        jobid='bla',
+                                        is_complete=False,
+                                        ))
 
     @patch('magmaweb.views.has_permission')
     def test_resuls_canrun(self, has_permission):

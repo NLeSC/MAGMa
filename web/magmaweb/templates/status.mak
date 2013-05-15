@@ -57,7 +57,7 @@ Ext.onReady(function() {
               method: 'GET',
               success: function(response) {
                 var result = Ext.JSON.decode(response.responseText);
-                if (result.status == 'STOPPED') {
+                if (result.is_complete) {
                     window.location = '${request.route_url('results',jobid=jobid)}';
                 } else {
                     status.update(result.status);
@@ -122,7 +122,8 @@ Ext.onReady(function() {
       }, {
         text: 'Workspace',
         tooltip: 'My settings and jobs',
-        href: "${request.route_url('workspace')}"
+        href: "${request.route_url('workspace')}",
+        hrefTarget: '_self'
       }, {
         text: 'Logout',
         href: "${request.route_url('logout')}",
