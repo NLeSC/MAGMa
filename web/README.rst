@@ -242,6 +242,18 @@ Javascript
 The ExtJS tests can be run by hosting the `web` directory in a web server (like apache or nginx) and
 opening `magmaweb/tests/js/SpecRunner.html` and `magmaweb/tests/js/app/run-tests.html` in a web-browser.
 
+Or headless for automatisation using PhantomJS.
+First install PhantomJS (http://phantomjs.org) then run test with:
+
+.. code-block:: bash
+
+   cd web/magmaweb/tests/js
+   /usr/bin/phantomjs lib/jasmine-reporters/test/phantomjs-testrunner.js $PWD/SpecRunner.html
+   cd app
+   /usr/bin/phantomjs lib/jasmine-reporters/test/phantomjs-testrunner.js $PWD/run-tests.html
+
+It will generate JUnit XML files as TEST-*.xml.
+
 Generate documentation
 ======================
 

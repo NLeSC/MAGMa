@@ -110,16 +110,31 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
             iconCls: 'icon-add',
             id: 'addstructuresaction',
             text: 'Add structures',
-            handler: this.showAddStructuresForm.bind(this)
+            listener: {
+                click: {
+                    fn: this.showAddStructuresForm,
+                    scope: this
+                }
+            }
         }, {
             text: 'Metabolize',
             id: 'metabolizeaction',
             tooltip: 'Metabolize all structures',
             disabled: true,
-            handler: this.showMetabolizeForm.bind(this)
+            listener: {
+                click: {
+                    fn: this.showMetabolizeForm,
+                    scope: this
+                }
+            }
         }, {
             text: 'Clear filters',
-            handler: this.clearFilters.bind(this)
+            listener: {
+                click: {
+                    fn: this.clearFilters,
+                    scope: this
+                }
+            }
         }]
     });
 
@@ -127,11 +142,21 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
         items: [{
             text: 'CSV',
             tooltip: 'Save metabolites as comma seperated file',
-            handler: this.download_csv.bind(this)
+            listener: {
+                click: {
+                    fn: this.download_csv,
+                    scope: this
+                }
+            }
         }, {
             text: 'SDF',
             tooltip: 'Save metabolites as sdf',
-            handler: this.download_sdf.bind(this)
+            listener: {
+                click: {
+                    fn: this.download_sdf,
+                    scope: this
+                }
+            }
         }]
     });
 

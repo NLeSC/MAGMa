@@ -105,18 +105,33 @@ Ext.define('Esc.magmaweb.controller.Scans', {
             iconCls: 'icon-add',
             id: 'uploadmssaction',
             text: 'Upload MS data',
-            handler: this.showUploadForm.bind(this)
+            listener: {
+                click: {
+                    fn: this.showUploadForm,
+                    scope: this
+                }
+            }
         }, {
             text: 'Zoom direction',
             menu: {
             	items: [{
             		text: 'X axis',
             		checked: true,
-            		checkHandler: this.onZoomDirectionXChange.bind(this)
+                    listener: {
+                        checkchange: {
+                            fn: this.onZoomDirectionXChange,
+                            scope: this
+                        }
+                    }
             	}, {
             		text: 'Y axis',
             		checked: false,
-            		checkHandler: this.onZoomDirectionYChange.bind(this)
+                    listener: {
+                        checkchange: {
+                            fn: this.onZoomDirectionYChange,
+                            scope: this
+                        }
+                    }
             	}]
             }
         }],

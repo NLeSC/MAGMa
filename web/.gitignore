@@ -14,3 +14,4 @@ env/
 env64/
 dist/
 MAGMaWeb.egg-info/
+TEST-*.xml
