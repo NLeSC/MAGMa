@@ -183,7 +183,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       chromatogram.setLoading(true);
       d3.json(
           me.application.getUrls().chromatogram,
-          callback.bind(me)
+          callback
       );
   },
   /**
@@ -230,7 +230,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     var me = this;
     d3.json(
       Ext.String.format(this.application.getUrls().extractedionchromatogram, metid),
-      me.loadExtractedIonChromatogramCallback.bind(me)
+      me.loadExtractedIonChromatogramCallback
     );
   },
   /**
