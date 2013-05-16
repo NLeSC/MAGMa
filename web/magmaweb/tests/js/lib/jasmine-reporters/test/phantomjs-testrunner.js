@@ -53,6 +53,9 @@ else {
             }
             exit_code |= page.__exit_code;
         }
+        page.evaluate(function(){
+            jscoverage_report('phantom');
+        });
         phantom.exit(exit_code);
     }, 100);
 }
