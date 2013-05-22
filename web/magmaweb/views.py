@@ -318,6 +318,7 @@ class InCompleteJobViews(object):
                     jobstate = 'ERROR'
             else:
                 jobstate = status['state']
+        self.job.state = jobstate
         return dict(status=jobstate, jobid=str(jobid))
 
     @view_config(route_name='results',
