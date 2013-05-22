@@ -172,10 +172,10 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * Loads the chromatogram from server.
    */
   onLaunch: function() {
-      this.loadChromatogram(this.loadChromatogramCallback);
+      this.loadChromatogram();
       this.applyRole();
   },
-  loadChromatogram: function(callback) {
+  loadChromatogram: function() {
       var me = this;
       // config chromatogram,
       // must be done after viewport so canvas is avaliable
@@ -183,7 +183,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       chromatogram.setLoading(true);
       d3.json(
           me.application.getUrls().chromatogram,
-          callback
+          function(data) {
+              me.loadChromatogramCallback(data);
+          }
       );
   },
   /**
@@ -199,7 +201,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       return false;
     }
     var me = this;
-    var chromatogram = this.getChromatogram();
+    var chromatogram = me.getChromatogram();
     chromatogram.setLoading(false);
     Ext.log({}, 'Loading chromatogram');
     if (data.cutoff !== null) {
@@ -209,13 +211,13 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     me.resetScans();
     if (data.scans.length === 0) {
     	// when there are no scans then user should upload some
-        this.showUploadForm();
+        me.showUploadForm();
     } else if (data.scans.length === 1) {
     	// hide when chromatogram consists of 1 scan
     	// on molecule load the scan will be selected
-    	this.getChromatogramPanel().hide();
+    	me.getChromatogramPanel().hide();
     }
-    this.application.fireEvent('chromatogramload', chromatogram);
+    me.application.fireEvent('chromatogramload', chromatogram);
   },
   clearExtractedIonChromatogram: function() {
     this.getChromatogram().setExtractedIonChromatogram([]);
@@ -230,7 +232,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     var me = this;
     d3.json(
       Ext.String.format(this.application.getUrls().extractedionchromatogram, metid),
-      me.loadExtractedIonChromatogramCallback
+      function(data) {
+          me.loadExtractedIonChromatogramCallback(data);
+      }
     );
   },
   /**
@@ -246,10 +250,11 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       });
       return false;
     }
-    var chromatogram = this.getChromatogram();
+    var me = this;
+    var chromatogram = me.getChromatogram();
     chromatogram.setLoading(false);
     chromatogram.setExtractedIonChromatogram(data.chromatogram);
-    this.setScans(data.scans);
+    me.setScans(data.scans);
   },
   searchScan: function() {
     var me = this;
