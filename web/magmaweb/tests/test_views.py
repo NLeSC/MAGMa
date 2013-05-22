@@ -51,7 +51,7 @@ class ViewsTestCase(AbstractViewsTestCase):
     def test_allinone_with_ms_data_as_file(self):
         from cgi import FieldStorage
         ms_file = FieldStorage()
-        ms_file.filename = 'c:\bla\bla\F1234.mzxml'
+        ms_file.filename = r'c:\bla\bla\F1234.mzxml'
         post = {'ms_data_file': ms_file}
         request = testing.DummyRequest(post=post)
         request.user = User('bob', 'Bob Example', 'bob@example.com')
@@ -69,7 +69,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         views.job_factory.submitQuery.assert_called_with(jobquery.allinone(),
                                                          job)
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
-        self.assertEqual(job.ms_filename, 'c:\bla\bla\F1234.mzxml')
+        self.assertEqual(job.ms_filename, r'c:\bla\bla\F1234.mzxml')
         job.jobquery.assert_called_with('http://example.com/status/foo.json',
                                         False,
                                         )
@@ -496,7 +496,7 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
 
     def test_set_jobstatus(self):
-        request = testing.DummyRequest()
+        request = testing.DummyRequest(content_type='text/plain')
         request.body = 'STOPPED'
         job = self.fake_job()
         job.id = 'bla'
@@ -507,6 +507,60 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
 
         self.assertEqual(response, dict(status='STOPPED', jobid='bla'))
         self.assertEqual(job.state, 'STOPPED')
+
+    def test_set_jobstatus_withjson_running(self):
+        body = '{"state": "EXECUTING", "exitCode": null, "running": true, '
+        body += '"done": false, "schedulerSpecficInformation": null, '
+        body += '"exception": null}'
+        request = testing.DummyRequest(content_type='application/json',
+                                       charset='UTF-8',
+                                       body=body,
+                                       )
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'PENDING'
+        views = InCompleteJobViews(job, request)
+
+        response = views.set_job_status()
+
+        self.assertEqual(response, dict(status='EXECUTING', jobid='bla'))
+        self.assertEqual(job.state, 'EXECUTING')
+
+    def test_set_jobstatus_withjson_doneok(self):
+        body = '{"state": "DONE", "exitCode": 0, "running": false, '
+        body += '"done": true, "schedulerSpecficInformation": null, '
+        body += '"exception": null}'
+        request = testing.DummyRequest(content_type='application/json',
+                                       charset='UTF-8',
+                                       body=body,
+                                       )
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'PENDING'
+        views = InCompleteJobViews(job, request)
+
+        response = views.set_job_status()
+
+        self.assertEqual(response, dict(status='STOPPED', jobid='bla'))
+        self.assertEqual(job.state, 'STOPPED')
+
+    def test_set_jobstatus_withjson_doneerr(self):
+        body = '{"state": "KILLED", "exitCode": 0, "running": false, '
+        body += '"done": true, "schedulerSpecficInformation": null, '
+        body += '"exception": "Process cancelled by user."}'
+        request = testing.DummyRequest(content_type='application/json',
+                                       charset='UTF-8',
+                                       body=body,
+                                       )
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'PENDING'
+        views = InCompleteJobViews(job, request)
+
+        response = views.set_job_status()
+
+        self.assertEqual(response, dict(status='ERROR', jobid='bla'))
+        self.assertEqual(job.state, 'ERROR')
 
     def test_updatejson(self):
         request = testing.DummyRequest()
