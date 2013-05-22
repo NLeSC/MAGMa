@@ -251,7 +251,10 @@ Ext.define('Esc.d3.Abstract', {
     this.onResize();
   },
   zoomBehavior: function() {
-    var zoom = d3.behavior.zoom().on("zoom", this.onZoom.bind(this));
+    var me = this;
+    var zoom = d3.behavior.zoom().on("zoom", function() {
+        me.onZoom();
+    });
 
     // store initial state of scales so zoom/translate can use it as reference
     this.scales0 = {};
