@@ -148,8 +148,8 @@ Then concatenate and compress javascript with:
 .. code-block:: bash
 
    cd magmaweb
-   sencha build -d static/app -p magmaweb.results-4.1.1a.jsb3
-   ln -s magmaweb/static/app/resultsApp-all-4.1.1a.js magmaweb/static/app/resultsApp-all.js
+   sencha build -d static/app -p magmaweb.results-4.2.0.jsb3
+   ln -s magmaweb/static/app/resultsApp-all-4.2.0.js magmaweb/static/app/resultsApp-all.js
 
 Now not hundreds of seperate javascript files are loaded, but a single javascript file.
 
