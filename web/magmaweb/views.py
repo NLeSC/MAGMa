@@ -275,9 +275,42 @@ class InCompleteJobViews(object):
                  permission='monitor',
                  request_method='PUT')
     def set_job_status(self):
+        """
+        Update status of job.
+
+        Used by JobLauncher and MAGMaJob to update status/progress.
+
+        Body of request can have `application/json` content type.
+        The JSON string should be formatted like:
+
+        ..code-block :: javascript
+
+          {
+            "done": true,
+            "state": "DONE",
+            "exception": null
+          }
+
+        The state is set to the JSON state if `done` is false.
+        The state is set to STOPPED if `done` is true and `exception` is null.
+        The state is set to ERROR if `done is true and `exception` is not null.
+
+        Body of request is taken as is if content type is something else.
+
+        """
         jobid = self.job.id
+        # plain request
         jobstate = self.request.body
-        self.job.state = jobstate
+        # parse job launcher request
+        if self.request.content_type == 'application/json':
+            status = json.loads(self.request.body)
+            if status['done']:
+                if status['exception'] is None:
+                    jobstate = 'STOPPED'
+                else:
+                    jobstate = 'ERROR'
+            else:
+                jobstate = status['state']
         return dict(status=jobstate, jobid=str(jobid))
 
     @view_config(route_name='results',
