@@ -52,6 +52,7 @@ Ext.onReady(function() {
       border: true,
       listeners: {
           'update': function() {
+            if (!progress.isWaiting()) return;
             Ext.Ajax.request({
               url: '${request.route_url('status.json',jobid=jobid)}',
               method: 'GET',
@@ -64,7 +65,8 @@ Ext.onReady(function() {
                 }
               },
               failure: function(response) {
-                Ext.Msg.alert('Failed to cancel job');
+                  progress.reset();
+                  Ext.Msg.alert('Failed to fetch job status', 'Reload page to try again');
               }
             });
           }
