@@ -519,7 +519,8 @@ class Job(object):
     def is_complete(self, mustBeFilled=False):
         """Checks if job is complete
 
-        If mustBeFilled==True then checks if jobs contains molecules, mspectras and fragments.
+        If mustBeFilled==True then checks
+            if jobs contains molecules, mspectras and fragments.
 
         Returns true or raises JobError or JobIncomplete or MissingDataError
         """

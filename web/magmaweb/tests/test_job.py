@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 import transaction
 from magmaweb.job import JobFactory, Job, JobDb, make_job_factory, JobQuery
 from magmaweb.job import JobError, JobIncomplete, MissingDataError
+from magmaweb.job import JobNotFound
 from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
 import magmaweb.user as mu
 
@@ -378,7 +379,6 @@ class JobFactoryTestCase(unittest.TestCase):
         self.factory.id2jobdir.assert_called_with(jobid)
 
     def test_fromid_notfoundindb(self):
-        from magmaweb.job import JobNotFound
         jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
         self.factory._makeJobSession = Mock()
         self.factory.id2jobdir = Mock()
@@ -389,7 +389,6 @@ class JobFactoryTestCase(unittest.TestCase):
         self.assertEqual(exc.exception.message, "Job not found in database")
 
     def test_fromid_notfoundasdb(self):
-        from magmaweb.job import JobNotFound
         jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
         self.factory._getJobMeta = Mock(mu.JobMeta)
 
@@ -562,9 +561,8 @@ class JobFactoryTestCase(unittest.TestCase):
         ua.assert_called_with(url)
 
 
-class JobNotFound(unittest.TestCase):
+class JobNotFoundTestCase(unittest.TestCase):
     def test_it(self):
-        from magmaweb.job import JobNotFound
         jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
         e = JobNotFound('Job not found', jobid)
         self.assertEqual(e.jobid, jobid)
@@ -730,7 +728,8 @@ class JobTestCase(unittest.TestCase):
         self.assertTrue(self.job.is_complete())
 
     def test_is_complete_running(self):
-        running_states = ('INITIAL', 'PRE_STAGING', 'RUNNING', 'POST_STAGING', 'Progress: 50%')
+        running_states = ('INITIAL', 'PRE_STAGING', 'RUNNING',
+                          'POST_STAGING', 'Progress: 50%')
         for running_state in running_states:
             self.job.state = running_state
             with self.assertRaises(JobIncomplete) as e:
