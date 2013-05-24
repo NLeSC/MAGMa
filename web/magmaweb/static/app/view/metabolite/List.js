@@ -56,6 +56,9 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
           target: id,
           html: null,
           listeners: {
+            show: function(tip) {
+              tip.setSize(300, 300);
+            },
             render: function(tip) {
               var c = new ChemDoodle.ViewerCanvas(id+'-'+tip.id, 300, 300);
               c.loadMolecule(ChemDoodle.readMOL(value));
