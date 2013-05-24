@@ -92,6 +92,9 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
         var tip = Ext.create('Ext.tip.ToolTip', {
             target: id,
             listeners: {
+                show: function(tip) {
+                    tip.setSize(300, 300);
+                },
                 render: function(tip,e) {
                     Ext.log({}, 'Drawing tooltip for '+id);
                     var c = new ChemDoodle.ViewerCanvas(id+'-'+tip.id, 300, 300);
