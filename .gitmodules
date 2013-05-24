@@ -1,0 +1,3 @@
+[submodule "joblauncher"]
+	path = joblauncher
+	url = git@github.com:NLeSC/octopus-job-ws.git
