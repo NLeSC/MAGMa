@@ -20,7 +20,7 @@ class FunctionalTests(unittest.TestCase):
                     'extjsroot': 'ext',
                     'sqlalchemy.url': 'sqlite:///:memory:',
                     'cookie.secret': 'aepeeV6aizaiph5Ae0Reimeequuluwoh',
-                    'cookie.path': '/magma',
+                    'cookie.path': '/',
                     'monitor_user': 'jobmanager',
                     }
         settings.update(self.settings)
