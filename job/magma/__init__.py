@@ -595,6 +595,7 @@ class AnnotateEngine(object):
         mzs.sort()
         # build non-overlapping set of queries around these masses
         queries=[[0,0]]
+        cqueries=[[0,0]] # queries of charged molecules
         for mz in mzs:
             ql=int(1e6*(min(mz/self.precision,mz-self.mz_precision_abs)-self.ionisation_mode*(pars.Hmass-pars.elmass)))
             qh=int(1e6*(max(mz*self.precision,mz+self.mz_precision_abs)-self.ionisation_mode*(pars.Hmass-pars.elmass)))
@@ -605,6 +606,15 @@ class AnnotateEngine(object):
                     queries[-1][1]=qh
                 else:
                     queries.append([ql,qh])
+            ql=int(1e6*(min(mz/self.precision,mz-self.mz_precision_abs)+self.ionisation_mode*pars.elmass))
+            qh=int(1e6*(max(mz*self.precision,mz+self.mz_precision_abs)+self.ionisation_mode*pars.elmass))
+            if ql < mmim:
+                if qh > mmim:
+                    qh == mmim
+                if cqueries[-1][0] <= ql <= cqueries[-1][1]:
+                    cqueries[-1][1]=qh
+                else:
+                    cqueries.append([ql,qh])
 
         # in case of an empty database, no check for existing duplicates needed
         check_duplicates = (self.db_session.query(Metabolite.metid).count() > 0)
@@ -613,7 +623,13 @@ class AnnotateEngine(object):
         # All candidates are stored in dbsession, resulting metids are returned
         metids=set([])
         for ql,qh in queries:
-            result=query_engine.query_on_mim(ql,qh)
+            result=query_engine.query_on_mim(ql,qh,0)
+            for molecule in result:
+                metid=struct_engine.add_molecule(molecule,check_duplicates=check_duplicates)
+                metids.add(metid)
+            print str(ql)+','+str(qh)+' --> '+str(len(metids))+' candidates'
+        for ql,qh in cqueries:
+            result=query_engine.query_on_mim(ql,qh,self.ionisation_mode)
             for molecule in result:
                 metid=struct_engine.add_molecule(molecule,check_duplicates=check_duplicates)
                 metids.add(metid)
@@ -861,10 +877,10 @@ class MetaCycEngine(object):
         self.conn = sqlite3.connect(dbfilename)
         self.conn.text_factory=str
         self.c = self.conn.cursor()
-    def query_on_mim(self,low,high):
-        result=self.c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ? %s' % self.where, (low,high))
+    def query_on_mim(self,low,high,charge):
+        result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         molecules=[]
-        for (cid,mim,natoms,molblock,inchikey,molform,name,reference,logp) in result:
+        for (cid,mim,charge,natoms,molblock,inchikey,molform,name,reference,logp) in result:
             metacyc_ids=reference.split(',')
             metacyc_refs='<a href="http://www.biocyc.org/META/NEW-IMAGE?type=COMPOUND&object='+metacyc_ids[0]+'" target="_blank">'+metacyc_ids[0]+' (MetaCyc)</a>'
             for metacyc_id in metacyc_ids[1:]:
@@ -927,23 +943,15 @@ class DataAnalysisEngine(object):
 
 def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast,chem_engine):
     pars=magma.pars
-    if chem_engine=="rdkit":
-        Chem=magma.rdkit_engine             # Use rdkit_engine
-    elif chem_engine=="cdk":
-        Chem=magma.cdk_engine.engine()      # Use cdk_engine
     if fast:
         Fragmentation=magma.fragmentation_cy
     else:
         Fragmentation=magma.fragmentation_py
 
-    def massmatch(peak,mim,low,high):
+    def massmatch(peak,mim,protonation):
         lowmz=min(peak.mz/precision,peak.mz-mz_precision_abs)
         highmz=max(peak.mz*precision,peak.mz+mz_precision_abs)
-        for x in range(low,high+1):
-            if lowmz <= mim+x*pars.Hmass-ionisation_mode*pars.elmass <= highmz:
-                return x
-        else:
-            return False
+        return lowmz <= (mim+protonation*pars.Hmass-ionisation_mode*pars.elmass) <= highmz
 
     #def findhit(self,childscan,parent):
     def gethit (peak,fragment,score,bondbreaks,mass,deltaH):
@@ -989,11 +997,12 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
     Fragmented=False
     hits=[]
     frags=0
+    charge=0
+    charge+=-1*(molformula[-1]=='-')+1*(molformula[-1]=='+') # derive charge from molecular formula
     for peak in peaks:
         if not ((not use_all_peaks) and peak.childscan==None):
-            protonation=ionisation_mode-(molformula.find('+')>=0)*1
-            deltaH=massmatch(peak,mim,protonation,protonation)
-            if type(deltaH)==int:
+            protonation=ionisation_mode-charge
+            if massmatch(peak,mim,protonation):
                 if not Fragmented:
                     #sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+' '+str(structure.reactionsequence)+'\n')
                     #sys.stderr.write('Mim: '+str(structure.mim)+'\n')
@@ -1004,7 +1013,7 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
                     #sys.stderr.write('N fragments kept: '+str(len(fragment_engine.fragments))+"\n")
                     Fragmented=True
                 if fragment_engine.accepted():
-                    hit=gethit(peak,(1<<fragment_engine.get_natoms())-1,0,0,mim,-deltaH)
+                    hit=gethit(peak,(1<<fragment_engine.get_natoms())-1,0,0,mim,-protonation)
                     add_fragment_data_to_hit(hit)
                     hits.append(hit)
     return (hits,frags)
