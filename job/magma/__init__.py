@@ -778,10 +778,10 @@ class PubChemEngine(object):
         self.conn = sqlite3.connect(dbfilename)
         self.conn.text_factory=str
         self.c = self.conn.cursor()
-    def query_on_mim(self,low,high):
-        result=self.c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ? %s' % self.where, (low,high))
+    def query_on_mim(self,low,high,charge):
+        result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         molecules=[]
-        for (cid,mim,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
+        for (cid,mim,charge,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
             molecules.append(types.MoleculeType(
                            molblock=zlib.decompress(molblock),
                            name=name+' ('+str(cid)+')',
@@ -809,10 +809,10 @@ class KeggEngine(object):
         self.conn = sqlite3.connect(dbfilename)
         self.conn.text_factory=str
         self.c = self.conn.cursor()
-    def query_on_mim(self,low,high):
-        result=self.c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ? %s' % self.where, (low,high))
+    def query_on_mim(self,low,high,charge):
+        result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         molecules=[]
-        for (cid,mim,natoms,molblock,inchikey,molform,name,reference,logp) in result:
+        for (cid,mim,charge,natoms,molblock,inchikey,molform,name,reference,logp) in result:
             keggids=reference.split(',')
             keggrefs='<a href="http://www.genome.jp/dbget-bin/www_bget?cpd:'+keggids[0]+'" target="_blank">'+keggids[0]+' (Kegg)</a>'
             for keggid in keggids[1:]:
