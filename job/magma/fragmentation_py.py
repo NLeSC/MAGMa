@@ -181,7 +181,7 @@ class FragmentEngine(object):
                 formula+=el
             if nel>1:
                 formula+=str(nel)
-        return atomstring,atomlist,formula # ,Chem.FragmentToInchiKey(self.mol,atomlist)
+        return atomstring,atomlist,formula,Chem.FragmentToInchiKey(self.mol,atomlist)
 
     def get_natoms(self):
         return self.natoms
