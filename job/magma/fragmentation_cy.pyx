@@ -34,7 +34,7 @@ cdef class FragmentEngine(object):
     cdef list fragment_masses,fragment_info
     cdef int[64] atomHs
     cdef dict atom_elements
-    #cdef rdkit_mol mol
+    cdef char* mol
     
     
     def __init__(self,mol,max_broken_bonds,max_water_losses,ionisation_mode):
@@ -42,8 +42,9 @@ cdef class FragmentEngine(object):
         cdef float bondscore
         cdef int x,a1,a2
         
+        self.mol=mol
         try:
-            mol=Chem.MolFromMolBlock(str(mol))
+            mol=Chem.MolFromMolBlock(str(self.mol))
             self.accept=1
             self.natoms=Chem.natoms(mol)  # number of atoms in the molecule
         except:
@@ -225,6 +226,7 @@ cdef class FragmentEngine(object):
     
     def get_fragment_info(self,unsigned long long fragment,deltaH):
         cdef int atom
+        mol=Chem.MolFromMolBlock(str(self.mol))
         atomstring=""
         atomlist=[]
         elements={'C':0,'H':0,'N':0,'O':0,'F':0,'P':0,'S':0,'Cl':0,'Br':0,'I':0}
@@ -232,8 +234,8 @@ cdef class FragmentEngine(object):
             if ((1ULL<<atom) & fragment):
                 atomstring+=','+str(atom)
                 atomlist.append(atom)
-                elements[self.atom_elements[atom]]+=1
-                elements['H']+=self.atomHs[atom]
+                elements[Chem.GetAtomSymbol(mol,atom)]+=1
+                elements['H']+=Chem.GetAtomHs(mol,atom)
         elements['H']-=deltaH
         formula=''
         for el in ('C','H','N','O','F','P','S','Cl','Br','I'):
@@ -242,7 +244,7 @@ cdef class FragmentEngine(object):
                 formula+=el
             if nel>1:
                 formula+=str(nel)
-        return atomstring,atomlist,formula
+        return atomstring,atomlist,formula,Chem.FragmentToInchiKey(mol,atomlist)
     
     def get_natoms(self):
         return self.natoms

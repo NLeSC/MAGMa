@@ -45,8 +45,9 @@ def MolToInchiKey(mol):
     return AllChem.InchiToInchiKey(AllChem.MolToInchi(mol))
 def FragmentToInchiKey(mol,atomlist):
     emol = Chem.EditableMol(mol)
-    for atom in reversed(atomlist):
-        emol.RemoveAtom(atom)
+    for atom in reversed(range(mol.GetNumAtoms())):
+        if atom not in atomlist:
+            emol.RemoveAtom(atom)
     frag = emol.GetMol()
     return Chem.MolToSmiles(frag)
 def GetFormulaProps(mol):

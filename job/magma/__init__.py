@@ -985,7 +985,7 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
 
     def add_fragment_data_to_hit(hit):
         if hit.fragment != 0:
-            hit.atomstring,hit.atomlist,hit.formula=fragment_engine.get_fragment_info(hit.fragment,hit.deltaH)
+            hit.atomstring,hit.atomlist,hit.formula,hit.inchikey=fragment_engine.get_fragment_info(hit.fragment,hit.deltaH)
             #except:
             #    exit('failed inchi for: '+atomstring+'--'+str(hit.fragment))
             if len(hit.besthits)>0:
