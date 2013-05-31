@@ -80,10 +80,10 @@ class TestUser(unittest.TestCase):
     def test_by_id(self):
         init_user_db()
         self.session = user.DBSession()
-        u = user.User('bob', 'Bob Smith', 'bob@smith.org')
+        u = user.User(u'bob', u'Bob Smith', u'bob@smith.org')
         self.session.add(u)
 
-        u2 = user.User.by_id('bob')
+        u2 = user.User.by_id(u'bob')
         self.assertEqual(u, u2)
 
         destroy_user_db()
@@ -91,7 +91,7 @@ class TestUser(unittest.TestCase):
     def test_add(self):
         init_user_db()
 
-        u = user.User('bob', 'Bob Smith', 'bob@smith.org')
+        u = user.User(u'bob', u'Bob Smith', u'bob@smith.org')
         user.User.add(u)
 
         session = user.DBSession()
@@ -103,13 +103,13 @@ class TestUser(unittest.TestCase):
     def test_jobs(self):
         init_user_db()
         session = user.DBSession()
-        u = user.User('bob', 'Bob Smith', 'bob@smith.org')
+        u = user.User(u'bob', u'Bob Smith', u'bob@smith.org')
         session.add(u)
         job_id = uuid.UUID('11111111-1111-1111-1111-111111111111')
-        j = user.JobMeta(job_id, 'bob')
+        j = user.JobMeta(job_id, u'bob')
         session.add(j)
 
-        u2 = user.User.by_id('bob')  # force commit
+        u2 = user.User.by_id(u'bob')  # force commit
         self.assertEqual(u2.jobs, [j])
 
         destroy_user_db()
@@ -131,13 +131,13 @@ class TestUser(unittest.TestCase):
     def test_delete(self):
         init_user_db()
 
-        u = user.User('bob', 'Bob Smith', 'bob@smith.org')
+        u = user.User(u'bob', u'Bob Smith', u'bob@smith.org')
         user.User.add(u)
 
         user.User.delete(u)
 
         session = user.DBSession()
-        u2 = session.query(user.User).get('bob')
+        u2 = session.query(user.User).get(u'bob')
         self.assertIsNone(u2)
 
         destroy_user_db()
@@ -148,7 +148,7 @@ class TestJobMeta(unittest.TestCase):
         init_user_db()
         self.session = user.DBSession()
         # job must be owned by a user
-        self.session.add(user.User('bob', 'Bob Smith', 'bob@smith.org'))
+        self.session.add(user.User(u'bob', u'Bob Smith', u'bob@smith.org'))
 
     def tearDown(self):
         destroy_user_db()
@@ -159,49 +159,49 @@ class TestJobMeta(unittest.TestCase):
         created_at = datetime.datetime(2012, 11, 14, 10, 48, 26, 504478)
         mock_dt.utcnow.return_value = created_at
 
-        j = user.JobMeta(jid, 'bob')
+        j = user.JobMeta(jid, u'bob')
 
         self.assertEqual(j.jobid, jid)
-        self.assertEqual(j.owner, 'bob')
-        self.assertEqual(j.description, '')
-        self.assertEqual(j.ms_filename, '')
+        self.assertEqual(j.owner, u'bob')
+        self.assertEqual(j.description, u'')
+        self.assertEqual(j.ms_filename, u'')
         self.assertIsNone(j.parentjobid)
-        self.assertEqual(j.state, 'STOPPED')
+        self.assertEqual(j.state, u'STOPPED')
         self.assertEqual(j.created_at, created_at)
-        self.assertEqual(j.launcher_url, '')
+        self.assertEqual(j.launcher_url, u'')
 
     def test_contstruct(self):
         jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
         pid = uuid.UUID('83198655-b287-427f-af0d-c6bc1ca566d8')
         created_at = datetime.datetime(2012, 11, 14, 10, 48, 26, 504478)
-        url = 'http://localhost:9998/job/70a00fe2-f698-41ed-b28c-b37c22f10440'
+        url = u'http://localhost:9998/job/70a00fe2-f698-41ed-b28c-b37c22f10440'
 
-        j = user.JobMeta(jid, 'bob', description='My desc',
-                         parentjobid=pid, state='RUNNING',
-                         ms_filename='F00346.mzxml',
+        j = user.JobMeta(jid, u'bob', description=u'My desc',
+                         parentjobid=pid, state=u'RUNNING',
+                         ms_filename=u'F00346.mzxml',
                          created_at=created_at,
                          launcher_url=url,
                          )
 
         self.assertEqual(j.jobid, jid)
-        self.assertEqual(j.owner, 'bob')
-        self.assertEqual(j.description, 'My desc')
-        self.assertEqual(j.ms_filename, 'F00346.mzxml')
+        self.assertEqual(j.owner, u'bob')
+        self.assertEqual(j.description, u'My desc')
+        self.assertEqual(j.ms_filename, u'F00346.mzxml')
         self.assertEqual(j.parentjobid, pid)
-        self.assertEqual(j.state, 'RUNNING')
+        self.assertEqual(j.state, u'RUNNING')
         self.assertEqual(j.created_at, created_at)
         self.assertEqual(j.launcher_url, url)
 
     def test_add(self):
         jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
-        j = user.JobMeta(jid, 'bob')
+        j = user.JobMeta(jid, u'bob')
         user.JobMeta.add(j)
 
         self.assertEqual(self.session.query(user.JobMeta).count(), 1)
 
     def test_by_id(self):
         jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
-        job_in = user.JobMeta(jid, 'bob')
+        job_in = user.JobMeta(jid, u'bob')
         user.JobMeta.add(job_in)
 
         job_out = user.JobMeta.by_id(jid)
@@ -210,7 +210,7 @@ class TestJobMeta(unittest.TestCase):
 
     def test_delete(self):
         jid = uuid.UUID('986917b1-66a8-42c2-8f77-00be28793e58')
-        job_in = user.JobMeta(jid, 'bob')
+        job_in = user.JobMeta(jid, u'bob')
         user.JobMeta.add(job_in)
 
         user.JobMeta.delete(job_in)
@@ -228,7 +228,7 @@ class TestGetUser(unittest.TestCase):
 
     @patch('magmaweb.user.authenticated_userid')
     def test_it(self, uau):
-        uau.return_value = 'bob'
+        uau.return_value = u'bob'
         self.request.user = 'User.bob'
 
         rf = user.get_user(self.request)
@@ -302,10 +302,10 @@ class TestJobIdFactory(unittest.TestCase):
                                           }
         init_user_db()
         self.session = user.DBSession()
-        u = user.User('me', 'My', 'myself')
+        u = user.User(u'me', u'My', u'myself')
         self.session.add(u)
         job_id = uuid.UUID('11111111-1111-1111-1111-111111111111')
-        j = user.JobMeta(job_id, 'me', description='My job')
+        j = user.JobMeta(job_id, u'me', description=u'My job')
         self.session.add(j)
 
     def tearDown(self):
@@ -315,7 +315,7 @@ class TestJobIdFactory(unittest.TestCase):
     def test_getPrivateJob(self):
         from magmaweb.job import Job
         mjob = Mock(Job)
-        mjob.owner = 'bob'
+        mjob.owner = u'bob'
         mjob.is_public = False
         jif = user.JobIdFactory(self.request)
         jif.job_factory.fromId = Mock(return_value=mjob)
@@ -325,15 +325,15 @@ class TestJobIdFactory(unittest.TestCase):
 
         jif.job_factory.fromId.assert_called_once_with(job_id)
         self.assertEqual(job, mjob)
-        self.assertEqual(job.__acl__, [(Allow, 'bob', ('run', 'view')),
-                                       (Allow, 'jobmanager', 'monitor'),
+        self.assertEqual(job.__acl__, [(Allow, u'bob', ('run', 'view')),
+                                       (Allow, u'jobmanager', 'monitor'),
                                        (Deny, Everyone, ALL_PERMISSIONS),
                                        ])
 
     def test_getPublicJob(self):
         from magmaweb.job import Job
         mjob = Mock(Job)
-        mjob.owner = 'bob'
+        mjob.owner = u'bob'
         mjob.is_public = True
         jif = user.JobIdFactory(self.request)
         jif.job_factory.fromId = Mock(return_value=mjob)
@@ -344,8 +344,8 @@ class TestJobIdFactory(unittest.TestCase):
         jif.job_factory.fromId.assert_called_once_with(job_id)
         self.assertEqual(job, mjob)
         self.assertEqual(job.__acl__, [(Allow, Authenticated, 'view'),
-                                       (Allow, 'bob', ('run', 'view')),
-                                       (Allow, 'jobmanager', 'monitor'),
+                                       (Allow, u'bob', ('run', 'view')),
+                                       (Allow, u'jobmanager', 'monitor'),
                                        (Deny, Everyone, ALL_PERMISSIONS),
                                        ])
 
