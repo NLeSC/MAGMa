@@ -19,9 +19,9 @@ class JobDbTestCase(JobDbTestCaseAbstract):
     def test_runInfo(self):
         runInfo = self.job.runInfo()
         self.assertEqual(runInfo.n_reaction_steps, 2)
-        self.assertEqual(runInfo.metabolism_types, "phase1,phase2")
+        self.assertEqual(runInfo.metabolism_types, u"phase1,phase2")
 
-        self.assertEqual(runInfo.ms_filename, 'F123456.mzxml')
+        self.assertEqual(runInfo.ms_filename, u'F123456.mzxml')
         self.assertEqual(runInfo.abs_peak_cutoff, 1000)
         self.assertEqual(runInfo.max_ms_level, 3)
         self.assertEqual(runInfo.precursor_mz_precision, 10)
@@ -32,25 +32,25 @@ class JobDbTestCase(JobDbTestCaseAbstract):
         self.assertEqual(runInfo.msms_intensity_cutoff, 50)
         self.assertEqual(runInfo.mz_precision, 10)
         self.assertEqual(runInfo.mz_precision_abs, 0.002)
-        self.assertEqual(runInfo.description, 'My first description')
+        self.assertEqual(runInfo.description, u'My first description')
         self.assertEqual(runInfo.max_water_losses, 1)
 
     def test_runInfo_maxrunid(self):
         self.session.add(Run(
-            n_reaction_steps=2, metabolism_types='phase1,phase2',
+            n_reaction_steps=2, metabolism_types=u'phase1,phase2',
             ionisation_mode=-1, skip_fragmentation=True,
             ms_intensity_cutoff=200000.0, msms_intensity_cutoff=50,
             mz_precision=10, mz_precision_abs=0.002, use_all_peaks=True,
-            ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
+            ms_filename=u'F123456.mzxml', abs_peak_cutoff=1000,
             max_ms_level=3, precursor_mz_precision=10,
-            max_broken_bonds=4, description='My second description',
+            max_broken_bonds=4, description=u'My second description',
             max_water_losses=1,
         ))
 
         runInfo = self.job.runInfo()
 
         # run with highest id is returned
-        self.assertEqual(runInfo.description, 'My second description')
+        self.assertEqual(runInfo.description, u'My second description')
 
     def test_maxMSLevel(self):
         maxmslevel = self.job.maxMSLevel()
@@ -273,7 +273,7 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
 
     def test_filteredon_molformula(self):
         response = self.job.metabolites(filters=[{"type": "string",
-                                                  "value": "C6",
+                                                  "value": u"C6",
                                                   "field": "molformula"}])
 
         self.assertEqual(response['total'], 1)
@@ -598,7 +598,7 @@ class JobScansWithMetabolitesTestCase(JobDbTestCaseAbstract):
         ])
 
     def test_molformula(self):
-        filters = [{"type": "string", "value": "C6", "field": "molformula"}]
+        filters = [{"type": "string", "value": u"C6", "field": "molformula"}]
 
         response = self.job.scansWithMetabolites(filters=filters)
 
@@ -648,7 +648,7 @@ class JobScansWithMetabolitesTestCase(JobDbTestCaseAbstract):
     def test_filteredon_nrscansgt_and_molformula(self):
         filters = [{"type": "numeric", "comparison": "lt",
                     "value": 2, "field": "nhits"},
-                   {"type": "string", "value": "C6", "field": "molformula"}]
+                   {"type": "string", "value": u"C6", "field": "molformula"}]
 
         response = self.job.scansWithMetabolites(filters=filters)
 
