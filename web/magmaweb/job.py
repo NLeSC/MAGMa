@@ -293,8 +293,8 @@ class JobFactory(object):
         """Writes job query script to job dir
         and submits job query to job launcher.
 
-        Changes the job state to 'INITIAL' or
-        'SUBMISSION_ERROR' if job submission fails.
+        Changes the job state to u'INITIAL' or
+        u'SUBMISSION_ERROR' if job submission fails.
         `job.launcher_url` gets filled with url returned by job launcher.
 
         query is a :class:`JobQuery` object
@@ -327,7 +327,7 @@ class JobFactory(object):
         if (self.tarball is not None):
             body['prestaged'].append(self.tarball)
 
-        job.state = 'INITIAL'
+        job.state = u'INITIAL'
 
         # Job launcher will try to report states of the submitted job
         # even before this request has been handled
@@ -346,7 +346,7 @@ class JobFactory(object):
             # store launcher url so job can be cancelled later
             job.launcher_url = launcher_url
         except requests.exceptions.RequestException:
-            job.state = 'SUBMISSION_ERROR'
+            job.state = u'SUBMISSION_ERROR'
             raise JobSubmissionError()
 
     def id2jobdir(self, jid):

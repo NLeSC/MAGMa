@@ -41,13 +41,13 @@ class FunctionalPrivateTests(FunctionalTests):
         # Setup owner of job
         jf = make_job_factory(self.settings)
         with transaction.manager:
-            user = User('bob', 'Bob Example', 'bob@example.com', 'mypassword')
+            user = User(u'bob', u'Bob Example', u'bob@example.com', 'mypassword')
             DBSession().add(user)
-            self.job = jf.fromScratch('bob')
+            self.job = jf.fromScratch(u'bob')
             self.jobid = self.job.id
 
     def do_login(self):
-        params = {'userid': 'bob', 'password': 'mypassword'}
+        params = {u'userid': u'bob', u'password': u'mypassword'}
         self.testapp.post('/login', params)
 
     def fake_jobid(self):
