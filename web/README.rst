@@ -236,6 +236,18 @@ Python tests can be run with:
    pip install nose coverage
    nosetests
 
+To run only unit tests:
+
+.. code-block:: bash
+
+   nostests -a '!functional'
+
+To run only functional tests:
+
+.. code-block:: bash
+
+   nosetests -a functional
+
 Javascript
 ----------
 

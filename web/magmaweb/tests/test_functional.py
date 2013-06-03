@@ -2,13 +2,14 @@ import tempfile
 import unittest
 import transaction
 import json
+from nose.plugins.attrib import attr
 from webtest import TestApp
 from magmaweb import main
 from magmaweb.user import DBSession, User
 from magmaweb.job import make_job_factory
 from magmaweb.tests.test_job import populateTestingDB
 
-
+@attr('functional')
 class FunctionalTests(unittest.TestCase):
     settings = {}
 
