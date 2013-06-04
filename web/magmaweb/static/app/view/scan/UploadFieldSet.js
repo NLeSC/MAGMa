@@ -15,9 +15,9 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
     ],
     frame: true,
     bodyPadding: '5',
-	defaults : {
-	    labelWidth : 200
-	},
+    defaults : {
+        labelWidth : 200
+    },
     items: [{
         xtype: 'combo',
         store: [['mzxml','mzXML'],
@@ -38,7 +38,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         xtype: 'container',
         layout: 'hbox',
         items: [{
-        	xtype: 'displayfield',
+            xtype: 'displayfield',
             value : '<a title="Information on examples" href="help/example">Examples:</a>'
         }, {
             xtype: 'button',

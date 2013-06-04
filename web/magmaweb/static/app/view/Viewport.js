@@ -37,13 +37,13 @@ Ext.define('Esc.magmaweb.view.Viewport', {
                   disabled: true
               }, {
                   text: 'Workspace',
-             	  tooltip: 'My settings and jobs',
-             	  href: '../workspace',
-            	  hrefTarget: '_self'
+                  tooltip: 'My settings and jobs',
+                  href: '../workspace',
+                  hrefTarget: '_self'
               }, {
                   text: 'Logout',
-              	  href: '../logout',
-              	  hrefTarget: '_self'
+                  href: '../logout',
+                  hrefTarget: '_self'
               }, {
                   text: 'Login',
                   href: "../login",

@@ -72,9 +72,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       'scanuploadform component[action=loadmsdataexample2]': {
           click: this.loadExample2
       },
-	  'scanuploadform component[name=ms_data_format]': {
-	    change: this.changeMsDataFormat
-	  }
+      'scanuploadform component[name=ms_data_format]': {
+          change: this.changeMsDataFormat
+      }
     });
 
     this.application.on('metaboliteload', this.setScansOfMetabolites, this);
@@ -114,29 +114,29 @@ Ext.define('Esc.magmaweb.controller.Scans', {
         }, {
             text: 'Zoom direction',
             menu: {
-            	items: [{
-            		text: 'X axis',
-            		checked: true,
-                    listener: {
-                        checkchange: {
-                            fn: this.onZoomDirectionXChange,
-                            scope: this
-                        }
+              items: [{
+                text: 'X axis',
+                checked: true,
+                listener: {
+                    checkchange: {
+                        fn: this.onZoomDirectionXChange,
+                        scope: this
                     }
-            	}, {
-            		text: 'Y axis',
-            		checked: false,
-                    listener: {
-                        checkchange: {
-                            fn: this.onZoomDirectionYChange,
-                            scope: this
-                        }
+                }
+              }, {
+                text: 'Y axis',
+                checked: false,
+                listener: {
+                    checkchange: {
+                        fn: this.onZoomDirectionYChange,
+                        scope: this
                     }
-            	}]
+                }
+              }]
             }
         }],
         hideUploadAction: function() {
-        	this.getComponent('uploadmssaction').hide();
+            this.getComponent('uploadmssaction').hide();
         }
     });
 
@@ -210,12 +210,12 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     chromatogram.setData(data.scans);
     me.resetScans();
     if (data.scans.length === 0) {
-    	// when there are no scans then user should upload some
+        // when there are no scans then user should upload some
         me.showUploadForm();
     } else if (data.scans.length === 1) {
-    	// hide when chromatogram consists of 1 scan
-    	// on molecule load the scan will be selected
-    	me.getChromatogramPanel().hide();
+        // hide when chromatogram consists of 1 scan
+        // on molecule load the scan will be selected
+        me.getChromatogramPanel().hide();
     }
     me.application.fireEvent('chromatogramload', chromatogram);
   },
@@ -378,7 +378,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * @param {Boolean} checked
    */
   onZoomDirectionXChange: function(item, checked) {
-	  this.onZoomDirectionChange('x', checked);
+      this.onZoomDirectionChange('x', checked);
   },
   /**
    * Enable/Disable zoom on Y axis
@@ -386,7 +386,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * @param {Boolean} checked
    */
   onZoomDirectionYChange: function(item, checked) {
-	  this.onZoomDirectionChange('y', checked);
+      this.onZoomDirectionChange('y', checked);
   },
   /**
    * Enable/Disable zoom on a axis
@@ -394,19 +394,19 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * @param {Boolean} checked
    */
   onZoomDirectionChange: function(axis, checked) {
-	  this.getChromatogram().setZoom(axis, checked);
+      this.getChromatogram().setZoom(axis, checked);
   },
   /**
    * Apply role to user interface.
    * Checks run feature and if false removes all action buttons.
    */
   applyRole: function() {
-	  if (!this.application.features.run && this.actionsMenu) {
-	      this.actionsMenu.hideUploadAction();
-	  }
-	  if (this.application.features.restricted) {
-	      this.forceSingleScan();
-	  }
+      if (!this.application.features.run && this.actionsMenu) {
+          this.actionsMenu.hideUploadAction();
+      }
+      if (this.application.features.restricted) {
+          this.forceSingleScan();
+      }
       // TODO change tooltip of gears tool
   },
   forceSingleScan: function() {
@@ -418,22 +418,22 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * In MS Data upload forms loads the example data set.
    */
   loadExample: function(field) {
-	  this._loadExample('example');
+      this._loadExample('example');
   },
   loadExample2: function(field) {
-	  this._loadExample('example2');
+      this._loadExample('example2');
   },
   _loadExample: function(example_name) {
-	  var form = this.getUploadForm().getForm();
-	  var example_url = this.application.runInfoUrl()+'?selection='+example_name;
-	  form.load({
-		  url: example_url,
-	      method: 'GET',
-	      waitMsg: 'Fetching example settings',
-	      failure: function(form, action) {
+      var form = this.getUploadForm().getForm();
+      var example_url = this.application.runInfoUrl()+'?selection='+example_name;
+      form.load({
+          url: example_url,
+          method: 'GET',
+          waitMsg: 'Fetching example settings',
+          failure: function(form, action) {
               Ext.Error.raise(action.response.responseText);
           }
-	  });
+      });
   },
   /**
    * Called when MS data format is changed.
@@ -481,26 +481,26 @@ Ext.define('Esc.magmaweb.controller.Scans', {
           'ms_intensity_cutoff',
           'msms_intensity_cutoff'
       ]);
-	  if (value == 'form_tree') {
-	      // hide form fields not required for form_tree
-	      hide_form_fields([
+      if (value == 'form_tree') {
+          // hide form fields not required for form_tree
+          hide_form_fields([
               'filter_heading',
-	          'max_ms_level',
+              'max_ms_level',
               'abs_peak_cutoff',
               'scan',
               'precision_heading',
-		      'mz_precision',
+              'mz_precision',
               'mz_precision_abs',
               'precursor_mz_precision',
               'intensity_heading',
               'ms_intensity_cutoff',
               'msms_intensity_cutoff'
           ]);
-	  } else if (value == 'mass_tree') {
+      } else if (value == 'mass_tree') {
           // hide form fields not required for mass_tree
-	      hide_form_fields([
+          hide_form_fields([
               'filter_heading',
-	          'max_ms_level',
+              'max_ms_level',
               'scan',
               'abs_peak_cutoff',
               'precursor_mz_precision',
@@ -508,6 +508,6 @@ Ext.define('Esc.magmaweb.controller.Scans', {
               'ms_intensity_cutoff',
               'msms_intensity_cutoff'
           ]);
-	  }
+      }
   }
 });
