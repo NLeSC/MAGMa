@@ -102,10 +102,10 @@ Ext.define('Esc.d3.Chromatogram', {
        .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + (me.scales.y(me.ranges.y.max)-4) + ")"; });
     }
     this.svg.selectAll("line.peak")
-    	.attr("x1", function(d) { return me.scales.x(d.rt); })
-	    .attr("y2", function(d) { return me.scales.y(d.intensity); })
-    	.attr("y1", function(d) { return me.scales.y(0); })
-	    .attr("x2", function(d) { return me.scales.x(d.rt); })
+      .attr("x1", function(d) { return me.scales.x(d.rt); })
+      .attr("y2", function(d) { return me.scales.y(d.intensity); })
+      .attr("y1", function(d) { return me.scales.y(0); })
+      .attr("x2", function(d) { return me.scales.x(d.rt); })
     ;
 
     this.svg.selectAll("line."+this.cutoffCls)
@@ -125,7 +125,7 @@ Ext.define('Esc.d3.Chromatogram', {
     this.scales.y = d3.scale.linear().domain([this.ranges.y.min, this.ranges.y.max]).range([this.chartHeight, 0]);
   },
   initAxes: function() {
-  	this.callParent(arguments);
+    this.callParent(arguments);
     var me = this;
     /**
      * @property {d3.svg.line} line Line factory for basepeakintensity and extractedionchromatogram
