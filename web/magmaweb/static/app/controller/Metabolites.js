@@ -501,11 +501,11 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
    * Checks run feature and if false removes all action buttons.
    */
   applyRole: function() {
-	  if (!this.application.features.run) {
-	      this.actionsMenu.getComponent('addstructuresaction').hide();
-	      this.actionsMenu.getComponent('metabolizeaction').hide();
-	      this.getMetaboliteList().hideCommandsColumn();
-	  }
+      if (!this.application.features.run) {
+          this.actionsMenu.getComponent('addstructuresaction').hide();
+          this.actionsMenu.getComponent('metabolizeaction').hide();
+          this.getMetaboliteList().hideCommandsColumn();
+      }
   }
 });
 
