@@ -1,5 +1,5 @@
 import argparse
-import sys,logging
+import sys,logging,shutil
 from rdkit import Chem
 from rdkit.Chem import AllChem
 import magma
@@ -100,6 +100,12 @@ class MagmaCommand(object):
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
 
+        sc = subparsers.add_parser("select", help=self.select.__doc__, description=self.select.__doc__)
+        sc.add_argument('-f', '--frag_id', help="Fragment_identifier as selection query (default: %(default)s)", default=None,type=int)
+        sc.add_argument('db_in', type=str, help="Input sqlite database file with annotation results")
+        sc.add_argument('db_out', type=str, help="Output qlite database file with selected results")
+        sc.set_defaults(func=self.select)
+
         sc = subparsers.add_parser("sd2smiles", help=self.sd2smiles.__doc__, description=self.sd2smiles.__doc__)
         sc.add_argument('input', type=argparse.FileType('rb'), help="Sd file")
         sc.add_argument('output', type=argparse.FileType('w'), help="File with smiles which can be used as metabolite reactantss")
@@ -114,7 +120,7 @@ class MagmaCommand(object):
     def version(self):
         return '1.0' # TODO move to main magma package and reuse in setup.py so version is specified in one place
 
-    def get_magma_session(self, db, description):
+    def get_magma_session(self, db, description=""):
         return magma.MagmaSession(db, description)
 
     def all_in_one(self, args):
@@ -251,6 +257,12 @@ class MagmaCommand(object):
             annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast,time_limit=args.time_limit)
         magma_session.commit()
             # annotate_engine.search_some_structures(metids)
+
+    def select(self, args):
+        shutil.copy(args.db_in,args.db_out)
+        magma_session = self.get_magma_session(args.db_out)
+        select_engine = magma_session.get_select_engine()
+        select_engine.select_fragment(args.frag_id)
 
     def sd2smiles(self, args):
         """ Convert sd file to smiles """

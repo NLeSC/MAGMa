@@ -6,7 +6,7 @@ import pkg_resources
 import numpy
 import logging
 from lxml import etree
-from sqlalchemy import create_engine,and_,desc
+from sqlalchemy import create_engine,and_,desc,distinct
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
@@ -17,6 +17,7 @@ import pp
 import cPickle as pickle
 import types
 import pars
+from operator import itemgetter
 
 import ConfigParser
 config = ConfigParser.ConfigParser()
@@ -82,6 +83,8 @@ class MagmaSession(object):
                  ):
         return AnnotateEngine(self.db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
                  ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,use_all_peaks,call_back_url)
+    def get_select_engine(self):
+        return SelectEngine(self.db_session)
     def get_data_analysis_engine(self):
         return DataAnalysisEngine(self.db_session)
     def get_call_back_engine(self,
@@ -900,6 +903,79 @@ class MetaCycEngine(object):
                            logp=float(logp)/10.0,
                            ))
         return molecules
+
+class SelectEngine(object):
+    def __init__(self,db_session):
+        self.db_session = db_session
+        mz_precision,mz_precision_abs=self.db_session.query(Run.mz_precision,Run.mz_precision_abs).all()[0]
+        self.precision=1+mz_precision/1e6
+        self.mz_precision_abs=mz_precision_abs
+
+    def select_fragment(self,fragid):
+        child_frags = self.db_session.query(Fragment.fragid).filter(Fragment.parentfragid==fragid).all()
+        if len(child_frags) == 0:
+            exit('Fragment not fragmented')
+        fragmented_fragids = self.db_session.query(distinct(Fragment.parentfragid))
+        smiles = self.db_session.query(Fragment.inchikey).filter(Fragment.fragid==fragid).all()
+        sys.stderr.write(str(smiles)+'\n')
+        metids = self.db_session.query(Fragment.metid).filter(Fragment.inchikey==smiles[0][0], Fragment.fragid.in_(fragmented_fragids))
+        # print frags.all()
+        self.db_session.query(Fragment).filter(~Fragment.metid.in_(metids)).delete(synchronize_session='fetch')
+        self.db_session.query(Metabolite).filter(~Metabolite.metid.in_(metids)).delete(synchronize_session='fetch')
+        self.db_session.commit()
+        ref_scan = self.db_session.query(distinct(Fragment.scanid)).filter(Fragment.parentfragid==fragid).all()[0][0]
+        fragids = self.db_session.query(Fragment.fragid).filter(Fragment.inchikey==smiles[0][0], Fragment.fragid.in_(fragmented_fragids))
+        query_scans = self.db_session.query(distinct(Fragment.scanid)).filter(Fragment.parentfragid.in_(fragids)).all()
+        for query_scan, in query_scans:
+            dot_product=self.dot_product_scans(ref_scan,query_scan)
+            compounds = self.db_session.query(Metabolite).filter(Metabolite.metid.in_(
+                            self.db_session.query(Fragment.metid).filter(Fragment.scanid==query_scan))).all()
+            for compound in compounds:
+                compound.reactionsequence+='Scan: '+str(query_scan)+' - Similarity: '+str(dot_product)+'\n'
+            self.db_session.add(compound)
+        self.db_session.commit()
+
+    def dot_product_scans(self,ref_scan,query_scan):
+        ref_peaks=self.db_session.query(Peak.mz,Peak.intensity).filter(Peak.scanid==ref_scan).all()
+        query_peaks=self.db_session.query(Peak.mz,Peak.intensity).filter(Peak.scanid==query_scan).all()
+        ref_peaks_sorted=sorted(ref_peaks, key=itemgetter(1), reverse=True)        # Start peak matching with most intense peaks first
+        query_peaks_sorted=sorted(query_peaks, key=itemgetter(1), reverse=True)
+        dot_product=None
+        if len(query_peaks) > 0:
+            matched_intensities=[]
+            for pr in ref_peaks_sorted:
+                #print ref_peaks_sorted
+                #print '-------------'
+                #print query_peaks_sorted
+                #print '============='
+                ll = min(pr[0]/self.precision,pr[0]-self.mz_precision_abs)
+                hl = max(pr[0]*self.precision,pr[0]+self.mz_precision_abs)
+                min_delta_intensity=None
+                match=None
+                for pq in query_peaks_sorted:
+                    if ll < pq[0] < hl:
+                        delta_intensity=abs(pq[1]-pr[1])
+                        if min_delta_intensity==None or min_delta_intensity>delta_intensity:
+                            min_delta_intensity=delta_intensity
+                            match=pq
+                if match == None:
+                    matched_intensities.append((pr[1],0))
+                else:
+                    matched_intensities.append((pr[1],match[1]))
+                    query_peaks_sorted.remove(match)
+            for pq in query_peaks_sorted:
+                matched_intensities.append((0,pq[1]))
+            #print matched_intensities
+            srq=0
+            sr=0
+            sq=0
+            for match in matched_intensities:
+                srq+=(match[0]*match[1])**0.5
+                sr+=match[0]
+                sq+=match[1]
+            dot_product=srq**2/(sr*sq)
+        return dot_product
+        
 
 class DataAnalysisEngine(object):
     def __init__(self,db_session):
