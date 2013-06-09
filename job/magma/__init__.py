@@ -177,14 +177,20 @@ class StructureEngine(object):
         return metab.metid
 
     def metabolize(self,metid,metabolism,nsteps):
+        # Define if reactions are performed with reactor or with cactvs toolbox 
+        if config.get('magma job','metabolism_engine')=="reactor":
+            exec_reactor=pkg_resources.resource_filename( #@UndefinedVariable
+                                                      'magma', 'script/reactor')
+            exec_reactor+=" -as" # -f 0.15 -m "+str(nsteps)
+        elif config.get('magma job','chemical_engine')=="cactvs":
+            exec_reactor=pkg_resources.resource_filename( #@UndefinedVariable
+                                                      'magma', 'script/csreact.sh')
+
         try:
             parent = self.db_session.query(Metabolite).filter_by(metid=metid).one()
         except:
             print 'Metabolite record ',metid,' does not exist.'
             return
-        exec_reactor=pkg_resources.resource_filename( #@UndefinedVariable
-                                                      'magma', 'script/reactor')
-        exec_reactor+=" -as -f 0.15 -m "+str(nsteps)
         metabolism_files={
             "phase1": pkg_resources.resource_filename( #@UndefinedVariable
                                                        'magma', "data/sygma_rules.phase1.smirks"),
@@ -213,10 +219,10 @@ class StructureEngine(object):
                 mol+=line
             line=reactor.stdout.readline()
             while line != '$$$$\n' and line != "":
-                if line=='> <Probability>\n':
-                    prob=float(reactor.stdout.readline())
-                elif line=='> <Level>\n':
-                    level=int(reactor.stdout.readline())
+                #if line=='> <Probability>\n':
+                #    prob=float(reactor.stdout.readline())
+                #elif line=='> <Level>\n':
+                #    level=int(reactor.stdout.readline())
                 elif line=='> <ReactionSequence>\n':
                     sequence=''
                     line=reactor.stdout.readline()
