@@ -846,10 +846,10 @@ class HmdbEngine(object):
         self.conn = sqlite3.connect(dbfilename)
         self.conn.text_factory=str
         self.c = self.conn.cursor()
-    def query_on_mim(self,low,high):
-        result=self.c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ? %s' % self.where, (low,high))
+    def query_on_mim(self,low,high,charge):
+        result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         molecules=[]
-        for (cid,mim,natoms,molblock,inchikey,molform,name,reference,logp) in result:
+        for (cid,mim,charge,natoms,molblock,inchikey,molform,name,reference,logp) in result:
             hmdb_ids=reference.split(',')
             hmdb_refs='<a href="http://www.hmdb.ca/metabolites/'+hmdb_ids[0]+'" target="_blank">'+hmdb_ids[0]+' (HMDB)</a>'
             for hmdb_id in hmdb_ids[1:]:
