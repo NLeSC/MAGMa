@@ -60,8 +60,8 @@ class MagmaCommand(object):
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # add_structures arguments
         sc.add_argument('-j', '--metids', type=argparse.FileType('rb'), help="File with structure ids")
-        sc.add_argument('-n', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=2,type=int)
-        sc.add_argument('-m', '--metabolism_types', help="1 and/or 2 for phase 1 and 2 biotransformations (default: %(default)s)", default="phase1,phase2", type=str)
+        sc.add_argument('-n', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=1,type=int)
+        sc.add_argument('-m', '--metabolism_types', help="digest,gut,phase1,phase2, (default: %(default)s)", default="phase1,phase2", type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.metabolize)
 

@@ -10,7 +10,7 @@ from sqlalchemy import create_engine,and_,desc,distinct
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
-from models import Base, Metabolite, Scan, Peak, Fragment, Run
+from models import Base, Metabolite, Reaction, Scan, Peak, Fragment, Run
 import requests,functools,macauthlib #required to update callback url
 from requests.auth import AuthBase
 import pp
@@ -161,6 +161,7 @@ class StructureEngine(object):
                     metab.origin=unicode(str(metab.origin)+'</br>'+molecule.name, 'utf-8', 'xmlcharrefreplace')
                     metab.reference=molecule.reference
                     metab.probability=molecule.probability
+                    metab.reactionsequence=unicode(str(metab.reactionsequence)+'</br>'+molecule.reactionsequence)
                 else:
                     if dups[0].probability < molecule.probability:
                         metab.metid=dups[0].metid
@@ -181,7 +182,7 @@ class StructureEngine(object):
         if config.get('magma job','metabolism_engine')=="reactor":
             exec_reactor=pkg_resources.resource_filename( #@UndefinedVariable
                                                       'magma', 'script/reactor')
-            exec_reactor+=" -as" # -f 0.15 -m "+str(nsteps)
+            exec_reactor+=" -as -m "+str(nsteps) # -f 0.15
         elif config.get('magma job','chemical_engine')=="cactvs":
             exec_reactor=pkg_resources.resource_filename( #@UndefinedVariable
                                                       'magma', 'script/csreact.sh')
@@ -193,11 +194,13 @@ class StructureEngine(object):
             return
         metabolism_files={
             "phase1": pkg_resources.resource_filename( #@UndefinedVariable
-                                                       'magma', "data/sygma_rules.phase1.smirks"),
+                                                       'magma', "data/sygma_rules_GE_0.1.phase1.smirks"),
             "phase2": pkg_resources.resource_filename( #@UndefinedVariable
                                                        'magma', "data/sygma_rules.phase2.smirks"),
             "gut": pkg_resources.resource_filename( #@UndefinedVariable
-                                                       'magma', "data/gut.smirks")
+                                                       'magma', "data/gut.smirks"),
+            "digest": pkg_resources.resource_filename( #@UndefinedVariable
+                                                       'magma', "data/digest.smirks")
             }
         for m in metabolism.split(','):
             if m in metabolism_files:
@@ -223,20 +226,23 @@ class StructureEngine(object):
                 #    prob=float(reactor.stdout.readline())
                 #elif line=='> <Level>\n':
                 #    level=int(reactor.stdout.readline())
-                elif line=='> <ReactionSequence>\n':
-                    sequence=''
-                    line=reactor.stdout.readline()
-                    while line != '\n':
-                        sequence=line+sequence
-                        line=reactor.stdout.readline()
-                    if sequence=='PARENT\n':
-                        isquery=1
-                        sequence=''
-                    reactionsequence=parent.reactionsequence+sequence
+                if line=='> <ReactionSequence>\n':
+                    reaction=reactor.stdout.readline()[:-1]
                 line=reactor.stdout.readline()
-            molecule=types.MoleculeType(mol,name,prob,level,reactionsequence,isquery)
-            metids.append(self.add_molecule(molecule))
+            if reaction!='PARENT':
+                molecule=types.MoleculeType(mol,name,0,0,str(metid)+'&gt&gt'+reaction,isquery)
+                new_metid=self.add_molecule(molecule,merge=True)
+                metids.append(new_metid)
+                parent.reactionsequence+=unicode('</br>'+str(new_metid)+'&lt&lt'+reaction)
+                react=Reaction(
+                    reactant=metid,
+                    product=new_metid,
+                    name=reaction
+                    )
+                self.db_session.add(react)
+                self.db_session.flush()
             line=reactor.stdout.readline()
+        self.db_session.add(parent)
         reactor.stdout.close()
         self.db_session.commit()
         return metids
@@ -257,6 +263,11 @@ class StructureEngine(object):
         result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass-0.01,mass+0.01))
         for (id,mim,molblock,smiles,chebi_name) in result:
             self.add_molecule(zlib.decompress(molblock),str(chebi_name),1.0,1,"",1)
+
+    def get_metids_with_mass_less_then(self,mass):
+        result=self.db_session.query(Metabolite.metid).filter(Metabolite.mim<mass).all()
+        metids=[x[0] for x in result]
+        return metids
 
 class MsDataEngine(object):
     def __init__(self,db_session,abs_peak_cutoff,rel_peak_cutoff,max_ms_level):
