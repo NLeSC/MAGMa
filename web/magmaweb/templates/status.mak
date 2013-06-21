@@ -62,6 +62,9 @@ Ext.onReady(function() {
                     window.location = '${request.route_url('results',jobid=jobid)}';
                 } else {
                     status.update(result.status);
+                    // force resize of parent component, so whole status is readable
+                    var status_container = Ext.getCmp('status_cont');
+                    status_container.setSize(status_container.getSize());
                 }
               },
               failure: function(response) {
@@ -157,6 +160,7 @@ Ext.onReady(function() {
       },
       items: [{
           xtype: 'component',
+          id: 'status_cont',
           contentEl: 'status_container'
         },
         progress,
@@ -188,9 +192,8 @@ Ext.onReady(function() {
 <body>
 <%include file="logos.mak"/>
 <div id="status_container">
-<p>
-<span>Job status:</span></p><p>
-<span id="status">${status|n}</span></p>
+<span>Job status:</span>
+<div id="status">${status|n}</div>
 </div>
 </body>
 </html>
