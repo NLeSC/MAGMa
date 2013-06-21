@@ -91,7 +91,7 @@ except:
 conn3 = sqlite3.connect(outputdir+"Pubchem_MAGMa.db")
 c3 = conn3.cursor()
 try:
-    c3.execute("CREATE TABLE molecules (cid INTEGER PRIMARY KEY, mim INTEGER NOT NULL, natoms INTEGER NOT NULL, molblock BLOB, inchikey TEXT, molform TEXT, name TEXT, refscore INTEGER, logp INT)")
+    c3.execute("CREATE TABLE molecules (cid INTEGER PRIMARY KEY, mim INTEGER NOT NULL, charge INTEGER NOT NULL, natoms INTEGER NOT NULL, molblock BLOB, inchikey TEXT, molform TEXT, name TEXT, refscore INTEGER, logp INT)")
     conn3.commit()
     print ("Pubchem_MAGMa.db created")
 except:
@@ -100,7 +100,7 @@ except:
 conn4 = sqlite3.connect(outputdir+"Pubchem_MAGMa_Kegg.db")
 c4 = conn4.cursor()
 try:
-    c4.execute("CREATE TABLE molecules (cid INTEGER PRIMARY KEY, mim INTEGER NOT NULL, natoms INTEGER NOT NULL, molblock BLOB, inchikey TEXT, molform TEXT, name TEXT, reference TEXT, logp INT)")
+    c4.execute("CREATE TABLE molecules (cid INTEGER PRIMARY KEY, mim INTEGER NOT NULL, charge INTEGER NOT NULL, natoms INTEGER NOT NULL, molblock BLOB, inchikey TEXT, molform TEXT, name TEXT, reference TEXT, logp INT)")
     conn4.commit()
     print ("Pubchem_MAGMa_kegg.db created")
 except:
@@ -120,13 +120,13 @@ while not ready:
         continue
     starttime=time.time()
     sdfile=gzip.open(pubchemdir+filename)
-    record=[]
-    hatoms=[]
-    hbonds=0
-    skip=False
-    ionized=0
     line='$$$$'
     while line!="":
+        record=[]
+        hatoms=[]
+        hbonds=0
+        skip=False
+        ionized=0
         #read heading:
         for x in range(4):
             line=sdfile.readline()
@@ -187,6 +187,19 @@ while not ready:
                 not skip and \
                 mim <= 1200.0 and \
                 comp_count == 1:
+            charge=0
+            if '-' in molform:
+                if molform[-1]=='-':  # exclude compounds with charge < -1
+                    charge=-1
+                    # mim+=0.0005486 # account for mass of electron
+                else:
+                    continue
+            elif '+' in molform:
+                if molform[-1]=='+':  # exclude compounds with charge > 1
+                    charge=1
+                    # mim-=0.0005486 # account for mass of electron
+                else:
+                    continue
             for x in ['C(=O)[O-]','S(=O)(=O)[O-]','[NH+]','[NH2+]','[NH3+]','[NH4+]']:
                 if smiles.find(x)>=0:
                     ionized=1
@@ -205,9 +218,10 @@ while not ready:
                 if (refscore > dbrefscore) or \
                     (refscore == dbrefscore and dbionized > ionized): # prefer CID's with higher refscore, then prefer non-ionized CID's
                     molblock = zlib.compress(''.join(record))
-                    c3.execute('UPDATE molecules SET cid=?, mim=?, molblock=?, molform=?, name=?, refscore=?, logp=? WHERE cid == ?', (
+                    c3.execute('UPDATE molecules SET cid=?, mim=?, charge=?,  molblock=?, molform=?, name=?, refscore=?, logp=? WHERE cid == ?', (
                                                                                 cid,
                                                                                 int(mim*1e6),
+                                                                                charge,
                                                                                 buffer(molblock),
                                                                                 unicode(molform),
                                                                                 unicode(molname),
@@ -219,9 +233,10 @@ while not ready:
             else:
                 molblock = zlib.compress(''.join(record))
                 curr_id+=1
-                c3.execute('INSERT INTO molecules (cid,mim,natoms,molblock,inchikey,molform,name,refscore,logp) VALUES (?,?,?,?,?,?,?,?,?)', (
+                c3.execute('INSERT INTO molecules (cid,mim,charge,natoms,molblock,inchikey,molform,name,refscore,logp) VALUES (?,?,?,?,?,?,?,?,?,?)', (
                                                                                 cid,
                                                                                 int(mim*1e6),
+                                                                                charge,
                                                                                 heavy_atoms,
                                                                                 buffer(molblock),
                                                                                 unicode(inchikey),
@@ -241,9 +256,10 @@ while not ready:
                     print 'Duplicates:',reference,molname
                     if dbionized > ionized: # prefer non-ionized CID's
                         molblock = zlib.compress(''.join(record))
-                        c4.execute('UPDATE molecules SET cid=?, mim=?, molblock=?, molform=?, name=?, reference=?, logp=? WHERE cid == ?', (
+                        c4.execute('UPDATE molecules SET cid=?, mim=?, charge=?, molblock=?, molform=?, name=?, reference=?, logp=? WHERE cid == ?', (
                                                                                     cid,
                                                                                     int(mim*1e6),
+                                                                                    charge,
                                                                                     buffer(molblock),
                                                                                     unicode(molform),
                                                                                     unicode(molname),
@@ -261,9 +277,10 @@ while not ready:
                 else:
                     molblock = zlib.compress(''.join(record))
                     curr_id+=1
-                    c4.execute('INSERT INTO molecules (cid,mim,natoms,molblock,inchikey,molform,name,reference,logp) VALUES (?,?,?,?,?,?,?,?,?)', (
+                    c4.execute('INSERT INTO molecules (cid,mim,charge,natoms,molblock,inchikey,molform,name,reference,logp) VALUES (?,?,?,?,?,?,?,?,?,?)', (
                                                                                     cid,
                                                                                     int(mim*1e6),
+                                                                                    charge,
                                                                                     heavy_atoms,
                                                                                     buffer(molblock),
                                                                                     unicode(inchikey),
@@ -274,11 +291,6 @@ while not ready:
                                                                                     )
                                 )
                     memstore_kegg[inchikey]=(cid,keggid,ionized)
-        record=[]
-        hatoms=[]
-        hbonds=0
-        skip=False
-        ionized=0
     
     conn3.commit()
     conn4.commit()
@@ -291,9 +303,9 @@ memstore={} # free up some memory
 memstore_kegg={}
 print "Creating index ..."
 c3.execute('PRAGMA temp_store = 2')
-c3.execute('CREATE INDEX idx_cover ON molecules (mim,natoms,refscore,molform,inchikey,name,molblock,logp)')
+c3.execute('CREATE INDEX idx_cover ON molecules (charge,mim,natoms,refscore,molform,inchikey,name,molblock,logp)')
 conn3.commit()
 c4.execute('PRAGMA temp_store = 2')
-c4.execute('CREATE INDEX idx_cover ON molecules (mim,natoms,reference,molform,inchikey,name,molblock,logp)')
+c4.execute('CREATE INDEX idx_cover ON molecules (charge,mim,natoms,reference,molform,inchikey,name,molblock,logp)')
 conn4.commit()
 

@@ -6,7 +6,7 @@ import pkg_resources
 import numpy
 import logging
 from lxml import etree
-from sqlalchemy import create_engine,and_,desc
+from sqlalchemy import create_engine,and_,desc,distinct
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
@@ -17,6 +17,7 @@ import pp
 import cPickle as pickle
 import types
 import pars
+from operator import itemgetter
 
 import ConfigParser
 config = ConfigParser.ConfigParser()
@@ -82,6 +83,8 @@ class MagmaSession(object):
                  ):
         return AnnotateEngine(self.db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
                  ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,use_all_peaks,call_back_url)
+    def get_select_engine(self):
+        return SelectEngine(self.db_session)
     def get_data_analysis_engine(self):
         return DataAnalysisEngine(self.db_session)
     def get_call_back_engine(self,
@@ -595,6 +598,7 @@ class AnnotateEngine(object):
         mzs.sort()
         # build non-overlapping set of queries around these masses
         queries=[[0,0]]
+        cqueries=[[0,0]] # queries of charged molecules
         for mz in mzs:
             ql=int(1e6*(min(mz/self.precision,mz-self.mz_precision_abs)-self.ionisation_mode*(pars.Hmass-pars.elmass)))
             qh=int(1e6*(max(mz*self.precision,mz+self.mz_precision_abs)-self.ionisation_mode*(pars.Hmass-pars.elmass)))
@@ -605,6 +609,15 @@ class AnnotateEngine(object):
                     queries[-1][1]=qh
                 else:
                     queries.append([ql,qh])
+            ql=int(1e6*(min(mz/self.precision,mz-self.mz_precision_abs)+self.ionisation_mode*pars.elmass))
+            qh=int(1e6*(max(mz*self.precision,mz+self.mz_precision_abs)+self.ionisation_mode*pars.elmass))
+            if ql < mmim:
+                if qh > mmim:
+                    qh == mmim
+                if cqueries[-1][0] <= ql <= cqueries[-1][1]:
+                    cqueries[-1][1]=qh
+                else:
+                    cqueries.append([ql,qh])
 
         # in case of an empty database, no check for existing duplicates needed
         check_duplicates = (self.db_session.query(Metabolite.metid).count() > 0)
@@ -613,7 +626,13 @@ class AnnotateEngine(object):
         # All candidates are stored in dbsession, resulting metids are returned
         metids=set([])
         for ql,qh in queries:
-            result=query_engine.query_on_mim(ql,qh)
+            result=query_engine.query_on_mim(ql,qh,0)
+            for molecule in result:
+                metid=struct_engine.add_molecule(molecule,check_duplicates=check_duplicates)
+                metids.add(metid)
+            print str(ql)+','+str(qh)+' --> '+str(len(metids))+' candidates'
+        for ql,qh in cqueries:
+            result=query_engine.query_on_mim(ql,qh,self.ionisation_mode)
             for molecule in result:
                 metid=struct_engine.add_molecule(molecule,check_duplicates=check_duplicates)
                 metids.add(metid)
@@ -631,8 +650,11 @@ class AnnotateEngine(object):
         logging.warn('calculating on '+str(ncpus)+' cpus !!!')
         job_server = pp.Server(ncpus, ppservers=ppservers)
         if metids==None:
-            metabdata=self.db_session.query(Metabolite.metid,Metabolite.probability).all()
-            metids=[x[0] for x in sorted(metabdata, key=lambda meta: meta[1])]
+            if time_limit == None:
+                metabdata=self.db_session.query(Metabolite.metid).order_by(desc(Metabolite.metid)).all()
+            else:
+                metabdata=self.db_session.query(Metabolite.metid).order_by(Metabolite.probability).all()
+            metids=[x[0] for x in metabdata]
         # annotate metids in chunks of 500 to avoid errors in db_session.query and memory problems during parallel processing
         total_frags=0
         total_metids = len(metids)
@@ -759,10 +781,10 @@ class PubChemEngine(object):
         self.conn = sqlite3.connect(dbfilename)
         self.conn.text_factory=str
         self.c = self.conn.cursor()
-    def query_on_mim(self,low,high):
-        result=self.c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ? %s' % self.where, (low,high))
+    def query_on_mim(self,low,high,charge):
+        result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         molecules=[]
-        for (cid,mim,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
+        for (cid,mim,charge,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
             molecules.append(types.MoleculeType(
                            molblock=zlib.decompress(molblock),
                            name=name+' ('+str(cid)+')',
@@ -790,10 +812,10 @@ class KeggEngine(object):
         self.conn = sqlite3.connect(dbfilename)
         self.conn.text_factory=str
         self.c = self.conn.cursor()
-    def query_on_mim(self,low,high):
-        result=self.c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ? %s' % self.where, (low,high))
+    def query_on_mim(self,low,high,charge):
+        result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         molecules=[]
-        for (cid,mim,natoms,molblock,inchikey,molform,name,reference,logp) in result:
+        for (cid,mim,charge,natoms,molblock,inchikey,molform,name,reference,logp) in result:
             keggids=reference.split(',')
             keggrefs='<a href="http://www.genome.jp/dbget-bin/www_bget?cpd:'+keggids[0]+'" target="_blank">'+keggids[0]+' (Kegg)</a>'
             for keggid in keggids[1:]:
@@ -824,10 +846,10 @@ class HmdbEngine(object):
         self.conn = sqlite3.connect(dbfilename)
         self.conn.text_factory=str
         self.c = self.conn.cursor()
-    def query_on_mim(self,low,high):
-        result=self.c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ? %s' % self.where, (low,high))
+    def query_on_mim(self,low,high,charge):
+        result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         molecules=[]
-        for (cid,mim,natoms,molblock,inchikey,molform,name,reference,logp) in result:
+        for (cid,mim,charge,natoms,molblock,inchikey,molform,name,reference,logp) in result:
             hmdb_ids=reference.split(',')
             hmdb_refs='<a href="http://www.hmdb.ca/metabolites/'+hmdb_ids[0]+'" target="_blank">'+hmdb_ids[0]+' (HMDB)</a>'
             for hmdb_id in hmdb_ids[1:]:
@@ -847,6 +869,113 @@ class HmdbEngine(object):
                            logp=float(logp)/10.0,
                            ))
         return molecules
+
+class MetaCycEngine(object):
+    def __init__(self,dbfilename='',max_64atoms=False):
+        if dbfilename=='':
+            dbfilename=config.get('magma job','structure_database.metacyc')
+        self.where=''
+        if max_64atoms==True:
+            self.where += ' AND natoms <= 64'
+        self.conn = sqlite3.connect(dbfilename)
+        self.conn.text_factory=str
+        self.c = self.conn.cursor()
+    def query_on_mim(self,low,high,charge):
+        result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
+        molecules=[]
+        for (cid,mim,charge,natoms,molblock,inchikey,molform,name,reference,logp) in result:
+            metacyc_ids=reference.split(',')
+            metacyc_refs='<a href="http://www.biocyc.org/META/NEW-IMAGE?type=COMPOUND&object='+metacyc_ids[0]+'" target="_blank">'+metacyc_ids[0]+' (MetaCyc)</a>'
+            for metacyc_id in metacyc_ids[1:]:
+                metacyc_refs+='<br><a href="http://www.biocyc.org/META/NEW-IMAGE?type=COMPOUND&object='+metacyc_id+'" target="_blank">'+metacyc_id+' (MetaCyc)</a>'
+            molecules.append(types.MoleculeType(
+                           molblock=zlib.decompress(molblock),
+                           name=name,
+                           mim=float(mim/1e6),
+                           natoms=natoms,
+                           molform=molform,
+                           inchikey=inchikey,
+                           prob=None,
+                           level=1,
+                           sequence="",
+                           isquery=1,
+                           reference=metacyc_refs,
+                           logp=float(logp)/10.0,
+                           ))
+        return molecules
+
+class SelectEngine(object):
+    def __init__(self,db_session):
+        self.db_session = db_session
+        mz_precision,mz_precision_abs=self.db_session.query(Run.mz_precision,Run.mz_precision_abs).all()[0]
+        self.precision=1+mz_precision/1e6
+        self.mz_precision_abs=mz_precision_abs
+
+    def select_fragment(self,fragid):
+        child_frags = self.db_session.query(Fragment.fragid).filter(Fragment.parentfragid==fragid).all()
+        if len(child_frags) == 0:
+            exit('Fragment not fragmented')
+        fragmented_fragids = self.db_session.query(distinct(Fragment.parentfragid))
+        smiles = self.db_session.query(Fragment.inchikey).filter(Fragment.fragid==fragid).all()
+        sys.stderr.write(str(smiles)+'\n')
+        metids = self.db_session.query(Fragment.metid).filter(Fragment.inchikey==smiles[0][0], Fragment.fragid.in_(fragmented_fragids))
+        # print frags.all()
+        self.db_session.query(Fragment).filter(~Fragment.metid.in_(metids)).delete(synchronize_session='fetch')
+        self.db_session.query(Metabolite).filter(~Metabolite.metid.in_(metids)).delete(synchronize_session='fetch')
+        self.db_session.commit()
+        ref_scan = self.db_session.query(distinct(Fragment.scanid)).filter(Fragment.parentfragid==fragid).all()[0][0]
+        fragids = self.db_session.query(Fragment.fragid).filter(Fragment.inchikey==smiles[0][0], Fragment.fragid.in_(fragmented_fragids))
+        query_scans = self.db_session.query(distinct(Fragment.scanid)).filter(Fragment.parentfragid.in_(fragids)).all()
+        for query_scan, in query_scans:
+            dot_product=self.dot_product_scans(ref_scan,query_scan)
+            compounds = self.db_session.query(Metabolite).filter(Metabolite.metid.in_(
+                            self.db_session.query(Fragment.metid).filter(Fragment.scanid==query_scan))).all()
+            for compound in compounds:
+                compound.reactionsequence+='Scan: '+str(query_scan)+' - Similarity: '+str(dot_product)+'\n'
+            self.db_session.add(compound)
+        self.db_session.commit()
+
+    def dot_product_scans(self,ref_scan,query_scan):
+        ref_peaks=self.db_session.query(Peak.mz,Peak.intensity).filter(Peak.scanid==ref_scan).all()
+        query_peaks=self.db_session.query(Peak.mz,Peak.intensity).filter(Peak.scanid==query_scan).all()
+        ref_peaks_sorted=sorted(ref_peaks, key=itemgetter(1), reverse=True)        # Start peak matching with most intense peaks first
+        query_peaks_sorted=sorted(query_peaks, key=itemgetter(1), reverse=True)
+        dot_product=None
+        if len(query_peaks) > 0:
+            matched_intensities=[]
+            for pr in ref_peaks_sorted:
+                #print ref_peaks_sorted
+                #print '-------------'
+                #print query_peaks_sorted
+                #print '============='
+                ll = min(pr[0]/self.precision,pr[0]-self.mz_precision_abs)
+                hl = max(pr[0]*self.precision,pr[0]+self.mz_precision_abs)
+                min_delta_intensity=None
+                match=None
+                for pq in query_peaks_sorted:
+                    if ll < pq[0] < hl:
+                        delta_intensity=abs(pq[1]-pr[1])
+                        if min_delta_intensity==None or min_delta_intensity>delta_intensity:
+                            min_delta_intensity=delta_intensity
+                            match=pq
+                if match == None:
+                    matched_intensities.append((pr[1],0))
+                else:
+                    matched_intensities.append((pr[1],match[1]))
+                    query_peaks_sorted.remove(match)
+            for pq in query_peaks_sorted:
+                matched_intensities.append((0,pq[1]))
+            #print matched_intensities
+            srq=0
+            sr=0
+            sq=0
+            for match in matched_intensities:
+                srq+=(match[0]*match[1])**0.5
+                sr+=match[0]
+                sq+=match[1]
+            dot_product=srq**2/(sr*sq)
+        return dot_product
+        
 
 class DataAnalysisEngine(object):
     def __init__(self,db_session):
@@ -890,23 +1019,15 @@ class DataAnalysisEngine(object):
 
 def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast,chem_engine):
     pars=magma.pars
-    if chem_engine=="rdkit":
-        Chem=magma.rdkit_engine             # Use rdkit_engine
-    elif chem_engine=="cdk":
-        Chem=magma.cdk_engine.engine()      # Use cdk_engine
     if fast:
         Fragmentation=magma.fragmentation_cy
     else:
         Fragmentation=magma.fragmentation_py
 
-    def massmatch(peak,mim,low,high):
+    def massmatch(peak,mim,protonation):
         lowmz=min(peak.mz/precision,peak.mz-mz_precision_abs)
         highmz=max(peak.mz*precision,peak.mz+mz_precision_abs)
-        for x in range(low,high+1):
-            if lowmz <= mim+x*pars.Hmass-ionisation_mode*pars.elmass <= highmz:
-                return x
-        else:
-            return False
+        return lowmz <= (mim+protonation*pars.Hmass-ionisation_mode*pars.elmass) <= highmz
 
     #def findhit(self,childscan,parent):
     def gethit (peak,fragment,score,bondbreaks,mass,deltaH):
@@ -940,7 +1061,7 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
 
     def add_fragment_data_to_hit(hit):
         if hit.fragment != 0:
-            hit.atomstring,hit.atomlist,hit.formula=fragment_engine.get_fragment_info(hit.fragment,hit.deltaH)
+            hit.atomstring,hit.atomlist,hit.formula,hit.inchikey=fragment_engine.get_fragment_info(hit.fragment,hit.deltaH)
             #except:
             #    exit('failed inchi for: '+atomstring+'--'+str(hit.fragment))
             if len(hit.besthits)>0:
@@ -952,11 +1073,12 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
     Fragmented=False
     hits=[]
     frags=0
+    charge=0
+    charge+=-1*(molformula[-1]=='-')+1*(molformula[-1]=='+') # derive charge from molecular formula
     for peak in peaks:
         if not ((not use_all_peaks) and peak.childscan==None):
-            protonation=ionisation_mode-(molformula.find('+')>=0)*1
-            deltaH=massmatch(peak,mim,protonation,protonation)
-            if type(deltaH)==int:
+            protonation=ionisation_mode-charge
+            if massmatch(peak,mim,protonation):
                 if not Fragmented:
                     #sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+' '+str(structure.reactionsequence)+'\n')
                     #sys.stderr.write('Mim: '+str(structure.mim)+'\n')
@@ -967,7 +1089,7 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
                     #sys.stderr.write('N fragments kept: '+str(len(fragment_engine.fragments))+"\n")
                     Fragmented=True
                 if fragment_engine.accepted():
-                    hit=gethit(peak,(1<<fragment_engine.get_natoms())-1,0,0,mim,-deltaH)
+                    hit=gethit(peak,(1<<fragment_engine.get_natoms())-1,0,0,mim,-protonation)
                     add_fragment_data_to_hit(hit)
                     hits.append(hit)
     return (hits,frags)

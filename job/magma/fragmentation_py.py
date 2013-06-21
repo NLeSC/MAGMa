@@ -38,6 +38,8 @@ class FragmentEngine(object):
             self.atom_masses.append(Chem.GetExtendedAtomMass(self.mol,x))
             if Chem.GetAtomSymbol(self.mol,x) == 'O' and Chem.GetAtomHs(self.mol,x) == 1 and Chem.GetNBonds(self.mol,x)==1:
                 self.neutral_loss_atoms.append(x)
+            if Chem.GetAtomSymbol(self.mol,x) == 'N' and Chem.GetAtomHs(self.mol,x) == 2 and Chem.GetNBonds(self.mol,x)==1:
+                self.neutral_loss_atoms.append(x)
         for x in range(Chem.nbonds(self.mol)):
             a1,a2 = Chem.GetBondAtoms(self.mol,x)
             self.bonded_atoms[a1].append(a2)
@@ -179,7 +181,7 @@ class FragmentEngine(object):
                 formula+=el
             if nel>1:
                 formula+=str(nel)
-        return atomstring,atomlist,formula # ,Chem.FragmentToInchiKey(self.mol,atomlist)
+        return atomstring,atomlist,formula,Chem.FragmentToInchiKey(self.mol,atomlist)
 
     def get_natoms(self):
         return self.natoms
