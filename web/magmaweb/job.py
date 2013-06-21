@@ -327,7 +327,7 @@ class JobFactory(object):
         if (self.tarball is not None):
             body['prestaged'].append(self.tarball)
 
-        job.state = u'INITIAL'
+        job.state = u'PENDING'
 
         # Job launcher will try to report states of the submitted job
         # even before this request has been handled

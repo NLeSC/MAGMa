@@ -432,7 +432,7 @@ class JobFactoryTestCase(unittest.TestCase):
                             'status_callback_url': status_cb_url
                             }
         self.factory.submitJob2Launcher.assert_called_with(jobmanager_query)
-        self.assertEqual(job.state, u'INITIAL')
+        self.assertEqual(job.state, u'PENDING')
         self.assertEqual(job.launcher_url, launcher_url)
 
     def test_submitQuery_with_tarball(self):
@@ -459,7 +459,7 @@ class JobFactoryTestCase(unittest.TestCase):
                             'status_callback_url': status_cb_url
                             }
         self.factory.submitJob2Launcher.assert_called_with(jobmanager_query)
-        self.assertEqual(job.state, u'INITIAL')
+        self.assertEqual(job.state, u'PENDING')
 
     def test_submitQuery_no_joblauncher(self):
         from requests.exceptions import ConnectionError
@@ -728,7 +728,7 @@ class JobTestCase(unittest.TestCase):
         self.assertTrue(self.job.is_complete())
 
     def test_is_complete_running(self):
-        running_states = (u'INITIAL', u'PRE_STAGING', u'RUNNING',
+        running_states = (u'PENDING', u'PRE_STAGING', u'RUNNING',
                           u'POST_STAGING', u'Progress: 50%')
         for running_state in running_states:
             self.job.state = running_state
