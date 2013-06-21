@@ -7,8 +7,7 @@
     href="${request.extjsroot}/resources/css/ext-all.css" type="text/css"></link>
 <link rel="stylesheet" href="${request.static_url('magmaweb:static/style.css')}" type="text/css"/>
 <style type="text/css">
-
-#status {
+.status {
   font-size: 200%;
 }
 </style>
@@ -30,6 +29,7 @@ Ext.Loader.setConfig({
 <script type="text/javascript">
 
 Ext.require([
+    'Ext.Template',
     'Ext.container.Viewport',
     'Ext.layout.container.Border',
     'Ext.toolbar.Spacer',
@@ -45,7 +45,8 @@ Ext.onReady(function() {
   Ext.QuickTips.init();
 
   var interval = 2000;
-  var status = Ext.get('status');
+  var template = new Ext.Template('<div>Job status:</div><div class="status">{0}</div>');
+  template.compile();
 
   var progress = Ext.create('Ext.ProgressBar', {
       width: '100%',
@@ -61,10 +62,7 @@ Ext.onReady(function() {
                 if (result.is_complete) {
                     window.location = '${request.route_url('results',jobid=jobid)}';
                 } else {
-                    status.update(result.status);
-                    // force resize of parent component, so whole status is readable
-                    var status_container = Ext.getCmp('status_cont');
-                    status_container.setSize(status_container.getSize());
+                    Ext.getCmp('status_cont').update([result.status]);
                 }
               },
               failure: function(response) {
@@ -160,8 +158,9 @@ Ext.onReady(function() {
       },
       items: [{
           xtype: 'component',
+          tpl: template,
+          data: ["${status|n}"],
           id: 'status_cont',
-          contentEl: 'status_container'
         },
         progress,
         cancel
@@ -191,9 +190,5 @@ Ext.onReady(function() {
 </head>
 <body>
 <%include file="logos.mak"/>
-<div id="status_container">
-<span>Job status:</span>
-<div id="status">${status|n}</div>
-</div>
 </body>
 </html>
