@@ -35,6 +35,14 @@ class Metabolite(Base):
     reference = Column(Unicode)
     fragments = relationship('Fragment', backref='metabolite') #: each metabolite is fragmented into fragments
 
+class Reaction(Base):
+    """Reaction model for reactions table"""
+    __tablename__ = 'reactions'
+    reactid = Column(Integer, primary_key=True, autoincrement=True) #: Id of a reaction
+    reactant = Column(Integer)
+    product = Column(Integer)
+    name = Column(Unicode)
+
 class Scan(Base):
     """Scan model for scans table"""
     __tablename__ = 'scans'
