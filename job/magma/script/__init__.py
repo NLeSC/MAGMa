@@ -1,5 +1,5 @@
 import argparse
-import sys,logging
+import sys,logging,shutil
 from rdkit import Chem
 from rdkit.Chem import AllChem
 import magma
@@ -91,7 +91,7 @@ class MagmaCommand(object):
         sc.add_argument('-u', '--use_all_peaks', help="Annotate all level 1 peaks, including those not fragmented (default: %(default)s)", action="store_true")
         sc.add_argument('--skip_fragmentation', help="Skip substructure annotation of fragment peaks (default: %(default)s)", action="store_true")
         sc.add_argument('-f', '--fast', help="Quick calculations for molecules up to 64 atoms (default: %(default)s)", action="store_true")
-        sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["pubchem","kegg","hmdb"])
+        sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["pubchem","kegg","hmdb","metacyc"])
         sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,min_refscore(only for PubChem) (default: %(default)s)",default=",1200,False,",type=str)
         sc.add_argument('--ncpus', help="Number of parallel cpus to use for annotation (default: %(default)s)", default=1,type=int)
         sc.add_argument('--scans', help="Search in specified scans (default: %(default)s)", default="all",type=str)
@@ -99,6 +99,12 @@ class MagmaCommand(object):
         sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
+
+        sc = subparsers.add_parser("select", help=self.select.__doc__, description=self.select.__doc__)
+        sc.add_argument('-f', '--frag_id', help="Fragment_identifier as selection query (default: %(default)s)", default=None,type=int)
+        sc.add_argument('db_in', type=str, help="Input sqlite database file with annotation results")
+        sc.add_argument('db_out', type=str, help="Output qlite database file with selected results")
+        sc.set_defaults(func=self.select)
 
         sc = subparsers.add_parser("sd2smiles", help=self.sd2smiles.__doc__, description=self.sd2smiles.__doc__)
         sc.add_argument('input', type=argparse.FileType('rb'), help="Sd file")
@@ -114,7 +120,7 @@ class MagmaCommand(object):
     def version(self):
         return '1.0' # TODO move to main magma package and reuse in setup.py so version is specified in one place
 
-    def get_magma_session(self, db, description):
+    def get_magma_session(self, db, description=""):
         return magma.MagmaSession(db, description)
 
     def all_in_one(self, args):
@@ -241,6 +247,8 @@ class MagmaCommand(object):
                 query_engine=magma.KeggEngine(db_opts[0],(db_opts[2]=='True'))
             elif args.structure_database == 'hmdb':
                 query_engine=magma.HmdbEngine(db_opts[0],(db_opts[2]=='True'))
+            elif args.structure_database == 'metacyc':
+                query_engine=magma.MetaCycEngine(db_opts[0],(db_opts[2]=='True'))
             pubchem_metids=annotate_engine.get_db_candidates(query_engine,db_opts[1])
         if args.metids == None:
             annotate_engine.search_structures(ncpus=args.ncpus,fast=args.fast,time_limit=args.time_limit)
@@ -249,6 +257,12 @@ class MagmaCommand(object):
             annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast,time_limit=args.time_limit)
         magma_session.commit()
             # annotate_engine.search_some_structures(metids)
+
+    def select(self, args):
+        shutil.copy(args.db_in,args.db_out)
+        magma_session = self.get_magma_session(args.db_out)
+        select_engine = magma_session.get_select_engine()
+        select_engine.select_fragment(args.frag_id)
 
     def sd2smiles(self, args):
         """ Convert sd file to smiles """
