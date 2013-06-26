@@ -698,6 +698,7 @@ class AnnotateEngine(object):
                                   self.mz_precision_abs,
                                   self.use_all_peaks,
                                   self.ionisation_mode,
+                                  self.skip_fragmentation,
                                   (fast and structure.natoms<=64),
                                   config.get('magma job','chemical_engine')
                                   ),(),(
@@ -711,7 +712,7 @@ class AnnotateEngine(object):
                 sys.stderr.write('Metabolite '+str(structure.metid))
                 raw_result=job(raw_result=True)
                 result,sout = pickle.loads(raw_result)
-                #print sout
+                print sout
                 (hits,frags)=result
                 total_frags+=frags
                 sys.stderr.write(' -> '+str(frags)+' fragments: '+str(structure.origin.encode('utf8'))+'\n')
@@ -1017,7 +1018,7 @@ class DataAnalysisEngine(object):
                     print '> <'+column+'>\n'+str(molecule.__getattribute__(column))+'\n'
             print '$$$$'
 
-def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast,chem_engine):
+def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,skip_fragmentation,fast,chem_engine):
     pars=magma.pars
     if fast:
         Fragmentation=magma.fragmentation_cy
@@ -1082,7 +1083,7 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
                 if not Fragmented:
                     #sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+' '+str(structure.reactionsequence)+'\n')
                     #sys.stderr.write('Mim: '+str(structure.mim)+'\n')
-                    fragment_engine=Fragmentation.FragmentEngine(mol,max_broken_bonds,max_water_losses,ionisation_mode)
+                    fragment_engine=Fragmentation.FragmentEngine(mol,max_broken_bonds,max_water_losses,ionisation_mode,skip_fragmentation)
                     #fragment_engine=GrowingEngine(mol)
                     if fragment_engine.accepted():
                         frags=fragment_engine.generate_fragments()
