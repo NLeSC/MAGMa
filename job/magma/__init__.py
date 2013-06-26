@@ -177,12 +177,14 @@ class StructureEngine(object):
         self.db_session.flush()
         return metab.metid
 
-    def metabolize(self,metid,metabolism,nsteps):
+    def metabolize(self,metid,metabolism,nsteps,keep=True):
         # Define if reactions are performed with reactor or with cactvs toolbox 
         if config.get('magma job','metabolism_engine')=="reactor":
             exec_reactor=pkg_resources.resource_filename( #@UndefinedVariable
                                                       'magma', 'script/reactor')
-            exec_reactor+=" -as -m "+str(nsteps) # -f 0.15
+            exec_reactor+=" -s -m "+str(nsteps) # -f 0.15
+        if keep:
+            exec_reactor+=" -a"
         elif config.get('magma job','chemical_engine')=="cactvs":
             exec_reactor=pkg_resources.resource_filename( #@UndefinedVariable
                                                       'magma', 'script/csreact.sh')
@@ -211,7 +213,7 @@ class StructureEngine(object):
         reactor.stdin.write(parent.mol+'$$$$\n')
         reactor.stdin.close()
 
-        metids=[]
+        metids=set([])
         line=reactor.stdout.readline()
         while line != "":
             name=line[:-1]
@@ -229,32 +231,36 @@ class StructureEngine(object):
                 if line=='> <ReactionSequence>\n':
                     reaction=reactor.stdout.readline()[:-1]
                 line=reactor.stdout.readline()
-            if reaction!='PARENT':
+            if reaction=='PARENT':
+                metids.add(metid)
+            else:
                 molecule=types.MoleculeType(mol,name,0,0,str(metid)+'&gt&gt'+reaction,isquery)
                 new_metid=self.add_molecule(molecule,merge=True)
-                metids.append(new_metid)
-                parent.reactionsequence+=unicode('</br>'+str(new_metid)+'&lt&lt'+reaction)
-                react=Reaction(
-                    reactant=metid,
-                    product=new_metid,
-                    name=reaction
-                    )
-                self.db_session.add(react)
-                self.db_session.flush()
+                metids.add(new_metid)
+                reactid=self.db_session.query(Reaction.reactid).filter(Reaction.reactant==metid,Reaction.product==new_metid,Reaction.name==reaction).all()
+                if len(reactid)==0:
+                    parent.reactionsequence+=unicode('</br>'+str(new_metid)+'&lt&lt'+reaction)
+                    react=Reaction(
+                        reactant=metid,
+                        product=new_metid,
+                        name=reaction
+                        )
+                    self.db_session.add(react)
+                    self.db_session.flush()
             line=reactor.stdout.readline()
         self.db_session.add(parent)
         reactor.stdout.close()
         self.db_session.commit()
         return metids
 
-    def metabolize_all(self,metabolism,nsteps):
+    def metabolize_all(self,metabolism,nsteps,keep=True):
         logging.warn('Metabolize all')
         parentids = self.db_session.query(Metabolite.metid).all()
         # print parentids
-        metids=[]
+        metids=set([])
         for parentid, in parentids:
-            metids.extend(self.metabolize(parentid,metabolism,nsteps))
-        return set(metids)
+            metids|=self.metabolize(parentid,metabolism,nsteps,keep=keep)
+        return metids
 
     def retrieve_structures(self,mass):
         dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
@@ -264,9 +270,12 @@ class StructureEngine(object):
         for (id,mim,molblock,smiles,chebi_name) in result:
             self.add_molecule(zlib.decompress(molblock),str(chebi_name),1.0,1,"",1)
 
-    def get_metids_with_mass_less_then(self,mass):
-        result=self.db_session.query(Metabolite.metid).filter(Metabolite.mim<mass).all()
-        metids=[x[0] for x in result]
+    def get_metids_with_mass_less_then(self,mass,metids=None):
+        if metids==None:
+            result=self.db_session.query(Metabolite.metid).filter(Metabolite.mim<mass).all()
+        else:
+            result=self.db_session.query(Metabolite.metid).filter(Metabolite.mim<mass,Metabolite.metid.in_(metids)).all()
+        metids={x[0] for x in result} #set comprehension
         return metids
 
 class MsDataEngine(object):
@@ -1034,6 +1043,76 @@ class DataAnalysisEngine(object):
                     print '> <'+column+'>\n'+str(molecule.__getattribute__(column))+'\n'
             print '$$$$'
 
+    def write_network1(self,filename):
+        f=open(filename+'.sif','w')
+        assigned_metids=self.db_session.query(distinct(Peak.assigned_metid))
+        written_metids=set([])
+        for reactant,product in self.db_session.query(Reaction.reactant,Reaction.product).filter(Reaction.reactant.in_(assigned_metids) | Reaction.product.in_(assigned_metids)).all():
+            f.write(str(reactant)+' pp '+str(product)+'\n')
+            written_metids.add(reactant)
+            written_metids.add(product)
+        f.close()
+        f=open(filename+'.txt','w')
+        assigned=assigned_metids.all()
+        for metid in written_metids:
+            if (metid,) in assigned:
+                f.write(str(metid)+' assigned\n')
+            else:
+                f.write(str(metid)+' unassigned\n')
+
+    def write_network2(self,filename):
+        nodes={}
+        for reactant,product in self.db_session.query(Reaction.reactant,Reaction.product).all():
+            r=int(reactant)
+            p=int(product)
+            if r not in nodes:
+                nodes[r]=set([])
+            if p not in nodes:
+                nodes[p]=set([])
+            nodes[r].add(p)
+            nodes[p].add(r)
+        result=self.db_session.query(distinct(Peak.assigned_metid)).all()
+        assigned_metids=[x[0] for x in result]
+        start_compound={}
+        result=self.db_session.query(Metabolite.metid,Metabolite.isquery).all()
+        for metid,isquery in result:
+            start_compound[metid]=isquery
+        print result
+        print assigned_metids
+        nnodes=len(nodes)+1
+        while len(nodes) < nnodes:
+            nnodes = len(nodes)
+            print nnodes
+            nodekeys=nodes.keys()
+            for n in nodekeys:
+                if n not in assigned_metids and start_compound[n] == False:
+                    if len(nodes[n]) == 1: # and list(nodes[n])[0] not in assigned_metids:
+                        nodes[list(nodes[n])[0]].remove(n)
+                        del nodes[n]
+                    else:
+                        if len(nodes[n]) == 2:
+                            tmpnode=list(nodes[n])
+                            if len(nodes[tmpnode[0]] & nodes[tmpnode[1]]) > 1 and tmpnode[0] not in assigned_metids and tmpnode[1] not in assigned_metids:
+                                for c in nodes[n]:
+                                    nodes[c].remove(n)
+                                del nodes[n]
+        f=open(filename+'.sif','w')
+        written_metids=set([])
+        connections=[]
+        for n in nodes:
+            for c in nodes[n]:
+                l = set([n,c])
+                if l not in connections:
+                    f.write(str(n)+' pp '+str(c)+'\n')
+                    connections.append(l)
+            written_metids.add(n)
+        f.close()
+        f=open(filename+'.txt','w')
+        for metid in written_metids:
+            if (metid) in assigned_metids:
+                f.write(str(metid)+' assigned '+str(start_compound[metid])+'\n')
+            else:
+                f.write(str(metid)+' unassigned '+str(start_compound[metid])+'\n')
 def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast,chem_engine):
     pars=magma.pars
     if fast:
