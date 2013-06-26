@@ -27,7 +27,7 @@ cdef class FragmentEngine(object):
     cdef bonded_atom[64] bonded_atoms
     cdef double[64] atom_masses
     cdef list neutral_loss_atoms
-    cdef int nbonds, natoms, accept
+    cdef int nbonds, natoms, accept, skip_fragmentation
     cdef unsigned long long[128] bonds
     cdef float[128] bondscore
     cdef numpy.ndarray fragment_masses_np
@@ -37,7 +37,7 @@ cdef class FragmentEngine(object):
     cdef char* mol
     
     
-    def __init__(self,mol,max_broken_bonds,max_water_losses,ionisation_mode):
+    def __init__(self,mol,max_broken_bonds,max_water_losses,ionisation_mode,skip_fragmentation):
         cdef unsigned long long bond
         cdef float bondscore
         cdef int x,a1,a2
@@ -56,6 +56,7 @@ cdef class FragmentEngine(object):
         self.max_broken_bonds=max_broken_bonds
         self.max_water_losses=max_water_losses
         self.ionisation_mode=ionisation_mode
+        self.skip_fragmentation=skip_fragmentation
         self.nbonds=Chem.nbonds(mol)
         self.neutral_loss_atoms=[]
         self.atom_elements={}
@@ -111,6 +112,10 @@ cdef class FragmentEngine(object):
         new_fragments=set([frag])
         self.add_fragment(frag,self.calc_fragment_mass(frag),0,0)
         # generate fragments
+
+        if self.skip_fragmentation:
+            self.convert_fragments_table()
+            return len(self.fragment_info)
 
         for step in range(self.max_broken_bonds):                    # perform fragmentation for nstep steps
             for fragment in current_fragments:   # loop of all fragments to be fragmented
