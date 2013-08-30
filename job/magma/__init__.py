@@ -177,47 +177,71 @@ class StructureEngine(object):
         self.db_session.flush()
         return metab.metid
 
-    def metabolize(self,metid,metabolism,nsteps,keep=True):
-        # Define if reactions are performed with reactor or with cactvs toolbox 
-        if config.get('magma job','metabolism_engine')=="reactor":
+    def metabolize(self,metid,metabolism,endpoints=False):
+        # Define if reactions are performed with reactor or with cactvs toolbox
+        metabolism_engine=config.get('magma job','metabolism_engine')
+        if metabolism_engine=="reactor":
             exec_reactor=pkg_resources.resource_filename( #@UndefinedVariable
                                                       'magma', 'script/reactor')
-            exec_reactor+=" -s -m "+str(nsteps) # -f 0.15
-        if keep:
-            exec_reactor+=" -a"
-        elif config.get('magma job','chemical_engine')=="cactvs":
+            exec_reactor+=" -s" # -f 0.15
+            if endpoints:
+                exec_reactor+=" -m 10"
+            else:
+                exec_reactor+=" -a -m 1"
+            metabolism_files={
+                "phase1": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/sygma_rules_GE_0.1.phase1.smirks"),
+                "phase2": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/sygma_rules.phase2.smirks"),
+                "gut": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/gut.smirks"),
+                "digest": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/digest.smirks")
+                }
+        elif metabolism_engine=="cactvs":
             exec_reactor=pkg_resources.resource_filename( #@UndefinedVariable
-                                                      'magma', 'script/csreact.sh')
-
+                                                      'magma', 'script/csreact')
+            if endpoints:
+                exec_reactor+=" "+"endpoints"
+            else:
+                exec_reactor+=" "+"parallel"
+            metabolism_files={
+                "phase1": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/sygma_rules4.0_GE_0.1.cactvs.phase1.smirks"),
+                "phase2": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/sygma_rules4.0.cactvs.phase2.smirks"),
+                "gut": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/gut.cactvs.smirks"),
+                "digest": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/digest.cactvs.smirks")
+                }
         try:
             parent = self.db_session.query(Metabolite).filter_by(metid=metid).one()
         except:
             print 'Metabolite record ',metid,' does not exist.'
             return
-        metabolism_files={
-            "phase1": pkg_resources.resource_filename( #@UndefinedVariable
-                                                       'magma', "data/sygma_rules_GE_0.1.phase1.smirks"),
-            "phase2": pkg_resources.resource_filename( #@UndefinedVariable
-                                                       'magma', "data/sygma_rules.phase2.smirks"),
-            "gut": pkg_resources.resource_filename( #@UndefinedVariable
-                                                       'magma', "data/gut.smirks"),
-            "digest": pkg_resources.resource_filename( #@UndefinedVariable
-                                                       'magma', "data/digest.smirks")
-            }
         for m in metabolism.split(','):
             if m in metabolism_files:
-                exec_reactor=exec_reactor+" -q "+metabolism_files[m]
+                if metabolism_engine=="reactor":
+                    exec_reactor+=" -q"
+                exec_reactor+=" "+metabolism_files[m]
         sys.stderr.write(exec_reactor + '\n')
 
         reactor=subprocess.Popen(exec_reactor, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
         reactor.stdin.write(parent.mol+'$$$$\n')
         reactor.stdin.close()
 
-        metids=set([])
+        metids=set()
         line=reactor.stdout.readline()
         while line != "":
-            name=line[:-1]
-            mol=line
+            splitline=line[:-1].split(" {>")
+            if len(splitline) == 1:
+                reaction='PARENT'
+                name=line[:-1]
+            else:
+                reaction=" + ".join([r[:-1] for r in splitline[1:]])
+                name=splitline[0]
+            mol=name+'\n'
             isquery=0
             while line != 'M  END\n':
                 line=reactor.stdout.readline()
@@ -229,11 +253,14 @@ class StructureEngine(object):
                 #elif line=='> <Level>\n':
                 #    level=int(reactor.stdout.readline())
                 if line=='> <ReactionSequence>\n':
-                    reaction=reactor.stdout.readline()[:-1]
+                    line=reactor.stdout.readline()
+                    reaction=line[:-1]
+                    line=reactor.stdout.readline()
+                    while line != '\n':
+                        reaction+=' + '+line[:-1]
+                        line=reactor.stdout.readline()
                 line=reactor.stdout.readline()
-            if reaction=='PARENT':
-                metids.add(metid)
-            else:
+            if reaction!='PARENT':
                 molecule=types.MoleculeType(mol,name,0,0,str(metid)+'&gt&gt'+reaction,isquery)
                 new_metid=self.add_molecule(molecule,merge=True)
                 metids.add(new_metid)
@@ -247,19 +274,23 @@ class StructureEngine(object):
                         )
                     self.db_session.add(react)
                     self.db_session.flush()
+            elif endpoints:
+                metids.add(metid)
             line=reactor.stdout.readline()
         self.db_session.add(parent)
         reactor.stdout.close()
         self.db_session.commit()
+        if len(metids)==0: # this might be the case with cactvs engine
+            metids.add(metid)
         return metids
 
-    def metabolize_all(self,metabolism,nsteps,keep=True):
+    def metabolize_all(self,metabolism,endpoints=False):
         logging.warn('Metabolize all')
         parentids = self.db_session.query(Metabolite.metid).all()
         # print parentids
         metids=set([])
         for parentid, in parentids:
-            metids|=self.metabolize(parentid,metabolism,nsteps,keep=keep)
+            metids|=self.metabolize(parentid,metabolism,endpoints)
         return metids
 
     def retrieve_structures(self,mass):

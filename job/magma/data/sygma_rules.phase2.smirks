@@ -41,8 +41,8 @@
 [#6:1][SH1:2]>>[#6:1][S:2]C	0.375	methylation_(thiol)	# 9/24
 
 # -- glycination --
-[c:1][C:2](=O)[OH1]>>[c:1][C:2](=O)NCC(=O)O	0.107383	glycination_(aromatic_carboxyl)	# 16/149
-[C:1][C:2](=O)[OH1]>>[C:1][C:2](=O)NCC(=O)O	0.022619	glycination_(aliphatic_carboxyl)	# 19/840
+[c:1][C:2](=[O:3])[OH1]>>[c:1][C:2](=[O:3])NCC(=O)O	0.107383	glycination_(aromatic_carboxyl)	# 16/149
+[C:1][C:2](=[O:3])[OH1]>>[C:1][C:2](=[O:3])NCC(=O)O	0.022619	glycination_(aliphatic_carboxyl)	# 19/840
 
 # -- phosphorylation --
 [OH1;$(O[CH2]C1AACO1),$(OP([OH1])(=O)OCC1AACO1),$(OP([OH1])(=O)OP(O)(=O)OCC1AACO1):1]>>[O:1]P(O)(O)=O	0.402985	phosphorylation	# 27/67
