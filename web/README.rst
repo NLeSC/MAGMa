@@ -148,8 +148,8 @@ Then concatenate and compress javascript with:
 .. code-block:: bash
 
    cd magmaweb
-   sencha build -d static/app -p magmaweb.results-4.1.1a.jsb3
-   ln -s magmaweb/static/app/resultsApp-all-4.1.1a.js magmaweb/static/app/resultsApp-all.js
+   sencha build -d static/app -p magmaweb.results-4.2.0.jsb3
+   ln -s magmaweb/static/app/resultsApp-all-4.2.0.js magmaweb/static/app/resultsApp-all.js
 
 Now not hundreds of seperate javascript files are loaded, but a single javascript file.
 
@@ -236,11 +236,55 @@ Python tests can be run with:
    pip install nose coverage
    nosetests
 
+To run only unit tests:
+
+.. code-block:: bash
+
+   nostests -a '!functional'
+
+To run only functional tests:
+
+.. code-block:: bash
+
+   nosetests -a functional
+
 Javascript
 ----------
 
 The ExtJS tests can be run by hosting the `web` directory in a web server (like apache or nginx) and
 opening `magmaweb/tests/js/SpecRunner.html` and `magmaweb/tests/js/app/run-tests.html` in a web-browser.
+
+Or headless for automatisation using PhantomJS and JSCover.
+First install PhantomJS (http://phantomjs.org) and download JSCover (http://tntim96.github.io/JSCover/) then run test with:
+
+.. code-block:: bash
+
+     # !!Requires PhantomJS and JSCover to be installed
+
+     # start jscover server
+     rm -rf jscover
+     java -jar ~/downloads/complete/JSCover-0.2.7/target/dist/JSCover-all.jar -ws --port=8099  --branch --document-root=web/magmaweb --no-instrument=static/extjs-4.2.0 --no-instrument=static/d3 --no-instrument=static/ChemDoodleWeb --no-instrument=tests/js/lib --report-dir=jscover &
+
+     # give jscover time to start
+     sleep 5
+
+     # run Jasmine specs
+     cd web/magmaweb/tests/js
+     rm -f TEST-*.xml
+     /usr/bin/phantomjs lib/jasmine-reporters/test/phantomjs-testrunner.js http://localhost:8099/tests/js/SpecRunner.html || true
+     cd app
+     rm -f TEST-*.xml
+     /usr/bin/phantomjs ../lib/jasmine-reporters/test/phantomjs-testrunner.js http://localhost:8099/tests/js/app/run-tests.html || true
+
+     # kill jscover server
+     curl http://localhost:8099/stop
+
+     # create coburtura xml file for use in ci
+     cd $WORKSPACE
+     java -cp ~/downloads/complete/JSCover-0.2.7/target/dist/JSCover-all.jar jscover.report.Main --format=COBERTURAXML jscover/phantom jscover/
+
+
+It will generate JUnit XML files as TEST-*.xml and a coverage report in jscover/ directory.
 
 Generate documentation
 ======================

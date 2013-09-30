@@ -1,6 +1,0 @@
-{
-	"brokerURI": "localq://localhost",
-	"preferences": {
-		"localq.max.concurrent.jobs": 1
-	}
-}

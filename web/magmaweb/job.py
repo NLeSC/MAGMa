@@ -4,7 +4,6 @@ import uuid
 import os
 import csv
 import StringIO
-import urllib2
 import json
 import shutil
 from sqlalchemy import create_engine, and_
@@ -14,6 +13,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import desc, asc, null
 from sqlalchemy.orm.exc import NoResultFound
 import transaction
+import requests
 from magmaweb.models import Base, Metabolite, Scan, Peak, Fragment, Run
 import magmaweb.user
 from .jobquery import JobQuery
@@ -94,7 +94,7 @@ class JobFactory(object):
                  script_fn='script.sh',
                  db_fn='results.db',
                  submit_url='http://localhost:9998',
-                 time_max=30):
+                 ):
         """
         root_dir
             Directory in which jobs are created, retrieved
@@ -116,16 +116,12 @@ class JobFactory(object):
         tarball
             Local absolute location of tarball which contains application
             which init_script will unpack and run
-
-        time_max
-            Maximum time in minutes a job can take (default 30)
         """
         self.root_dir = root_dir
         self.db_fn = db_fn
         self.submit_url = submit_url
         self.script_fn = script_fn
         self.tarball = tarball
-        self.time_max = time_max
         self.init_script = init_script
 
     def _makeJobSession(self, jobid):
@@ -280,21 +276,26 @@ class JobFactory(object):
 
         body is a dict which is submitted as json.
 
-        returns job identifier of job submitted to job launcher
+        returns job url of job submitted to job launcher
         (not the same as job.id).
         """
-        request = urllib2.Request(self.submit_url,
-                                  json.dumps(body),
-                                  {'Content-Type': 'application/json',
-                                   'Accept': 'application/json'})
-        return urllib2.urlopen(request)
+        headers = {'Content-Type': 'application/json',
+                   'Accept': 'application/json',
+                   }
+        response = requests.post(self.submit_url,
+                                 data=json.dumps(body),
+                                 headers=headers,
+                                 )
+
+        return response.headers['Location']
 
     def submitQuery(self, query, job):
         """Writes job query script to job dir
         and submits job query to job launcher.
 
-        Changes the job state to 'INITIAL' or
-        'SUBMISSION_ERROR' if job submission fails.
+        Changes the job state to u'INITIAL' or
+        u'SUBMISSION_ERROR' if job submission fails.
+        `job.launcher_url` gets filled with url returned by job launcher.
 
         query is a :class:`JobQuery` object
 
@@ -318,7 +319,6 @@ class JobFactory(object):
             'poststaged': [self.db_fn],
             'stderr': 'stderr.txt',
             'stdout': 'stdout.txt',
-            'time_max': self.time_max,
             'arguments': [self.script_fn],
             'status_callback_url': query.status_callback_url
         }
@@ -327,7 +327,7 @@ class JobFactory(object):
         if (self.tarball is not None):
             body['prestaged'].append(self.tarball)
 
-        job.state = 'INITIAL'
+        job.state = u'PENDING'
 
         # Job launcher will try to report states of the submitted job
         # even before this request has been handled
@@ -342,9 +342,11 @@ class JobFactory(object):
         job.meta = magmaweb.user.DBSession().merge(job.meta)
 
         try:
-            self.submitJob2Launcher(body)
-        except urllib2.URLError:
-            job.state = 'SUBMISSION_ERROR'
+            launcher_url = self.submitJob2Launcher(body)
+            # store launcher url so job can be cancelled later
+            job.launcher_url = launcher_url
+        except requests.exceptions.RequestException:
+            job.state = u'SUBMISSION_ERROR'
             raise JobSubmissionError()
 
     def id2jobdir(self, jid):
@@ -359,6 +361,12 @@ class JobFactory(object):
         """Returns sqlalchemy url of sqlite db of job with jid """
         # 3rd / is for username:pw@host which sqlite does not need
         return 'sqlite:///' + self.id2db(jid)
+
+    def cancel(self, job):
+        """Cancel in-complete :class:`Job` on the job server
+        """
+        url = job.launcher_url
+        return requests.delete(url)
 
 
 class Job(object):
@@ -491,6 +499,16 @@ class Job(object):
 
     is_public = property(get_is_public, set_is_public)
 
+    def get_launcher_url(self):
+        """Url of job on joblauncher"""
+        return self.meta.launcher_url
+
+    def set_launcher_url(self, launcher_url):
+        """Set url of job on joblauncher"""
+        self.meta.launcher_url = launcher_url
+
+    launcher_url = property(get_launcher_url, set_launcher_url)
+
     def delete(self):
         """Deletes job from user database and deletes job directory"""
         magmaweb.user.JobMeta.delete(self.meta)
@@ -501,7 +519,8 @@ class Job(object):
     def is_complete(self, mustBeFilled=False):
         """Checks if job is complete
 
-        If mustBeFilled==True then checks if jobs contains molecules, mspectras and fragments.
+        If mustBeFilled==True then checks
+            if jobs contains molecules, mspectras and fragments.
 
         Returns true or raises JobError or JobIncomplete or MissingDataError
         """

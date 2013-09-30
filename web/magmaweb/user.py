@@ -23,8 +23,6 @@ from pyramid.httpexceptions import HTTPNotFound
 from pyramid.security import Allow, Deny, Everyone, ALL_PERMISSIONS
 from pyramid.security import Authenticated, authenticated_userid
 
-from magmaweb.job import make_job_factory, JobNotFound
-
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 
 Base = declarative_base()
@@ -122,13 +120,13 @@ class User(Base):
 
     @classmethod
     def generate(cls,
-                 displayname='Temporary user',
-                 email='example@example.com',
+                 displayname=u'Temporary user',
+                 email=u'example@example.com',
                  ):
         """Generates a user with a uuid as userid
         and adds it to the db and commits
         """
-        userid = str(uuid.uuid4())
+        userid = unicode(uuid.uuid4())
         user = User(userid, displayname, email)
         cls.add(user)
         return user
@@ -145,14 +143,17 @@ class JobMeta(Base):
     owner = Column(Unicode, ForeignKey('user.userid'), nullable=False)
     created_at = Column(DateTime, nullable=False)
     is_public = Column(Boolean, default=False)
+    launcher_url = Column(Unicode)  # Url of job returned by job launcher
     children = relationship('JobMeta',
                             backref=backref('parent', remote_side=[jobid]))
 
     def __init__(self, jobid, owner,
                  description=u'', parentjobid=None,
-                 state=u'STOPPED', ms_filename='',
+                 state=u'STOPPED', ms_filename=u'',
                  created_at=None,
-                 is_public=False):
+                 is_public=False,
+                 launcher_url=u'',
+                 ):
         self.jobid = jobid
         self.owner = owner
         self.description = description
@@ -160,6 +161,7 @@ class JobMeta(Base):
         self.state = state
         self.ms_filename = ms_filename
         self.is_public = is_public
+        self.launcher_url = launcher_url
         if created_at is None:
             self.created_at = datetime.datetime.utcnow()
         else:
@@ -240,9 +242,11 @@ class JobIdFactory(RootFactory):
     """
     def __init__(self, request):
         super(JobIdFactory, self).__init__(request)
+        from magmaweb.job import make_job_factory
         self.job_factory = make_job_factory(request.registry.settings)
 
     def __getitem__(self, jobid):
+        from magmaweb.job import JobNotFound
         try:
             job = self.job_factory.fromId(uuid.UUID(jobid))
             # owner may view and run calculations or perform changes

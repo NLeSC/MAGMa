@@ -127,7 +127,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
    * @private
    */
   getFilter: function() {
-	return this.getView().getFeature('mfilter');
+      return this.getView().getFeature('mfilter');
   },
   /**
    * Clears all filters applied to metabolites
@@ -190,20 +190,20 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
    * @return {String}
    */
   getFilterQuery: function() {
-	  var filter = this.getFilter();
-	  return filter.buildQuery(filter.getFilterData());
+      var filter = this.getFilter();
+      return filter.buildQuery(filter.getFilterData());
   },
   /**
    * Array of dataindexes currently visible. In order they appear.
    * @return {Array}
    */
   getVisiblColumnIndices: function() {
-	  return this.getView().getHeaderCt().getVisibleGridColumns().map(function(v) {return v.dataIndex}).filter(function(v) { return v});
+      return this.getView().getHeaderCt().getVisibleGridColumns().map(function(v) {return v.dataIndex}).filter(function(v) { return v});
   },
   hideCommandsColumn: function() {
-	  this.getCommandsColumn().hide();
+      this.getCommandsColumn().hide();
   },
   setPageSize: function(size) {
-	  Ext.ComponentQuery.query('component[action=pagesizeCombo]')[0].select(size);
+      Ext.ComponentQuery.query('component[action=pagesizeCombo]')[0].select(size);
   }
 });

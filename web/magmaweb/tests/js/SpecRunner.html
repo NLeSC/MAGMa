@@ -17,6 +17,7 @@
 
 <script type="text/javascript" src="lib/jasmine-1.2.0/jasmine.js"></script>
 <script type="text/javascript" src="lib/jasmine-1.2.0/jasmine-html.js"></script>
+<script type="text/javascript" src="lib/jasmine-reporters/src/jasmine.junit_reporter.js"></script>
 
 <script type="text/javascript" src="specs/chemdoodlecolumn.spec.js"></script>
 <script type="text/javascript" src="specs/abstractd3.spec.js"></script>
@@ -38,6 +39,7 @@ Ext.require([
 
 Ext.onReady(function () {
   jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
+  jasmine.getEnv().addReporter(new jasmine.JUnitXmlReporter());
   jasmine.getEnv().execute();
 });
 </script>
