@@ -21,3 +21,15 @@ Subproject interdependencies
 - The `emetabolomics_site` website can be used as starting pages for the `web` application.
 - The `job` calculation requires a pubchem lookup database which can be made using the `pubchem` application.
 - The `web` application starts `job` calculations via the `joblauncher` webservice.
+
+Joblauncher submodule
+---------------------
+
+The Joblauncher subproject has been moved to it's own repository.
+It is now a submodule in the this repository.
+
+Use following command to initialize and fetch the joblauncher submodule:
+
+.. code-block:: bash
+
+    git submodule update --init
