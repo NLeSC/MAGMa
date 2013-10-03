@@ -246,6 +246,7 @@ class InCompleteJobViews(object):
     def __init__(self, job, request):
         self.request = request
         self.job = job
+        self.job_factory = make_job_factory(request.registry.settings)
 
     @view_config(route_name='status',
                  renderer='status.mak',
@@ -263,20 +264,60 @@ class InCompleteJobViews(object):
 
             {
                 "status" : "RUNNING",
+                "complete": False,
                 "jobid" : "b1eee101-dcc6-435e-baa8-d35e688c408e"
             }
 
         """
         jobid = self.job.id
         jobstate = self.job.state
-        return dict(status=jobstate, jobid=str(jobid))
+
+        try:
+            is_complete = self.job.is_complete()
+        except JobIncomplete:
+            is_complete = False
+        return dict(status=jobstate, jobid=str(jobid), is_complete=is_complete)
 
     @view_config(route_name='status.json', renderer='json',
                  permission='monitor',
                  request_method='PUT')
     def set_job_status(self):
+        """
+        Update status of job.
+
+        Used by JobLauncher and MAGMaJob to update status/progress.
+
+        Body of request can have `application/json` content type.
+        The JSON string should be formatted like:
+
+        ..code-block :: javascript
+
+          {
+            "done": true,
+            "state": "DONE",
+            "exception": null
+          }
+
+        The state is set to the JSON state if `done` is false.
+        The state is set to STOPPED if `done` is true and `exception` is null.
+        The state is set to ERROR if `done is true and `exception` is not null.
+
+        Body of request is taken as is if content type is something else.
+
+        """
         jobid = self.job.id
+        # plain request
         jobstate = self.request.body
+        # parse job launcher request
+        if self.request.content_type == 'application/json':
+            status = json.loads(self.request.body)
+            if status['done']:
+                if status['exception'] is None:
+                    jobstate = 'STOPPED'
+                else:
+                    jobstate = 'ERROR'
+            else:
+                jobstate = status['state']
         self.job.state = jobstate
         return dict(status=jobstate, jobid=str(jobid))
 
@@ -285,8 +326,21 @@ class InCompleteJobViews(object):
                  request_method='DELETE',
                  permission='run',
                  )
-    def deletejson(self):
-        """Delete job from user database and deletes job directory"""
+    def delete(self):
+        """Deletes job from
+        job server if in-complete, user database and deletes job directory.
+        """
+        try:
+            self.job.is_complete()
+        except JobIncomplete:
+            try:
+                self.job_factory.cancel(self.job)
+            except Exception as e:
+                body = {'success': False,
+                        'msg': 'Failed to cancel job'
+                        }
+                raise HTTPInternalServerError(body=json.dumps(body))
+
         self.job.delete()
         del self.job
         self.request.response.status_int = 204
@@ -340,6 +394,9 @@ class InCompleteJobViews(object):
 
     @view_config(context=JobIncomplete, renderer='status.mak')
     def job_incomplete(self):
+        """Catches JobIncomplete exception when results urls are tried
+        and returns status page
+        """
         self.job = self.job.job
         return self.job_status()
 

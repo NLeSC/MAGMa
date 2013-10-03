@@ -385,6 +385,7 @@ describe('Metabolites', function() {
             totalUnfiltered: 0,
             scans: []
        });
+       store.fireEvent('load', store);
 
        expect(f.callback).toHaveBeenCalledWith('metaboliteload', jasmine.any(Object));
        expect(ctrl.metabolizable).toHaveBeenCalledWith(false);
