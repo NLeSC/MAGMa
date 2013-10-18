@@ -209,11 +209,13 @@ class StructureEngine(object):
                 "phase1": pkg_resources.resource_filename( #@UndefinedVariable
                                                            'magma', "data/sygma_rules4.0_GE_0.1.cactvs.phase1.smirks"),
                 "phase2": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/sygma_rules4.0.cactvs.phase2.smirks"),
+                                                           'magma', "data/sygma_rules4.0.cactvs.phase2_GE0.05.smirks"),
                 "gut": pkg_resources.resource_filename( #@UndefinedVariable
                                                            'magma', "data/gut.cactvs.smirks"),
                 "digest": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/digest.cactvs.smirks")
+                                                           'magma', "data/digest.cactvs.smirks"),
+                "peptide": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/peptide.cactvs.smirks")
                 }
         try:
             parent = self.db_session.query(Metabolite).filter_by(metid=metid).one()
@@ -649,6 +651,7 @@ class AnnotateEngine(object):
         # build sorted list of query masses
         mzs=[]
         for scan in self.scans:
+            # if self.db_session.query(Fragment.fragid).filter(Fragment.scanid==scan.scanid).count() > 0: # tijdelijk!
             for peak in scan.peaks:
                 if not ((not self.use_all_peaks) and peak.childscan==None):
                     mzs.append(peak.mz)
@@ -685,13 +688,13 @@ class AnnotateEngine(object):
         for ql,qh in queries:
             result=query_engine.query_on_mim(ql,qh,0)
             for molecule in result:
-                metid=struct_engine.add_molecule(molecule,check_duplicates=check_duplicates)
+                metid=struct_engine.add_molecule(molecule,check_duplicates=check_duplicates,merge=True)
                 metids.add(metid)
             print str(ql)+','+str(qh)+' --> '+str(len(metids))+' candidates'
         for ql,qh in cqueries:
             result=query_engine.query_on_mim(ql,qh,self.ionisation_mode)
             for molecule in result:
-                metid=struct_engine.add_molecule(molecule,check_duplicates=check_duplicates)
+                metid=struct_engine.add_molecule(molecule,check_duplicates=check_duplicates,merge=True)
                 metids.add(metid)
             print str(ql)+','+str(qh)+' --> '+str(len(metids))+' candidates'
         self.db_session.commit()
@@ -725,6 +728,9 @@ class AnnotateEngine(object):
             structures = self.db_session.query(Metabolite).filter(Metabolite.metid.in_(ids)).all()
             jobs=[]
             for structure in structures:
+                # skip molecule if it has already been used for annotation
+                if self.db_session.query(Fragment.fragid).filter(Fragment.metid == structure.metid).count() > 0:
+                    continue
                 # collect all peaks with masses within 3 Da range
                 int_mass=int(round(structure.mim+self.ionisation_mode*pars.Hmass))
                 try:
@@ -1059,20 +1065,20 @@ class DataAnalysisEngine(object):
             print "> <molecular formula>\n"+metabolite.molformula+"\n"
             print "$$$$"
 
-    def write_SDF(self,molecules=None,columns=None,sortcolumn=None,descend=False):
+    def write_SDF(self,file=sys.stdout,molecules=None,columns=None,sortcolumn=None,descend=False):
         if molecules==None:
             if descend:
                 molecules=self.db_session.query(Metabolite).order_by(desc(sortcolumn)).all()
             else:
                 molecules=self.db_session.query(Metabolite).order_by(sortcolumn).all()
         for molecule in molecules:
-            print molecule.mol[:-1]
+            file.write(molecule.mol)
             if columns==None:
                 columns=dir(molecule)
             for column in columns:
                 if column[:1] != '_' and column != 'mol' and column != 'metadata':
-                    print '> <'+column+'>\n'+str(molecule.__getattribute__(column))+'\n'
-            print '$$$$'
+                    file.write('> <'+column+'>\n'+str(molecule.__getattribute__(column))+'\n\n')
+            file.write('$$$$\n')
 
     def write_network1(self,filename):
         f=open(filename+'.sif','w')
@@ -1141,9 +1147,9 @@ class DataAnalysisEngine(object):
         f=open(filename+'.txt','w')
         for metid in written_metids:
             if (metid) in assigned_metids:
-                f.write(str(metid)+' assigned '+str(start_compound[metid])+'\n')
+                f.write(str(metid)+" "+str(start_compound[metid]+2)+'\n')
             else:
-                f.write(str(metid)+' unassigned '+str(start_compound[metid])+'\n')
+                f.write(str(metid)+" "+str(start_compound[metid]+0)+'\n')
 def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,fast,chem_engine):
     pars=magma.pars
     if fast:
@@ -1154,6 +1160,8 @@ def search_structure(mol,mim,molformula,peaks,max_broken_bonds,max_water_losses,
     def massmatch(peak,mim,protonation):
         lowmz=min(peak.mz/precision,peak.mz-mz_precision_abs)
         highmz=max(peak.mz*precision,peak.mz+mz_precision_abs)
+        #lowmz=peak.mz/precision #for peptides file
+        #highmz=peak.mz*precision #for peptides file
         return lowmz <= (mim+protonation*pars.Hmass-ionisation_mode*pars.elmass) <= highmz
 
     #def findhit(self,childscan,parent):
