@@ -82,6 +82,8 @@ master = true
 processes = 4
 chmod = 666
 enable-threads = true
+req-logger = file:logs/access.log
+logformat = %(addr) - %(user) [%(ltime)] "%(method) %(uri) %(proto)" %(status) %(size)`` "%(referer)" "%(uagent)"
 
 # Begin logging configuration
 
