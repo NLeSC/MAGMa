@@ -27,6 +27,7 @@ Ext.onReady(function() {
       launch: function() {
           //include the tests in the test.html head
           jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
+          jasmine.getEnv().addReporter(new jasmine.JUnitXmlReporter());
           jasmine.getEnv().execute();
       },
       // mock runinfo url to a static file
