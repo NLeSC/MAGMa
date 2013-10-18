@@ -14,9 +14,12 @@ requires = ['pyramid',
             'pyramid_macauth',
             'zope.sqlalchemy',
             'colander',
-            'waitress',
             'py-bcrypt',
+            'requests',
+            # wsgi server dependencies
+            'waitress',
             'Paste',
+            # Test dependencies
             'WebTest',
             'mock'
             ]

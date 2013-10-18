@@ -28,10 +28,10 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
     blockRefresh: false,
     deferEmptyText: false,
     emptyText: 'Select a metabolite and scan, to show its fragments',
-	getRowClass: function(record) {
-		// Make transition between mslevel visible by giving even/odd mslevel different bg color
-    	return record.get("mslevel") % 2 === 0 ? this.altRowCls : "";
-	}
+    getRowClass: function(record) {
+      // Make transition between mslevel visible by giving even/odd mslevel different bg color
+      return record.get("mslevel") % 2 === 0 ? this.altRowCls : "";
+    }
   },
   tools: [{
      type: 'save',
@@ -92,6 +92,9 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
         var tip = Ext.create('Ext.tip.ToolTip', {
             target: id,
             listeners: {
+                show: function(tip) {
+                    tip.setSize(300, 300);
+                },
                 render: function(tip,e) {
                     Ext.log({}, 'Drawing tooltip for '+id);
                     var c = new ChemDoodle.ViewerCanvas(id+'-'+tip.id, 300, 300);

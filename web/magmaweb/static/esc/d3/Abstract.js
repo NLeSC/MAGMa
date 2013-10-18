@@ -179,13 +179,13 @@ Ext.define('Esc.d3.Abstract', {
    * @template
    */
   onZoom: function() {
-  	if (d3.event) {
-    	var translate = d3.event.translate;
-    	var scale = d3.event.scale;
-  	} else {
-  		var translate = [0,0];
-  		var scale = 1;
-  	}
+    if (d3.event) {
+      var translate = d3.event.translate;
+      var scale = d3.event.scale;
+    } else {
+      var translate = [0,0];
+      var scale = 1;
+    }
 
     if (this.zoom.x) {
       var x1 = this.scales.x;
@@ -251,7 +251,10 @@ Ext.define('Esc.d3.Abstract', {
     this.onResize();
   },
   zoomBehavior: function() {
-    var zoom = d3.behavior.zoom().on("zoom", this.onZoom.bind(this));
+    var me = this;
+    var zoom = d3.behavior.zoom().on("zoom", function() {
+        me.onZoom();
+    });
 
     // store initial state of scales so zoom/translate can use it as reference
     this.scales0 = {};
