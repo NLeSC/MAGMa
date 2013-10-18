@@ -1,0 +1,43 @@
+# *** PHASE 2 ***
+
+# -- O-glucuronidation --
+[C;!$(C1CCOCC1);!$(C1COCCC1);!$(C(O)=O):1][O:2][H]>>[C:1][O:2]C1OC(C(O)=O)C(O)C(O)C1O	0.102502	O-gluc_1	y	# 213/2078
+[c:1][O:2][H]>>[c:1][O:2]C1OC(C(O)=O)C(O)C(O)C1O	0.248155	O-gluc_2	y	# 269/1084
+[N:1][O:2][H]>>[N:1][O:2]C1OC(C(O)=O)C(O)C(O)C1O	0.212766	O-gluc_3	y	# 10/47
+[C:1][C;!$(C(O)(=O)C1OCCCC1):2](=[O:3])[O:4][H]>>[C:1][C:2](=[O:3])[O:4]C1OC(C(O)=O)C(O)C(O)C1O	0.160102	O-gluc_4	y	# 126/787
+[c:1][C:2](=[O:3])[O:4][H]>>[c:1][C:2](=[O:3])[O:4]C1OC(C(O)=O)C(O)C(O)C1O	0.295302	O-gluc_5	y	# 44/149
+
+# -- N-glucuronidation --
+[c:1][NH2;X3:2][H]>>[c:1][N:2]C1OC(C(O)=O)C(O)C(O)C1O	0.0387931	N-gluc_1	y	# 9/232
+[C:1][NH2;X3:2][H]>>[C:1][N:2]C1OC(C(O)=O)C(O)C(O)C1O	0.01341	N-gluc_2	y	# 7/522
+[c:1][NH1;X3:2][H]>>[c:1][N:2]C1OC(C(O)=O)C(O)C(O)C1O	0.0269815	N-gluc_3	y	# 16/593
+[N;X3;$(N([CH3])([CH3])[CH2]C):1]>>[N+:1]C1OC(C(O)=O)C(O)C(O)C1O	0.0947368	N-gluc_4	y	# 9/95
+[N;X3;R;$(N(C)(C)[CH3]):1]>>[N+:1]C1OC(C(O)=O)C(O)C(O)C1O	0.0229885	N-gluc_5	y	# 6/261
+[NH1;X3;R;$(N(C)C):1][H]>>[N:1]C1OC(C(O)=O)C(O)C(O)C1O	0.0148936	N-gluc_6	y	# 7/470
+[n;X2:1]>>[n+:1]C1OC(C(O)=O)C(O)C(O)C1O	0.0108475	N-gluc_7	y	# 16/1475
+[nH1;X3:1][H]>>[n:1]C1OC(C(O)=O)C(O)C(O)C1O	0.0382514	N-gluc_8	y	# 7/183
+
+# -- sulfation --
+[c:1][O:2][H]>>[c:1][O:2]S(=O)(=O)O	0.119004	sulfation_1	y	# 129/1084
+[c:1][NH2:2][H]>>[c:1][N:2]S(=O)(=O)O	0.012931	sulfation_2	y	# 3/232
+[C;!$(C=O);!$(CC[OH1]):1][O:2][H]>>[C:1][O:2]S(=O)(=O)O	0.019337	sulfation_3	y	# 35/1810
+
+# -- N-acetylation --
+[c:1][NH2:2][H]>>[c:1][N:2]C(=O)C	0.314655	N-acetyl_1	y	# 73/232
+[C;!$(C=[*;!#6]):1][NH2:2][H]>>[C:1][N:2]C(=O)C	0.151751	N-acetyl_2	y	# 39/257
+[*!#6!#1:1][NH2:2][H]>>[*:1][N:2]C(=O)C	0.117647	N-acetyl_3	y	# 6/51
+[C:1][NH1;R:2]([H])[C:3]>>[C:1][N:2]([C:3])C(=O)C	0.0106383	N-acetyl_4	y	# 5/470
+[CH3:1][NH1:2]([H])[C:3]>>[CH3:1][N:2]([C:3])C(=O)C	0.0220588	N-acetyl_5	y	# 3/136
+
+# -- methylation --
+[c:1][O:2][H]>>[c:1][O:2]C	0.0535055	O-methyl	y	# 58/1084
+[#6:1][SH1:2][H]>>[#6:1][S:2]C	0.375	S-methyl	y	# 9/24
+
+# -- glycination --
+#[c:1][C:2](=[O:3])[O][H]>>[c:1][C:2](=[O:3])NCC(=O)O	0.107383	glycination_1	y	# 16/149
+#[C:1][C:2](=[O:3])[O][H]>>[C:1][C:2](=[O:3])NCC(=O)O	0.022619	glycination_2	y	# 19/840
+
+# -- phosphorylation --
+[O;$(O[CH2]C1AACO1),$(OP([OH1])(=O)OCC1AACO1),$(OP([OH1])(=O)OP(O)(=O)OCC1AACO1):1][H]>>[O:1]P(O)(O)=O	0.402985	phosphorylation	y	# 27/67
+[#6,P:1][O:2][P:3]([O:4])([O:5])=[O:6]>>[#6,P:1][O:2].O[P:3]([O:4])([O:5])=[O:6]	0.203297	dephosphorylation	y	# 37/182
+

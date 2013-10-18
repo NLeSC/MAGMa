@@ -1,0 +1,17 @@
+# gut enzymes
+# [C$(C=O):1]!@[NH1:2][#6:3]>>[C:1]O.[N:2][#6:3]  1.0   GE_protease
+# [C$(C=O):1]!@[O:2][#6:3]>>[C:1]O.[O:2][#6:3]  1.0   GE_esterase_(incl._lipase)
+# [CH1$(C-@O):1]-!@[O:2][#6:3]>>[C:1]O.[O:2][#6:3]  1.0   GE_glycoside_hydrolase
+
+# gut microflora
+[C$([CH1]1(c2[cH1]ccc[cH1]2)[CH1]([OH1])[CH2]c3c([OH1])[cH1]c([OH1])[cH1]c3O1):1][O:2]>>[C:1].[O:2]   1.0   GM_catechin_Cring_cleavage #Crozier2010
+#[OH1][CH1$(C[CH2]c1[cH1]ccc[cH1]1)]([CH2:1])[CH2]c1c([cH1]c([OH1])[cH1]c1([OH1]))[OH1]>>O1C(C:1)CCC1=O   1.0   GM_valerolactone_formation #Crozier2010_Das1969
+[c$(c1[cH1]ccc[cH1]1):1][CH2:2][CH1:3]([OH1])[CH2]c1c([cH1]c([OH1])[cH1]c1([OH1]))[OH1]>>[c:1][C:2][C:3](O1)CCC1=O   1.0   GM_valerolactone_formation #Crozier2010_Das1969
+[O:1]=[C:2]1[O:3][CH1$(C[CH2]c2[cH1]ccc[cH1]2):4][CH2:5][CH2:6]1>>[O:1]=[C:2]1[O:3].[C:4][C:5][C:6]1  1.0   GM_valerolactone_to_valeric_acid_A #Crozier2010
+O=C1O[CH1$(C[CH2]c2[cH1]ccc[cH1]2):4][CH2:5][CH2:6]1>>O=C1O.O[C:4][C:5][C:6]1  1.0   GM_valerolactone_to_valeric_acid_B #Hooft2012_Stoupi2010
+# [c:1][C:2][C:3][CH2:4][CH2]C(=O)[OH1]>>[c:1][C:2][C:3][C:4](=O)O  1.0    GM_beta-oxidation #Stoupi2010
+# [c:1][CH2:2][CH2:3]C(=O)[OH1]>>[c:1][C:2][C:3](=O)O  1.0    GM_alpha-oxidation #Stoupi2010
+
+[c$(c1ccccc1):1]C(=O)[OH1]>>[C:1]   1.0 GM_benzoate_decarboxylase #
+
+# [C;$(C(=O)[OH1]):1][CH1:2]=[CH1:3][c:4]>>[C:1][C:2]-[C:3][c:4]    1.0 P1_reductase #Stalmach2010
