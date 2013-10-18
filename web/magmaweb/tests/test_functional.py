@@ -2,13 +2,14 @@ import tempfile
 import unittest
 import transaction
 import json
+from nose.plugins.attrib import attr
 from webtest import TestApp
 from magmaweb import main
 from magmaweb.user import DBSession, User
 from magmaweb.job import make_job_factory
 from magmaweb.tests.test_job import populateTestingDB
 
-
+@attr('functional')
 class FunctionalTests(unittest.TestCase):
     settings = {}
 
@@ -20,7 +21,7 @@ class FunctionalTests(unittest.TestCase):
                     'extjsroot': 'ext',
                     'sqlalchemy.url': 'sqlite:///:memory:',
                     'cookie.secret': 'aepeeV6aizaiph5Ae0Reimeequuluwoh',
-                    'cookie.path': '/magma',
+                    'cookie.path': '/',
                     'monitor_user': 'jobmanager',
                     }
         settings.update(self.settings)
@@ -41,13 +42,13 @@ class FunctionalPrivateTests(FunctionalTests):
         # Setup owner of job
         jf = make_job_factory(self.settings)
         with transaction.manager:
-            user = User('bob', 'Bob Example', 'bob@example.com', 'mypassword')
+            user = User(u'bob', u'Bob Example', u'bob@example.com', 'mypassword')
             DBSession().add(user)
-            self.job = jf.fromScratch('bob')
+            self.job = jf.fromScratch(u'bob')
             self.jobid = self.job.id
 
     def do_login(self):
-        params = {'userid': 'bob', 'password': 'mypassword'}
+        params = {u'userid': u'bob', u'password': u'mypassword'}
         self.testapp.post('/login', params)
 
     def fake_jobid(self):

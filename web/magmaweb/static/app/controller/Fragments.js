@@ -18,16 +18,16 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
    * @property {Object} annotabable
    */
   annotatable: {
-	  /**
-	   * Whether there are structures.
-	   * @property {Boolean} annotabable.structures
-	   */
-	  structures: false,
-	  /**
-	   * Whether there is ms data.
-	   * @property {Boolean} annotabable.msdata
-	   */
-	  msdata: false
+      /**
+       * Whether there are structures.
+       * @property {Boolean} annotabable.structures
+       */
+      structures: false,
+      /**
+       * Whether there is ms data.
+       * @property {Boolean} annotabable.msdata
+       */
+      msdata: false
   },
   init: function() {
     Ext.log({}, 'Fragments controller init');
@@ -397,8 +397,8 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
    * Checks assign feature and if false removes all assign action buttons.
    */
   applyRole: function() {
-	  if (!this.application.features.assign) {
-	      this.getAssignStruct2PeakButton().hide();
-	  }
+      if (!this.application.features.assign) {
+          this.getAssignStruct2PeakButton().hide();
+      }
   }
 });

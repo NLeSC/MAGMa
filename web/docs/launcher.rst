@@ -1,7 +1,7 @@
 .. _launcher:
 
 Job launcher
-===========
+============
 
 To perform MAGMa calculations the web application offloads the job to a launcher deamon.
 
@@ -18,7 +18,7 @@ Installation
 ------------
 
 1. Create a user for the joblauncher, see :ref:`User management <user>` or `user.rst <user.rst>`_.
-2. Set username as 'monitor_user' key in web config file, so that user is authorized with status update rights.
-3. Login as joblauncher on web site
+2. Set username as 'monitor_user' key in web config file, so that user is authorized with to update statuses of jobs.
+3. Login as the joblauncher user on web site
 4. On workspace page generate an access token.
 5. Configure joblauncher with supplied token.

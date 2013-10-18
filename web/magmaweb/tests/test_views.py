@@ -51,7 +51,7 @@ class ViewsTestCase(AbstractViewsTestCase):
     def test_allinone_with_ms_data_as_file(self):
         from cgi import FieldStorage
         ms_file = FieldStorage()
-        ms_file.filename = 'c:\bla\bla\F1234.mzxml'
+        ms_file.filename = r'c:\bla\bla\F1234.mzxml'
         post = {'ms_data_file': ms_file}
         request = testing.DummyRequest(post=post)
         request.user = User('bob', 'Bob Example', 'bob@example.com')
@@ -69,7 +69,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         views.job_factory.submitQuery.assert_called_with(jobquery.allinone(),
                                                          job)
         self.assertEqual(response, {'success': True, 'jobid': 'foo'})
-        self.assertEqual(job.ms_filename, 'c:\bla\bla\F1234.mzxml')
+        self.assertEqual(job.ms_filename, r'c:\bla\bla\F1234.mzxml')
         job.jobquery.assert_called_with('http://example.com/status/foo.json',
                                         False,
                                         )
@@ -484,19 +484,38 @@ class ViewsTestCase(AbstractViewsTestCase):
 
 class InCompleteJobViewsTestCase(AbstractViewsTestCase):
     """Test case for magmaweb.views.InCompleteJobViews"""
-    def test_jobstatus(self):
+    def test_jobstatus_complete(self):
         request = testing.DummyRequest()
         job = self.fake_job()
         job.id = 'bla'
         job.state = 'RUNNING'
+        job.is_complete.side_effect = JobIncomplete(job)
         views = InCompleteJobViews(job, request)
 
         response = views.job_status()
 
-        self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
+        self.assertEqual(response, dict(status='RUNNING',
+                                        jobid='bla',
+                                        is_complete=False,
+                                        ))
+
+    def test_jobstatus_incomplete(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'STOPPED'
+        job.is_complete.return_value = True
+        views = InCompleteJobViews(job, request)
+
+        response = views.job_status()
+
+        self.assertEqual(response, dict(status='STOPPED',
+                                        jobid='bla',
+                                        is_complete=True,
+                                        ))
 
     def test_set_jobstatus(self):
-        request = testing.DummyRequest()
+        request = testing.DummyRequest(content_type='text/plain')
         request.body = 'STOPPED'
         job = self.fake_job()
         job.id = 'bla'
@@ -507,6 +526,60 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
 
         self.assertEqual(response, dict(status='STOPPED', jobid='bla'))
         self.assertEqual(job.state, 'STOPPED')
+
+    def test_set_jobstatus_withjson_running(self):
+        body = '{"state": "EXECUTING", "exitCode": null, "running": true, '
+        body += '"done": false, "schedulerSpecficInformation": null, '
+        body += '"exception": null}'
+        request = testing.DummyRequest(content_type='application/json',
+                                       charset='UTF-8',
+                                       body=body,
+                                       )
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'PENDING'
+        views = InCompleteJobViews(job, request)
+
+        response = views.set_job_status()
+
+        self.assertEqual(response, dict(status='EXECUTING', jobid='bla'))
+        self.assertEqual(job.state, 'EXECUTING')
+
+    def test_set_jobstatus_withjson_doneok(self):
+        body = '{"state": "DONE", "exitCode": 0, "running": false, '
+        body += '"done": true, "schedulerSpecficInformation": null, '
+        body += '"exception": null}'
+        request = testing.DummyRequest(content_type='application/json',
+                                       charset='UTF-8',
+                                       body=body,
+                                       )
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'PENDING'
+        views = InCompleteJobViews(job, request)
+
+        response = views.set_job_status()
+
+        self.assertEqual(response, dict(status='STOPPED', jobid='bla'))
+        self.assertEqual(job.state, 'STOPPED')
+
+    def test_set_jobstatus_withjson_doneerr(self):
+        body = '{"state": "KILLED", "exitCode": 0, "running": false, '
+        body += '"done": true, "schedulerSpecficInformation": null, '
+        body += '"exception": "Process cancelled by user."}'
+        request = testing.DummyRequest(content_type='application/json',
+                                       charset='UTF-8',
+                                       body=body,
+                                       )
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'PENDING'
+        views = InCompleteJobViews(job, request)
+
+        response = views.set_job_status()
+
+        self.assertEqual(response, dict(status='ERROR', jobid='bla'))
+        self.assertEqual(job.state, 'ERROR')
 
     def test_updatejson(self):
         request = testing.DummyRequest()
@@ -531,17 +604,47 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(job.created_at, execpted_ca)
         self.assertEqual(job.is_public, True)
 
-    def test_deletejson(self):
+    def test_delete_completedjob(self):
         request = testing.DummyRequest()
         job = self.fake_job()
         views = InCompleteJobViews(job, request)
 
-        response = views.deletejson()
+        response = views.delete()
 
         exp_response = {'success': True, 'message': 'Deleted job'}
         self.assertDictEqual(response, exp_response)
         job.delete.assert_called_with()
         self.assertEquals(request.response.status_int, 204)
+
+    def test_delete_incompletejob(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        # make job incomplete
+        job.is_complete.side_effect = JobIncomplete(job)
+        views = InCompleteJobViews(job, request)
+        # see if cancel is called on job_factory
+        views.job_factory = Mock(JobFactory)
+
+        views.delete()
+
+        views.job_factory.cancel.assert_called_with(job)
+
+    def test_delete_unable2cancel(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        # make job incomplete
+        job.is_complete.side_effect = JobIncomplete(job)
+        views = InCompleteJobViews(job, request)
+        from requests.exceptions import ConnectionError
+        exc = ConnectionError('[Errno 111] Connection refused')
+        views.job_factory.cancel = Mock(side_effect=exc)
+        from pyramid.httpexceptions import HTTPInternalServerError
+
+        with self.assertRaises(HTTPInternalServerError) as e:
+            views.delete()
+
+        expected = '{"msg": "Failed to cancel job", "success": false}'
+        self.assertEquals(e.exception.body, expected)
 
     def test_error(self):
         request = testing.DummyRequest()
@@ -563,12 +666,16 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
         job = self.fake_job()
         job.id = 'bla'
         job.state = 'RUNNING'
+        job.is_complete.return_value = False
         exc = JobIncomplete(job)
         views = InCompleteJobViews(exc, request)
 
         response = views.job_incomplete()
 
-        self.assertEqual(response, dict(status='RUNNING', jobid='bla'))
+        self.assertEqual(response, dict(status='RUNNING',
+                                        jobid='bla',
+                                        is_complete=False,
+                                        ))
 
     @patch('magmaweb.views.has_permission')
     def test_resuls_canrun(self, has_permission):
@@ -952,8 +1059,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  ms_data_area='',
                                                  ms_data_format='mzxml',
                                                  ionisation_mode=1,
-                                                 ms_intensity_cutoff=1000000.0,
-                                                 msms_intensity_cutoff=10,
+                                                 ms_intensity_cutoff=0.0,
+                                                 msms_intensity_cutoff=5,
                                                  mz_precision=5.0,
                                                  mz_precision_abs=0.001,
                                                  abs_peak_cutoff=1100,
@@ -979,8 +1086,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                  ms_data_area='',
                                                  ms_data_format='mzxml',
                                                  ionisation_mode=1,
-                                                 ms_intensity_cutoff=1000000.0,
-                                                 msms_intensity_cutoff=10,
+                                                 ms_intensity_cutoff=0.0,
+                                                 msms_intensity_cutoff=5,
                                                  mz_precision=5.0,
                                                  mz_precision_abs=0.001,
                                                  abs_peak_cutoff=5000,
