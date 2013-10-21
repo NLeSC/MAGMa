@@ -88,6 +88,16 @@ Remove user and his/her jobs
    User.delete(user)
    commit()
 
+Add a job result database
+-------------------------
+
+.. code-block:: python
+
+   from magmaweb.job import JobFactory
+   factory = JobFactory('data/jobs')
+   job = factory.fromDb(file('<location of results.db>'), '<username of owner>')
+   print job.id
+
 Anonymous and restricted mode
 =============================
 
