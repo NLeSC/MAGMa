@@ -117,20 +117,14 @@ Ext.define('Esc.magmaweb.controller.Scans', {
               items: [{
                 text: 'X axis',
                 checked: true,
-                listener: {
-                    checkchange: {
-                        fn: this.onZoomDirectionXChange,
-                        scope: this
-                    }
+                checkHandler: function(item, checked) {
+                    me.onZoomDirectionXChange(item, checked);
                 }
               }, {
                 text: 'Y axis',
                 checked: false,
-                listener: {
-                    checkchange: {
-                        fn: this.onZoomDirectionYChange,
-                        scope: this
-                    }
+                checkHandler: function(item, checked) {
+                    me.onZoomDirectionYChange(item, checked);
                 }
               }]
             }
