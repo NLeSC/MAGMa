@@ -297,6 +297,51 @@ class StructureEngine(object):
             metids|=self.metabolize(parentid,metabolism,endpoints)
         return metids
 
+    def run_scenario(self, scenario):
+        print scenario
+        metids=set()
+        old_metids=set()
+        for step in range(len(scenario)):
+            input,action,value = scenario[step]
+            print "----- Scenario, step ",step,"-----"
+            endpoints=False
+            if input=="previous":
+                metids |= old_metids
+            old_metids=metids
+            if action=='mass_filter':
+                if input=='all':
+                    result=self.db_session.query(Metabolite.metid).filter(Metabolite.mim<float(value)).all()
+                else:
+                    result=self.db_session.query(Metabolite.metid).filter(Metabolite.mim<float(value),Metabolite.metid.in_(metids)).all()
+                    print "from ",len(metids),"processed compounds"
+                metids={x[0] for x in result} #set comprehension
+                print len(metids),"compounds were selected with mass <",value
+            else:
+                if value=='end':
+                    endpoints=True
+                    value=1
+                if input=='all':
+                    metids=set()
+                    new_metids = self.metabolize_all(action,endpoints)
+                    print "All metabolites",
+                else:
+                    print len(metids),"metabolites",
+                    new_metids=set()
+                    for metid in metids:
+                        new_metids |= self.metabolize(metid,action,endpoints)
+                active_metids=new_metids.difference(metids)
+                metids=new_metids
+                for it in range(1,int(value)):
+                    new_metids=set()
+                    for metid in active_metids:
+                        new_metids |= self.metabolize(metid,action,endpoints)
+                    active_metids=new_metids.difference(metids)
+                    metids |= new_metids
+                print 'were metabolized according to',action,'rules'
+                print '"Active" metabolites:',len(metids)
+            # print metids
+            print ""
+ 
     def retrieve_structures(self,mass):
         dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
         conn = sqlite3.connect(dbfilename)
