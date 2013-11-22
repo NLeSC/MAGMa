@@ -215,7 +215,9 @@ class StructureEngine(object):
                 "digest": pkg_resources.resource_filename( #@UndefinedVariable
                                                            'magma', "data/digest.cactvs.smirks"),
                 "peptide": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/peptide.cactvs.smirks")
+                                                           'magma', "data/peptide.cactvs.smirks"),
+                "ptm": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/ptm.cactvs.smirks")
                 }
         try:
             parent = self.db_session.query(Metabolite).filter_by(metid=metid).one()
@@ -662,6 +664,8 @@ class AnnotateEngine(object):
         for mz in mzs:
             ql=int(1e6*(min(mz/self.precision,mz-self.mz_precision_abs)-self.ionisation_mode*(pars.Hmass-pars.elmass)))
             qh=int(1e6*(max(mz*self.precision,mz+self.mz_precision_abs)-self.ionisation_mode*(pars.Hmass-pars.elmass)))
+            #ql=int(1e6*(mz/self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass))) # tijdelijk for thermo
+            #qh=int(1e6*(mz*self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass))) # tijdelijk for thermo
             if ql < mmim:
                 if qh > mmim:
                     qh == mmim
