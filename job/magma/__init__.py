@@ -1134,7 +1134,10 @@ class DataAnalysisEngine(object):
                     else:
                         if len(nodes[n]) == 2:
                             tmpnode=list(nodes[n])
-                            if len(nodes[tmpnode[0]] & nodes[tmpnode[1]]) > 1 and tmpnode[0] not in assigned_metids and tmpnode[1] not in assigned_metids:
+                            #if len(nodes[tmpnode[0]] & nodes[tmpnode[1]]) > 1 and tmpnode[0] not in assigned_metids and tmpnode[1] not in assigned_metids:
+                            if len(nodes[tmpnode[0]] & nodes[tmpnode[1]]) > 1 or \
+                                    len(nodes[tmpnode[0]] & nodes[n]) > 0 or \
+                                    len(nodes[tmpnode[1]] & nodes[n]) > 0:
                                 for c in nodes[n]:
                                     nodes[c].remove(n)
                                 del nodes[n]
