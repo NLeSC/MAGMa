@@ -1,0 +1,2 @@
+[S;$(S(C)CCC(N)C=O):1]>>[S:1]=O 1.0 oxidation n # Methione oxidation
+[S;$(SCC(N)C=O):1]>>[S:1]CC(=O)N 1.0 carbamidomethylation n # Cystein carbamidomethylation
