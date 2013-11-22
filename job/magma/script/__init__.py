@@ -62,6 +62,7 @@ class MagmaCommand(object):
         sc.add_argument('-j', '--metids', type=argparse.FileType('rb'), help="File with structure ids")
         sc.add_argument('-n', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=1,type=int)
         sc.add_argument('-m', '--metabolism_types', help="digest,gut,phase1,phase2, (default: %(default)s)", default="phase1,phase2", type=str)
+        sc.add_argument('-s', '--scenario', help="Scenario file", type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.metabolize)
 
@@ -182,7 +183,15 @@ class MagmaCommand(object):
         if magma_session == None:
             magma_session = self.get_magma_session(args.db,args.description)
         struct_engine = magma_session.get_structure_engine(args.metabolism_types, args.n_reaction_steps) # TODO remove arguments
-        if args.metids == None:
+        if args.scenario != None:
+            scenario=[]
+            scenario_file=open(args.scenario,'r')
+            for line in scenario_file:
+                step=line.split('#')[0].rstrip().split(',') # Comments indicated by # are allowed
+                if len(step)>1:
+                    scenario.append(step)
+            struct_engine.run_scenario(scenario)
+        elif args.metids == None:
             metids=struct_engine.metabolize_all(args.metabolism_types, args.n_reaction_steps)
             for metid in metids:
                 print metid
