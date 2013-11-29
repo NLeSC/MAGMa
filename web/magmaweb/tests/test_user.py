@@ -43,6 +43,10 @@ class TestUUIDType(unittest.TestCase):
         self.assertEqual(self.uuidtype.process_result_value(None, None),
                          None)
 
+    def test_result_emptystring(self):
+        self.assertEqual(self.uuidtype.process_result_value('', None),
+                         None)
+
 
 class TestUser(unittest.TestCase):
     def test_construct(self):

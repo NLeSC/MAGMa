@@ -35,6 +35,7 @@
 			</tr>
 		</table>
 	</fieldset>
+	% if run.n_reaction_steps!=None:
 	<fieldset class="x-fieldset x-fieldset-default">
 		<legend class="x-fieldset-header x-fieldset-header-default">Generate
 			metabolite options</legend>
@@ -49,6 +50,7 @@
 			</tr>
 		</table>
 	</fieldset>
+	% endif
 	<fieldset class="x-fieldset x-fieldset-default">
 		<legend class="x-fieldset-header x-fieldset-header-default">Annotate
 			options</legend>
