@@ -7,12 +7,16 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeFieldSet', {
     extend : 'Ext.panel.Panel',
     alias : 'widget.metabolizefieldset',
     requires : [ 'Ext.form.field.Number', 'Ext.form.field.ComboBox' ],
-    title : 'Generate metabolite options',
+    title : 'Metabolize',
     frame: true,
     defaults : {
         labelWidth : 300
     },
     items : [ {
+        fieldLabel : 'Perform metabolization of molecules',
+        xtype: 'checkbox',
+        name: 'metabolize'
+    }, {
         fieldLabel : 'Maximum number of reaction steps',
         name : 'n_reaction_steps',
         xtype : 'numberfield',
@@ -23,7 +27,7 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeFieldSet', {
     }, {
         xtype : 'combobox',
         fieldLabel : 'Metabolism types',
-        store : [ 'phase1', 'phase2' ],
+        store : [ 'digest', 'gut', 'phase1', 'phase2' ],
         multiSelect : true,
         allowBlank : false,
         name : 'metabolism_types'
