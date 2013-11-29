@@ -55,7 +55,7 @@ class UUIDType(TypeDecorator):
         return unicode(value)
 
     def process_result_value(self, value, dialect):
-        if value is None:
+        if value is None or value == '':
             return None
         return uuid.UUID(value)
 
