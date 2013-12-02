@@ -105,7 +105,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
             iconCls: 'icon-add',
             id: 'uploadmssaction',
             text: 'Upload MS data',
-            listener: {
+            listeners: {
                 click: {
                     fn: this.showUploadForm,
                     scope: this
