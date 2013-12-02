@@ -85,7 +85,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
 
     Ext.apply(this, {
       columns: [
-        {text: 'ID', dataIndex: 'metid', hidden: true},
+        {text: 'ID', dataIndex: 'metid', hidden: true, filter: { type: 'numeric' }},
         {text: 'Scans', dataIndex: 'nhits', filter: {
             type: 'numeric', value:{gt:0}, active: true
         }},

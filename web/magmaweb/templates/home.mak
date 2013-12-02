@@ -76,14 +76,10 @@ Ext.onReady(function() {
     	}]
     }, {
     	items: [{
-            xtype : 'metabolizefieldset',
-            margin: '0 0 10 0',
-            checkboxToggle: true,
-            checkboxName: 'metabolize',
-            collapsed : true,
-            collapsible : true
-        }, {
-            xtype : 'annotatefieldset'
+    	    xtype : 'metabolizefieldset',
+ 	        margin: '0 0 10 0'
+ 	    }, {
+    	    xtype : 'annotatefieldset'
     	}]
     }],
     buttons: [{
@@ -127,6 +123,21 @@ Ext.onReady(function() {
       }
     }]
   });
+
+  /**
+   * Don't allow metabolization when Molecules tab 'Database' is selected.
+   */
+  function struct_change(panel, newCard) {
+      var metabolize_fields = form.down('metabolizefieldset');
+      if (newCard.title === 'Database') {
+          metabolize_fields.down('component[name=metabolize]').setValue(false);
+          metabolize_fields.hide();
+      } else {
+          metabolize_fields.show();
+      }
+  }
+  form.down('addstructurefieldset').down('tabpanel').addListener('tabchange', struct_change);
+
   form.load({
       url: '${request.route_url('defaults.json')}',
       method: 'GET',
@@ -220,7 +231,7 @@ Ext.onReady(function() {
       }
       if (!features.run) {
           // hide interactive job run starting points
-          Ext.ComponentQuery.query('component[title=Generate metabolite options]')[0].hide();
+          Ext.ComponentQuery.query('metabolizefieldset')[0].hide();
           Ext.ComponentQuery.query('component[text=Start from scratch]')[0].hide();
           Ext.ComponentQuery.query('component[text=Upload result]')[0].hide();
       }
