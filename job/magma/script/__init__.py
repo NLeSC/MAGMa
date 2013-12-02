@@ -62,7 +62,8 @@ class MagmaCommand(object):
         sc.add_argument('-j', '--metids', type=argparse.FileType('rb'), help="File with structure ids")
         sc.add_argument('-n', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=1,type=int)
         sc.add_argument('-m', '--metabolism_types', help="digest,gut,phase1,phase2, (default: %(default)s)", default="phase1,phase2", type=str)
-        sc.add_argument('-s', '--scenario', help="Scenario file", type=str)
+        sc.add_argument('-s', '--scenario', type=str, help="""Scenario file, each line defines a separate stage:
+                                                            input (all/previous),action(digest/gut/phase1/phase2/mass_filter),value(nsteps/mass limit)""")
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.metabolize)
 
