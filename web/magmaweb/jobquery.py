@@ -116,7 +116,7 @@ class JobQuery(object):
                                        name='max_mz'))
 
     def _addMetabolizeSchema(self, schema):
-        validator = colander.OneOf(['phase1', 'phase2'])
+        validator = colander.OneOf(['digest', 'gut', 'phase1', 'phase2'])
         metabolism_type = colander.SchemaNode(colander.String(),
                                               validator=validator)
         schema.add(colander.SchemaNode(colander.Sequence(),
