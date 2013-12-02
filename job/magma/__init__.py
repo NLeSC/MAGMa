@@ -158,10 +158,14 @@ class StructureEngine(object):
             if len(dups)>0:
                 if merge:
                     metab=dups[0]
-                    metab.origin=unicode(str(metab.origin)+'</br>'+molecule.name, 'utf-8', 'xmlcharrefreplace')
-                    metab.reference=molecule.reference
-                    metab.probability=molecule.probability
-                    metab.reactionsequence=unicode(str(metab.reactionsequence)+'</br>'+molecule.reactionsequence)
+                    if metab.origin == "" and molecule.name != "":
+                        metab.origin=unicode(str(metab.origin)+'</br>'+molecule.name, 'utf-8', 'xmlcharrefreplace')
+                    if metab.reference == "" and molecule.reference != "":
+                        metab.reference=molecule.reference
+                    if molecule.probability > 0:
+                        metab.probability=molecule.probability
+                    if molecule.reactionsequence != "":
+                        metab.reactionsequence=unicode(str(metab.reactionsequence)+'</br>'+molecule.reactionsequence)
                 else:
                     if dups[0].probability < molecule.probability:
                         metab.metid=dups[0].metid
@@ -265,12 +269,12 @@ class StructureEngine(object):
                         line=reactor.stdout.readline()
                 line=reactor.stdout.readline()
             if reaction!='PARENT':
-                molecule=types.MoleculeType(mol,name,0,0,str(metid)+'&gt&gt'+reaction,isquery)
+                molecule=types.MoleculeType(mol,"",None,None,str(metid)+'&gt&gt'+reaction,isquery)
                 new_metid=self.add_molecule(molecule,merge=True)
                 metids.add(new_metid)
                 reactid=self.db_session.query(Reaction.reactid).filter(Reaction.reactant==metid,Reaction.product==new_metid,Reaction.name==reaction).all()
                 if len(reactid)==0:
-                    parent.reactionsequence+=unicode('</br>'+str(new_metid)+'&lt&lt'+reaction)
+                    # parent.reactionsequence+=unicode('</br>'+str(new_metid)+'&lt&lt'+reaction)
                     react=Reaction(
                         reactant=metid,
                         product=new_metid,
