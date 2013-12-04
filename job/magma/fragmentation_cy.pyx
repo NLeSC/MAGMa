@@ -154,7 +154,7 @@ cdef class FragmentEngine(object):
                 if fi[2]==self.max_broken_bonds+step:               # on which to apply neutral loss rules
                     fragment=fi[0]
                     for atom in self.neutral_loss_atoms:       # loop of all atoms
-                        if (1<<atom) & fragment:            # in the fragment
+                        if (1ULL<<atom) & fragment:            # in the fragment
                             frag=fragment^(1ULL<<atom)
                             if frag not in total_fragments:   # add extended fragments if not yet present
                                 total_fragments.add(frag)     # to the collection
