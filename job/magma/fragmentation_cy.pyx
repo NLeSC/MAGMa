@@ -106,6 +106,8 @@ cdef class FragmentEngine(object):
         cdef bond_breaks_score_pair bbsp
         cdef set all_fragments,total_fragments,current_fragments,new_fragments
         frag=(1ULL<<self.natoms)-1
+        if self.natoms==64:
+            frag=18446744073709551615 # =(1<<64)-1
         all_fragments=set([frag])
         total_fragments=set([frag])
         current_fragments=set([frag])
