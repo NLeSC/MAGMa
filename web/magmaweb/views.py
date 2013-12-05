@@ -9,6 +9,7 @@ from pyramid.view import view_defaults
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.httpexceptions import HTTPFound
 from pyramid.httpexceptions import HTTPInternalServerError
+from pyramid.httpexceptions import HTTPUnauthorized
 from pyramid.security import has_permission
 from pyramid.security import remember
 from pyramid.security import forget
@@ -375,6 +376,9 @@ class InCompleteJobViews(object):
         # so moved GET to InCompleteJobViews
         self.job.is_complete(True)
         db = self.job.db
+        canView = has_permission('view', self.job, self.request)
+        if not canView:
+            raise HTTPUnauthorized()
         # determine if Run buttons should be shown
         canRun = has_permission('run', self.job, self.request)
         return dict(run=db.runInfo(),
