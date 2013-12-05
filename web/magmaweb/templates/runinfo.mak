@@ -36,20 +36,6 @@
 		</table>
 	</fieldset>
 	<fieldset class="x-fieldset x-fieldset-default">
-		<legend class="x-fieldset-header x-fieldset-header-default">Generate
-			metabolite options</legend>
-		<table class='infotable'>
-			<tr>
-				<td>Maximum number of reaction steps:</td>
-				<td>${run.n_reaction_steps}</td>
-			</tr>
-			<tr>
-				<td>Metabolism types:</td>
-				<td>${run.metabolism_types}</td>
-			</tr>
-		</table>
-	</fieldset>
-	<fieldset class="x-fieldset x-fieldset-default">
 		<legend class="x-fieldset-header x-fieldset-header-default">Annotate
 			options</legend>
 		<table class='infotable'>
