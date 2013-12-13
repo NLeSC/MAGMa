@@ -331,6 +331,16 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
 
         self.assertEqual(response['total'], 0)
 
+    def test_filteredon_reaction(self):
+        filters = [{"type": "reaction",
+                    "product": 3,
+                    "name": "esterase",
+                    "field": "reactionsequence",
+                    }]
+        response = self.job.metabolites(filters=filters)
+
+        self.assertEqual(response['total'], 0)
+
     def test_sort_probmet(self):
         response = self.job.metabolites(sorts=[{"property": "probability",
                                                 "direction": "DESC"},
@@ -377,6 +387,68 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
 
         with self.assertRaises(ScanRequiredError):
             self.job.metabolites(sorts=sorts)
+
+
+class JobDbMetabolitesReactionFilterTestCase(JobDbTestCaseAbstract):
+    def setUp(self):
+        JobDbTestCaseAbstract.setUp(self)
+        self.query = self.session.query(Metabolite.metid)
+
+    def test_none(self):
+        afilter = {"type": "reaction",
+                   "field": "reactionsequence"}
+
+        fq = self.job.reaction_filter(self.query, afilter)
+
+        self.assertEqual(str(fq), 'SELECT metabolites.metid AS metabolites_metid \nFROM metabolites')
+
+    def test_reaction_reactants(self):
+        afilter = {"type": "reaction",
+                   "product": 3,
+                   "field": "reactionsequence"}
+
+        fq = self.job.reaction_filter(self.query, afilter)
+
+        self.assertEqual(str(fq), 'SELECT metabolites.metid AS metabolites_metid \nFROM metabolites JOIN reactions ON metabolites.metid = reactions.reactant \nWHERE reactions.product = :product_1')
+
+    def test_reaction_products(self):
+        afilter = {"type": "reaction",
+                   "reactant": 3,
+                   "field": "reactionsequence"}
+
+        fq = self.job.reaction_filter(self.query, afilter)
+
+        self.assertEqual(str(fq), 'SELECT metabolites.metid AS metabolites_metid \nFROM metabolites JOIN reactions ON metabolites.metid = reactions.product \nWHERE reactions.reactant = :reactant_1')
+
+    def test_reaction_productsofname(self):
+        afilter = {"type": "reaction",
+                   "reactant": 3,
+                   "name": "esterase",
+                   "field": "reactionsequence"}
+
+        fq = self.job.reaction_filter(self.query, afilter)
+
+        self.assertEqual(str(fq), 'SELECT metabolites.metid AS metabolites_metid \nFROM metabolites JOIN reactions ON metabolites.metid = reactions.product \nWHERE reactions.reactant = :reactant_1 AND reactions.name = :name_1')
+
+    def test_reaction_reactantsofname(self):
+        afilter = {"type": "reaction",
+                   "product": 3,
+                   "name": "esterase",
+                   "field": "reactionsequence"}
+
+        fq = self.job.reaction_filter(self.query, afilter)
+
+        self.assertEqual(str(fq), 'SELECT metabolites.metid AS metabolites_metid \nFROM metabolites JOIN reactions ON metabolites.metid = reactions.reactant \nWHERE reactions.product = :product_1 AND reactions.name = :name_1')
+
+    def test_reaction_reactantandproduct(self):
+        afilter = {"type": "reaction",
+                   "product": 3,
+                   "reactant": 3,
+                   "name": "esterase",
+                   "field": "reactionsequence"}
+
+        with self.assertRaises(TypeError):
+            self.job.reaction_filter(self.query, afilter)
 
 
 class JobDbMetabolites2csvTestCase(JobDbTestCaseAbstract):
