@@ -9,6 +9,7 @@ from pyramid.view import view_defaults
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.httpexceptions import HTTPFound
 from pyramid.httpexceptions import HTTPInternalServerError
+from pyramid.httpexceptions import HTTPUnauthorized
 from pyramid.security import has_permission
 from pyramid.security import remember
 from pyramid.security import forget
@@ -363,6 +364,7 @@ class InCompleteJobViews(object):
     @view_config(route_name='results',
                  renderer='results.mak',
                  request_method='GET',
+                 permission='view',
                  )
     def results(self):
         """Returns results page or
@@ -385,14 +387,20 @@ class InCompleteJobViews(object):
                     job=self.job,
                     )
 
-    @view_config(context=JobError, renderer='error.mak')
+    @view_config(context=JobError,
+                 renderer='error.mak',
+                 permission='view',
+                 )
     def error(self):
         return {'exception': self.job,
                 'job': self.job.job,
                 'run': self.job.job.db.runInfo(),
                 }
 
-    @view_config(context=JobIncomplete, renderer='status.mak')
+    @view_config(context=JobIncomplete,
+                 renderer='status.mak',
+                 permission='view',
+                 )
     def job_incomplete(self):
         """Catches JobIncomplete exception when results urls are tried
         and returns status page
