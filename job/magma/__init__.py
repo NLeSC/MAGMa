@@ -887,20 +887,30 @@ class AnnotateEngine(object):
                     self.store_hit(childhit,metid,currentFragid)
 
 class PubChemEngine(object):
-    def __init__(self,dbfilename='',max_64atoms=False,min_refscore=''):
+    def __init__(self,dbfilename='',max_64atoms=False,incl_halo=False,min_refscore=''):
         if dbfilename=='':
             dbfilename=config.get('magma job','structure_database.pubchem')
+        self.conn = sqlite3.connect(dbfilename)
+        self.conn.text_factory=str
+        self.c = self.conn.cursor()
+        self.incl_halo=False
+        if incl_halo!=False:
+            self.incl_halo=True
+            if incl_halo=='True':
+                halo_filename=config.get('magma job','structure_database.pubchem_halo')
+            else:
+                halo_filename=incl_halo
+            self.connh = sqlite3.connect(halo_filename)
+            self.connh.text_factory=str
+            self.ch = self.connh.cursor()
         self.where=''
         if min_refscore!='':
             self.where += ' AND refscore >= '+min_refscore
         if max_64atoms==True:
             self.where += ' AND natoms <= 64'
-        self.conn = sqlite3.connect(dbfilename)
-        self.conn.text_factory=str
-        self.c = self.conn.cursor()
     def query_on_mim(self,low,high,charge):
-        result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         molecules=[]
+        result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         for (cid,mim,charge,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
             molecules.append(types.MoleculeType(
                            molblock=zlib.decompress(molblock),
@@ -917,6 +927,24 @@ class PubChemEngine(object):
                                      str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>',
                            logp=float(logp)/10.0,
                            ))
+        if self.incl_halo:
+            result=self.ch.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
+            for (cid,mim,charge,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
+                molecules.append(types.MoleculeType(
+                               molblock=zlib.decompress(molblock),
+                               name=name+' ('+str(cid)+')',
+                               mim=float(mim/1e6),
+                               natoms=natoms,
+                               molform=molform,
+                               inchikey=inchikey,
+                               prob=refscore,
+                               level=1,
+                               sequence="",
+                               isquery=1,
+                               reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
+                                         str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>',
+                               logp=float(logp)/10.0,
+                               ))
         return molecules
 
 class KeggEngine(object):
