@@ -9,7 +9,6 @@ from pyramid.view import view_defaults
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.httpexceptions import HTTPFound
 from pyramid.httpexceptions import HTTPInternalServerError
-from pyramid.httpexceptions import HTTPUnauthorized
 from pyramid.security import has_permission
 from pyramid.security import remember
 from pyramid.security import forget
