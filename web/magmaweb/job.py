@@ -575,10 +575,11 @@ class JobDb(object):
         if 'product' in afilter:
             q = q.join(Reaction, Metabolite.metid == Reaction.reactant)
             q = q.filter(Reaction.product == afilter['product'])
-
-        if 'reactant' in afilter:
+        elif 'reactant' in afilter:
             q = q.join(Reaction, Metabolite.metid == Reaction.product)
             q = q.filter(Reaction.reactant == afilter['reactant'])
+        else:
+            raise TypeError('Reactant or product is missing')
 
         if 'name' in afilter:
             q = q.filter(Reaction.name == afilter['name'])
