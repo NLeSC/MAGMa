@@ -394,14 +394,6 @@ class JobDbMetabolitesReactionFilterTestCase(JobDbTestCaseAbstract):
         JobDbTestCaseAbstract.setUp(self)
         self.query = self.session.query(Metabolite.metid)
 
-    def test_none(self):
-        afilter = {"type": "reaction",
-                   "field": "reactionsequence"}
-
-        fq = self.job.reaction_filter(self.query, afilter)
-
-        self.assertEqual(str(fq), 'SELECT metabolites.metid AS metabolites_metid \nFROM metabolites')
-
     def test_reaction_reactants(self):
         afilter = {"type": "reaction",
                    "product": 3,
@@ -445,6 +437,21 @@ class JobDbMetabolitesReactionFilterTestCase(JobDbTestCaseAbstract):
                    "product": 3,
                    "reactant": 3,
                    "name": "esterase",
+                   "field": "reactionsequence"}
+
+        with self.assertRaises(TypeError):
+            self.job.reaction_filter(self.query, afilter)
+
+    def test_reaction_onlyname(self):
+        afilter = {"type": "reaction",
+                   "name": "esterase",
+                   "field": "reactionsequence"}
+
+        with self.assertRaises(TypeError):
+            self.job.reaction_filter(self.query, afilter)
+
+    def test_none(self):
+        afilter = {"type": "reaction",
                    "field": "reactionsequence"}
 
         with self.assertRaises(TypeError):
