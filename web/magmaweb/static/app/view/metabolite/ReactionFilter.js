@@ -77,12 +77,18 @@ Ext.define('Esc.magmaweb.view.metabolite.ReactionFilter', {
     setValue: function(value) {
         if ('reactant' in value) {
             me.reactant.setValue(value['reactant']);
+        } else {
+            me.reactant.reset();
         }
         if ('product' in value) {
             me.product.setValue(value['product']);
+        } else {
+            me.product.reset();
         }
         if ('name' in value) {
             me.reaction_name.setValue(value['name']);
+        } else {
+            me.reaction_name.reset();
         }
         this.fireUpdate();
     },

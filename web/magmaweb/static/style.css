@@ -120,3 +120,8 @@ svg {
 .relation {
 	float: right;
 }
+
+.reaction-col-item span, .reaction-col-r span, reaction-col-p span {
+    /*cursor: pointer;*/
+}
+
