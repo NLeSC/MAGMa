@@ -73,6 +73,16 @@ class Metabolite(Base):
     fragments = relationship('Fragment', backref='metabolite')
 
 
+class Reaction(Base):
+    """Reaction model for reactions table"""
+    __tablename__ = 'reactions'
+    # Id of a reaction
+    reactid = Column(Integer, primary_key=True, autoincrement=True)
+    reactant = Column(Integer, ForeignKey('metabolites.metid'))
+    product = Column(Integer, ForeignKey('metabolites.metid'))
+    name = Column(Unicode)
+
+
 class Scan(Base):
     """Scan model for scans table"""
     __tablename__ = 'scans'
