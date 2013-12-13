@@ -22,7 +22,7 @@ def pubchem(args):
         update_data(args.data_dir)
         create_names_db(args.data_dir)
     if not args.update_only:
-        create_pubchem_dbs(args.data_dir,args.database_dir,kegg_info)
+        create_pubchem_dbs(args.data_dir,args.database_dir,kegg_info,args.halogens)
 
 def create_names_db(data_dir):
     "Generate Pubchem_names.db which is used later by create_pubchem_dbs"
@@ -100,7 +100,7 @@ def parse_kegg_file(kegg_file):
 
 
 
-def create_pubchem_dbs(data_dir,dbs_dir,kegg_info):
+def create_pubchem_dbs(data_dir,dbs_dir,kegg_info,halogens):
     """Generate Pubchem_MAGMa.db and Pubchem_MAGMa_kegg.db in dbs_dir from data in data_dir"""
     pubchem_dir=data_dir+"/ftp.ebi.ac.uk/pub/databases/pubchem/Compound/CURRENT-Full/SDF/"
     # open database with compounds names
@@ -124,7 +124,10 @@ def create_pubchem_dbs(data_dir,dbs_dir,kegg_info):
     conn_list.commit()
     print ("Pubchem_Listing.db created")
     
-    conn_pubchem = sqlite3.connect(dbs_dir+"/Pubchem_MAGMa.db")
+    if halogens:
+        conn_pubchem = sqlite3.connect(dbs_dir+"/Pubchem_MAGMa_halo.db")
+    else:
+        conn_pubchem = sqlite3.connect(dbs_dir+"/Pubchem_MAGMa.db")
     curs_pubchem = conn_pubchem.cursor()
     try:
         curs_pubchem.execute("CREATE TABLE molecules (cid INTEGER PRIMARY KEY, mim INTEGER NOT NULL, charge INTEGER NOT NULL, natoms INTEGER NOT NULL, molblock BLOB, inchikey TEXT, molform TEXT, name TEXT, refscore INTEGER, logp INT)")
@@ -134,7 +137,10 @@ def create_pubchem_dbs(data_dir,dbs_dir,kegg_info):
         print ("Pubchem_MAGMa.db already exists (or error creating it)")
     
     if len(kegg_info) > 0:
-        conn_kegg = sqlite3.connect(dbs_dir+"/Pubchem_MAGMa_Kegg.db")
+        if halogens:
+            conn_kegg = sqlite3.connect(dbs_dir+"/Pubchem_MAGMa_Kegg_halo.db")
+        else:
+            conn_kegg = sqlite3.connect(dbs_dir+"/Pubchem_MAGMa_Kegg.db")
         curs_kegg = conn_kegg.cursor()
         try:
             curs_kegg.execute("CREATE TABLE molecules (cid INTEGER PRIMARY KEY, mim INTEGER NOT NULL, charge INTEGER NOT NULL, natoms INTEGER NOT NULL, molblock BLOB, inchikey TEXT, molform TEXT, name TEXT, reference TEXT, logp INT)")
@@ -164,6 +170,7 @@ def create_pubchem_dbs(data_dir,dbs_dir,kegg_info):
             hatoms=[]
             hbonds=0
             skip=False
+            halo=False
             ionized=0
             #read heading:
             for x in range(4):
@@ -180,8 +187,10 @@ def create_pubchem_dbs(data_dir,dbs_dir,kegg_info):
                     continue # remove hydrogens
                 if line[31:33] != 'H ' and len(hatoms)>0:
                     exit('Error: heavy atoms after hydrogens'+record[0][:-1])
-                if line[31:33] not in ['C ','N ','O ','P ','S ']:
+                if line[31:33] not in ['C ','N ','O ','P ','S ','F ','Cl','Br','I ']:
                     skip=True # filter non-organic compounds
+                if line[31:33] in ['F ','Cl','Br','I ']:
+                    halo=True # filter non-organic compounds
                 elif line[50:51] != '0': # this flag seems to have something to do with polymeric structures
                     skip=True # -> resulted in deviation between calculated and given inchikeys
                 elif line[38:39] == '4': # radical
@@ -223,6 +232,7 @@ def create_pubchem_dbs(data_dir,dbs_dir,kegg_info):
                     logp=float(sdfile.readline()[:-1])
             if line != "" and \
                     not skip and \
+                    halo == halogens and \
                     mim <= 1200.0 and \
                     comp_count == 1:
                 charge=0
@@ -363,6 +373,7 @@ sc.add_argument('-k', '--kegg', default=None,type=str,help="""File with informat
                         (default: %(default)s)""")
 sc.add_argument('-s', '--skip_update', help="Skip update of PubChem data (default: %(default)s)", action="store_true")
 sc.add_argument('-u', '--update_only', help="Only perform updata of PubChem data (default: %(default)s)", action="store_true")
+sc.add_argument('-f', '--halogens', help="Generate database with halogenated compounds (default: %(default)s)", action="store_true")
 sc.add_argument('-d', '--data_dir', help="Directory where PubChem data is stored (default: %(default)s)", default="./",type=str)
 sc.add_argument('-b', '--database_dir', help="Directory where PubChem databases are stored (default: %(default)s)", default="./",type=str)
 sc.set_defaults(func=pubchem)
