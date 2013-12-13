@@ -1,7 +1,7 @@
 """
 Sqlalchemy models for magma result database
 """
-
+import json
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import Unicode
@@ -21,23 +21,19 @@ Base = declarative_base()
 class ReactionSequence(TypeDecorator):
     """List of reactions.
 
-    Stored in database as a newline seperated list.
+    Stored in database as json serialized string.
     """
     impl = Unicode
 
     def process_bind_param(self, value, dialect):
-        if value is not None and not isinstance(value, basestring):
-            value = u'\n'.join(value)
+        if value is not None:
+            value = json.dumps(value)
 
         return value
 
     def process_result_value(self, value, dialect):
-        if value == "":
-            return []
-
         if value is not None:
-            value = value.rstrip(u'\n').split(u'\n')
-
+            value = json.loads(value)
         return value
 
 
@@ -51,7 +47,7 @@ class Metabolite(Base):
     level = Column(Integer)
     probability = Column(Float)
     # A newline seperated list of reactions
-    reactionsequence = Column(ReactionSequence)
+    reactionsequence = Column(ReactionSequence, default={})
     # Smile string
     smiles = Column(Unicode, unique=True)
     # Molecular formula
@@ -81,6 +77,68 @@ class Reaction(Base):
     reactant = Column(Integer, ForeignKey('metabolites.metid'))
     product = Column(Integer, ForeignKey('metabolites.metid'))
     name = Column(Unicode)
+
+
+def fill_molecules_reactionsequence(session):
+    """Fills the reactionsequence column in the molecules table with info from reactions table.
+
+    The molecules query will become to complex when reactionsequence is queried from reactions table.
+    So we fill reaction sequence with a json serialized struct which can be used during rendering.
+
+    from magmaweb.job import JobFactory
+    factory = JobFactory('data/jobs')
+    session = factory._makeJobSession('58f05077-aad8-4fc9-a497-310495ab8b62')
+    from magmaweb.models import fill_molecules_reactionsequence
+    fill_molecules_reactionsequence(session)
+
+    """
+    from sqlalchemy.sql import func
+
+    reactions = {}
+    for metid, rname, nr in session.query(Reaction.product, Reaction.name, func.count('*')).group_by(Reaction.product, Reaction.name):
+        if metid not in reactions:
+            reactions[metid] = {}
+        if 'productof' not in reactions[metid]:
+            reactions[metid]['productof'] = {}
+        if rname not in reactions[metid]['productof']:
+            reactions[metid]['productof'][rname] = {}
+        reactions[metid]['productof'][rname]['nr'] = nr
+
+    for metid, rname, nrp in session.query(Reaction.product, Reaction.name, func.count('*')).join(Metabolite, Metabolite.metid == Reaction.reactant).filter(Metabolite.nhits > 0).group_by(Reaction.product, Reaction.name):
+        if metid not in reactions:
+            reactions[metid] = {}
+        if 'productof' not in reactions[metid]:
+            reactions[metid]['productof'] = {}
+        if rname not in reactions[metid]['productof']:
+            reactions[metid]['productof'][rname] = {}
+        reactions[metid]['productof'][rname]['nrp'] = nrp
+
+    for metid, rname, nr in session.query(Reaction.reactant, Reaction.name, func.count('*')).group_by(Reaction.reactant, Reaction.name):
+        if metid not in reactions:
+            reactions[metid] = {}
+        if 'reactantof' not in reactions[metid]:
+            reactions[metid]['reactantof'] = {}
+        if rname not in reactions[metid]['reactantof']:
+            reactions[metid]['reactantof'][rname] = {}
+        reactions[metid]['reactantof'][rname]['nr'] = nr
+
+    for metid, rname, nrp in session.query(Reaction.reactant, Reaction.name, func.count('*')).join(Metabolite, Metabolite.metid == Reaction.product).filter(Metabolite.nhits > 0).group_by(Reaction.reactant, Reaction.name):
+        if metid not in reactions:
+            reactions[metid] = {}
+        if 'reactantof' not in reactions[metid]:
+            reactions[metid]['reactantof'] = {}
+        if rname not in reactions[metid]['reactantof']:
+            reactions[metid]['reactantof'][rname] = {}
+        reactions[metid]['reactantof'][rname]['nrp'] = nrp
+
+    for mol in session.query(Metabolite):
+        if metid in reactions:
+            reaction = reactions[metid]
+        else:
+            reaction = {}
+        mol.reactionsequence = reaction
+
+    session.commit()
 
 
 class Scan(Base):
