@@ -9,7 +9,9 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
     'Ext.ux.grid.FiltersFeature', 'Esc.chemdoodle.Column',
     'Ext.toolbar.Paging', 'Ext.grid.column.Boolean',
     'Ext.grid.column.Action', 'Ext.selection.CheckboxModel',
-    'Ext.grid.column.Number', 'Ext.grid.column.Template'
+    'Ext.grid.column.Number',
+    'Esc.magmaweb.view.metabolite.ReactionColumn',
+    'Esc.magmaweb.view.metabolite.ReactionFilter'
   ],
   store: 'Metabolites',
   viewConfig: {
@@ -98,9 +100,8 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         {text: '&Delta;Mass (ppm)', dataIndex: 'deltappm', hidden: true, filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Name', dataIndex: 'origin', flex:1, filter: { type: 'string' }},
         {
-            text: 'Reaction sequence', dataIndex: 'reactionsequence', flex:1, filter: { type: 'string' },
-            hidden: true,
-            xtype: 'templatecolumn', tpl: '<ol><tpl for="reactionsequence"><li style="list-style:decimal;list-style-position:inside;">{.}</li></tpl></ol>'
+            text: 'Reactions', dataIndex: 'reactionsequence', flex:1, filter: { type: 'reaction' },
+            xtype: 'reactioncolumn'
         },
         {text: 'Refscore', dataIndex: 'probability', filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: ['0','1','2','3'] }, hidden:true},
