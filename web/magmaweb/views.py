@@ -364,6 +364,7 @@ class InCompleteJobViews(object):
     @view_config(route_name='results',
                  renderer='results.mak',
                  request_method='GET',
+                 permission='view',
                  )
     def results(self):
         """Returns results page or
@@ -376,9 +377,6 @@ class InCompleteJobViews(object):
         # so moved GET to InCompleteJobViews
         self.job.is_complete(True)
         db = self.job.db
-        canView = has_permission('view', self.job, self.request)
-        if not canView:
-            raise HTTPUnauthorized()
         # determine if Run buttons should be shown
         canRun = has_permission('run', self.job, self.request)
         return dict(run=db.runInfo(),
@@ -389,14 +387,20 @@ class InCompleteJobViews(object):
                     job=self.job,
                     )
 
-    @view_config(context=JobError, renderer='error.mak')
+    @view_config(context=JobError,
+                 renderer='error.mak',
+                 permission='view',
+                 )
     def error(self):
         return {'exception': self.job,
                 'job': self.job.job,
                 'run': self.job.job.db.runInfo(),
                 }
 
-    @view_config(context=JobIncomplete, renderer='status.mak')
+    @view_config(context=JobIncomplete,
+                 renderer='status.mak',
+                 permission='view',
+                 )
     def job_incomplete(self):
         """Catches JobIncomplete exception when results urls are tried
         and returns status page
