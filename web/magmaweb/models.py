@@ -21,6 +21,29 @@ Base = declarative_base()
 class ReactionSequence(TypeDecorator):
     """List of reactions.
 
+    Reactions are grouped by relation to of the current row or molecule:
+
+    * reactantof, reactions which have current row as reactant
+    * productof, reactions which have current as product
+
+    Reactions is a dict with key as the reaction name and the value a dict with keys:
+
+    * nr, number of molecules which are product/reactant
+        of current molecule with this reaction
+    * nrp, number of molecules which are product/reactant
+        of current molecule with this reaction and which have been matched to at least one scan
+
+    Example:
+
+          {
+            'reactantof': [{
+               'esterase': {'nr': 123, 'nrp': 45}
+            }],
+            'productof': [{
+               'theogallin': {'nr': 678, 'nrp': 90}
+            }]
+          }
+
     Stored in database as json serialized string.
     """
     impl = Unicode
@@ -32,6 +55,8 @@ class ReactionSequence(TypeDecorator):
         return value
 
     def process_result_value(self, value, dialect):
+        if value is '':
+            value = '{}'
         if value is not None:
             value = json.loads(value)
         return value
@@ -105,12 +130,7 @@ def fill_molecules_reactionsequence(session):
         reactions[metid]['productof'][rname]['nr'] = nr
 
     for metid, rname, nrp in session.query(Reaction.product, Reaction.name, func.count('*')).join(Metabolite, Metabolite.metid == Reaction.reactant).filter(Metabolite.nhits > 0).group_by(Reaction.product, Reaction.name):
-        if metid not in reactions:
-            reactions[metid] = {}
-        if 'productof' not in reactions[metid]:
-            reactions[metid]['productof'] = {}
-        if rname not in reactions[metid]['productof']:
-            reactions[metid]['productof'][rname] = {}
+        # dont need checks for keys because query above is always superset of this query
         reactions[metid]['productof'][rname]['nrp'] = nrp
 
     for metid, rname, nr in session.query(Reaction.reactant, Reaction.name, func.count('*')).group_by(Reaction.reactant, Reaction.name):
@@ -123,19 +143,22 @@ def fill_molecules_reactionsequence(session):
         reactions[metid]['reactantof'][rname]['nr'] = nr
 
     for metid, rname, nrp in session.query(Reaction.reactant, Reaction.name, func.count('*')).join(Metabolite, Metabolite.metid == Reaction.product).filter(Metabolite.nhits > 0).group_by(Reaction.reactant, Reaction.name):
-        if metid not in reactions:
-            reactions[metid] = {}
-        if 'reactantof' not in reactions[metid]:
-            reactions[metid]['reactantof'] = {}
-        if rname not in reactions[metid]['reactantof']:
-            reactions[metid]['reactantof'][rname] = {}
+        # dont need checks for keys because query above is always superset of this query
         reactions[metid]['reactantof'][rname]['nrp'] = nrp
 
     for mol in session.query(Metabolite):
-        if metid in reactions:
-            reaction = reactions[metid]
+        if mol.metid in reactions:
+            reaction = reactions[mol.metid]
         else:
             reaction = {}
+        if 'reactantof' in reaction:
+            for reaction_name, counts in reaction['reactantof'].iteritems():
+                if 'nrp' not in counts:
+                    reaction['reactantof'][reaction_name]['nrp'] = 0
+        if 'productof' in reaction:
+            for reaction_name, counts in reaction['productof'].iteritems():
+                if 'nrp' not in counts:
+                    reaction['productof'][reaction_name]['nrp'] = 0
         mol.reactionsequence = reaction
 
     session.commit()
