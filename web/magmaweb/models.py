@@ -21,10 +21,10 @@ Base = declarative_base()
 class ReactionSequence(TypeDecorator):
     """List of reactions.
 
-    Reactions are grouped by relation to of the current row or molecule:
+    Reactions are grouped by relation to the current row or molecule:
 
     * reactantof, reactions which have current row as reactant
-    * productof, reactions which have current as product
+    * productof, reactions which have current row as product
 
     Reactions is a dict with key as the reaction name and the value a dict with keys:
 
@@ -35,13 +35,15 @@ class ReactionSequence(TypeDecorator):
 
     Example:
 
+    .. code-block:: javascript
+
           {
-            'reactantof': [{
+            'reactantof': {
                'esterase': {'nr': 123, 'nrp': 45}
-            }],
-            'productof': [{
+            },
+            'productof': {
                'theogallin': {'nr': 678, 'nrp': 90}
-            }]
+            }
           }
 
     Stored in database as json serialized string.
