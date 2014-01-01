@@ -213,7 +213,14 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
                     'nhits': 1,
                     'origin': u'pyrocatechol',
                     'probability': 1.0,
-                    'reactionsequence': [u'PARENT'],
+                    'reactionsequence': {
+                                             u'reactantof': {
+                                                 u'esterase': {
+                                                     u'nr': 2,
+                                                     u'nrp': 1
+                                                 }
+                                             }
+                                         },
                     'smiles': u'Oc1ccccc1O',
                     'mim': 110.03677, 'logp':1.231,
                     'assigned': False,
@@ -225,7 +232,14 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
                     'nhits': 1,
                     'origin': u"dihydroxyphenyl-valerolactone",
                     'probability': 1,
-                    'reactionsequence': [u"PARENT", u"CHILD"],
+                    'reactionsequence': {
+                                             u'productof': {
+                                                 u'theogallin': {
+                                                     u'nr': 1,
+                                                     u'nrp': 0
+                                                 }
+                                             }
+                                         },
                     'smiles': u"O=C1OC(Cc2ccc(O)c(O)c2)CC1",
                     'mim': 208.07355, 'logp':2.763,
                     'assigned': False,
@@ -475,7 +489,7 @@ class JobDbMetabolites2csvTestCase(JobDbTestCaseAbstract):
         csvwriter.writerow({'origin': 'pyrocatechol',
                             'smiles': 'Oc1ccccc1O',
                             'probability': 1.0,
-                            'reactionsequence': 'PARENT',
+                            'reactionsequence': '{"reactantof": {"esterase": {"nr": 2, "nrp": 1}}}',
                             'nhits': 1,
                             'molformula': 'C6H6O2',
                             'isquery': True,
@@ -486,7 +500,7 @@ class JobDbMetabolites2csvTestCase(JobDbTestCaseAbstract):
         csvwriter.writerow({'origin': 'dihydroxyphenyl-valerolactone',
                             'smiles': 'O=C1OC(Cc2ccc(O)c(O)c2)CC1',
                             'probability': 1.0,
-                            'reactionsequence': 'PARENT|CHILD',
+                            'reactionsequence': '{"productof": {"theogallin": {"nr": 1, "nrp": 0}}}',
                             'nhits': 1,
                             'molformula': 'C11H12O4',
                             'isquery': True,
@@ -511,7 +525,8 @@ class JobDbMetabolites2csvTestCase(JobDbTestCaseAbstract):
         url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
         url1 += '?cid=289">CID: 289</a>'
         csvwriter.writerow({'origin': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
-                            'probability': 1.0, 'reactionsequence': 'PARENT',
+                            'probability': 1.0,
+                            'reactionsequence': '{"reactantof": {"esterase": {"nr": 2, "nrp": 1}}}',
                             'nhits': 1, 'molformula': 'C6H6O2',
                             'isquery': True, 'score': 200.0, 'mim': 110.03677,
                             'logp': 1.231,
@@ -551,7 +566,7 @@ Oc1ccccc1O
 1.0
 
 > <reactionsequence>
-PARENT
+{{"reactantof": {{"esterase": {{"nr": 2, "nrp": 1}}}}}}
 
 > <nhits>
 1
@@ -579,8 +594,7 @@ O=C1OC(Cc2ccc(O)c(O)c2)CC1
 1.0
 
 > <reactionsequence>
-PARENT
-CHILD
+{{"productof": {{"theogallin": {{"nr": 1, "nrp": 0}}}}}}
 
 > <nhits>
 1
@@ -618,7 +632,7 @@ Oc1ccccc1O
 1.0
 
 > <reactionsequence>
-PARENT
+{{"reactantof": {{"esterase": {{"nr": 2, "nrp": 1}}}}}}
 
 > <nhits>
 1

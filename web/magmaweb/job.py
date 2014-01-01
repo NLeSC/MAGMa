@@ -774,7 +774,7 @@ class JobDb(object):
         csvwriter = csv.DictWriter(csvstr, headers, extrasaction='ignore')
         csvwriter.writeheader()
         for m in metabolites:
-            m['reactionsequence'] = '|'.join(m['reactionsequence'])
+            m['reactionsequence'] = json.dumps(m['reactionsequence'])
             csvwriter.writerow(m)
 
         return csvstr
@@ -806,7 +806,7 @@ class JobDb(object):
 
         for m in metabolites:
             s += m['mol']
-            m['reactionsequence'] = '\n'.join(m['reactionsequence'])
+            m['reactionsequence'] = json.dumps(m['reactionsequence'])
             for p in props:
                 s += '> <{}>\n{}\n\n'.format(p, m[p])
             s += '$$$$' + "\n"
