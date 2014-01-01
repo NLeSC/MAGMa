@@ -75,6 +75,7 @@ Ext.define('Esc.magmaweb.view.metabolite.ReactionFilter', {
         return value;
     },
     setValue: function(value) {
+        var me = this;
         if ('reactant' in value) {
             me.reactant.setValue(value['reactant']);
         } else {

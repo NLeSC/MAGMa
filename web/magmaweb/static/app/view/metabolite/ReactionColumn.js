@@ -6,20 +6,24 @@
  * {
  *   'reactantof': [{
  *      'esterase': {'nr': 123, 'nrp': 45}
- *   }]
+ *   }],
  *   'productof': [{
- *      'theogallin': {'nr: 678, 'nrp': 90}
+ *      'theogallin': {'nr': 678, 'nrp': 90}
  *   }]
  * }
  *
  * Will be rendered as
  * <ul>
- *   <li class="reaction-col reaction-col-r>Reactant of<ul>
- *     <li class="reaction-col reaction-col-r-0" data-qtip="Click to see products">esterase (123/45)</li>
- *   </ul></li>
- *   <li class="reaction-col reaction-col-p>Product of<ul>
- *     <li class="reaction-col reaction-col-p-0" data-qtip="Click to see reactants">theogallin (678/90)</li>
- *   </ul></li>
+ *     <li><span class="reaction-col-item reaction-col-r-g" data-qtip="Click to see products of this molecule">Reactant of</span>
+ *         <ul class="reaction-col-items">
+ *            <li>- <span class="reaction-col-item reaction-col-r-i" data-qtip="Click to see products of this molecule with esterase reaction">esterase</span> (123/45)</li>
+ *         </ul>
+ *     </li>
+ *     <li><span class="reaction-col-item reaction-col-p-g" data-qtip="Click to see reactants of this molecule">Product of</span>
+ *        <ul class="reaction-col-items">
+ *            <li>- <span class="reaction-col-item reaction-col-p-i" data-qtip="Click to see reactants of this molecule with theogallin reaction">theogallin</span> (678/90)</li>
+ *        </ul>
+ *    </li>
  * </ul>
  *
  * Clicking on 'esterase' will filter molecules on which are products of 'esterase' reaction with current molecule as reactant.
@@ -30,60 +34,65 @@ Ext.define('Esc.magmaweb.view.metabolite.ReactionColumn', {
     alias: ['widget.reactioncolumn'],
     alternateClassName: 'Ext.grid.ReactionColumn',
     tpl: '<ul>' +
-         '  <li class="reaction-col-r-g"><span class="reaction-col-item" data-qtip="Click to see products of this molecule">Reactant of</span><ul class="reaction-col-items">' +
-         '    <tpl foreach="reactionsequence.reactantof"><li>- <span class="reaction-col-item reaction-col-r-{[xindex]} data-qtip="Click to see products of this reaction">{$}</span> ({nr}/{nrp})</li></tpl>' +
+         '  <tpl if="reactionsequence.reactantof">' +
+         '  <li><span class="reaction-col-item reaction-col-r-g" data-qtip="Click to see products of this molecule">Reactant of</span><ul class="reaction-col-items">' +
+         '    <tpl foreach="reactionsequence.reactantof"><li>- <span class="reaction-col-item reaction-col-r-i" data-qtip="Click to see products of this molecule with {$} reaction">{$}</span> ({nr}/{nrp})</li></tpl>' +
          '  </ul></li>' +
-         '  <li class="reaction-col-p-g"><span class="reaction-col-item" data-qtip="Click to see reactants of this molecule">Product of</span><ul class="reaction-col-items">' +
-         '    <tpl foreach="reactionsequence.productof"><li>- <span class="reaction-col-item reaction-col-p-{[xindex]}" data-qtip="Click to see reactants of this reaction">{$}</span> ({nr}/{nrp})</li></tpl>' +
+         '  </tpl>' +
+         '  <tpl if="reactionsequence.productof">' +
+         '  <li><span class="reaction-col-item reaction-col-p-g" data-qtip="Click to see reactants of this molecule">Product of</span><ul class="reaction-col-items">' +
+         '    <tpl foreach="reactionsequence.productof"><li>- <span class="reaction-col-item reaction-col-p-i" data-qtip="Click to see reactants of this molecule with {$} reaction">{$}</span> ({nr}/{nrp})</li></tpl>' +
          '  </ul></li>' +
+         '  </tpl>' +
          '</ul>',
-    groupRe: new RegExp('reaction-col-(\\w)-g'),
-    itemRe: new RegExp('reaction-col-(\\w)-(\\d+)'),
+    itemRe: new RegExp('reaction-col-(\\w)-(\\w)'),
+    getFilter: function(view) {
+        return view.up('grid').filters.getFilter('reactionsequence');
+    },
     processEvent : function(type, view, cell, recordIndex, cellIndex, e, record, row){
-        var me = this,
-        target = e.getTarget(),
-        match,
-        item, fn,
-        key = type == 'keydown' && e.getKey(),
-        disabled;
-        var reaction_filter = view.up('grid').filters.getFilter('reactionsequence');
+        var me = this, target = e.getTarget(), match;
+        var reaction_filter = this.getFilter(view);
 
-//        if (key && !Ext.fly(target).findParent(view.getCellSelector())) {
-//            target = Ext.fly(cell).down('.reaction-col-item', true);
-//        }
-//
-//        if (type === 'click') {
-//            // reactant of or product of clicked
-//            match = target.className.match(me.groupRe);
-//            if match {
-//                if (match[1] === 'r') {
-//                    reaction_filter.setValue({
-//                        'reactant': record.data.metid
-//                    });
-//                } else if (match[1] === 'p') {
-//                    reaction_filter.setValue({
-//                        'product': record.data.metid
-//                    });
-//                }
-//            }
-//
-//            // reaction name
-//            match = target.className.match(me.itemRe);
-//            if match {
-//                if (match[1] === 'r') {
-//                    reaction_filter.setValue({
-//                        'reactant': record.data.metid,
-//                    });
-//                } else if (match[1] === 'p') {
-//                    reaction_filter.setValue({
-//                        'product': record.data.metid
-//                    });
-//                }
-//            }
-//        }
-        // TODO attach click event to reaction and perform filtering
-        // See Ext-grid-column-Action
+        // only listen for click events
+        if (type !== 'click') {
+            return false;
+        }
 
-        return me.callParent(arguments);
+        if (match = target.className.match(me.itemRe)) {
+            if (match[2] === 'g') {
+                if (match[1] === 'r') {
+                    // 'reactant of' clicked
+                    reaction_filter.setValue({
+                        'reactant': record.data.metid
+                    });
+                    return reaction_filter.setActive(true);
+                } else if (match[1] === 'p') {
+                    // 'product of' clicked
+                    reaction_filter.setValue({
+                        'product': record.data.metid
+                    });
+                    return reaction_filter.setActive(true);
+                }
+            } else if (match[2] === 'i') {
+                if (match[1] === 'r') {
+                    // reaction name of reactant clicked
+                    reaction_filter.setValue({
+                        'name': target.innerText,
+                        'reactant': record.data.metid,
+                    });
+                    return reaction_filter.setActive(true);
+                } else if (match[1] === 'p') {
+                    // reaction name of product clicked
+                    reaction_filter.setValue({
+                        'name': target.innerText,
+                        'product': record.data.metid
+                    });
+                    return reaction_filter.setActive(true);
+                }
+            }
+        }
+
+        // do not select molecule with this column.
+        return false;
     }
 });
