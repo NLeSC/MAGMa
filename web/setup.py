@@ -21,7 +21,9 @@ requires = ['pyramid==1.4.5',
             'Paste',
             # Test dependencies
             'WebTest',
-            'mock'
+            'mock',
+            # Database migrations
+            'alembic',
             ]
 
 if sys.version_info[:3] < (2, 5, 0):
