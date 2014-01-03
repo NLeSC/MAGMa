@@ -330,6 +330,30 @@ describe('Scans controller', function() {
       Ext.util.Observable.releaseCapture(ctrl.application);
     });
 
+    it('one scan, prev other scan selected', function() {
+        spyOn(mocked_chromatogram, 'hasData').andReturn(true);
+        spyOn(mocked_chromatogram, 'setMarkers');
+        spyOn(mocked_chromatogram, 'clearScanSelection');
+        var f = { callback: function() {} };
+        spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+        Ext.util.Observable.capture(ctrl.application, f.callback);
+
+        mocked_chromatogram.selectedScan = 204;
+        var scans = [{
+            "id" : 1133,
+            "rt" : 1624.99
+        }, {
+            "id" : 1134,
+            "rt" : 1634.99
+        }];
+        ctrl.setScans(scans);
+
+        expect(mocked_chromatogram.setMarkers).toHaveBeenCalledWith(scans);
+        expect(mocked_chromatogram.clearScanSelection).toHaveBeenCalledWith();
+        expect(f.callback).toHaveBeenCalledWith('noselectscan');
+        Ext.util.Observable.releaseCapture(ctrl.application);
+      });
+
     it('selected scan', function() {
       spyOn(mocked_chromatogram, 'hasData').andReturn(true);
       spyOn(mocked_chromatogram, 'setMarkers');
