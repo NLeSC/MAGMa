@@ -57,10 +57,13 @@ class ReactionSequence(TypeDecorator):
         return value
 
     def process_result_value(self, value, dialect):
-        if value is '':
-            value = '{}'
+        if value is u'':
+            value = u'{}'
         if value is not None:
-            value = json.loads(value)
+            try:
+                value = json.loads(value)
+            except ValueError:
+                value = {}
         return value
 
 
@@ -127,9 +130,7 @@ def fill_molecules_reactionsequence(session):
             reactions[metid] = {}
         if 'productof' not in reactions[metid]:
             reactions[metid]['productof'] = {}
-        if rname not in reactions[metid]['productof']:
-            reactions[metid]['productof'][rname] = {}
-        reactions[metid]['productof'][rname]['nr'] = nr
+        reactions[metid]['productof'][rname] = {'nr': nr}
 
     for metid, rname, nrp in session.query(Reaction.product, Reaction.name, func.count('*')).join(Metabolite, Metabolite.metid == Reaction.reactant).filter(Metabolite.nhits > 0).group_by(Reaction.product, Reaction.name):
         # dont need checks for keys because query above is always superset of this query
@@ -140,9 +141,7 @@ def fill_molecules_reactionsequence(session):
             reactions[metid] = {}
         if 'reactantof' not in reactions[metid]:
             reactions[metid]['reactantof'] = {}
-        if rname not in reactions[metid]['reactantof']:
-            reactions[metid]['reactantof'][rname] = {}
-        reactions[metid]['reactantof'][rname]['nr'] = nr
+        reactions[metid]['reactantof'][rname] = {'nr': nr}
 
     for metid, rname, nrp in session.query(Reaction.reactant, Reaction.name, func.count('*')).join(Metabolite, Metabolite.metid == Reaction.product).filter(Metabolite.nhits > 0).group_by(Reaction.reactant, Reaction.name):
         # dont need checks for keys because query above is always superset of this query
