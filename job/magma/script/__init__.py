@@ -108,6 +108,10 @@ class MagmaCommand(object):
         sc.add_argument('db_out', type=str, help="Output qlite database file with selected results")
         sc.set_defaults(func=self.select)
 
+        sc = subparsers.add_parser("writeSDF", help=self.writeSDF.__doc__, description=self.writeSDF.__doc__)
+        sc.add_argument('db', type=str, help="Sqlite database file with results")
+        sc.set_defaults(func=self.writeSDF)
+        
         sc = subparsers.add_parser("sd2smiles", help=self.sd2smiles.__doc__, description=self.sd2smiles.__doc__)
         sc.add_argument('input', type=argparse.FileType('rb'), help="Sd file")
         sc.add_argument('output', type=argparse.FileType('w'), help="File with smiles which can be used as metabolite reactantss")
@@ -272,6 +276,12 @@ class MagmaCommand(object):
         magma_session = self.get_magma_session(args.db_out)
         select_engine = magma_session.get_select_engine()
         select_engine.select_fragment(args.frag_id)
+
+    def writeSDF(self, args, magma_session=None):
+        if magma_session == None:
+            magma_session = self.get_magma_session(args.db)
+        analysis_engine = magma_session.get_data_analysis_engine()
+        analysis_engine.write_SDF()
 
     def sd2smiles(self, args):
         """ Convert sd file to smiles """
