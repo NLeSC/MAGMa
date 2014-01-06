@@ -221,7 +221,9 @@ class StructureEngine(object):
                 "peptide": pkg_resources.resource_filename( #@UndefinedVariable
                                                            'magma', "data/peptide.cactvs.smirks"),
                 "ptm": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/ptm.cactvs.smirks")
+                                                           'magma', "data/ptm.cactvs.smirks"),
+                "plant": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/plant.cactvs.smirks")
                 }
         try:
             parent = self.db_session.query(Metabolite).filter_by(metid=metid).one()
