@@ -14,14 +14,14 @@
  *
  * Will be rendered as
  * <ul>
- *     <li><span class="reaction-col-item reaction-col-r-g" data-qtip="Click to see products of this molecule">Reactant of</span>
+ *     <li><span class="reaction-col-item reaction-col-r-g" data-qtip="Click to see products of this molecule"><U>Products via</U></span>
  *         <ul class="reaction-col-items">
- *            <li>- <span class="reaction-col-item reaction-col-r-i" data-qtip="Click to see products of this molecule with esterase reaction">esterase</span> (123/45)</li>
+ *            <li>&nbsp&nbsp&nbsp&nbsp<span class="reaction-col-item reaction-col-r-i" data-qtip="Click to see products of this molecule via esterase reaction">esterase</span> (123/45)</li>
  *         </ul>
  *     </li>
- *     <li><span class="reaction-col-item reaction-col-p-g" data-qtip="Click to see reactants of this molecule">Product of</span>
+ *     <li><span class="reaction-col-item reaction-col-p-g" data-qtip="Click to see reactants of this molecule"><U>Reactants via</U></span>
  *        <ul class="reaction-col-items">
- *            <li>- <span class="reaction-col-item reaction-col-p-i" data-qtip="Click to see reactants of this molecule with theogallin reaction">theogallin</span> (678/90)</li>
+ *            <li>&nbsp&nbsp&nbsp&nbsp<span class="reaction-col-item reaction-col-p-i" data-qtip="Click to see reactants of this molecule via theogallin reaction">theogallin</span> (678/90)</li>
  *        </ul>
  *    </li>
  * </ul>
@@ -35,13 +35,13 @@ Ext.define('Esc.magmaweb.view.metabolite.ReactionColumn', {
     alternateClassName: 'Ext.grid.ReactionColumn',
     tpl: '<ul>' +
          '  <tpl if="reactionsequence.reactantof">' +
-         '  <li><span class="reaction-col-item reaction-col-r-g" data-qtip="Click to see products of this molecule">Reactant of</span><ul class="reaction-col-items">' +
-         '    <tpl foreach="reactionsequence.reactantof"><li>- <span class="reaction-col-item reaction-col-r-i" data-qtip="Click to see products of this molecule with {$} reaction">{$}</span> ({nr}/{nrp})</li></tpl>' +
+         '  <li><span class="reaction-col-item reaction-col-r-g" data-qwidth="100" data-qtip="Click to see products of this molecule"><U>Products via</U></span><ul class="reaction-col-items">' +
+         '    <tpl foreach="reactionsequence.reactantof"><li>&nbsp&nbsp&nbsp&nbsp<span class="reaction-col-item reaction-col-r-i" data-qwidth="100" data-qtip="Click to see products of this molecule via {$} reaction">{$}</span> ({nr}/{nrp})</li></tpl>' +
          '  </ul></li>' +
          '  </tpl>' +
          '  <tpl if="reactionsequence.productof">' +
-         '  <li><span class="reaction-col-item reaction-col-p-g" data-qtip="Click to see reactants of this molecule">Product of</span><ul class="reaction-col-items">' +
-         '    <tpl foreach="reactionsequence.productof"><li>- <span class="reaction-col-item reaction-col-p-i" data-qtip="Click to see reactants of this molecule with {$} reaction">{$}</span> ({nr}/{nrp})</li></tpl>' +
+         '  <li><span class="reaction-col-item reaction-col-p-g" data-qwidth="100" data-qtip="Click to see reactants of this molecule"><U>Reactants via</U></span><ul class="reaction-col-items">' +
+         '    <tpl foreach="reactionsequence.productof"><li>&nbsp&nbsp&nbsp&nbsp<span class="reaction-col-item reaction-col-p-i" data-qwidth="100" data-qtip="Click to see reactants of this molecule via {$} reaction">{$}</span> ({nr}/{nrp})</li></tpl>' +
          '  </ul></li>' +
          '  </tpl>' +
          '</ul>',
