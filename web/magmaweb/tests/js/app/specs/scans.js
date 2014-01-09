@@ -300,7 +300,7 @@ describe('Scans controller', function() {
       }];
       ctrl.setScans(scans);
 
-      expect(ctrl.selectScan).toHaveBeenCalledWith(1133);
+      expect(ctrl.selectScan).not.toHaveBeenCalledWith(1133);
       expect(mocked_chromatogram.setMarkers).toHaveBeenCalledWith(scans);
       expect(mocked_chromatogram.selectScan).not.toHaveBeenCalled();
       expect(f.callback).not.toHaveBeenCalledWith('noscansfound');
