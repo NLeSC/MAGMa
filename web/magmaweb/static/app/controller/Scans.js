@@ -320,10 +320,6 @@ Ext.define('Esc.magmaweb.controller.Scans', {
          }
          chromatogram.setMarkers(scans);
        }
-       // if only one scan then select scan
-       if (scans.length == 1 && chromatogram.selectedScan != scans[0].id) {
-         this.selectScan(scans[0].id);
-       }
     } else {
       this.application.fireEvent('noscansfound');
     }
