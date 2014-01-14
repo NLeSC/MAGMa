@@ -110,6 +110,7 @@ describe('Scans controller', function() {
       it('when has a single scan then hide chromatogram', function() {
           spyOn(mocked_chromatogram, 'setLoading');
           spyOn(mocked_chromatogram, 'setData');
+          spyOn(mocked_chromatogram, 'selectScan');
           spyOn(ctrl, 'resetScans');
     	  var mocked_panel = jasmine.createSpyObj('panel', ['hide']);
     	  spyOn(ctrl, 'getChromatogramPanel').andReturn(mocked_panel);
@@ -117,11 +118,13 @@ describe('Scans controller', function() {
           spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
           Ext.util.Observable.capture(ctrl.application, f.callback);
 
-          var data = { scans:[1], cutoff:null };
+          var data = { scans:[{id:1234}], cutoff:null };
           ctrl.loadChromatogramCallback(data);
 
           expect(mocked_panel.hide).toHaveBeenCalledWith();
+          expect(mocked_chromatogram.selectScan).toHaveBeenCalledWith(1234, false);
           expect(f.callback).toHaveBeenCalledWith('chromatogramload', jasmine.any(Object));
+          expect(f.callback).toHaveBeenCalledWith('selectscan', 1234);
           Ext.util.Observable.releaseCapture(ctrl.application);
       });
   });

@@ -207,8 +207,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
         // when there are no scans then user should upload some
         me.showUploadForm();
     } else if (data.scans.length === 1) {
-        // hide when chromatogram consists of 1 scan
-        // on molecule load the scan will be selected
+        me.selectScan(data.scans[0].id, false);
         me.getChromatogramPanel().hide();
     }
     me.application.fireEvent('chromatogramload', chromatogram);
