@@ -26,24 +26,24 @@ Ext.define('Esc.magmaweb.view.metabolite.ReactionFilter', {
         var menu = Ext.create('Ext.menu.Menu');
         me.reactant = Ext.create('Ext.form.field.Number', {
             enableKeyEvents: true,
-            labelWidth: 80,
-            fieldLabel: 'Reactant',
+            labelWidth: 120,
+            fieldLabel: 'Products of (ID)',
         });
         me.reactant.on('specialkey', this.onSpecialKey, this);
         menu.add(me.reactant);
 
         me.product = Ext.create('Ext.form.field.Number', {
             enableKeyEvents: true,
-            labelWidth: 80,
-            fieldLabel: 'Product'
+            labelWidth: 120,
+            fieldLabel: 'Reactants of (ID)'
         });
         me.product.on('specialkey', this.onSpecialKey, this);
         menu.add(me.product);
 
         me.reaction_name = Ext.create('Ext.form.field.Text', {
             enableKeyEvents: true,
-            labelWidth: 80,
-            fieldLabel: 'Name'
+            labelWidth: 120,
+            fieldLabel: 'Via reaction'
         });
         me.reaction_name.on('specialkey', this.onSpecialKey, this);
         menu.add(me.reaction_name);
