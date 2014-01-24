@@ -23,8 +23,8 @@ class ReactionSequence(TypeDecorator):
 
     Reactions are grouped by relation to the current row or molecule:
 
-    * reactantof, reactions which have current row as reactant
-    * productof, reactions which have current row as product
+    * products, reactions which have current row as reactant
+    * reactants, reactions which have current row as product
 
     Reactions is a dict with key as the reaction name and the value a dict with keys:
 
@@ -38,11 +38,11 @@ class ReactionSequence(TypeDecorator):
     .. code-block:: javascript
 
           {
-            'reactantof': {
+            'reactants': {
                'esterase': {'nr': 123, 'nrp': 45}
             },
-            'productof': {
-               'theogallin': {'nr': 678, 'nrp': 90}
+            'products': {
+               'sulfation': {'nr': 678, 'nrp': 90}
             }
           }
 
@@ -128,40 +128,31 @@ def fill_molecules_reactionsequence(session):
     for metid, rname, nr in session.query(Reaction.product, Reaction.name, func.count('*')).group_by(Reaction.product, Reaction.name):
         if metid not in reactions:
             reactions[metid] = {}
-        if 'productof' not in reactions[metid]:
-            reactions[metid]['productof'] = {}
-        reactions[metid]['productof'][rname] = {'nr': nr}
+        if 'reactants' not in reactions[metid]:
+            reactions[metid]['reactants'] = {}
+        reactions[metid]['reactants'][rname] = {'nr': nr}
 
     for metid, rname, nrp in session.query(Reaction.product, Reaction.name, func.count('*')).join(Metabolite, Metabolite.metid == Reaction.reactant).filter(Metabolite.nhits > 0).group_by(Reaction.product, Reaction.name):
         # dont need checks for keys because query above is always superset of this query
-        reactions[metid]['productof'][rname]['nrp'] = nrp
+        reactions[metid]['reactants'][rname]['nrp'] = nrp
 
     for metid, rname, nr in session.query(Reaction.reactant, Reaction.name, func.count('*')).group_by(Reaction.reactant, Reaction.name):
         if metid not in reactions:
             reactions[metid] = {}
-        if 'reactantof' not in reactions[metid]:
-            reactions[metid]['reactantof'] = {}
-        reactions[metid]['reactantof'][rname] = {'nr': nr}
+        if 'products' not in reactions[metid]:
+            reactions[metid]['products'] = {}
+        reactions[metid]['products'][rname] = {'nr': nr}
 
     for metid, rname, nrp in session.query(Reaction.reactant, Reaction.name, func.count('*')).join(Metabolite, Metabolite.metid == Reaction.product).filter(Metabolite.nhits > 0).group_by(Reaction.reactant, Reaction.name):
         # dont need checks for keys because query above is always superset of this query
-        reactions[metid]['reactantof'][rname]['nrp'] = nrp
+        reactions[metid]['products'][rname]['nrp'] = nrp
 
     for mol in session.query(Metabolite):
         if mol.metid in reactions:
             reaction = reactions[mol.metid]
         else:
             reaction = {}
-        if 'reactantof' in reaction:
-            for reaction_name, counts in reaction['reactantof'].iteritems():
-                if 'nrp' not in counts:
-                    reaction['reactantof'][reaction_name]['nrp'] = 0
-        if 'productof' in reaction:
-            for reaction_name, counts in reaction['productof'].iteritems():
-                if 'nrp' not in counts:
-                    reaction['productof'][reaction_name]['nrp'] = 0
         mol.reactionsequence = reaction
-
     session.commit()
 
 
