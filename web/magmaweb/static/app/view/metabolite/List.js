@@ -56,15 +56,16 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         c.loadMolecule(ChemDoodle.readMOL(value));
         var tip = Ext.create('Ext.tip.ToolTip', {
           target: id,
+          dismissDelay: 0,
           html: null,
           listeners: {
             show: function(tip) {
               tip.setSize(300, 300);
             },
             render: function(tip) {
-              var c = new ChemDoodle.ViewerCanvas(id+'-'+tip.id, 300, 300);
+              var c = new ChemDoodle.ViewerCanvas(id+'-'+tip.id, 290, 290);
               c.loadMolecule(ChemDoodle.readMOL(value));
-            }
+             }
           }
         });
         tip.update('<canvas id="'+id+'-'+tip.id+'"></canvas>');
@@ -87,24 +88,24 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
 
     Ext.apply(this, {
       columns: [
-        {text: 'ID', dataIndex: 'metid', hidden: true, filter: { type: 'numeric' }},
-        {text: 'Scans', dataIndex: 'nhits', filter: {
+        {text: 'ID', width:40, dataIndex: 'metid', hidden: true, filter: { type: 'numeric' }},
+        {text: 'Scans', width:50, dataIndex: 'nhits', filter: {
             type: 'numeric', value:{gt:0}, active: true
         }},
-        {text: 'Assigned', dataIndex: 'assigned', hidden: false, xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
+        {text: 'Assigned', width:60, dataIndex: 'assigned', hidden: false, xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
         {text: 'Candidate score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
         molcol,
         {text: 'Inchikey', dataIndex: 'smiles', hidden:true},
-        {text: 'Formula', dataIndex: 'molformula', filter: { type: 'string' }},
-        {text: 'Monoisotopic mass', dataIndex: 'mim', filter: { type: 'numeric' }, hidden: false, xtype: 'numbercolumn', format: '0.00000'},
-        {text: '&Delta;Mass (ppm)', dataIndex: 'deltappm', hidden: true, filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
+        {text: 'Formula', width:100, dataIndex: 'molformula', filter: { type: 'string' }},
+        {text: 'Mass', width:80, dataIndex: 'mim', filter: { type: 'numeric' }, hidden: false, xtype: 'numbercolumn', format: '0.00000'},
+        {text: '&Delta;Mass (ppm)', width:80, dataIndex: 'deltappm', hidden: true, filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Name', dataIndex: 'origin', flex:1, filter: { type: 'string' }},
         {
             text: 'Reactions', dataIndex: 'reactionsequence', flex:1, filter: { type: 'reaction' },
             xtype: 'reactioncolumn'
         },
-        {text: 'Refscore', dataIndex: 'probability', filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
-        {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: ['0','1','2','3'] }, hidden:true},
+        {text: 'Refscore', width:80, dataIndex: 'probability', filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
+        // {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: ['0','1','2','3'] }, hidden:true},
         {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Reference', dataIndex: 'reference', filter: { type: 'string' }, sortable: false },
         {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', hidden: true, trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
