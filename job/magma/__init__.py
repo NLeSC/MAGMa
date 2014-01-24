@@ -10,7 +10,7 @@ from sqlalchemy import create_engine,and_,desc,distinct
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
-from models import Base, Metabolite, Reaction, Scan, Peak, Fragment, Run
+from models import Base, Metabolite, Reaction, fill_molecules_reactions, Scan, Peak, Fragment, Run
 import requests,functools,macauthlib #required to update callback url
 from requests.auth import AuthBase
 import pp
@@ -92,6 +92,8 @@ class MagmaSession(object):
                  key
                  ):
         return CallBackEngine(id,key)
+    def fill_molecules_reactions(self):
+        fill_molecules_reactions(self.db_session)
     def commit(self):
         self.db_session.commit()
     def close(self):
@@ -131,8 +133,8 @@ class StructureEngine(object):
         self.metabolism_types=rundata.metabolism_types.split(',')
         self.n_reaction_steps=rundata.n_reaction_steps
 
-    def add_structure(self,molblock,name,prob,level,sequence,isquery,mim=None,natoms=None,inchikey=None,molform=None,reference=None,logp=None,mass_filter=9999):
-        molecule=types.MoleculeType(molblock,name,prob,level,sequence,isquery,mim,natoms,inchikey,molform,reference,logp)
+    def add_structure(self,molblock,name,prob,level,isquery,mim=None,natoms=None,inchikey=None,molform=None,reference=None,logp=None,mass_filter=9999):
+        molecule=types.MoleculeType(molblock,name,prob,level,isquery,mim,natoms,inchikey,molform,reference,logp)
         self.add_molecule(molecule,mass_filter)
 
     def add_molecule(self,molecule,mass_filter=9999,check_duplicates=True,merge=False):
@@ -142,7 +144,6 @@ class StructureEngine(object):
             mol=unicode(molecule.molblock, 'utf-8', 'xmlcharrefreplace'),
             level=molecule.level,
             probability=molecule.probability,
-            reactionsequence=molecule.reactionsequence,
             smiles=molecule.inchikey,
             molformula=molecule.molformula,
             isquery=molecule.isquery,
@@ -164,8 +165,6 @@ class StructureEngine(object):
                         metab.reference=molecule.reference
                     if molecule.probability > 0:
                         metab.probability=molecule.probability
-                    if molecule.reactionsequence != "":
-                        metab.reactionsequence=unicode(str(metab.reactionsequence)+'</br>'+molecule.reactionsequence)
                 else:
                     if dups[0].probability < molecule.probability:
                         metab.metid=dups[0].metid
@@ -269,12 +268,11 @@ class StructureEngine(object):
                         line=reactor.stdout.readline()
                 line=reactor.stdout.readline()
             if reaction!='PARENT':
-                molecule=types.MoleculeType(mol,"",None,None,str(metid)+'&gt&gt'+reaction,isquery)
+                molecule=types.MoleculeType(mol,"",None,None,isquery)
                 new_metid=self.add_molecule(molecule,merge=True)
                 metids.add(new_metid)
                 reactid=self.db_session.query(Reaction.reactid).filter(Reaction.reactant==metid,Reaction.product==new_metid,Reaction.name==reaction).all()
                 if len(reactid)==0:
-                    # parent.reactionsequence+=unicode('</br>'+str(new_metid)+'&lt&lt'+reaction)
                     react=Reaction(
                         reactant=metid,
                         product=new_metid,
@@ -911,7 +909,6 @@ class PubChemEngine(object):
                            inchikey=inchikey,
                            prob=refscore,
                            level=1,
-                           sequence="",
                            isquery=1,
                            reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
                                      str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>',
@@ -946,7 +943,6 @@ class KeggEngine(object):
                            inchikey=inchikey,
                            prob=None,
                            level=1,
-                           sequence="",
                            isquery=1,
                            reference=keggrefs,
                            logp=float(logp)/10.0,
@@ -980,7 +976,6 @@ class HmdbEngine(object):
                            inchikey=inchikey,
                            prob=None,
                            level=1,
-                           sequence="",
                            isquery=1,
                            reference=hmdb_refs,
                            logp=float(logp)/10.0,
@@ -1014,7 +1009,6 @@ class MetaCycEngine(object):
                            inchikey=inchikey,
                            prob=None,
                            level=1,
-                           sequence="",
                            isquery=1,
                            reference=metacyc_refs,
                            logp=float(logp)/10.0,
@@ -1047,8 +1041,8 @@ class SelectEngine(object):
             dot_product=self.dot_product_scans(ref_scan,query_scan)
             compounds = self.db_session.query(Metabolite).filter(Metabolite.metid.in_(
                             self.db_session.query(Fragment.metid).filter(Fragment.scanid==query_scan))).all()
-            for compound in compounds:
-                compound.reactionsequence+='Scan: '+str(query_scan)+' - Similarity: '+str(dot_product)+'\n'
+            #for compound in compounds:
+            #    compound.reactionsequence+='Scan: '+str(query_scan)+' - Similarity: '+str(dot_product)+'\n'
             self.db_session.add(compound)
         self.db_session.commit()
 
@@ -1099,7 +1093,7 @@ class DataAnalysisEngine(object):
         self.db_session = db_session
 
     def get_scores(self,scanid):
-        return self.db_session.query(Fragment.score,Metabolite.reactionsequence,Metabolite.molformula).\
+        return self.db_session.query(Fragment.score,Metabolite.molformula).\
             join((Metabolite,and_(Fragment.metid==Metabolite.metid))).\
             filter(Fragment.parentfragid==0).\
             filter(Fragment.scanid==scanid).\
