@@ -91,13 +91,14 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
         c.loadMolecule(m);
         var tip = Ext.create('Ext.tip.ToolTip', {
             target: id,
+            dismissDelay: 0,
             listeners: {
                 show: function(tip) {
                     tip.setSize(300, 300);
                 },
                 render: function(tip,e) {
                     Ext.log({}, 'Drawing tooltip for '+id);
-                    var c = new ChemDoodle.ViewerCanvas(id+'-'+tip.id, 300, 300);
+                    var c = new ChemDoodle.ViewerCanvas(id+'-'+tip.id, 290, 290);
                     c.specs.bonds_color = 'cyan';
                     c.specs.atoms_color = 'cyan';
                     c.loadMolecule(m);
