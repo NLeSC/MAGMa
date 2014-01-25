@@ -211,13 +211,17 @@ class StructureEngine(object):
                 exec_reactor+=" "+"parallel"
             metabolism_files={
                 "phase1": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/sygma_rules4.0_GE_0.1.cactvs.phase1.smirks"),
+                                                           'magma', "data/sygma_rules4.0.cactvs.phase1.smirks"),
                 "phase2": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/sygma_rules4.0.cactvs.phase2.smirks"),
+                "phase1_selected": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/sygma_rules4.0.cactvs.phase1_GE0.05.smirks"),
+                "phase2_selected": pkg_resources.resource_filename( #@UndefinedVariable
                                                            'magma', "data/sygma_rules4.0.cactvs.phase2_GE0.05.smirks"),
                 "gut": pkg_resources.resource_filename( #@UndefinedVariable
                                                            'magma', "data/gut.cactvs.smirks"),
-                "digest": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/digest.cactvs.smirks"),
+                "glycosidase": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/glycosidase.cactvs.smirks"),
                 "peptide": pkg_resources.resource_filename( #@UndefinedVariable
                                                            'magma', "data/peptide.cactvs.smirks"),
                 "ptm": pkg_resources.resource_filename( #@UndefinedVariable
@@ -305,39 +309,28 @@ class StructureEngine(object):
 
     def run_scenario(self, scenario):
         print scenario
-        metids=set()
-        old_metids=set()
+        result=self.db_session.query(Metabolite.metid).all()
+        metids={x[0] for x in result} #set comprehension
         for step in range(len(scenario)):
-            input,action,value = scenario[step]
+            action,value = scenario[step]
             print "----- Scenario, step ",step,"-----"
             endpoints=False
-            if input=="previous":
-                metids |= old_metids
-            old_metids=metids
             if action=='mass_filter':
-                if input=='all':
-                    result=self.db_session.query(Metabolite.metid).filter(Metabolite.mim<float(value)).all()
-                else:
-                    result=self.db_session.query(Metabolite.metid).filter(Metabolite.mim<float(value),Metabolite.metid.in_(metids)).all()
-                    print "from ",len(metids),"processed compounds"
+                result=self.db_session.query(Metabolite.metid).filter(Metabolite.mim<float(value),Metabolite.metid.in_(metids)).all()
                 metids={x[0] for x in result} #set comprehension
-                print len(metids),"compounds were selected with mass <",value
+                print "from ",len(metids),"processed compounds",len(metids),"compounds were selected with mass <",value
             else:
-                if value=='end':
+                prev_metids=metids
+                if value=='complete':
                     endpoints=True
                     value=1
-                if input=='all':
-                    metids=set()
-                    new_metids = self.metabolize_all(action,endpoints)
-                    print "All metabolites",
-                else:
-                    print len(metids),"metabolites",
-                    new_metids=set()
-                    for metid in metids:
-                        new_metids |= self.metabolize(metid,action,endpoints)
+                print len(metids),"metabolites",
+                new_metids=set()
+                for metid in metids:
+                    new_metids |= self.metabolize(metid,action,endpoints)
                 active_metids=new_metids.difference(metids)
                 metids=new_metids
-                for it in range(1,int(value)):
+                for i in range(1,int(value)):
                     new_metids=set()
                     for metid in active_metids:
                         new_metids |= self.metabolize(metid,action,endpoints)
@@ -345,6 +338,8 @@ class StructureEngine(object):
                     metids |= new_metids
                 print 'were metabolized according to',action,'rules'
                 print '"Active" metabolites:',len(metids)
+                if not endpoints:
+                    metids |= prev_metids
             # print metids
             print ""
  
