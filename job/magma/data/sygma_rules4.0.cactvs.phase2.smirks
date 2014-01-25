@@ -34,8 +34,8 @@
 [#6:1][SH1:2][H]>>[#6:1][S:2]C	0.375	S-methyl	y	# 9/24
 
 # -- glycination --
-#[c:1][C:2](=[O:3])[O][H]>>[c:1][C:2](=[O:3])NCC(=O)O	0.107383	glycination_1	y	# 16/149
-#[C:1][C:2](=[O:3])[O][H]>>[C:1][C:2](=[O:3])NCC(=O)O	0.022619	glycination_2	y	# 19/840
+[c:1][C:2](=[O:3])[O][H]>>[c:1][C:2](=[O:3])NCC(=O)O	0.107383	glycination_1	y	# 16/149
+[C:1][C:2](=[O:3])[O][H]>>[C:1][C:2](=[O:3])NCC(=O)O	0.022619	glycination_2	y	# 19/840
 
 # -- phosphorylation --
 [O;$(O[CH2]C1AACO1),$(OP([OH1])(=O)OCC1AACO1),$(OP([OH1])(=O)OP(O)(=O)OCC1AACO1):1][H]>>[O:1]P(O)(O)=O	0.402985	phosphorylation	y	# 27/67
