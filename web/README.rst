@@ -313,3 +313,23 @@ See https://github.com/senchalabs/jsduck
    magmaweb/static/d3/d3.v3.js magmaweb/static/esc magmaweb/static/app --builtin-classes \
    --output jsdoc --images magmaweb/static/extjs-4.2.0/docs/images
    firefox jsdoc/index.html
+
+Database migration
+==================
+
+When `magmaweb/models.py` is changed then all the databases have to migrated to this new state.
+Alembic (http://readthedocs.org/docs/alembic/) is used to perform database migrations.
+
+When `models.py` has changed use ``alembic revision --autogenerate -m "Added metabolize scenario"`` to make a migration script.
+
+Upgrade all the job result databases with:
+
+.. code-block:: bash
+
+    for x in `ls data/jobs`
+    do
+    echo $x
+    alembic -x jobid=$x upgrade head
+    done
+
+The migration version of a job db can be queried with ``alembic -x jobid=ff52323b-c49a-4387-b964-c6dafab5f0c4 current``.

@@ -7,7 +7,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
-requires = ['pyramid',
+requires = ['pyramid==1.4.5',
             'SQLAlchemy',
             'pyramid_tm',
             'pyramid_multiauth',
@@ -21,7 +21,9 @@ requires = ['pyramid',
             'Paste',
             # Test dependencies
             'WebTest',
-            'mock'
+            'mock',
+            # Database migrations
+            'alembic',
             ]
 
 if sys.version_info[:3] < (2, 5, 0):

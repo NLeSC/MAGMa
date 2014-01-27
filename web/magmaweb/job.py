@@ -6,6 +6,7 @@ import csv
 import StringIO
 import json
 import shutil
+import logging
 from sqlalchemy import create_engine, and_
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, aliased, scoped_session
@@ -14,9 +15,12 @@ from sqlalchemy.sql.expression import desc, asc, null
 from sqlalchemy.orm.exc import NoResultFound
 import transaction
 import requests
-from magmaweb.models import Base, Metabolite, Scan, Peak, Fragment, Run
+from .models import Base, Metabolite, Scan, Peak, Fragment, Run
+from .models import Reaction
 import magmaweb.user
 from .jobquery import JobQuery
+
+logger = logging.getLogger('magmaweb')
 
 
 class ScanRequiredError(Exception):
@@ -561,6 +565,27 @@ class JobDb(object):
         """Returns unfiltered and not paged count of metabolites"""
         return self.session.query(Metabolite).count()
 
+    def reaction_filter(self, q, afilter):
+        """Filters metabolites on being reactant/product
+        of a reaction with given product/reactant and optional reaction name.
+        """
+        if 'product' in afilter and 'reactant' in afilter:
+            raise TypeError('Reactant and product can not be used together')
+
+        if 'product' in afilter:
+            q = q.join(Reaction, Metabolite.metid == Reaction.reactant)
+            q = q.filter(Reaction.product == afilter['product'])
+        elif 'reactant' in afilter:
+            q = q.join(Reaction, Metabolite.metid == Reaction.product)
+            q = q.filter(Reaction.reactant == afilter['reactant'])
+        else:
+            raise TypeError('Reactant or product is missing')
+
+        if 'name' in afilter:
+            q = q.filter(Reaction.name == afilter['name'])
+
+        return q
+
     def extjsgridfilter(self, q, column, afilter):
         """Query helper to convert a extjs grid filter dict
         to a sqlalchemy query filter
@@ -568,23 +593,25 @@ class JobDb(object):
         """
         if (afilter['type'] == 'numeric'):
             if (afilter['comparison'] == 'eq'):
-                efilter = q.filter(column == afilter['value'])
+                q = q.filter(column == afilter['value'])
             if (afilter['comparison'] == 'gt'):
-                efilter = q.filter(column > afilter['value'])
+                q = q.filter(column > afilter['value'])
             if (afilter['comparison'] == 'lt'):
-                efilter = q.filter(column < afilter['value'])
+                q = q.filter(column < afilter['value'])
         elif (afilter['type'] == 'string'):
-            efilter = q.filter(column.contains(afilter['value']))
+            q = q.filter(column.contains(afilter['value']))
         elif (afilter['type'] == 'list'):
-            efilter = q.filter(column.in_(afilter['value']))
+            q = q.filter(column.in_(afilter['value']))
         elif (afilter['type'] == 'boolean'):
-            efilter = q.filter(column == afilter['value'])
+            q = q.filter(column == afilter['value'])
+        elif (afilter['type'] == 'reaction'):
+            q = self.reaction_filter(q, afilter)
         elif (afilter['type'] == 'null'):
             if not afilter['value']:
-                efilter = q.filter(column == null())  # IS NULL
+                q = q.filter(column == null())  # IS NULL
             else:
-                efilter = q.filter(column != null())  # IS NOT NULL
-        return efilter
+                q = q.filter(column != null())  # IS NOT NULL
+        return q
 
     def _metabolitesQuery2Rows(self, start, limit, q):
         mets = []
@@ -692,13 +719,13 @@ class JobDb(object):
             if afilter['field'] == 'assigned':
                 col = assign_q.c.assigned
                 afilter['type'] = 'null'
-            elif (afilter['field'] == 'score'):
-                if (scanid is not None):
+            elif afilter['field'] == 'score':
+                if scanid is not None:
                     col = fragal.score
                 else:
                     raise ScanRequiredError()
-            elif (afilter['field'] == 'deltappm'):
-                if (scanid is not None):
+            elif afilter['field'] == 'deltappm':
+                if scanid is not None:
                     col = fragal.deltappm
                 else:
                     raise ScanRequiredError()
@@ -747,7 +774,7 @@ class JobDb(object):
         csvwriter = csv.DictWriter(csvstr, headers, extrasaction='ignore')
         csvwriter.writeheader()
         for m in metabolites:
-            m['reactionsequence'] = '|'.join(m['reactionsequence'])
+            m['reactionsequence'] = json.dumps(m['reactionsequence'])
             csvwriter.writerow(m)
 
         return csvstr
@@ -779,7 +806,7 @@ class JobDb(object):
 
         for m in metabolites:
             s += m['mol']
-            m['reactionsequence'] = '\n'.join(m['reactionsequence'])
+            m['reactionsequence'] = json.dumps(m['reactionsequence'])
             for p in props:
                 s += '> <{}>\n{}\n\n'.format(p, m[p])
             s += '$$$$' + "\n"
