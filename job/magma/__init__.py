@@ -451,7 +451,6 @@ class MsDataEngine(object):
         sys.stderr.write('Merging scans'+str(existing_scan.scanid)+' and '+str(newscan.scanid)+'\n')
         if existing_scan.lowmz > newscan.lowmz:
             existing_scan.lowmz = newscan.lowmz
-            print '==>',existing_scan.scanid,newscan.lowmz
         if existing_scan.highmz < newscan.highmz:
             existing_scan.highmz = newscan.highmz
         if existing_scan.basepeakintensity < newscan.basepeakintensity:
@@ -922,14 +921,14 @@ class AnnotateEngine(object):
                     self.store_hit(childhit,metid,currentFragid)
 
 class PubChemEngine(object):
-    def __init__(self,dbfilename='',max_64atoms=False,incl_halo=False,min_refscore=''):
+    def __init__(self,dbfilename='',max_64atoms=False,incl_halo='',min_refscore=''):
         if dbfilename=='':
             dbfilename=config.get('magma job','structure_database.pubchem')
         self.conn = sqlite3.connect(dbfilename)
         self.conn.text_factory=str
         self.c = self.conn.cursor()
         self.incl_halo=False
-        if incl_halo!=False:
+        if incl_halo!='':
             self.incl_halo=True
             if incl_halo=='True':
                 halo_filename=config.get('magma job','structure_database.pubchem_halo')
