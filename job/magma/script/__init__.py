@@ -169,16 +169,16 @@ class MagmaCommand(object):
         metids=set([])
         if args.structure_format == 'smiles':
             for mol in self.smiles2mols(args.structures):
-                metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 'PARENT', 1, mass_filter=args.mass_filter))
+                metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 1, mass_filter=args.mass_filter))
         elif args.structure_format == 'sdf':
             for mol in Chem.SDMolSupplier(args.structures.name):
                 try:
                     ref=mol.GetProp('reference')
                     prob=mol.GetProp('probability')
-                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), prob, 0,"", 1, reference=ref, mass_filter=args.mass_filter))
+                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), prob, 0, 1, reference=ref, mass_filter=args.mass_filter))
                 except:
                     #print sys.exc_info()
-                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0,"", 1, mass_filter=args.mass_filter))
+                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 1, mass_filter=args.mass_filter))
         magma_session.commit()
         for metid in metids:
             print metid
@@ -205,6 +205,7 @@ class MagmaCommand(object):
                 metids.extend(struct_engine.metabolize(reactantid,args.metabolism_types, args.n_reaction_steps))
             for metid in set(metids):
                 print metid
+        magma_session.fill_molecules_reactions()
 
     def read_ms_data(self, args, magma_session=None):
         if magma_session == None:
@@ -269,6 +270,7 @@ class MagmaCommand(object):
             metids=args.metids.split(',')+pubchem_metids
             annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast,time_limit=args.time_limit)
         magma_session.commit()
+        magma_session.fill_molecules_reactions()
             # annotate_engine.search_some_structures(metids)
 
     def select(self, args):

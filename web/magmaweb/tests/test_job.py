@@ -56,7 +56,15 @@ def populateTestingDB(session):
     ))
     session.add(Metabolite(
         metid=72, mol=u'Molfile', level=0, probability=1.0,
-        reactionsequence=['PARENT'], smiles=u'Oc1ccccc1O',
+        reactionsequence={
+                             u'reactantof': {
+                                 u'esterase': {
+                                     u'nr': 2,
+                                     u'nrp': 1
+                                 }
+                             }
+                         },
+        smiles=u'Oc1ccccc1O',
         molformula=u'C6H6O2', isquery=True, nhits=1,
         origin=u'pyrocatechol', mim=110.03677, logp=1.231,
         reference=url1
@@ -90,7 +98,14 @@ def populateTestingDB(session):
         mol=u"Molfile of dihydroxyphenyl-valerolactone",
         molformula=u"C11H12O4",
         origin=u"dihydroxyphenyl-valerolactone",
-        probability=1.0, reactionsequence=u"PARENT\nCHILD\n",
+        probability=1.0, reactionsequence={
+                                               u'productof': {
+                                                   u'theogallin': {
+                                                       u'nr': 1,
+                                                       u'nrp': 0
+                                                   }
+                                               }
+                                           },
         smiles=u"O=C1OC(Cc2ccc(O)c(O)c2)CC1",
         reference=url2,
         mim=208.07355, logp=2.763, nhits=1

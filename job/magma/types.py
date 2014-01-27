@@ -46,7 +46,7 @@ class HitType(object):
         #print "childscan",peak.childscan
 
 class MoleculeType(object):
-    def __init__(self,molblock,name,prob,level,sequence,isquery,mim=None,natoms=None,inchikey=None,molform=None,reference=None,logp=None):
+    def __init__(self,molblock,name,prob,level,isquery=1,mim=None,natoms=None,inchikey=None,molform=None,reference=None,logp=None):
         if inchikey==None or mim==None or molform==None or logp==None or natoms==None:
             mol=Chem.MolFromMolBlock(molblock)
             inchikey=Chem.MolToInchiKey(mol)[:14]
@@ -58,7 +58,6 @@ class MoleculeType(object):
         self.molblock = molblock #: molfile as string
         self.level = level
         self.probability = prob
-        self.reactionsequence = sequence #: A newline seperated list of reactions
         self.inchikey = inchikey #: Smile string
         self.molformula = molform #: Molecular formula
         self.isquery = isquery #: Whether metabolite was given as query or is a result a of reaction

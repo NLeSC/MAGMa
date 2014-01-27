@@ -1,7 +1,7 @@
 """
 Sqlalchemy models for magma result database
 """
-
+import json
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import Unicode
@@ -21,23 +21,49 @@ Base = declarative_base()
 class ReactionSequence(TypeDecorator):
     """List of reactions.
 
-    Stored in database as a newline seperated list.
+    Reactions are grouped by relation to the current row or molecule:
+
+    * products, reactions which have current row as reactant
+    * reactants, reactions which have current row as product
+
+    Reactions is a dict with key as the reaction name and the value a dict with keys:
+
+    * nr, number of molecules which are product/reactant
+        of current molecule with this reaction
+    * nrp, number of molecules which are product/reactant
+        of current molecule with this reaction and which have been matched to at least one scan
+
+    Example:
+
+    .. code-block:: javascript
+
+          {
+            'reactants': {
+               'esterase': {'nr': 123, 'nrp': 45}
+            },
+            'products': {
+               'sulfation': {'nr': 678, 'nrp': 90}
+            }
+          }
+
+    Stored in database as json serialized string.
     """
     impl = Unicode
 
     def process_bind_param(self, value, dialect):
-        if value is not None and not isinstance(value, basestring):
-            value = u'\n'.join(value)
+        if value is not None:
+            value = json.dumps(value)
 
         return value
 
     def process_result_value(self, value, dialect):
-        if value == "":
-            return []
-
+        if value is u'':
+            value = u'{}'
         if value is not None:
-            value = value.rstrip(u'\n').split(u'\n')
-
+            try:
+                value = json.loads(value)
+            except ValueError:
+                value = {}
         return value
 
 
@@ -51,7 +77,7 @@ class Metabolite(Base):
     level = Column(Integer)
     probability = Column(Float)
     # A newline seperated list of reactions
-    reactionsequence = Column(ReactionSequence)
+    reactionsequence = Column(ReactionSequence, default={})
     # Smile string
     smiles = Column(Unicode, unique=True)
     # Molecular formula
@@ -71,6 +97,63 @@ class Metabolite(Base):
     reference = Column(Unicode)
     # each metabolite is fragmented into fragments
     fragments = relationship('Fragment', backref='metabolite')
+
+
+class Reaction(Base):
+    """Reaction model for reactions table"""
+    __tablename__ = 'reactions'
+    # Id of a reaction
+    reactid = Column(Integer, primary_key=True, autoincrement=True)
+    reactant = Column(Integer, ForeignKey('metabolites.metid'))
+    product = Column(Integer, ForeignKey('metabolites.metid'))
+    name = Column(Unicode)
+
+
+def fill_molecules_reactionsequence(session):
+    """Fills the reactionsequence column in the molecules table with info from reactions table.
+
+    The molecules query will become to complex when reactionsequence is queried from reactions table.
+    So we fill reaction sequence with a json serialized struct which can be used during rendering.
+
+    from magmaweb.job import JobFactory
+    factory = JobFactory('data/jobs')
+    session = factory._makeJobSession('58f05077-aad8-4fc9-a497-310495ab8b62')
+    from magmaweb.models import fill_molecules_reactionsequence
+    fill_molecules_reactionsequence(session)
+
+    """
+    from sqlalchemy.sql import func
+
+    reactions = {}
+    for metid, rname, nr in session.query(Reaction.product, Reaction.name, func.count('*')).group_by(Reaction.product, Reaction.name):
+        if metid not in reactions:
+            reactions[metid] = {}
+        if 'reactants' not in reactions[metid]:
+            reactions[metid]['reactants'] = {}
+        reactions[metid]['reactants'][rname] = {'nr': nr}
+
+    for metid, rname, nrp in session.query(Reaction.product, Reaction.name, func.count('*')).join(Metabolite, Metabolite.metid == Reaction.reactant).filter(Metabolite.nhits > 0).group_by(Reaction.product, Reaction.name):
+        # dont need checks for keys because query above is always superset of this query
+        reactions[metid]['reactants'][rname]['nrp'] = nrp
+
+    for metid, rname, nr in session.query(Reaction.reactant, Reaction.name, func.count('*')).group_by(Reaction.reactant, Reaction.name):
+        if metid not in reactions:
+            reactions[metid] = {}
+        if 'products' not in reactions[metid]:
+            reactions[metid]['products'] = {}
+        reactions[metid]['products'][rname] = {'nr': nr}
+
+    for metid, rname, nrp in session.query(Reaction.reactant, Reaction.name, func.count('*')).join(Metabolite, Metabolite.metid == Reaction.product).filter(Metabolite.nhits > 0).group_by(Reaction.reactant, Reaction.name):
+        # dont need checks for keys because query above is always superset of this query
+        reactions[metid]['products'][rname]['nrp'] = nrp
+
+    for mol in session.query(Metabolite):
+        if mol.metid in reactions:
+            reaction = reactions[mol.metid]
+        else:
+            reaction = {}
+        mol.reactionsequence = reaction
+    session.commit()
 
 
 class Scan(Base):
