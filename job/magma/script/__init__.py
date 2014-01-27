@@ -251,7 +251,7 @@ class MagmaCommand(object):
 #            annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
         pubchem_metids=[]
         if args.structure_database != "":
-            db_opts=['','','',False,'']
+            db_opts=['','','','','']
             db_options=args.db_options.split(',')
             for x in range(len(db_options)):
                 db_opts[x]=db_options[x]
