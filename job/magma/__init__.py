@@ -377,6 +377,8 @@ class MsDataEngine(object):
         self.abs_peak_cutoff=rundata.abs_peak_cutoff
 #        self.rel_peak_cutoff=rundata.rel_peak_cutoff
         self.max_ms_level=rundata.max_ms_level
+        self.precision=1.00001 # TODO read as options (move option from annotate to read_ms_data)
+        self.mz_precision_abs=0.002 # TODO idem
 
     def store_mzxml_file(self,mzxml_file,scan_filter=None):
         logging.warn('Store mzxml file')
@@ -392,12 +394,10 @@ class MsDataEngine(object):
         mzxml_query=namespace+"msRun/"+namespace+"scan"
         prec_scans=[] # in case of non-hierarchical mzXML, also find child scans
         for mzxmlScan in root.findall(mzxml_query):
-            try:
-                if scan_filter == None or mzxmlScan.attrib['num'] == scan_filter or mzxmlScan.find(namespace+'precursorMz').attrib['precursorScanNum'] in prec_scans:
-                    self.store_mzxml_scan(mzxmlScan,0,namespace)
-                    prec_scans.append(mzxmlScan.attrib['num']) # in case of non-hierarchical mzXML, also find child scans
-            except:
-                pass
+            if scan_filter == None or mzxmlScan.attrib['num'] == scan_filter or \
+                    (int(mzxmlScan.attrib['msLevel'])>1 and mzxmlScan.find(namespace+'precursorMz').attrib['precursorScanNum'] in prec_scans):
+                self.store_mzxml_scan(mzxmlScan,0,namespace)
+                prec_scans.append(mzxmlScan.attrib['num']) # in case of non-hierarchical mzXML, also find child scans
         self.db_session.commit()
 
     def store_mzxml_scan(self,mzxmlScan,precScan,namespace):
@@ -414,12 +414,24 @@ class MsDataEngine(object):
             totioncurrent=float(mzxmlScan.attrib['totIonCurrent']),
             precursorscanid=precScan
             )
+        sys.stderr.write('Processing scan '+str(scan.scanid)+' (level '+str(scan.mslevel)+')\n') 
+        comp=None
         for child in mzxmlScan:
             if child.tag == namespace+'precursorMz':
                 scan.precursormz=float(child.text)
                 scan.precursorintensity=float(child.attrib['precursorIntensity'])
-                if child.attrib.get('precursorScanNum') != None:
+                if child.attrib.get('precursorScanNum') != None: # Non-hierarchical mzXML!
                     scan.precursorscanid=float(child.attrib['precursorScanNum'])
+                if scan.precursorscanid == 0: 
+                    # MS>1 scan is not in a hierarchy and does not contain precursor scan information
+                    # assume that the last scan at the precursor MS level is the precursor scan
+                    result=self.db_session.query(Scan.scanid).filter(Scan.mslevel==scan.mslevel-1).all()
+                    scan.precursorscanid=result[-1][0]
+                    sys.stderr.write('Assigning precursor scanid '+str(scan.precursorscanid)+' to scan '+str(scan.scanid)+'\n')
+                #check for existing scan with the same precursor
+                comp=self.db_session.query(Scan).filter(Scan.precursorscanid==scan.precursorscanid, \
+                                                        Scan.precursormz==scan.precursormz, \
+                                                        Scan.precursorintensity==scan.precursorintensity).all()
             if child.tag == namespace+'peaks':
                 decoded = base64.decodestring(child.text)
                 try:
@@ -427,21 +439,49 @@ class MsDataEngine(object):
                         decoded=zlib.decompress(decoded)
                 except:
                     pass
-                self.store_mzxml_peaks(scan,decoded)
+                if comp==None or len(comp)==0:
+                    self.store_mzxml_peaks(scan,decoded)
+                else: # generate composite spectrum with the existing scan of the same precursor
+                    self.merge_spectrum(comp[0],scan,decoded)
             if child.tag == namespace+'scan' and int(child.attrib['msLevel'])<=self.max_ms_level:
-#                if scan.mslevel == 1:
-#                    cutoff=0.0
-#                else:
-#                    cutoff=max(scan.basepeakintensity*self.rel_peak_cutoff,self.abs_peak_cutoff)
-#                if float(child.attrib['basePeakIntensity'])>cutoff:
                 self.store_mzxml_scan(child,scan.scanid,namespace)
-        self.db_session.add(scan)
+        if comp==None or len(comp)==0:
+            self.db_session.add(scan)
         self.db_session.flush()
 
+    def merge_spectrum(self,existing_scan,newscan,decoded):
+        sys.stderr.write('Merging scans'+str(existing_scan.scanid)+' and '+str(newscan.scanid)+'\n')
+        if existing_scan.lowmz > newscan.lowmz:
+            existing_scan.lowmz = newscan.lowmz
+            print '==>',existing_scan.scanid,newscan.lowmz
+        if existing_scan.highmz < newscan.highmz:
+            existing_scan.highmz = newscan.highmz
+        if existing_scan.basepeakintensity < newscan.basepeakintensity:
+            existing_scan.basepeakintensity = newscan.basepeakintensity
+            existing_scan.basepeakmz = newscan.basepeakmz
+        self.db_session.add(existing_scan)
+        tmp_size = len(decoded)/4
+        unpack_format1 = ">%df" % tmp_size
+        unpacked = struct.unpack(unpack_format1,decoded)
+        for mz, intensity in zip(unpacked[::2], unpacked[1::2]):
+            if intensity > self.abs_peak_cutoff:
+                matching_peaks=self.db_session.query(Peak).filter(Peak.scanid == existing_scan.scanid, \
+                              Peak.mz.between(min(mz/self.precision,mz-self.mz_precision_abs),max(mz*self.precision,mz+self.mz_precision_abs))).all()
+                if len(matching_peaks) == 0:
+                    self.db_session.add(Peak(scanid=existing_scan.scanid,mz=mz,intensity=intensity))
+                else:
+                    replace=True
+                    # Compare intensity of peak with all matching peaks. Of all those, keep only the one with highest intensity
+                    for p in matching_peaks:
+                        if intensity > p.intensity:
+                            self.db_session.delete(p)
+                        else:
+                            replace=False
+                            intensity=p.intensity
+                    if replace:
+                        self.db_session.add(Peak(scanid=existing_scan.scanid,mz=mz,intensity=intensity))
+
     def store_mzxml_peaks(self,scan,decoded):
-#        dbpeak_cutoff=scan.basepeakintensity*self.rel_peak_cutoff
-#        if dbpeak_cutoff<self.abs_peak_cutoff:
-#            dbpeak_cutoff=self.abs_peak_cutoff
         tmp_size = len(decoded)/4
         unpack_format1 = ">%df" % tmp_size
         unpacked = struct.unpack(unpack_format1,decoded)
