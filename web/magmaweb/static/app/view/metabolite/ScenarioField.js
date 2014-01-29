@@ -53,7 +53,7 @@ Ext.define('Esc.magmaweb.view.metabolite.ScenarioField', {
                        'phase2_selected',
                        'glycosidase',
                        'mass_filter',
-                       'gut',
+                       'gut'
                    ]
                }
             }, {
