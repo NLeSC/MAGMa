@@ -244,14 +244,7 @@ class Run(Base):
     description = Column(Unicode)
 
     # metabolize parameters
-
-    # Maximum number of reaction steps applied to reactants
-    n_reaction_steps = Column(Integer)
-
-    # Comma separated list of metabolism types, like "phase1"
-    metabolism_types = Column(Unicode)
-    # TODO: remove metabolism type column
-    # will be part of reacton sequence of metabolites
+    scenario = Column(ReactionSequence)
 
     # ms data parsing parameters
     ms_filename = Column(Unicode)

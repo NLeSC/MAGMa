@@ -1010,7 +1010,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
         job = self.fake_job()
         from magmaweb.models import Run
         job.db.runInfo.return_value = Run(
-            n_reaction_steps=2, metabolism_types=['phase1', 'phase2'],
+            scenario=[{'type': 'phase1', 'steps': '2'}, {'type': 'phase2', 'steps': '1'}],
             ionisation_mode=-1, skip_fragmentation=True,
             ms_intensity_cutoff=200000.0, msms_intensity_cutoff=50,
             mz_precision=4.0, mz_precision_abs=0.002, use_all_peaks=True,
@@ -1024,9 +1024,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
         response = views.runinfojson()
 
         self.assertEqual(response, {'success': True,
-                                    'data': dict(n_reaction_steps=2,
-                                                 metabolism_types=['phase1',
-                                                                   'phase2'],
+                                    'data': dict(scenario=[{'type': 'phase1', 'steps': '2'},
+                                                           {'type': 'phase2', 'steps': '1'}],
                                                  ms_data_area='',
                                                  ms_data_format='mzxml',
                                                  ionisation_mode=-1,
@@ -1053,9 +1052,8 @@ class JobViewsTestCase(AbstractViewsTestCase):
         response = views.runinfojson()
 
         self.assertEqual(response, {'success': True,
-                                    'data': dict(n_reaction_steps=2,
-                                                 metabolism_types=['phase1',
-                                                                   'phase2'],
+                                    'data': dict(scenario=[{'type': 'phase1', 'steps': '2'},
+                                                           {'type': 'phase2', 'steps': '1'}],
                                                  ms_data_area='',
                                                  ms_data_format='mzxml',
                                                  ionisation_mode=1,
@@ -1080,9 +1078,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
         response = views.runinfojson()
 
         self.assertEqual(response, {'success': True,
-                                    'data': dict(n_reaction_steps=2,
-                                                 metabolism_types=['phase1',
-                                                                   'phase2'],
+                                    'data': dict(scenario=[{'type': 'phase1', 'steps': '2'}, {'type': 'phase2', 'steps': '1'}],
                                                  ms_data_area='',
                                                  ms_data_format='mzxml',
                                                  ionisation_mode=1,

@@ -35,7 +35,25 @@
 			</tr>
 		</table>
 	</fieldset>
-	<fieldset class="x-fieldset x-fieldset-default">
+	% if run.scenario:
+    <fieldset class="x-fieldset x-fieldset-default">
+        <legend class="x-fieldset-header x-fieldset-header-default">Metabolize options</legend>
+        <table class='infotable'>
+            <caption>Transformation scenario</caption>
+            <tr>
+                <th>Transformation type</th>
+                <th>Steps</th>
+            </tr>
+            % for trans in run.scenario:
+            <tr>
+                <td>${trans.type}</td>
+                <td>${trans.steps}</td>
+            </tr>
+            % endfor
+        </table>
+    </fieldset>
+    % endif
+    	<fieldset class="x-fieldset x-fieldset-default">
 		<legend class="x-fieldset-header x-fieldset-header-default">Annotate
 			options</legend>
 		<table class='infotable'>

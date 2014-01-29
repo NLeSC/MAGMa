@@ -18,8 +18,8 @@ class JobDbTestCase(JobDbTestCaseAbstract):
 
     def test_runInfo(self):
         runInfo = self.job.runInfo()
-        self.assertEqual(runInfo.n_reaction_steps, 2)
-        self.assertEqual(runInfo.metabolism_types, u"phase1,phase2")
+        self.assertEqual(runInfo.scenario, [{'type': 'phase1', 'steps': '2'},
+                                            {'type': 'phase2', 'steps': '1'}])
 
         self.assertEqual(runInfo.ms_filename, u'F123456.mzxml')
         self.assertEqual(runInfo.abs_peak_cutoff, 1000)
@@ -37,7 +37,8 @@ class JobDbTestCase(JobDbTestCaseAbstract):
 
     def test_runInfo_maxrunid(self):
         self.session.add(Run(
-            n_reaction_steps=2, metabolism_types=u'phase1,phase2',
+            scenario=[{'type': 'phase1', 'steps': '2'},
+                      {'type': 'phase2', 'steps': '1'}],
             ionisation_mode=-1, skip_fragmentation=True,
             ms_intensity_cutoff=200000.0, msms_intensity_cutoff=50,
             mz_precision=10, mz_precision_abs=0.002, use_all_peaks=True,

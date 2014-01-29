@@ -238,25 +238,37 @@ class Fragment(Base):
 class Run(Base):
     """Run model for run table"""
     __tablename__ = 'run'
-    runid = Column(Integer, primary_key=True, autoincrement=True) #: Run identifier
-    description = Column(Unicode) #: Description of the run
+    # Run identifier
+    runid = Column(Integer, primary_key=True, autoincrement=True)
+    # Description of the run
+    description = Column(Unicode)
 
-    # SyGMa parameters, TODO remove: metabolism type info will be part of reacton sequence of metabolites
-    n_reaction_steps = Column(Integer) #: Maximum number of reaction steps applied to reactants
-    metabolism_types = Column(Unicode) #: Comma separated list of metabolism types, like "phase1"
+    # metabolize parameters
+    scenario = Column(ReactionSequence)
+
     # ms data parsing parameters
     ms_filename = Column(Unicode)
-    abs_peak_cutoff = Column(Float) #: abs intensity threshold for storing peaks in database
-    max_ms_level = Column(Integer) #: maximum ms level to be included in the analysis
+    # abs intensity threshold for storing peaks in database
+    abs_peak_cutoff = Column(Float)
+    # maximum ms level to be included in the analysis
+    max_ms_level = Column(Integer)
 
     # parameters for matching metabolites and fragments with peaks
     ionisation_mode = Column(Integer)
     skip_fragmentation = Column(Boolean)
-    max_broken_bonds = Column(Integer) #: max number of bonds broken in substructures generated from metabolites
-    max_water_losses = Column(Integer) #: max number of additional neutral water losses
-    ms_intensity_cutoff = Column(Float) #: Absolute intensity minimum of lvl1 scan peaks which are matched with metabolites
-    msms_intensity_cutoff = Column(Float) #: Ratio of basepeak intensity
-    mz_precision = Column(Float) #: precision for matching a metabolite mim to m/z of a peak
-    mz_precision_abs = Column(Float) #: precision for matching a metabolite mim to m/z of a peak
-    precursor_mz_precision = Column(Float) #: precision for matching precursor mz with peak mz in parent scan
+    # max number of bonds broken in substructures generated from metabolites
+    max_broken_bonds = Column(Integer)
+    # max number of additional neutral water losses
+    max_water_losses = Column(Integer)
+    # Absolute intensity minimum of lvl1 scan peaks
+    # which are matched with metabolites
+    ms_intensity_cutoff = Column(Float)
+    # Ratio of basepeak intensity
+    msms_intensity_cutoff = Column(Float)
+    # precision for matching a metabolite mim to m/z of a peak (in ppm)
+    mz_precision = Column(Float)
+    # precision for matching a metabolite mim to m/z of a peak (in Da)
+    mz_precision_abs = Column(Float)
+    # precision for matching precursor mz with peak mz in parent scan
+    precursor_mz_precision = Column(Float)
     use_all_peaks = Column(Boolean)

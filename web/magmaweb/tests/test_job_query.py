@@ -1,5 +1,9 @@
 """Tests for magmaweb.job.JobQuery"""
 import unittest
+import tempfile
+import shutil
+import os.path
+from webob.multidict import MultiDict
 from magmaweb.job import JobQuery
 
 
@@ -188,7 +192,6 @@ class JobQueryFileTestCase(unittest.TestCase):
 
 class JobQueryActionTestCase(unittest.TestCase):
     def setUp(self):
-        import tempfile
         self.jobdir = tempfile.mkdtemp()
         self.jobquery = JobQuery(directory=self.jobdir,
                                  script='',
@@ -196,11 +199,9 @@ class JobQueryActionTestCase(unittest.TestCase):
                                  )
 
     def tearDown(self):
-        import shutil
         shutil.rmtree(self.jobdir)
 
     def fetch_file(self, filename):
-        import os.path
         return file(os.path.join(self.jobdir, filename)).read()
 
 
@@ -241,27 +242,31 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         self.assertMultiLineEqual('foo', self.fetch_file('structures.dat'))
 
     def test_with_metabolize(self):
-        from webob.multidict import MultiDict
+
         params = MultiDict(structure_format='smiles',
                            structures='CCO Ethanol',
                            metabolize='on',
-                           n_reaction_steps=2,
-                           metabolism_types='phase1'
+                           scenario=[
+                                     {'type': 'phase1', 'steps': '2'},
+                                     {'type': 'phase2', 'steps': '1'}
+                                     ],
                            )
-        params.add('metabolism_types', 'phase2')
 
         query = self.jobquery.add_structures(params)
 
         sf = 'structures.dat'
+        scen = 'scenario.csv'
         script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
-        script += "{magma} metabolize --n_reaction_steps '2' "
-        script += "-m 'phase1,phase2' -j - {db}\n"
+        script += "{magma} metabolize --scenario scenario.csv "
+        script += "-j - {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
-                                  prestaged=[sf],
+                                  prestaged=[sf, scen],
                                   script=script,
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('CCO Ethanol', self.fetch_file('structures.dat'))
+        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_with_annotate(self):
         params = {'structure_format': 'smiles',
@@ -291,14 +296,15 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('CCO Ethanol', self.fetch_file('structures.dat'))
 
     def test_with_metabolize_and_annotate(self):
-        from webob.multidict import MultiDict
+
         params = MultiDict(structure_format='smiles',
                            structures='CCO Ethanol',
                            metabolize='on',
-                           n_reaction_steps=2,
-                           metabolism_types='phase2',
+                           scenario=[{'type': 'phase1', 'steps': '2'},
+                                     {'type': 'phase2', 'steps': '1'}],
                            precursor_mz_precision=0.005,
                            mz_precision=5.0,
                            mz_precision_abs=0.001,
@@ -312,8 +318,8 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
 
         sf = 'structures.dat'
         script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
-        script += "{magma} metabolize --n_reaction_steps '2' "
-        script += "-m 'phase2' -j - {db} |"
+        script += "{magma} metabolize --scenario scenario.csv "
+        script += "-j - {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0'"
         script += " -d '10.0'"
         script += " -i '1'"
@@ -321,11 +327,13 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         script += " --max_water_losses '1' --call_back_url '/'"
         script += " -j - --fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
-                                  prestaged=[sf],
+                                  prestaged=[sf, 'scenario.csv'],
                                   script=script,
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('CCO Ethanol', self.fetch_file('structures.dat'))
+        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_without_structures(self):
         params = {'structure_format': 'smiles',
@@ -594,24 +602,50 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
 class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 
     def test_it(self):
-        from webob.multidict import MultiDict
-        params = MultiDict(n_reaction_steps=2, metabolism_types='phase1')
+
+        params = MultiDict(scenario=[{'type': 'phase1', 'steps': '2'},
+                                     {'type': 'phase2', 'steps': '1'}]
+                           )
 
         query = self.jobquery.metabolize(params)
 
-        script = "{magma} metabolize --n_reaction_steps '2' -m 'phase1' {db}\n"
+        script = "{magma} metabolize --scenario scenario.csv {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
-                                  prestaged=[],
+                                  prestaged=['scenario.csv'],
                                   script=script,
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+
+    def test_with_jsonified_scenario(self):
+        scenario = '[{"steps": "2", "type": "phase1"}, '
+        scenario += '{"steps": "1", "type": "phase2"}]'
+        params = dict(scenario=scenario)
+
+        query = self.jobquery.metabolize(params)
+
+        script = "{magma} metabolize --scenario scenario.csv {db}\n"
+        expected_query = JobQuery(directory=self.jobdir,
+                                  prestaged=['scenario.csv'],
+                                  script=script,
+                                  status_callback_url='/',
+                                  )
+        self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+
+    def test_with_misformatjsonified_scenario(self):
+        scenario = 'xxxxxx[{"steps": "2", "type": "phase1"}, '
+        scenario += '{"steps": "1", "type": "phase2"}]'
+        params = dict(scenario=scenario)
+
+        with self.assertRaises(ValueError):
+            self.jobquery.metabolize(params)
 
     def test_with_annotate(self):
-        from webob.multidict import MultiDict
-        params = MultiDict([('n_reaction_steps', 2),
-                            ('metabolism_types', 'phase1'),
-                            ('metabolism_types', 'phase2'),
+
+        params = MultiDict([('scenario', [{'type': 'phase1', 'steps': '2'},
+                                          {'type': 'phase2', 'steps': '1'}]),
                             ('precursor_mz_precision', 0.005),
                             ('mz_precision', 5.0),
                             ('mz_precision_abs', 0.001),
@@ -623,47 +657,47 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                             ])
         query = self.jobquery.metabolize(params, True)
 
-        script = "{magma} metabolize --n_reaction_steps '2' "
-        script += "-m 'phase1,phase2' {db} |"
+        script = "{magma} metabolize --scenario scenario.csv {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001'"
         script += " -c '200000.0' -d '10.0'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' "
         script += "--max_water_losses '1' --call_back_url '/' -j - "
         script += "--fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
-                                  prestaged=[],
+                                  prestaged=['scenario.csv'],
                                   script=script,
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
 
 class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
     def test_it(self):
-        from webob.multidict import MultiDict
+
         params = MultiDict(metid=123,
-                           n_reaction_steps=2,
-                           metabolism_types='phase1'
+                           scenario=[{'type': 'phase1', 'steps': '2'},
+                                     {'type': 'phase2', 'steps': '1'}],
                            )
-        params.add('metabolism_types', 'phase2')
 
         query = self.jobquery.metabolize_one(params)
 
-        script = "echo '123' | {magma} metabolize -j - --n_reaction_steps '2'"
-        script += " -m 'phase1,phase2' {db}\n"
+        script = "echo '123' | {magma} metabolize -j - "
+        script += "--scenario scenario.csv {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
-                                  prestaged=[],
+                                  prestaged=['scenario.csv'],
                                   script=script,
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_with_annotate(self):
-        from webob.multidict import MultiDict
+
         params = MultiDict(metid=123,
-                           n_reaction_steps=2,
-                           metabolism_types='phase1',
+                           scenario=[{'type': 'phase1', 'steps': '2'},
+                                     {'type': 'phase2', 'steps': '1'}],
                            precursor_mz_precision=0.005,
                            mz_precision=5.0,
                            mz_precision_abs=0.001,
@@ -676,19 +710,19 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize_one(params, True)
 
-        script = "echo '123' | {magma} metabolize -j - --n_reaction_steps '2' "
-        script += "-m 'phase1' {db} |"
+        script = "echo '123' | {magma} metabolize -j - --scenario scenario.csv {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001' "
         script += "-c '200000.0' -d '10.0' "
         script += "-i '1' -b '4' --precursor_mz_precision '0.005'"
         script += " --max_water_losses '1' --call_back_url '/' -j - "
         script += "--fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
-                                  prestaged=[],
+                                  prestaged=['scenario.csv'],
                                   script=script,
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
 
 class JobQueryAnnotateTestCase(JobQueryActionTestCase):
@@ -808,9 +842,8 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         ms_data_file.flush()
         msfield = FieldStorage()
         msfield.file = ms_data_file
-        from webob.multidict import MultiDict
-        params = MultiDict(n_reaction_steps=2,
-                           ionisation_mode=1,
+
+        params = MultiDict(ionisation_mode=1,
                            ms_intensity_cutoff=200000,
                            msms_intensity_cutoff=10,
                            abs_peak_cutoff=1000,
@@ -820,14 +853,14 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
                            mz_precision=5.0,
                            mz_precision_abs=0.001,
                            metabolize='on',
-                           metabolism_types='phase1',
+                           scenario=[{'type': 'phase1', 'steps': '2'},
+                                     {'type': 'phase2', 'steps': '1'}],
                            max_ms_level=3,
                            structures='C1CCCC1 comp1',
                            ms_data_file=msfield,
                            structure_format='smiles',
                            ms_data_format='mzxml',
                            )
-        params.add('metabolism_types', 'phase2')
 
         query = self.jobquery.allinone(params)
 
@@ -837,8 +870,8 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += "{magma} add_structures -t 'smiles'"
         expected_script += " structures.dat {db}\n"
 
-        expected_script += "{magma} metabolize --n_reaction_steps '2'"
-        expected_script += " -m 'phase1,phase2' {db}\n"
+        expected_script += "{magma} metabolize --scenario scenario.csv"
+        expected_script += " {db}\n"
 
         expected_script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0'"
         expected_script += " -d '10.0'"
@@ -847,7 +880,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += " --fast {db}\n"
 
         expected_query = JobQuery(directory=self.jobdir,
-                                  prestaged=['ms_data.dat', 'structures.dat'],
+                                  prestaged=['ms_data.dat', 'structures.dat', 'scenario.csv'],
                                   script=expected_script,
                                   status_callback_url='/',
                                   )
@@ -855,6 +888,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         self.assertMultiLineEqual(params['structures'],
                                   self.fetch_file('structures.dat'))
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
+        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_without_metabolize(self):
         self.maxDiff = 100000
@@ -865,9 +899,8 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         ms_data_file.flush()
         msfield = FieldStorage()
         msfield.file = ms_data_file
-        from webob.multidict import MultiDict
-        params = MultiDict(n_reaction_steps=2,
-                           ionisation_mode=1,
+
+        params = MultiDict(ionisation_mode=1,
                            ms_intensity_cutoff=200000,
                            msms_intensity_cutoff=10,
                            abs_peak_cutoff=1000,
@@ -876,7 +909,8 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
                            max_water_losses=1,
                            mz_precision=5.0,
                            mz_precision_abs=0.001,
-                           metabolism_types='phase1',
+                           scenario=[{'type': 'phase1', 'steps': '2'},
+                                     {'type': 'phase2', 'steps': '1'}],
                            max_ms_level=3,
                            structures='C1CCCC1 comp1',
                            ms_data_file=msfield,
@@ -886,7 +920,6 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
                            min_refscore=1,
                            max_mz=9999,
                            )
-        params.add('metabolism_types', 'phase2')
 
         query = self.jobquery.allinone(params)
 
@@ -913,8 +946,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
 
     def test_without_molecule_and_with_structure_database(self):
-        params = dict(n_reaction_steps=2,
-                      ionisation_mode=1,
+        params = dict(ionisation_mode=1,
                       ms_intensity_cutoff=200000,
                       msms_intensity_cutoff=10,
                       abs_peak_cutoff=1000,
@@ -923,7 +955,8 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
                       max_water_losses=1,
                       mz_precision=5.0,
                       mz_precision_abs=0.001,
-                      metabolism_types='phase1',
+                      scenario=[{'type': 'phase1', 'steps': '2'},
+                                {'type': 'phase2', 'steps': '1'}],
                       max_ms_level=3,
                       structures='',
                       ms_data='bla',
@@ -955,8 +988,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         self.assertEqual(query, expected_query)
 
     def test_without_molecule_and_structure_database(self):
-        params = dict(n_reaction_steps=2,
-                      ionisation_mode=1,
+        params = dict(ionisation_mode=1,
                       ms_intensity_cutoff=200000,
                       msms_intensity_cutoff=10,
                       abs_peak_cutoff=1000,
@@ -965,7 +997,8 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
                       max_water_losses=1,
                       mz_precision=5.0,
                       mz_precision_abs=0.001,
-                      metabolism_types='phase1',
+                      scenario=[{'type': 'phase1', 'steps': '2'},
+                                {'type': 'phase2', 'steps': '1'}],
                       max_ms_level=3,
                       structures='',
                       ms_data='bla',

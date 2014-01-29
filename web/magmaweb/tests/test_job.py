@@ -45,7 +45,8 @@ def populateTestingDB(session):
     url2 = u'<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
     url2 += u'?cid=152432">CID: 152432</a>'
     session.add(Run(
-        n_reaction_steps=2, metabolism_types=u'phase1,phase2',
+        scenario=[{'type': 'phase1', 'steps': '2'},
+                  {'type': 'phase2', 'steps': '1'}],
         ionisation_mode=-1, skip_fragmentation=True,
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=50,
         mz_precision=10, mz_precision_abs=0.002, use_all_peaks=True,
@@ -168,7 +169,8 @@ def populateTestingDB(session):
 def populateWithUseAllPeaks(session):
     """ Dataset with multiple fragments of same metabolite on lvl1 scan """
     session.add(Run(
-        n_reaction_steps=2, metabolism_types=u'phase1,phase2',
+        scenario=[{'type': 'phase1', 'steps': '2'},
+                  {'type': 'phase2', 'steps': '1'}],
         ionisation_mode=-1, skip_fragmentation=True,
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=50,
         mz_precision=10, mz_precision_abs=0.002, use_all_peaks=False,
