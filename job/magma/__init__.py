@@ -638,8 +638,9 @@ class AnnotateEngine(object):
             self.call_back_engine=CallBackEngine(call_back_url)
         else:
             self.call_back_engine=None
-        iontypes=['H','NH4']
-        maxcharge=2
+        iontypes=['+H','+NH4']
+        #iontypes=['-H']
+        maxcharge=1
         self.ions=self.generate_ions(iontypes,maxcharge)
         print self.ions
         #print len(self.ions)
@@ -655,10 +656,10 @@ class AnnotateEngine(object):
             ions.append({})
             for ionmass in ions[c]:
                 for i in iontypes:
-                    ions[c+1][ionmass+pars.ionmasses[i]]=ions[c][ionmass]+'+'+i
+                    ions[c+1][ionmass+pars.ionmasses[i]]=ions[c][ionmass]+i
         for c in range(1,maxcharge+1):
             for ionmass in ions[c]:
-                ions[c][ionmass]='[M'+ions[c][ionmass]+']'+str(c)*(c>1)+'-'*(self.ionisation_mode<0)+'+'*(self.ionisation_mode>0)
+                ions[c][ionmass]='<br>[M'+ions[c][ionmass]+']'+str(c)*(c>1)+'-'*(self.ionisation_mode<0)+'+'*(self.ionisation_mode>0)
         return ions
 
     def build_spectrum(self,dbscan):
@@ -764,48 +765,35 @@ class AnnotateEngine(object):
                     mzs.append(peak.mz)
         mzs.sort()
         # build non-overlapping set of queries around these masses
-        queries=[[0,0]]
-        cqueries=[[0,0]] # queries of charged molecules
+        candidate={}
         for mz in mzs:
-            ql=int(1e6*(min(mz/self.precision,mz-self.mz_precision_abs)-self.ionisation_mode*(pars.Hmass-pars.elmass)))
-            qh=int(1e6*(max(mz*self.precision,mz+self.mz_precision_abs)-self.ionisation_mode*(pars.Hmass-pars.elmass)))
-            #ql=int(1e6*(mz/self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass))) # tijdelijk for thermo
-            #qh=int(1e6*(mz*self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass))) # tijdelijk for thermo
-            if ql < mmim:
-                if qh > mmim:
-                    qh == mmim
-                if queries[-1][0] <= ql <= queries[-1][1]:
-                    queries[-1][1]=qh
-                else:
-                    queries.append([ql,qh])
-            ql=int(1e6*(min(mz/self.precision,mz-self.mz_precision_abs)+self.ionisation_mode*pars.elmass))
-            qh=int(1e6*(max(mz*self.precision,mz+self.mz_precision_abs)+self.ionisation_mode*pars.elmass))
-            if ql < mmim:
-                if qh > mmim:
-                    qh == mmim
-                if cqueries[-1][0] <= ql <= cqueries[-1][1]:
-                    cqueries[-1][1]=qh
-                else:
-                    cqueries.append([ql,qh])
+            for charge in range(1,len(self.ions)):
+                for ionmass in self.ions[charge]:
+                    ql=int(1e6*((min(mz/self.precision,mz-self.mz_precision_abs)-ionmass)*charge+self.ionisation_mode*pars.elmass))
+                    qh=int(1e6*((max(mz*self.precision,mz+self.mz_precision_abs)-ionmass)*charge+self.ionisation_mode*pars.elmass))
+                    #ql=int(1e6*(mz/self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass))) # tijdelijk for thermo
+                    #qh=int(1e6*(mz*self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass))) # tijdelijk for thermo
+                    result=query_engine.query_on_mim(ql,qh,0)
+                    for molecule in result:
+                        candidate[molecule.inchikey]=molecule #remove duplicates
+                    print str(ql)+','+str(qh)+' --> '+str(len(candidate))+' candidates'
+                for ionmass in self.ions[charge-1]: # include singly charged candidates from database
+                    ql=int(1e6*((min(mz/self.precision,mz-self.mz_precision_abs)-ionmass)*charge+self.ionisation_mode*pars.elmass))
+                    qh=int(1e6*((max(mz*self.precision,mz+self.mz_precision_abs)-ionmass)*charge+self.ionisation_mode*pars.elmass))
+                    result=query_engine.query_on_mim(ql,qh,self.ionisation_mode)
+                    for molecule in result:
+                        candidate[molecule.inchikey]=molecule #remove duplicates
+                    print str(ql)+','+str(qh)+' --> '+str(len(candidate))+' candidates'
 
         # in case of an empty database, no check for existing duplicates needed
         check_duplicates = (self.db_session.query(Metabolite.metid).count() > 0)
         print 'check: ',check_duplicates
+        metids=set([])
+        for molecule in candidate.itervalues():
+            metid=struct_engine.add_molecule(molecule,check_duplicates=check_duplicates,merge=True)
+            metids.add(metid)
 
         # All candidates are stored in dbsession, resulting metids are returned
-        metids=set([])
-        for ql,qh in queries:
-            result=query_engine.query_on_mim(ql,qh,0)
-            for molecule in result:
-                metid=struct_engine.add_molecule(molecule,check_duplicates=check_duplicates,merge=True)
-                metids.add(metid)
-            print str(ql)+','+str(qh)+' --> '+str(len(metids))+' candidates'
-        for ql,qh in cqueries:
-            result=query_engine.query_on_mim(ql,qh,self.ionisation_mode)
-            for molecule in result:
-                metid=struct_engine.add_molecule(molecule,check_duplicates=check_duplicates,merge=True)
-                metids.add(metid)
-            print str(ql)+','+str(qh)+' --> '+str(len(metids))+' candidates'
         self.db_session.commit()
         return metids
 
@@ -842,10 +830,10 @@ class AnnotateEngine(object):
                     continue
                 # collect all peaks with masses within 3 Da range
                 molcharge=0
-                molcharge+=1*((structure.molformula[-1]=='-' and ionisation_mode==-1) or \
-                               (structure.molformula[-1]=='+' and ionisation_mode==1)) # derive charge from molecular formula
+                molcharge+=1*((structure.molformula[-1]=='-' and self.ionisation_mode==-1) or \
+                               (structure.molformula[-1]=='+' and self.ionisation_mode==1)) # derive charge from molecular formula
                 peaks=set([])
-                for charge in range(molcharge+1,len(self.ions)):
+                for charge in range(1,len(self.ions)):
                     for ionmass in self.ions[charge-molcharge]:
                         int_mass=int(round((structure.mim+ionmass)/charge))
                         try:
@@ -1305,11 +1293,11 @@ def search_structure(mol,mim,molcharge,peaks,max_broken_bonds,max_water_losses,p
     def massmatch(peak,mim,molcharge):
         lowmz=min(peak.mz/precision,peak.mz-mz_precision_abs)
         highmz=max(peak.mz*precision,peak.mz+mz_precision_abs)
-        for charge in range(molcharge+1,len(ions)):
+        for charge in range(1,len(ions)):
             for ionmass in ions[charge-molcharge]: 
                 #print lowmz, highmz, mim, ionmass, charge
                 if lowmz <= (mim+ionmass)/charge-ionisation_mode*pars.elmass <= highmz:
-                    return [ionmass,ions[charge][ionmass]]
+                    return [ionmass,ions[charge-molcharge][ionmass]]
         return False
 
     #def findhit(self,childscan,parent):

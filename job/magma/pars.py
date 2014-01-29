@@ -22,8 +22,9 @@ mims={'H':1.0078250321,\
 Hmass=mims['H']     # Mass of hydrogen atom
 elmass=0.0005486
 
-ionmasses={'H':  mims['H'],
-           'NH4':mims['N']+4*mims['H'],
-           'Na': mims['Na'],
-           'K':  mims['K']
+ionmasses={'+H':   mims['H'],
+           '+NH4': mims['N']+4*mims['H'],
+           '+Na':  mims['Na'],
+           '+K':   mims['K'],
+           '-H':   -mims['H']
            }
