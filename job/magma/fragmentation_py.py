@@ -11,7 +11,7 @@ elif config.get('magma job','chemical_engine')=="cdk":
     Chem=cdk_engine.engine()
 
 class FragmentEngine(object):
-    def __init__(self,mol,max_broken_bonds,max_water_losses,ionisation_mode,skip_fragmentation):
+    def __init__(self,mol,max_broken_bonds,max_water_losses,ionisation_mode,skip_fragmentation,molcharge):
         try:
             self.mol=Chem.MolFromMolBlock(str(mol))
             self.accept=True
@@ -23,6 +23,7 @@ class FragmentEngine(object):
         self.max_water_losses=max_water_losses
         self.ionisation_mode=ionisation_mode
         self.skip_fragmentation=skip_fragmentation
+        self.molcharge=molcharge
         self.atom_masses=[]
         self.neutral_loss_atoms=[]
         self.bonded_atoms=[]           # [[list of atom numbers]]
@@ -143,7 +144,7 @@ class FragmentEngine(object):
 
     def add_fragment(self, fragment, fragmentmass, score, bondbreaks):
         self.fragment_masses+=((self.max_broken_bonds+self.max_water_losses-bondbreaks)*[0]+\
-                                  list(numpy.arange(-bondbreaks+self.ionisation_mode,bondbreaks+self.ionisation_mode+1)*pars.Hmass+fragmentmass)+\
+                                  list(numpy.arange(-bondbreaks+self.ionisation_mode*(1-self.molcharge),bondbreaks+self.ionisation_mode*(1-self.molcharge)+1)*pars.Hmass+fragmentmass)+\
                                   (self.max_broken_bonds+self.max_water_losses-bondbreaks)*[0])
         self.fragment_info.append([fragment,score,bondbreaks])
     
