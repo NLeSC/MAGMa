@@ -23,7 +23,7 @@ ctypedef struct bond_breaks_score_pair:
 cdef class FragmentEngine(object):
 
     cdef unsigned long long new_fragment,template_fragment
-    cdef int max_broken_bonds,max_water_losses,ionisation_mode
+    cdef int max_broken_bonds,max_water_losses,ionisation_mode,molcharge
     cdef bonded_atom[64] bonded_atoms
     cdef double[64] atom_masses
     cdef list neutral_loss_atoms
@@ -37,7 +37,7 @@ cdef class FragmentEngine(object):
     cdef char* mol
     
     
-    def __init__(self,mol,max_broken_bonds,max_water_losses,ionisation_mode,skip_fragmentation):
+    def __init__(self,mol,max_broken_bonds,max_water_losses,ionisation_mode,skip_fragmentation,molcharge):
         cdef unsigned long long bond
         cdef float bondscore
         cdef int x,a1,a2
@@ -57,6 +57,7 @@ cdef class FragmentEngine(object):
         self.max_water_losses=max_water_losses
         self.ionisation_mode=ionisation_mode
         self.skip_fragmentation=skip_fragmentation
+        self.molcharge=molcharge
         self.nbonds=Chem.nbonds(mol)
         self.neutral_loss_atoms=[]
         self.atom_elements={}
@@ -205,7 +206,7 @@ cdef class FragmentEngine(object):
 
     def add_fragment(self,unsigned long long fragment,double fragmentmass,score,int bondbreaks):
         self.fragment_masses+=((self.max_broken_bonds+self.max_water_losses-bondbreaks)*[0]+\
-                                  list(numpy.arange(-bondbreaks+self.ionisation_mode,bondbreaks+self.ionisation_mode+1)*pars.Hmass+fragmentmass)+\
+                                  list(numpy.arange(-bondbreaks+self.ionisation_mode*(1-self.molcharge),bondbreaks+self.ionisation_mode*(1-self.molcharge)+1)*pars.Hmass+fragmentmass)+\
                                   (self.max_broken_bonds+self.max_water_losses-bondbreaks)*[0])
         self.fragment_info.append([fragment,score,bondbreaks])
     
