@@ -657,7 +657,7 @@ class AnnotateEngine(object):
             for ionmass in ions[c]:
                 for i in iontypes:
                     ions[c+1][ionmass+pars.ionmasses[i]]=ions[c][ionmass]+i
-        for c in range(1,maxcharge+1):
+        for c in range(maxcharge+1):
             for ionmass in ions[c]:
                 ions[c][ionmass]='<br>[M'+ions[c][ionmass]+']'+str(c)*(c>1)+'-'*(self.ionisation_mode<0)+'+'*(self.ionisation_mode>0)
         return ions
