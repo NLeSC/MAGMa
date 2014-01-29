@@ -66,7 +66,6 @@ class ReactionSequence(TypeDecorator):
                 value = {}
         return value
 
-
 class Metabolite(Base):
     """Metabolite model for metabolites table"""
     __tablename__ = 'metabolites'
@@ -108,8 +107,7 @@ class Reaction(Base):
     product = Column(Integer, ForeignKey('metabolites.metid'))
     name = Column(Unicode)
 
-
-def fill_molecules_reactionsequence(session):
+def fill_molecules_reactions(session):
     """Fills the reactionsequence column in the molecules table with info from reactions table.
 
     The molecules query will become to complex when reactionsequence is queried from reactions table.
@@ -155,7 +153,6 @@ def fill_molecules_reactionsequence(session):
         mol.reactionsequence = reaction
     session.commit()
 
-
 class Scan(Base):
     """Scan model for scans table"""
     __tablename__ = 'scans'
@@ -199,7 +196,7 @@ class Peak(Base):
     # Intensity of peak (y-coordinate)
     intensity = Column(Float)
     # which metabolite is assigned to this peak
-    assigned_metid = Column(Integer, ForeignKey('metabolites.metid'))
+    assigned_metid = Column(Integer, ForeignKey('metabolites.metid'),index=True)
 
 
 class Fragment(Base):
@@ -208,9 +205,9 @@ class Fragment(Base):
     # Fragment identifier
     fragid = Column(Integer, primary_key=True, autoincrement=True)
     # Metabolite identifier
-    metid = Column(Integer, ForeignKey('metabolites.metid'))
+    metid = Column(Integer, ForeignKey('metabolites.metid'),index=True)
     # Scan identifier
-    scanid = Column(Integer, ForeignKey('scans.scanid'))
+    scanid = Column(Integer, ForeignKey('scans.scanid'),index=True)
     # m/z of peak in scan
     mz = Column(Float)
     # Mass of fragment in Dalton, corrected with h delta
@@ -237,7 +234,6 @@ class Fragment(Base):
                                            ),
                       {}
                       )
-
 
 class Run(Base):
     """Run model for run table"""
