@@ -1353,7 +1353,7 @@ def search_structure(mol,mim,molcharge,peaks,max_broken_bonds,max_water_losses,p
                 if not Fragmented:
                     #sys.stderr.write('\nMetabolite '+str(structure.metid)+': '+str(structure.origin)+' '+str(structure.reactionsequence)+'\n')
                     #sys.stderr.write('Mim: '+str(structure.mim)+'\n')
-                    fragment_engine=Fragmentation.FragmentEngine(mol,max_broken_bonds,max_water_losses,ionisation_mode,skip_fragmentation)
+                    fragment_engine=Fragmentation.FragmentEngine(mol,max_broken_bonds,max_water_losses,ionisation_mode,skip_fragmentation,molcharge)
                     #fragment_engine=GrowingEngine(mol)
                     if fragment_engine.accepted():
                         frags=fragment_engine.generate_fragments()
