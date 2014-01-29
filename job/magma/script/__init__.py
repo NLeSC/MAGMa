@@ -62,6 +62,8 @@ class MagmaCommand(object):
         sc.add_argument('-j', '--metids', type=argparse.FileType('rb'), help="File with structure ids")
         sc.add_argument('-n', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=1,type=int)
         sc.add_argument('-m', '--metabolism_types', help="digest,gut,phase1,phase2, (default: %(default)s)", default="phase1,phase2", type=str)
+        sc.add_argument('-s', '--scenario', default=None, type=str, help="""Scenario file, each line defines a separate stage:
+                                        action(glycosidase/gut/phase1[_selected]/phase2[_selected]/mass_filter),value(nsteps/mass limit)""")
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.metabolize)
 
@@ -92,7 +94,7 @@ class MagmaCommand(object):
         sc.add_argument('--skip_fragmentation', help="Skip substructure annotation of fragment peaks (default: %(default)s)", action="store_true")
         sc.add_argument('-f', '--fast', help="Quick calculations for molecules up to 64 atoms (default: %(default)s)", action="store_true")
         sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["pubchem","kegg","hmdb","metacyc"])
-        sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,min_refscore(only for PubChem) (default: %(default)s)",default=",1200,False,",type=str)
+        sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,incl_halo,min_refscore(only for PubChem) (default: %(default)s)",default=",1200,False",type=str)
         sc.add_argument('--ncpus', help="Number of parallel cpus to use for annotation (default: %(default)s)", default=1,type=int)
         sc.add_argument('--scans', help="Search in specified scans (default: %(default)s)", default="all",type=str)
         sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=int)
@@ -106,6 +108,10 @@ class MagmaCommand(object):
         sc.add_argument('db_out', type=str, help="Output qlite database file with selected results")
         sc.set_defaults(func=self.select)
 
+        sc = subparsers.add_parser("writeSDF", help=self.writeSDF.__doc__, description=self.writeSDF.__doc__)
+        sc.add_argument('db', type=str, help="Sqlite database file with results")
+        sc.set_defaults(func=self.writeSDF)
+        
         sc = subparsers.add_parser("sd2smiles", help=self.sd2smiles.__doc__, description=self.sd2smiles.__doc__)
         sc.add_argument('input', type=argparse.FileType('rb'), help="Sd file")
         sc.add_argument('output', type=argparse.FileType('w'), help="File with smiles which can be used as metabolite reactantss")
@@ -163,17 +169,16 @@ class MagmaCommand(object):
         metids=set([])
         if args.structure_format == 'smiles':
             for mol in self.smiles2mols(args.structures):
-                metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 'PARENT', 1, mass_filter=args.mass_filter))
+                metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 1, mass_filter=args.mass_filter))
         elif args.structure_format == 'sdf':
             for mol in Chem.SDMolSupplier(args.structures.name):
                 try:
-                    rs=mol.GetProp('ReactionSequence')
-                    if rs!="":
-                        rs=rs+"\n"
-                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0,rs, 1, mass_filter=args.mass_filter))
+                    ref=mol.GetProp('reference')
+                    prob=mol.GetProp('probability')
+                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), prob, 0, 1, reference=ref, mass_filter=args.mass_filter))
                 except:
                     #print sys.exc_info()
-                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0,"", 1, mass_filter=args.mass_filter))
+                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 1, mass_filter=args.mass_filter))
         magma_session.commit()
         for metid in metids:
             print metid
@@ -182,7 +187,15 @@ class MagmaCommand(object):
         if magma_session == None:
             magma_session = self.get_magma_session(args.db,args.description)
         struct_engine = magma_session.get_structure_engine(args.metabolism_types, args.n_reaction_steps) # TODO remove arguments
-        if args.metids == None:
+        if args.scenario != None:
+            scenario=[]
+            scenario_file=open(args.scenario,'r')
+            for line in scenario_file:
+                step=line.split('#')[0].rstrip().split(',') # Comments indicated by # are allowed
+                if len(step)>1:
+                    scenario.append(step)
+            struct_engine.run_scenario(scenario)
+        elif args.metids == None:
             metids=struct_engine.metabolize_all(args.metabolism_types, args.n_reaction_steps)
             for metid in metids:
                 print metid
@@ -192,6 +205,7 @@ class MagmaCommand(object):
                 metids.extend(struct_engine.metabolize(reactantid,args.metabolism_types, args.n_reaction_steps))
             for metid in set(metids):
                 print metid
+        magma_session.fill_molecules_reactions()
 
     def read_ms_data(self, args, magma_session=None):
         if magma_session == None:
@@ -237,12 +251,12 @@ class MagmaCommand(object):
 #            annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
         pubchem_metids=[]
         if args.structure_database != "":
-            db_opts=['','','','']
+            db_opts=['','','','','']
             db_options=args.db_options.split(',')
             for x in range(len(db_options)):
                 db_opts[x]=db_options[x]
             if args.structure_database == 'pubchem':
-                query_engine=magma.PubChemEngine(db_opts[0],(db_opts[2]=='True'),db_opts[3])
+                query_engine=magma.PubChemEngine(db_opts[0],(db_opts[2]=='True'),db_opts[3],db_opts[4])
             elif args.structure_database == 'kegg':
                 query_engine=magma.KeggEngine(db_opts[0],(db_opts[2]=='True'))
             elif args.structure_database == 'hmdb':
@@ -256,6 +270,7 @@ class MagmaCommand(object):
             metids=args.metids.split(',')+pubchem_metids
             annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast,time_limit=args.time_limit)
         magma_session.commit()
+        magma_session.fill_molecules_reactions()
             # annotate_engine.search_some_structures(metids)
 
     def select(self, args):
@@ -263,6 +278,12 @@ class MagmaCommand(object):
         magma_session = self.get_magma_session(args.db_out)
         select_engine = magma_session.get_select_engine()
         select_engine.select_fragment(args.frag_id)
+
+    def writeSDF(self, args, magma_session=None):
+        if magma_session == None:
+            magma_session = self.get_magma_session(args.db)
+        analysis_engine = magma_session.get_data_analysis_engine()
+        analysis_engine.write_SDF()
 
     def sd2smiles(self, args):
         """ Convert sd file to smiles """

@@ -213,7 +213,14 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
                     'nhits': 1,
                     'origin': u'pyrocatechol',
                     'probability': 1.0,
-                    'reactionsequence': [u'PARENT'],
+                    'reactionsequence': {
+                                             u'reactantof': {
+                                                 u'esterase': {
+                                                     u'nr': 2,
+                                                     u'nrp': 1
+                                                 }
+                                             }
+                                         },
                     'smiles': u'Oc1ccccc1O',
                     'mim': 110.03677, 'logp':1.231,
                     'assigned': False,
@@ -225,7 +232,14 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
                     'nhits': 1,
                     'origin': u"dihydroxyphenyl-valerolactone",
                     'probability': 1,
-                    'reactionsequence': [u"PARENT", u"CHILD"],
+                    'reactionsequence': {
+                                             u'productof': {
+                                                 u'theogallin': {
+                                                     u'nr': 1,
+                                                     u'nrp': 0
+                                                 }
+                                             }
+                                         },
                     'smiles': u"O=C1OC(Cc2ccc(O)c(O)c2)CC1",
                     'mim': 208.07355, 'logp':2.763,
                     'assigned': False,
@@ -331,6 +345,16 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
 
         self.assertEqual(response['total'], 0)
 
+    def test_filteredon_reaction(self):
+        filters = [{"type": "reaction",
+                    "product": 3,
+                    "name": "esterase",
+                    "field": "reactionsequence",
+                    }]
+        response = self.job.metabolites(filters=filters)
+
+        self.assertEqual(response['total'], 0)
+
     def test_sort_probmet(self):
         response = self.job.metabolites(sorts=[{"property": "probability",
                                                 "direction": "DESC"},
@@ -379,6 +403,75 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
             self.job.metabolites(sorts=sorts)
 
 
+class JobDbMetabolitesReactionFilterTestCase(JobDbTestCaseAbstract):
+    def setUp(self):
+        JobDbTestCaseAbstract.setUp(self)
+        self.query = self.session.query(Metabolite.metid)
+
+    def test_reaction_reactants(self):
+        afilter = {"type": "reaction",
+                   "product": 3,
+                   "field": "reactionsequence"}
+
+        fq = self.job.reaction_filter(self.query, afilter)
+
+        self.assertEqual(str(fq), 'SELECT metabolites.metid AS metabolites_metid \nFROM metabolites JOIN reactions ON metabolites.metid = reactions.reactant \nWHERE reactions.product = :product_1')
+
+    def test_reaction_products(self):
+        afilter = {"type": "reaction",
+                   "reactant": 3,
+                   "field": "reactionsequence"}
+
+        fq = self.job.reaction_filter(self.query, afilter)
+
+        self.assertEqual(str(fq), 'SELECT metabolites.metid AS metabolites_metid \nFROM metabolites JOIN reactions ON metabolites.metid = reactions.product \nWHERE reactions.reactant = :reactant_1')
+
+    def test_reaction_productsofname(self):
+        afilter = {"type": "reaction",
+                   "reactant": 3,
+                   "name": "esterase",
+                   "field": "reactionsequence"}
+
+        fq = self.job.reaction_filter(self.query, afilter)
+
+        self.assertEqual(str(fq), 'SELECT metabolites.metid AS metabolites_metid \nFROM metabolites JOIN reactions ON metabolites.metid = reactions.product \nWHERE reactions.reactant = :reactant_1 AND reactions.name = :name_1')
+
+    def test_reaction_reactantsofname(self):
+        afilter = {"type": "reaction",
+                   "product": 3,
+                   "name": "esterase",
+                   "field": "reactionsequence"}
+
+        fq = self.job.reaction_filter(self.query, afilter)
+
+        self.assertEqual(str(fq), 'SELECT metabolites.metid AS metabolites_metid \nFROM metabolites JOIN reactions ON metabolites.metid = reactions.reactant \nWHERE reactions.product = :product_1 AND reactions.name = :name_1')
+
+    def test_reaction_reactantandproduct(self):
+        afilter = {"type": "reaction",
+                   "product": 3,
+                   "reactant": 3,
+                   "name": "esterase",
+                   "field": "reactionsequence"}
+
+        with self.assertRaises(TypeError):
+            self.job.reaction_filter(self.query, afilter)
+
+    def test_reaction_onlyname(self):
+        afilter = {"type": "reaction",
+                   "name": "esterase",
+                   "field": "reactionsequence"}
+
+        with self.assertRaises(TypeError):
+            self.job.reaction_filter(self.query, afilter)
+
+    def test_none(self):
+        afilter = {"type": "reaction",
+                   "field": "reactionsequence"}
+
+        with self.assertRaises(TypeError):
+            self.job.reaction_filter(self.query, afilter)
+
+
 class JobDbMetabolites2csvTestCase(JobDbTestCaseAbstract):
     def test_it(self):
         csvfile = self.job.metabolites2csv(self.job.metabolites()['rows'])
@@ -396,7 +489,7 @@ class JobDbMetabolites2csvTestCase(JobDbTestCaseAbstract):
         csvwriter.writerow({'origin': 'pyrocatechol',
                             'smiles': 'Oc1ccccc1O',
                             'probability': 1.0,
-                            'reactionsequence': 'PARENT',
+                            'reactionsequence': '{"reactantof": {"esterase": {"nr": 2, "nrp": 1}}}',
                             'nhits': 1,
                             'molformula': 'C6H6O2',
                             'isquery': True,
@@ -407,7 +500,7 @@ class JobDbMetabolites2csvTestCase(JobDbTestCaseAbstract):
         csvwriter.writerow({'origin': 'dihydroxyphenyl-valerolactone',
                             'smiles': 'O=C1OC(Cc2ccc(O)c(O)c2)CC1',
                             'probability': 1.0,
-                            'reactionsequence': 'PARENT|CHILD',
+                            'reactionsequence': '{"productof": {"theogallin": {"nr": 1, "nrp": 0}}}',
                             'nhits': 1,
                             'molformula': 'C11H12O4',
                             'isquery': True,
@@ -432,7 +525,8 @@ class JobDbMetabolites2csvTestCase(JobDbTestCaseAbstract):
         url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
         url1 += '?cid=289">CID: 289</a>'
         csvwriter.writerow({'origin': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
-                            'probability': 1.0, 'reactionsequence': 'PARENT',
+                            'probability': 1.0,
+                            'reactionsequence': '{"reactantof": {"esterase": {"nr": 2, "nrp": 1}}}',
                             'nhits': 1, 'molformula': 'C6H6O2',
                             'isquery': True, 'score': 200.0, 'mim': 110.03677,
                             'logp': 1.231,
@@ -472,7 +566,7 @@ Oc1ccccc1O
 1.0
 
 > <reactionsequence>
-PARENT
+{{"reactantof": {{"esterase": {{"nr": 2, "nrp": 1}}}}}}
 
 > <nhits>
 1
@@ -500,8 +594,7 @@ O=C1OC(Cc2ccc(O)c(O)c2)CC1
 1.0
 
 > <reactionsequence>
-PARENT
-CHILD
+{{"productof": {{"theogallin": {{"nr": 1, "nrp": 0}}}}}}
 
 > <nhits>
 1
@@ -539,7 +632,7 @@ Oc1ccccc1O
 1.0
 
 > <reactionsequence>
-PARENT
+{{"reactantof": {{"esterase": {{"nr": 2, "nrp": 1}}}}}}
 
 > <nhits>
 1

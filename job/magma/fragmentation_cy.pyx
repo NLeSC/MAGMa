@@ -106,6 +106,8 @@ cdef class FragmentEngine(object):
         cdef bond_breaks_score_pair bbsp
         cdef set all_fragments,total_fragments,current_fragments,new_fragments
         frag=(1ULL<<self.natoms)-1
+        if self.natoms==64:
+            frag=18446744073709551615 # =(1<<64)-1
         all_fragments=set([frag])
         total_fragments=set([frag])
         current_fragments=set([frag])
@@ -154,7 +156,7 @@ cdef class FragmentEngine(object):
                 if fi[2]==self.max_broken_bonds+step:               # on which to apply neutral loss rules
                     fragment=fi[0]
                     for atom in self.neutral_loss_atoms:       # loop of all atoms
-                        if (1<<atom) & fragment:            # in the fragment
+                        if (1ULL<<atom) & fragment:            # in the fragment
                             frag=fragment^(1ULL<<atom)
                             if frag not in total_fragments:   # add extended fragments if not yet present
                                 total_fragments.add(frag)     # to the collection

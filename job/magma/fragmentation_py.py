@@ -163,6 +163,7 @@ class FragmentEngine(object):
         fragment_set=[]
         for i in range(len(result[0])):
             fid=result[0][i]
+            #if self.max_broken_bonds+self.max_water_losses-self.ionisation_mode-result[1][i] in [0,-self.ionisation_mode]:
             fragment_set.append(self.fragment_info[fid]+\
                                  [self.fragment_masses_np[fid][self.max_broken_bonds+self.max_water_losses-self.ionisation_mode]]+\
                                  [self.max_broken_bonds+self.max_water_losses-self.ionisation_mode-result[1][i]])

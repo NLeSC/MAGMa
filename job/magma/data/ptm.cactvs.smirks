@@ -1,0 +1,4 @@
+[S$(S(C)CCC(N)C=O):1]>>[S:1]=O 1.0 M_ox n # Methione oxidation
+[S$(SCC(N)C=O):1][H]>>[S:1]CC(=O)N 1.0 C_mod n # Cystein carbamidomethylation
+[C$(C([NH2])(=O)[CH2][CH2]C(N)C=O):1]N([H])[H]>>[C:1]O 1.0 Q_deam n
+[C$(C([NH2])(=O)[CH2]C(N)C=O):1]N([H])[H]>>[C:1]O 1.0 N_deam n

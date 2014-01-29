@@ -10,7 +10,7 @@ from sqlalchemy import create_engine,and_,desc,distinct
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
-from models import Base, Metabolite, Reaction, Scan, Peak, Fragment, Run
+from models import Base, Metabolite, Reaction, fill_molecules_reactions, Scan, Peak, Fragment, Run
 import requests,functools,macauthlib #required to update callback url
 from requests.auth import AuthBase
 import pp
@@ -92,6 +92,8 @@ class MagmaSession(object):
                  key
                  ):
         return CallBackEngine(id,key)
+    def fill_molecules_reactions(self):
+        fill_molecules_reactions(self.db_session)
     def commit(self):
         self.db_session.commit()
     def close(self):
@@ -131,8 +133,8 @@ class StructureEngine(object):
         self.metabolism_types=rundata.metabolism_types.split(',')
         self.n_reaction_steps=rundata.n_reaction_steps
 
-    def add_structure(self,molblock,name,prob,level,sequence,isquery,mim=None,natoms=None,inchikey=None,molform=None,reference=None,logp=None,mass_filter=9999):
-        molecule=types.MoleculeType(molblock,name,prob,level,sequence,isquery,mim,natoms,inchikey,molform,reference,logp)
+    def add_structure(self,molblock,name,prob,level,isquery,mim=None,natoms=None,inchikey=None,molform=None,reference=None,logp=None,mass_filter=9999):
+        molecule=types.MoleculeType(molblock,name,prob,level,isquery,mim,natoms,inchikey,molform,reference,logp)
         self.add_molecule(molecule,mass_filter)
 
     def add_molecule(self,molecule,mass_filter=9999,check_duplicates=True,merge=False):
@@ -142,7 +144,6 @@ class StructureEngine(object):
             mol=unicode(molecule.molblock, 'utf-8', 'xmlcharrefreplace'),
             level=molecule.level,
             probability=molecule.probability,
-            reactionsequence=molecule.reactionsequence,
             smiles=molecule.inchikey,
             molformula=molecule.molformula,
             isquery=molecule.isquery,
@@ -158,10 +159,12 @@ class StructureEngine(object):
             if len(dups)>0:
                 if merge:
                     metab=dups[0]
-                    metab.origin=unicode(str(metab.origin)+'</br>'+molecule.name, 'utf-8', 'xmlcharrefreplace')
-                    metab.reference=molecule.reference
-                    metab.probability=molecule.probability
-                    metab.reactionsequence=unicode(str(metab.reactionsequence)+'</br>'+molecule.reactionsequence)
+                    if metab.origin == "" and molecule.name != "":
+                        metab.origin=unicode(str(metab.origin)+'</br>'+molecule.name, 'utf-8', 'xmlcharrefreplace')
+                    if metab.reference == "" and molecule.reference != "":
+                        metab.reference=molecule.reference
+                    if molecule.probability > 0:
+                        metab.probability=molecule.probability
                 else:
                     if dups[0].probability < molecule.probability:
                         metab.metid=dups[0].metid
@@ -207,15 +210,23 @@ class StructureEngine(object):
                 exec_reactor+=" "+"parallel"
             metabolism_files={
                 "phase1": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/sygma_rules4.0_GE_0.1.cactvs.phase1.smirks"),
+                                                           'magma', "data/sygma_rules4.0.cactvs.phase1.smirks"),
                 "phase2": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/sygma_rules4.0.cactvs.phase2.smirks"),
+                "phase1_selected": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/sygma_rules4.0.cactvs.phase1_GE0.05.smirks"),
+                "phase2_selected": pkg_resources.resource_filename( #@UndefinedVariable
                                                            'magma', "data/sygma_rules4.0.cactvs.phase2_GE0.05.smirks"),
                 "gut": pkg_resources.resource_filename( #@UndefinedVariable
                                                            'magma', "data/gut.cactvs.smirks"),
-                "digest": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/digest.cactvs.smirks"),
+                "glycosidase": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/glycosidase.cactvs.smirks"),
                 "peptide": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/peptide.cactvs.smirks")
+                                                           'magma', "data/peptide.cactvs.smirks"),
+                "ptm": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/ptm.cactvs.smirks"),
+                "plant": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/plant.cactvs.smirks")
                 }
         try:
             parent = self.db_session.query(Metabolite).filter_by(metid=metid).one()
@@ -263,12 +274,11 @@ class StructureEngine(object):
                         line=reactor.stdout.readline()
                 line=reactor.stdout.readline()
             if reaction!='PARENT':
-                molecule=types.MoleculeType(mol,name,0,0,str(metid)+'&gt&gt'+reaction,isquery)
+                molecule=types.MoleculeType(mol,"",None,None,isquery)
                 new_metid=self.add_molecule(molecule,merge=True)
                 metids.add(new_metid)
                 reactid=self.db_session.query(Reaction.reactid).filter(Reaction.reactant==metid,Reaction.product==new_metid,Reaction.name==reaction).all()
                 if len(reactid)==0:
-                    parent.reactionsequence+=unicode('</br>'+str(new_metid)+'&lt&lt'+reaction)
                     react=Reaction(
                         reactant=metid,
                         product=new_metid,
@@ -295,6 +305,42 @@ class StructureEngine(object):
             metids|=self.metabolize(parentid,metabolism,endpoints)
         return metids
 
+    def run_scenario(self, scenario):
+        print scenario
+        result=self.db_session.query(Metabolite.metid).all()
+        metids={x[0] for x in result} #set comprehension
+        for step in range(len(scenario)):
+            action,value = scenario[step]
+            print "----- Scenario, step ",step,"-----"
+            endpoints=False
+            if action=='mass_filter':
+                result=self.db_session.query(Metabolite.metid).filter(Metabolite.mim<float(value),Metabolite.metid.in_(metids)).all()
+                metids={x[0] for x in result} #set comprehension
+                print "from ",len(metids),"processed compounds",len(metids),"compounds were selected with mass <",value
+            else:
+                prev_metids=metids
+                if value=='complete':
+                    endpoints=True
+                    value=1
+                print len(metids),"metabolites",
+                new_metids=set()
+                for metid in metids:
+                    new_metids |= self.metabolize(metid,action,endpoints)
+                active_metids=new_metids.difference(metids)
+                metids=new_metids
+                for i in range(1,int(value)):
+                    new_metids=set()
+                    for metid in active_metids:
+                        new_metids |= self.metabolize(metid,action,endpoints)
+                    active_metids=new_metids.difference(metids)
+                    metids |= new_metids
+                print 'were metabolized according to',action,'rules'
+                print '"Active" metabolites:',len(metids)
+                if not endpoints:
+                    metids |= prev_metids
+            # print metids
+            print ""
+ 
     def retrieve_structures(self,mass):
         dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
         conn = sqlite3.connect(dbfilename)
@@ -329,6 +375,8 @@ class MsDataEngine(object):
         self.abs_peak_cutoff=rundata.abs_peak_cutoff
 #        self.rel_peak_cutoff=rundata.rel_peak_cutoff
         self.max_ms_level=rundata.max_ms_level
+        self.precision=1.00001 # TODO read as options (move option from annotate to read_ms_data)
+        self.mz_precision_abs=0.002 # TODO idem
 
     def store_mzxml_file(self,mzxml_file,scan_filter=None):
         logging.warn('Store mzxml file')
@@ -344,12 +392,10 @@ class MsDataEngine(object):
         mzxml_query=namespace+"msRun/"+namespace+"scan"
         prec_scans=[] # in case of non-hierarchical mzXML, also find child scans
         for mzxmlScan in root.findall(mzxml_query):
-            try:
-                if scan_filter == None or mzxmlScan.attrib['num'] == scan_filter or mzxmlScan.find(namespace+'precursorMz').attrib['precursorScanNum'] in prec_scans:
-                    self.store_mzxml_scan(mzxmlScan,0,namespace)
-                    prec_scans.append(mzxmlScan.attrib['num']) # in case of non-hierarchical mzXML, also find child scans
-            except:
-                pass
+            if scan_filter == None or mzxmlScan.attrib['num'] == scan_filter or \
+                    (int(mzxmlScan.attrib['msLevel'])>1 and mzxmlScan.find(namespace+'precursorMz').attrib['precursorScanNum'] in prec_scans):
+                self.store_mzxml_scan(mzxmlScan,0,namespace)
+                prec_scans.append(mzxmlScan.attrib['num']) # in case of non-hierarchical mzXML, also find child scans
         self.db_session.commit()
 
     def store_mzxml_scan(self,mzxmlScan,precScan,namespace):
@@ -366,12 +412,24 @@ class MsDataEngine(object):
             totioncurrent=float(mzxmlScan.attrib['totIonCurrent']),
             precursorscanid=precScan
             )
+        sys.stderr.write('Processing scan '+str(scan.scanid)+' (level '+str(scan.mslevel)+')\n') 
+        comp=None
         for child in mzxmlScan:
             if child.tag == namespace+'precursorMz':
                 scan.precursormz=float(child.text)
                 scan.precursorintensity=float(child.attrib['precursorIntensity'])
-                if child.attrib.get('precursorScanNum') != None:
+                if child.attrib.get('precursorScanNum') != None: # Non-hierarchical mzXML!
                     scan.precursorscanid=float(child.attrib['precursorScanNum'])
+                if scan.precursorscanid == 0: 
+                    # MS>1 scan is not in a hierarchy and does not contain precursor scan information
+                    # assume that the last scan at the precursor MS level is the precursor scan
+                    result=self.db_session.query(Scan.scanid).filter(Scan.mslevel==scan.mslevel-1).all()
+                    scan.precursorscanid=result[-1][0]
+                    sys.stderr.write('Assigning precursor scanid '+str(scan.precursorscanid)+' to scan '+str(scan.scanid)+'\n')
+                #check for existing scan with the same precursor
+                comp=self.db_session.query(Scan).filter(Scan.precursorscanid==scan.precursorscanid, \
+                                                        Scan.precursormz==scan.precursormz, \
+                                                        Scan.precursorintensity==scan.precursorintensity).all()
             if child.tag == namespace+'peaks':
                 decoded = base64.decodestring(child.text)
                 try:
@@ -379,21 +437,48 @@ class MsDataEngine(object):
                         decoded=zlib.decompress(decoded)
                 except:
                     pass
-                self.store_mzxml_peaks(scan,decoded)
+                if comp==None or len(comp)==0:
+                    self.store_mzxml_peaks(scan,decoded)
+                else: # generate composite spectrum with the existing scan of the same precursor
+                    self.merge_spectrum(comp[0],scan,decoded)
             if child.tag == namespace+'scan' and int(child.attrib['msLevel'])<=self.max_ms_level:
-#                if scan.mslevel == 1:
-#                    cutoff=0.0
-#                else:
-#                    cutoff=max(scan.basepeakintensity*self.rel_peak_cutoff,self.abs_peak_cutoff)
-#                if float(child.attrib['basePeakIntensity'])>cutoff:
                 self.store_mzxml_scan(child,scan.scanid,namespace)
-        self.db_session.add(scan)
+        if comp==None or len(comp)==0:
+            self.db_session.add(scan)
         self.db_session.flush()
 
+    def merge_spectrum(self,existing_scan,newscan,decoded):
+        sys.stderr.write('Merging scans'+str(existing_scan.scanid)+' and '+str(newscan.scanid)+'\n')
+        if existing_scan.lowmz > newscan.lowmz:
+            existing_scan.lowmz = newscan.lowmz
+        if existing_scan.highmz < newscan.highmz:
+            existing_scan.highmz = newscan.highmz
+        if existing_scan.basepeakintensity < newscan.basepeakintensity:
+            existing_scan.basepeakintensity = newscan.basepeakintensity
+            existing_scan.basepeakmz = newscan.basepeakmz
+        self.db_session.add(existing_scan)
+        tmp_size = len(decoded)/4
+        unpack_format1 = ">%df" % tmp_size
+        unpacked = struct.unpack(unpack_format1,decoded)
+        for mz, intensity in zip(unpacked[::2], unpacked[1::2]):
+            if intensity > self.abs_peak_cutoff:
+                matching_peaks=self.db_session.query(Peak).filter(Peak.scanid == existing_scan.scanid, \
+                              Peak.mz.between(min(mz/self.precision,mz-self.mz_precision_abs),max(mz*self.precision,mz+self.mz_precision_abs))).all()
+                if len(matching_peaks) == 0:
+                    self.db_session.add(Peak(scanid=existing_scan.scanid,mz=mz,intensity=intensity))
+                else:
+                    replace=True
+                    # Compare intensity of peak with all matching peaks. Of all those, keep only the one with highest intensity
+                    for p in matching_peaks:
+                        if intensity > p.intensity:
+                            self.db_session.delete(p)
+                        else:
+                            replace=False
+                            intensity=p.intensity
+                    if replace:
+                        self.db_session.add(Peak(scanid=existing_scan.scanid,mz=mz,intensity=intensity))
+
     def store_mzxml_peaks(self,scan,decoded):
-#        dbpeak_cutoff=scan.basepeakintensity*self.rel_peak_cutoff
-#        if dbpeak_cutoff<self.abs_peak_cutoff:
-#            dbpeak_cutoff=self.abs_peak_cutoff
         tmp_size = len(decoded)/4
         unpack_format1 = ">%df" % tmp_size
         unpacked = struct.unpack(unpack_format1,decoded)
@@ -662,6 +747,8 @@ class AnnotateEngine(object):
         for mz in mzs:
             ql=int(1e6*(min(mz/self.precision,mz-self.mz_precision_abs)-self.ionisation_mode*(pars.Hmass-pars.elmass)))
             qh=int(1e6*(max(mz*self.precision,mz+self.mz_precision_abs)-self.ionisation_mode*(pars.Hmass-pars.elmass)))
+            #ql=int(1e6*(mz/self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass))) # tijdelijk for thermo
+            #qh=int(1e6*(mz*self.precision-self.ionisation_mode*(pars.Hmass-pars.elmass))) # tijdelijk for thermo
             if ql < mmim:
                 if qh > mmim:
                     qh == mmim
@@ -834,20 +921,30 @@ class AnnotateEngine(object):
                     self.store_hit(childhit,metid,currentFragid)
 
 class PubChemEngine(object):
-    def __init__(self,dbfilename='',max_64atoms=False,min_refscore=''):
+    def __init__(self,dbfilename='',max_64atoms=False,incl_halo='',min_refscore=''):
         if dbfilename=='':
             dbfilename=config.get('magma job','structure_database.pubchem')
+        self.conn = sqlite3.connect(dbfilename)
+        self.conn.text_factory=str
+        self.c = self.conn.cursor()
+        self.incl_halo=False
+        if incl_halo!='':
+            self.incl_halo=True
+            if incl_halo=='True':
+                halo_filename=config.get('magma job','structure_database.pubchem_halo')
+            else:
+                halo_filename=incl_halo
+            self.connh = sqlite3.connect(halo_filename)
+            self.connh.text_factory=str
+            self.ch = self.connh.cursor()
         self.where=''
         if min_refscore!='':
             self.where += ' AND refscore >= '+min_refscore
         if max_64atoms==True:
             self.where += ' AND natoms <= 64'
-        self.conn = sqlite3.connect(dbfilename)
-        self.conn.text_factory=str
-        self.c = self.conn.cursor()
     def query_on_mim(self,low,high,charge):
-        result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         molecules=[]
+        result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         for (cid,mim,charge,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
             molecules.append(types.MoleculeType(
                            molblock=zlib.decompress(molblock),
@@ -858,12 +955,29 @@ class PubChemEngine(object):
                            inchikey=inchikey,
                            prob=refscore,
                            level=1,
-                           sequence="",
                            isquery=1,
                            reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
                                      str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>',
                            logp=float(logp)/10.0,
                            ))
+        if self.incl_halo:
+            result=self.ch.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
+            for (cid,mim,charge,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
+                molecules.append(types.MoleculeType(
+                               molblock=zlib.decompress(molblock),
+                               name=name+' ('+str(cid)+')',
+                               mim=float(mim/1e6),
+                               natoms=natoms,
+                               molform=molform,
+                               inchikey=inchikey,
+                               prob=refscore,
+                               level=1,
+                               sequence="",
+                               isquery=1,
+                               reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
+                                         str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>',
+                               logp=float(logp)/10.0,
+                               ))
         return molecules
 
 class KeggEngine(object):
@@ -893,7 +1007,6 @@ class KeggEngine(object):
                            inchikey=inchikey,
                            prob=None,
                            level=1,
-                           sequence="",
                            isquery=1,
                            reference=keggrefs,
                            logp=float(logp)/10.0,
@@ -927,7 +1040,6 @@ class HmdbEngine(object):
                            inchikey=inchikey,
                            prob=None,
                            level=1,
-                           sequence="",
                            isquery=1,
                            reference=hmdb_refs,
                            logp=float(logp)/10.0,
@@ -961,7 +1073,6 @@ class MetaCycEngine(object):
                            inchikey=inchikey,
                            prob=None,
                            level=1,
-                           sequence="",
                            isquery=1,
                            reference=metacyc_refs,
                            logp=float(logp)/10.0,
@@ -994,8 +1105,8 @@ class SelectEngine(object):
             dot_product=self.dot_product_scans(ref_scan,query_scan)
             compounds = self.db_session.query(Metabolite).filter(Metabolite.metid.in_(
                             self.db_session.query(Fragment.metid).filter(Fragment.scanid==query_scan))).all()
-            for compound in compounds:
-                compound.reactionsequence+='Scan: '+str(query_scan)+' - Similarity: '+str(dot_product)+'\n'
+            #for compound in compounds:
+            #    compound.reactionsequence+='Scan: '+str(query_scan)+' - Similarity: '+str(dot_product)+'\n'
             self.db_session.add(compound)
         self.db_session.commit()
 
@@ -1046,7 +1157,7 @@ class DataAnalysisEngine(object):
         self.db_session = db_session
 
     def get_scores(self,scanid):
-        return self.db_session.query(Fragment.score,Metabolite.reactionsequence,Metabolite.molformula).\
+        return self.db_session.query(Fragment.score,Metabolite.molformula).\
             join((Metabolite,and_(Fragment.metid==Metabolite.metid))).\
             filter(Fragment.parentfragid==0).\
             filter(Fragment.scanid==scanid).\
@@ -1130,7 +1241,10 @@ class DataAnalysisEngine(object):
                     else:
                         if len(nodes[n]) == 2:
                             tmpnode=list(nodes[n])
-                            if len(nodes[tmpnode[0]] & nodes[tmpnode[1]]) > 1 and tmpnode[0] not in assigned_metids and tmpnode[1] not in assigned_metids:
+                            #if len(nodes[tmpnode[0]] & nodes[tmpnode[1]]) > 1 and tmpnode[0] not in assigned_metids and tmpnode[1] not in assigned_metids:
+                            if len(nodes[tmpnode[0]] & nodes[tmpnode[1]]) > 1 or \
+                                    len(nodes[tmpnode[0]] & nodes[n]) > 0 or \
+                                    len(nodes[tmpnode[1]] & nodes[n]) > 0:
                                 for c in nodes[n]:
                                     nodes[c].remove(n)
                                 del nodes[n]
