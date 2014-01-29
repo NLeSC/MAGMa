@@ -85,13 +85,14 @@ Ext.define('Esc.chemdoodle.Column', {
       // used to find canvases belonging to this column
       canvasClass: config.canvasClass || 'x-chemdoodle-cols'
     });
+    this.scope = this;
     return this;
   },
-  renderer: function(v,meta,r,row,col,store,gridview) {
+  renderer: function(v, meta, r, row, col, store, gridview) {
     // renderer returns html string
     // we want to run js on created dom, but that must be delayed until dom is complete.
     // create canvas with right dimensions using id unique to this gridview and cell (row/col)
-    var c = this.columns[col];
+    var c = this;
     return '<canvas width='+c.getCanvasWidth()+' height='+c.getCanvasHeight()+' class="'+c.getCanvasClass()+'" id="'+gridview.id+'-'+r.internalId+'-'+col+'"></canvas>';
   },
   // find canvas tags and paint with chemdoodle

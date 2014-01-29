@@ -207,8 +207,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
         // when there are no scans then user should upload some
         me.showUploadForm();
     } else if (data.scans.length === 1) {
-        // hide when chromatogram consists of 1 scan
-        // on molecule load the scan will be selected
+        me.selectScan(data.scans[0].id, false);
         me.getChromatogramPanel().hide();
     }
     me.application.fireEvent('chromatogramload', chromatogram);
@@ -300,6 +299,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   setScans: function(scans) {
     Ext.log({}, 'Setting chromatogram scan markers');
     var chromatogram = this.getChromatogram();
+    var selectedScan = chromatogram.selectedScan;
     if (!chromatogram.hasData()) {
         return; // can not set scan markers if chromatogram is not loaded
     }
@@ -307,18 +307,17 @@ Ext.define('Esc.magmaweb.controller.Scans', {
        // if scan is already selected and is part of new scans then reselect scan
        if (
          scans.some(function(e) {
-           return (e.id == chromatogram.selectedScan);
+           return (e.id == selectedScan);
          })
        ) {
-         var selectedScan = chromatogram.selectedScan;
          chromatogram.setMarkers(scans);
          chromatogram.selectScan(selectedScan);
        } else {
+         // if a scan was selected, but can not be reselected then clear selection.
+         if (selectedScan >=0) {
+             this.clearScanSelection();
+         }
          chromatogram.setMarkers(scans);
-       }
-       // if only one scan then select scan
-       if (scans.length == 1 && chromatogram.selectedScan != scans[0].id) {
-         this.selectScan(scans[0].id);
        }
     } else {
       this.application.fireEvent('noscansfound');
