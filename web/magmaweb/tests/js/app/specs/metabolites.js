@@ -520,8 +520,7 @@ describe('Metabolites', function() {
 
         runs(function() {
             expect(ctrl.metabolizeForm.getForm().getValues()).toEqual({
-                "metabolism_types": ["phase1", "phase2"],
-                "n_reaction_steps": '1'
+                "scenario": [{type: 'phase1', steps: 2}, {type: 'phase2', steps: 1}]
             });
         });
     });
