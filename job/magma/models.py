@@ -18,6 +18,35 @@ from sqlalchemy.schema import ForeignKeyConstraint
 Base = declarative_base()
 
 
+class Scenario(TypeDecorator):
+    """List of transformations that make up a metabolite scenario
+
+    Example:
+
+    .. code-block:: javascript
+
+          [{'type': 'phase1', 'steps': '2'}, {'type': 'phase2', 'steps': '1'}]
+
+    Stored in database as json serialized string.
+    """
+    impl = Unicode
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            value = json.dumps(value)
+
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is u'':
+            value = u'[]'
+        if value is not None:
+            try:
+                value = json.loads(value)
+            except ValueError:
+                value = []
+        return value
+
 class ReactionSequence(TypeDecorator):
     """List of reactions.
 
@@ -244,7 +273,7 @@ class Run(Base):
     description = Column(Unicode)
 
     # metabolize parameters
-    scenario = Column(ReactionSequence)
+    scenario = Column(Scenario)
 
     # ms data parsing parameters
     ms_filename = Column(Unicode)
