@@ -26,7 +26,7 @@ class PeakType(object):
 #            return False
 
 class HitType(object):
-    def __init__(self,peak,fragment,score,bondbreaks,mass,deltaH):
+    def __init__(self,peak,fragment,score,bondbreaks,mass,ionmass,ion):
         self.mz = peak.mz
         self.intensity = peak.intensity
         self.intensity_weight = peak.missing_fragment_score / missingfragmentpenalty
@@ -35,7 +35,7 @@ class HitType(object):
         self.score = score
         self.breaks = bondbreaks
         self.mass = mass
-        self.deltaH = deltaH
+        self.deltaH = ionmass
         self.bonds = []
         self.allbonds = 0
         self.besthits=[]
@@ -43,6 +43,7 @@ class HitType(object):
         self.atomlist=[]
         self.inchikey=""
         self.formula=""
+        self.ion=ion
         #print "childscan",peak.childscan
 
 class MoleculeType(object):

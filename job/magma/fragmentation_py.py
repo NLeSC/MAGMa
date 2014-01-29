@@ -166,7 +166,7 @@ class FragmentEngine(object):
             #if self.max_broken_bonds+self.max_water_losses-self.ionisation_mode-result[1][i] in [0,-self.ionisation_mode]:
             fragment_set.append(self.fragment_info[fid]+\
                                  [self.fragment_masses_np[fid][self.max_broken_bonds+self.max_water_losses-self.ionisation_mode]]+\
-                                 [self.max_broken_bonds+self.max_water_losses-self.ionisation_mode-result[1][i]])
+                                 [self.ionisation_mode+result[1][i]-self.max_broken_bonds-self.max_water_losses])
         return fragment_set
     
     def get_fragment_info(self,fragment,deltaH):
@@ -179,7 +179,6 @@ class FragmentEngine(object):
                 atomlist.append(atom)
                 elements[Chem.GetAtomSymbol(self.mol,atom)]+=1
                 elements['H']+=Chem.GetAtomHs(self.mol,atom)
-        elements['H']-=deltaH
         formula=''
         for el in ('C','H','N','O','F','P','S','Cl','Br','I'):
             nel=elements[el]
