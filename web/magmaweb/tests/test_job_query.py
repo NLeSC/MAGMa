@@ -53,8 +53,10 @@ class JobQueryTestCase(unittest.TestCase):
         self.assertEquals(jq.escape("'"), '&#39;')
 
     def test_defaults(self):
-        expected = dict(n_reaction_steps=2,
-                        metabolism_types=['phase1', 'phase2'],
+        expected = dict(scenario=[
+                                  {'type': 'phase1', 'steps': '2'},
+                                  {'type': 'phase2', 'steps': '1'}
+                                  ],
                         ionisation_mode=1,
                         ms_data_format='mzxml',
                         ms_data_area='',

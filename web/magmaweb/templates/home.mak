@@ -8,6 +8,8 @@
 <link rel="stylesheet"
 	href="${request.static_url('magmaweb:static/ChemDoodleWeb/sketcher/jquery-ui-1.9.2.custom.css')}"
 	type="text/css"></link>
+<link rel="stylesheet"  href="${request.extjsroot}/examples/ux/css/ItemSelector.css" type="text/css"></link>
+<link rel="stylesheet"  href="${request.extjsroot}/examples/writer/writer.css" type="text/css"></link>
 <link rel="stylesheet" href="${request.static_url('magmaweb:static/style.css')}" type="text/css"/>
 <script type="text/javascript"
 	src="${request.static_url('magmaweb:static/ChemDoodleWeb/ChemDoodleWeb-libs.js')}"></script>

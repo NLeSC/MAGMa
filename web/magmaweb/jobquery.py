@@ -575,8 +575,10 @@ class JobQuery(object):
         elif selection == 'example2':
             return cls._example2()
 
-        return dict(n_reaction_steps=2,
-                    metabolism_types=['phase1', 'phase2'],
+        return dict(scenario=[
+                              {'type': 'phase1', 'steps': '2'},
+                              {'type': 'phase2', 'steps': '1'}
+                              ],
                     ms_data_format='mzxml',
                     ms_data_area='',
                     ionisation_mode=1,

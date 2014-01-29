@@ -12,16 +12,13 @@
 	href="${request.extjsroot}/examples/ux/grid/css/GridFilters.css" />
 <link rel="stylesheet" type="text/css"
 	href="${request.extjsroot}/examples/ux/grid/css/RangeMenu.css" />
+<link rel="stylesheet"  href="${request.extjsroot}/examples/ux/css/ItemSelector.css" type="text/css"></link>
+<link rel="stylesheet"  href="${request.extjsroot}/examples/writer/writer.css" type="text/css"></link>
 <link rel="stylesheet" href="${request.static_url('magmaweb:static/style.css')}" type="text/css"/>
 <style type="text/css">
 .x-action-col-cell img.metabolize-col {
 	background-image:
 		url(${request.extjsroot}/examples/shared/icons/fam/cog.png);
-}
-
-.icon-add {
-	background-image:
-		url(${request.extjsroot}/examples/writer/images/add.png) !important;
 }
 
 .icon-annot {
