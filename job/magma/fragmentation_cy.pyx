@@ -228,8 +228,8 @@ cdef class FragmentEngine(object):
         for i in range(len(result[0])):
             fid=result[0][i]
             fragment_set.append(self.fragment_info[fid]+\
-                                 [self.fragment_masses_np[fid][self.max_broken_bonds+self.max_water_losses-self.ionisation_mode]]+\
-                                 [self.ionisation_mode+result[1][i]-self.max_broken_bonds-self.max_water_losses])
+                                 [self.fragment_masses_np[fid][self.max_broken_bonds+self.max_water_losses-self.ionisation_mode*(1-self.molcharge)]]+\
+                                 [self.ionisation_mode*(1-self.molcharge)+result[1][i]-self.max_broken_bonds-self.max_water_losses])
         return fragment_set
     
     def get_fragment_info(self,unsigned long long fragment,deltaH):
