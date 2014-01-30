@@ -31,8 +31,8 @@ Installation
     }
 
 5. Configure joblauncher with supplied token.
-* Use "access_token" from token object in joblauncher config as "mac_id"
-* Use "mac_key" from token object in joblauncher config as "mac_key"
+* Use "access_token" from token object in joblauncher config as "id"
+* Use "mac_key" from token object in joblauncher config as "key"
 * Use "http(s):\\host:port" where MAGMa web is running at as "scope" in joblauncher config. Examples:
   * if MAGMaWeb is running at http://localhost:6543/magma use http://localhost:6543 as scope
   * if MAGMaWeb is running at https://www.emetabolomics.org/magma use https://www.emetabolomics.org/magma as scope
