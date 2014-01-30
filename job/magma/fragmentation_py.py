@@ -166,8 +166,8 @@ class FragmentEngine(object):
             fid=result[0][i]
             #if self.max_broken_bonds+self.max_water_losses-self.ionisation_mode-result[1][i] in [0,-self.ionisation_mode]:
             fragment_set.append(self.fragment_info[fid]+\
-                                 [self.fragment_masses_np[fid][self.max_broken_bonds+self.max_water_losses-self.ionisation_mode]]+\
-                                 [self.ionisation_mode+result[1][i]-self.max_broken_bonds-self.max_water_losses])
+                                 [self.fragment_masses_np[fid][self.max_broken_bonds+self.max_water_losses-self.ionisation_mode*(1-self.molcharge)]]+\
+                                 [self.ionisation_mode*(1-self.molcharge)+result[1][i]-self.max_broken_bonds-self.max_water_losses])
         return fragment_set
     
     def get_fragment_info(self,fragment,deltaH):
