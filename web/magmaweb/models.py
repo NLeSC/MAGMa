@@ -18,35 +18,6 @@ from sqlalchemy.schema import ForeignKeyConstraint
 Base = declarative_base()
 
 
-class Scenario(TypeDecorator):
-    """List of transformations that make up a metabolite scenario
-
-    Example:
-
-    .. code-block:: javascript
-
-          [{'type': 'phase1', 'steps': '2'}, {'type': 'phase2', 'steps': '1'}]
-
-    Stored in database as json serialized string.
-    """
-    impl = Unicode
-
-    def process_bind_param(self, value, dialect):
-        if value is not None:
-            value = json.dumps(value)
-
-        return value
-
-    def process_result_value(self, value, dialect):
-        if value is u'':
-            value = u'[]'
-        if value is not None:
-            try:
-                value = json.loads(value)
-            except ValueError:
-                value = []
-        return value
-
 class ReactionSequence(TypeDecorator):
     """List of reactions.
 
@@ -95,6 +66,7 @@ class ReactionSequence(TypeDecorator):
                 value = {}
         return value
 
+
 class Metabolite(Base):
     """Metabolite model for metabolites table"""
     __tablename__ = 'metabolites'
@@ -135,6 +107,7 @@ class Reaction(Base):
     reactant = Column(Integer, ForeignKey('metabolites.metid'))
     product = Column(Integer, ForeignKey('metabolites.metid'))
     name = Column(Unicode)
+
 
 def fill_molecules_reactions(session):
     """Fills the reactionsequence column in the molecules table with info from reactions table.
@@ -181,6 +154,7 @@ def fill_molecules_reactions(session):
             reaction = {}
         mol.reactionsequence = reaction
     session.commit()
+
 
 class Scan(Base):
     """Scan model for scans table"""
@@ -264,6 +238,7 @@ class Fragment(Base):
                       {}
                       )
 
+
 class Run(Base):
     """Run model for run table"""
     __tablename__ = 'run'
@@ -271,9 +246,6 @@ class Run(Base):
     runid = Column(Integer, primary_key=True, autoincrement=True)
     # Description of the run
     description = Column(Unicode)
-
-    # metabolize parameters
-    scenario = Column(Scenario)
 
     # ms data parsing parameters
     ms_filename = Column(Unicode)

@@ -35,30 +35,7 @@
 			</tr>
 		</table>
 	</fieldset>
-	% if len(run.scenario) > 0:
-    <fieldset class="x-fieldset x-fieldset-default">
-        <legend class="x-fieldset-header x-fieldset-header-default">Metabolize options</legend>
-        <table class='infotable'>
-            <tr>
-                <td>Scenario:</td>
-                <td>             <table border=1>
-            <tr>
-                <th>Transformation type</th>
-                <th>Steps</th>
-            </tr>
-            % for trans in run.scenario:
-            <tr>
-                <td>${trans['type']}</td>
-                <td>${trans['steps']}</td>
-            </tr>
-            % endfor
-                </table></td>
-            </tr>
-            </table>
-        </table>
-    </fieldset>
-    % endif
-    	<fieldset class="x-fieldset x-fieldset-default">
+	<fieldset class="x-fieldset x-fieldset-default">
 		<legend class="x-fieldset-header x-fieldset-header-default">Annotate
 			options</legend>
 		<table class='infotable'>
