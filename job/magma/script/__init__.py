@@ -64,6 +64,7 @@ class MagmaCommand(object):
         sc.add_argument('-m', '--metabolism_types', help="digest,gut,phase1,phase2, (default: %(default)s)", default="phase1,phase2", type=str)
         sc.add_argument('-s', '--scenario', default=None, type=str, help="""Scenario file, each line defines a separate stage:
                                         action(glycosidase/gut/phase1[_selected]/phase2[_selected]/mass_filter),value(nsteps/mass limit)""")
+        sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.metabolize)
 
@@ -165,7 +166,7 @@ class MagmaCommand(object):
     def add_structures(self, args, magma_session=None):
         if magma_session == None:
             magma_session = self.get_magma_session(args.db,args.description)
-        struct_engine = magma_session.get_structure_engine() # TODO remove arguments
+        struct_engine = magma_session.get_structure_engine()
         metids=set([])
         if args.structure_format == 'smiles':
             for mol in self.smiles2mols(args.structures):
@@ -186,7 +187,7 @@ class MagmaCommand(object):
     def metabolize(self, args, magma_session=None):
         if magma_session == None:
             magma_session = self.get_magma_session(args.db,args.description)
-        struct_engine = magma_session.get_structure_engine()
+        struct_engine = magma_session.get_structure_engine(call_back_url=args.call_back_url)
         if args.scenario != None:
             scenario=[]
             scenario_file=open(args.scenario,'r')

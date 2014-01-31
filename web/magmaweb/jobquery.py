@@ -412,7 +412,11 @@ class JobQuery(object):
 
         script = "{{magma}} metabolize"
         script += " --scenario scenario.csv"
-        self.script += script.format()
+        script += " --call_back_url '{call_back_url}' "
+        script_substitutions = {
+            'call_back_url': self.status_callback_url,
+        }
+        self.script += script.format(**script_substitutions)
 
         if from_subset:
             self.script += " -j -"
@@ -454,8 +458,10 @@ class JobQuery(object):
 
         script = "echo '{metid}' | {{magma}} metabolize -j - "
         script += "--scenario scenario.csv {{db}}"
+        script += " --call_back_url '{call_back_url}' "
         script_substitutions = {
             'metid': self.escape(params['metid']),
+            'call_back_url': self.status_callback_url,
         }
         self.script += script.format(**script_substitutions)
 
