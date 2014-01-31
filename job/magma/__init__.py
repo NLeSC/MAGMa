@@ -57,11 +57,8 @@ class MagmaSession(object):
             rundata.description=description
         self.db_session.add(rundata)
         self.db_session.commit()
-    def get_structure_engine(self,
-                 metabolism_types="phase1,phase2",
-                 n_reaction_steps=2
-                 ):
-        return StructureEngine(self.db_session,metabolism_types,n_reaction_steps)
+    def get_structure_engine(self):
+        return StructureEngine(self.db_session)
     def get_ms_data_engine(self,
                  abs_peak_cutoff=1000,
                  rel_peak_cutoff=0.01,
@@ -118,20 +115,14 @@ class CallBackEngine(object):
         #print r
 
 class StructureEngine(object):
-    def __init__(self,db_session,metabolism_types,n_reaction_steps):
+    def __init__(self,db_session):
         self.db_session = db_session
         try:
             rundata=self.db_session.query(Run).one()
         except:
             rundata = Run()
-        if rundata.metabolism_types == None:
-            rundata.metabolism_types=metabolism_types
-        if rundata.n_reaction_steps == None:
-            rundata.n_reaction_steps=n_reaction_steps
         self.db_session.add(rundata)
         self.db_session.commit()
-        self.metabolism_types=rundata.metabolism_types.split(',')
-        self.n_reaction_steps=rundata.n_reaction_steps
 
     def add_structure(self,molblock,name,prob,level,isquery,mim=None,natoms=None,inchikey=None,molform=None,reference=None,logp=None,mass_filter=9999):
         molecule=types.MoleculeType(molblock,name,prob,level,isquery,mim,natoms,inchikey,molform,reference,logp)
