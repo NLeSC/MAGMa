@@ -129,16 +129,31 @@ Ext.onReady(function() {
   /**
    * Don't allow metabolization when Molecules tab 'Database' is selected.
    */
-  function struct_change(panel, newCard) {
+  function metabolize_toggler() {
+      var molecule_tab_title = form.down('addstructurefieldset').down('tabpanel').getActiveTab().title;
+      var ms_format = form.getForm().findField('ms_data_format').getValue();
+      var scan = form.getForm().findField('scan').getValue();
+
+      var new_visibile = false;
+      if (molecule_tab_title === 'Database') {
+          new_visibile = true;
+      }
+
       var metabolize_fields = form.down('metabolizefieldset');
-      if (newCard.title === 'Database') {
-          metabolize_fields.down('component[name=metabolize]').setValue(false);
-          metabolize_fields.hide();
-      } else {
-          metabolize_fields.show();
+      var current_visibile = metabolize_fields.isVisible();
+
+      if (current_visible !== new_visible) {
+          if (new_visibility) {
+              metabolize_fields.show();
+          } else {
+              metabolize_fields.getForm().findField('metabolize').setValue(false);
+              metabolize_fields.hide();
+          }
       }
   }
-  form.down('addstructurefieldset').down('tabpanel').addListener('tabchange', struct_change);
+  form.down('addstructurefieldset').down('tabpanel').addListener('tabchange', metabolize_toggler);
+  form.getForm().findField('scan').addListener('change', metabolize_toggler);
+  form.getForm().findField('ms_data_format').addListener('change', metabolize_toggler);
 
   form.load({
       url: '${request.route_url('defaults.json')}',
