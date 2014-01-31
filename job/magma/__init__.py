@@ -57,8 +57,8 @@ class MagmaSession(object):
             rundata.description=description
         self.db_session.add(rundata)
         self.db_session.commit()
-    def get_structure_engine(self):
-        return StructureEngine(self.db_session)
+    def get_structure_engine(self,call_back_url=None):
+        return StructureEngine(self.db_session,call_back_url)
     def get_ms_data_engine(self,
                  abs_peak_cutoff=1000,
                  rel_peak_cutoff=0.01,
@@ -112,10 +112,10 @@ class CallBackEngine(object):
                 return r
 
         r = requests.put(self.url, status, auth=HTTPMacAuth(self.access_token, self.mac_key))
-        #print r
+        print r,status
 
 class StructureEngine(object):
-    def __init__(self,db_session):
+    def __init__(self,db_session,call_back_url=None):
         self.db_session = db_session
         try:
             rundata=self.db_session.query(Run).one()
@@ -123,6 +123,11 @@ class StructureEngine(object):
             rundata = Run()
         self.db_session.add(rundata)
         self.db_session.commit()
+
+        if call_back_url != None:
+            self.call_back_engine=CallBackEngine(call_back_url)
+        else:
+            self.call_back_engine=None
 
     def add_structure(self,molblock,name,prob,level,isquery,mim=None,natoms=None,inchikey=None,molform=None,reference=None,logp=None,mass_filter=9999):
         molecule=types.MoleculeType(molblock,name,prob,level,isquery,mim,natoms,inchikey,molform,reference,logp)
@@ -317,12 +322,18 @@ class StructureEngine(object):
                 new_metids=set()
                 for metid in metids:
                     new_metids |= self.metabolize(metid,action,endpoints)
+                    if self.call_back_engine != None:
+                        update_string = "Transformation: "+action+' ... '+str(len(prev_metids)+len(metids) + len(new_metids))+' metabolites generated'
+                        self.call_back_engine.update_callback_url(update_string)
                 active_metids=new_metids.difference(metids)
                 metids=new_metids
                 for i in range(1,int(value)):
                     new_metids=set()
                     for metid in active_metids:
                         new_metids |= self.metabolize(metid,action,endpoints)
+                        if self.call_back_engine != None:
+                            update_string = "Transformation: "+action+' ... '+str(len(prev_metids)+len(metids) + len(new_metids))+' metabolites generated'
+                            self.call_back_engine.update_callback_url(update_string)
                     active_metids=new_metids.difference(metids)
                     metids |= new_metids
                 print 'were metabolized according to',action,'rules'
