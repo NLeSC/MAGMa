@@ -134,16 +134,16 @@ Ext.onReady(function() {
       var ms_format = form.getForm().findField('ms_data_format').getValue();
       var scan = form.getForm().findField('scan').getValue();
 
-      var new_visibile = false;
-      if (molecule_tab_title === 'Database') {
-          new_visibile = true;
+      var new_visible = false;
+      if (molecule_tab_title !== 'Database') {
+          new_visible = true;
       }
 
       var metabolize_fields = form.down('metabolizefieldset');
-      var current_visibile = metabolize_fields.isVisible();
+      var current_visible = metabolize_fields.isVisible();
 
       if (current_visible !== new_visible) {
-          if (new_visibility) {
+          if (new_visible) {
               metabolize_fields.show();
           } else {
               metabolize_fields.getForm().findField('metabolize').setValue(false);
