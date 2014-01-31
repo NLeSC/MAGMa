@@ -777,6 +777,8 @@ class JobViews(object):
         r = self.job.db.runInfo()
 
         defaults = Views(self.request).defaults()
+        # metabolize scenario is not stored in runinfo
+        defaults['data'].pop('scenario')
         if r is None:
             return defaults
         else:

@@ -1,43 +1,8 @@
 import unittest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from magmaweb.models import ReactionSequence, Scenario, fill_molecules_reactions, Metabolite, Reaction
+from magmaweb.models import ReactionSequence, fill_molecules_reactions, Metabolite, Reaction
 
-
-class TestScenario(unittest.TestCase):
-    scenario = [{'type': 'phase1', 'steps': '2'}, {'type': 'phase2', 'steps': '1'}]
-    scenario_as_json = '[{"steps": "2", "type": "phase1"}, {"steps": "1", "type": "phase2"}]'
-
-    def setUp(self):
-        self.rs = Scenario()
-
-    def test_set(self):
-        r = self.rs.process_bind_param(self.scenario, 'sqlite')
-        self.assertEqual(r, self.scenario_as_json)
-
-    def test_set_none(self):
-        scenario = None
-        r = self.rs.process_bind_param(scenario, 'sqlite')
-        self.assertIsNone(r)
-
-    def test_get(self):
-        r = self.rs.process_result_value(self.scenario_as_json, 'sqlite')
-        self.assertEqual(r, self.scenario)
-
-    def test_get_empty(self):
-        scenario = u''
-        r = self.rs.process_result_value(scenario, 'sqlite')
-        self.assertEqual(r, [])
-
-    def test_get_none(self):
-        scenario = None
-        r = self.rs.process_result_value(scenario, 'sqlite')
-        self.assertEqual(r, None)
-
-    def test_get_badjson2empty(self):
-        scenario = u'PARENT'
-        r = self.rs.process_result_value(scenario, 'sqlite')
-        self.assertEqual(r, [])
 
 class TestReactionSequence(unittest.TestCase):
     reactions = {
