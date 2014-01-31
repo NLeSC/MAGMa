@@ -186,7 +186,7 @@ class MagmaCommand(object):
     def metabolize(self, args, magma_session=None):
         if magma_session == None:
             magma_session = self.get_magma_session(args.db,args.description)
-        struct_engine = magma_session.get_structure_engine(args.metabolism_types, args.n_reaction_steps) # TODO remove arguments
+        struct_engine = magma_session.get_structure_engine()
         if args.scenario != None:
             scenario=[]
             scenario_file=open(args.scenario,'r')
