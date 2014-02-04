@@ -76,6 +76,7 @@ class MagmaCommand(object):
         sc.add_argument('-l', '--max_ms_level', help="Maximum MS level to be processsed (default: %(default)s)", default=10,type=int)
         sc.add_argument('-a', '--abs_peak_cutoff', help="Absolute intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
         sc.add_argument('-s', '--scan', help="Read only spectral tree specified by MS1 scan number (default: %(default)s)", default=None,type=str)
+        sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.read_ms_data)
 
@@ -212,7 +213,7 @@ class MagmaCommand(object):
         if magma_session == None:
             magma_session = self.get_magma_session(args.db,args.description)
         ms_data_engine = magma_session.get_ms_data_engine(abs_peak_cutoff=args.abs_peak_cutoff,
-            max_ms_level=args.max_ms_level)
+            max_ms_level=args.max_ms_level,call_back_url=args.call_back_url)
         if args.ms_data_format == "mzxml":
             ms_data_engine.store_mzxml_file(args.ms_data.name,args.scan)
         else:
