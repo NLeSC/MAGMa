@@ -357,7 +357,8 @@ class JobQuery(object):
         script__substitution = {
             'ms_data_format': self.escape(params['ms_data_format']),
             'max_ms_level': self.escape(params['max_ms_level']),
-            'abs_peak_cutoff': self.escape(params['abs_peak_cutoff'])
+            'abs_peak_cutoff': self.escape(params['abs_peak_cutoff']),
+            'call_back_url': self.status_callback_url
         }
         script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}' "
         script += "-l '{max_ms_level}' "
@@ -373,6 +374,7 @@ class JobQuery(object):
             script += "--scan '{scan}' "
             script__substitution['scan'] = self.escape(params['scan'])
 
+        script += " --call_back_url '{call_back_url}' "
         script += "ms_data.dat {{db}}\n"
         self.script += script.format(**script__substitution)
 
