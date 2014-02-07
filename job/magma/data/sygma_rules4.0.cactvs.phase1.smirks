@@ -50,6 +50,7 @@
 # v4.0   - June 2013: Adapt for usage with cactvs toolbox
 #        - Short names
 #        - Explicit hydrogens
+# v4.0.1 - Glycination of glycine disabled
 ###################################################################################
 
 # *** PHASE 1 ***
