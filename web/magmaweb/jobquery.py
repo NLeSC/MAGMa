@@ -373,6 +373,8 @@ class JobQuery(object):
         if not empty_scan and is_mzxml:
             script += "--scan '{scan}' "
             script__substitution['scan'] = self.escape(params['scan'])
+        if self.restricted:
+            script += '--time_limit 1 '
 
         script += " --call_back_url '{call_back_url}' "
         script += "ms_data.dat {{db}}\n"
@@ -419,6 +421,9 @@ class JobQuery(object):
             'call_back_url': self.status_callback_url,
         }
         self.script += script.format(**script_substitutions)
+
+        if self.restricted:
+            self.script += '--time_limit 3 '
 
         if from_subset:
             self.script += " -j -"
