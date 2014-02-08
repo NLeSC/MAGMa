@@ -116,7 +116,6 @@ class CallBackEngine(object):
 
         update_last=time.time()-self.update_time
         if force or update_last > self.update_interval: # update status every second
-            status='<h1>'+status+'</h1>'
             if elapsed_time != None:
                 status+='<h3>Time: %02d:%02d:%02d' % (elapsed_time//3600,(elapsed_time%3600)//60,elapsed_time%60)
                 if time_limit != None:
@@ -168,7 +167,7 @@ class StructureEngine(object):
                     metab=dups[0]
                     if metab.origin == "" and molecule.name != "":
                         metab.origin=unicode(str(metab.origin)+'</br>'+molecule.name, 'utf-8', 'xmlcharrefreplace')
-                    if metab.reference == "" and molecule.reference != "":
+                    if metab.reference == None and molecule.reference != "":
                         metab.reference=molecule.reference
                     if molecule.probability > 0:
                         metab.probability=molecule.probability
@@ -312,8 +311,7 @@ class StructureEngine(object):
             metids|=self.metabolize(parentid,metabolism,endpoints)
         return metids
 
-    def run_scenario(self, scenario):
-        print scenario
+    def run_scenario(self, scenario, time_limit=None):
         result=self.db_session.query(Metabolite.metid).all()
         metids={x[0] for x in result} #set comprehension
         start_time=time.time()
@@ -334,28 +332,43 @@ class StructureEngine(object):
                 new_metids=set()
                 for metid in metids:
                     new_metids |= self.metabolize(metid,action,endpoints)
+                    elapsed_time=time.time()-start_time
                     if self.call_back_engine != None:
                         status='Transformation: %s, step 1<br>Metabolites generated: %d' % (action,len(prev_metids)+len(metids) + len(new_metids))
-                        self.call_back_engine.update_callback_url(status,time.time()-start_time)
-                active_metids=new_metids.difference(metids)
-                metids=new_metids
-                for i in range(1,int(value)):
-                    new_metids=set()
-                    for metid in active_metids:
-                        new_metids |= self.metabolize(metid,action,endpoints)
-                        if self.call_back_engine != None:
-                            status='Transformation: %s, step %d<br>Metabolites generated: %d' % (action,i+1,len(prev_metids)+len(metids) + len(new_metids))
-                            self.call_back_engine.update_callback_url(status,time.time()-start_time)
+                        self.call_back_engine.update_callback_url(status,elapsed_time,time_limit)
+                    if time_limit and elapsed_time > time_limit * 60:
+                        break
+                else:
                     active_metids=new_metids.difference(metids)
-                    metids |= new_metids
+                    metids=new_metids
+                    for i in range(1,int(value)):
+                        new_metids=set()
+                        for metid in active_metids:
+                            new_metids |= self.metabolize(metid,action,endpoints)
+                            elapsed_time=time.time()-start_time
+                            if self.call_back_engine != None:
+                                status='Transformation: %s, step %d<br>Metabolites generated: %d' % (action,i+1,len(prev_metids)+len(metids) + len(new_metids))
+                                self.call_back_engine.update_callback_url(status,elapsed_time,time_limit)
+                            if time_limit and elapsed_time > time_limit * 60:
+                                break
+                        active_metids=new_metids.difference(metids)
+                        metids |= new_metids
+                        if time_limit and time.time()-start_time > time_limit * 60:
+                            break
                 print 'were metabolized according to',action,'rules'
                 print '"Active" metabolites:',len(metids)
                 if not endpoints:
                     metids |= prev_metids
             # print metids
             print ""
-        if self.call_back_engine != None:
-            self.call_back_engine.update_callback_url('Transformations completed',force=True)
+            if time_limit and time.time()-start_time > time_limit * 60:
+                if self.call_back_engine != None:
+                    self.call_back_engine.update_callback_url('Transformation stopped: time limit exceeded',force=True)
+                logging.warn('Transformation stopped: time limit exceeded')
+                break
+        else:
+            if self.call_back_engine != None:
+                self.call_back_engine.update_callback_url('Transformations completed',force=True)
  
     def retrieve_structures(self,mass):
         dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
@@ -395,7 +408,7 @@ class MsDataEngine(object):
         else:
             self.call_back_engine=None
 
-    def store_mzxml_file(self,mzxml_file,scan_filter=None):
+    def store_mzxml_file(self,mzxml_file,scan_filter=None,time_limit=None):
         logging.warn('Store mzxml file')
         rundata=self.db_session.query(Run).one()
         if rundata.ms_filename != None:
@@ -408,16 +421,24 @@ class MsDataEngine(object):
         namespace='{'+root.nsmap[None]+'}'
         mzxml_query=namespace+"msRun/"+namespace+"scan"
         prec_scans=[] # in case of non-hierarchical mzXML, also find child scans
+        start_time=time.time()
         for mzxmlScan in root.findall(mzxml_query):
+            elapsed_time=time.time()-start_time
             if scan_filter == None or mzxmlScan.attrib['num'] == scan_filter or \
                     (int(mzxmlScan.attrib['msLevel'])>1 and mzxmlScan.find(namespace+'precursorMz').attrib['precursorScanNum'] in prec_scans):
                 self.store_mzxml_scan(mzxmlScan,0,namespace)
                 prec_scans.append(mzxmlScan.attrib['num']) # in case of non-hierarchical mzXML, also find child scans
                 if self.call_back_engine != None:
                     status='Reading mzXML, scan: %s' % (prec_scans[-1],)
-                    self.call_back_engine.update_callback_url(status)
-        if self.call_back_engine != None:
-            self.call_back_engine.update_callback_url('Reading mzXML completed',force=True)
+                    self.call_back_engine.update_callback_url(status,elapsed_time,time_limit)
+            if time_limit and elapsed_time > time_limit * 60:
+                if self.call_back_engine != None:
+                    self.call_back_engine.update_callback_url('Reading mzXML stopped: time limit exceeded',force=True)
+                logging.warn('Reading mzXML stopped: time limit exceeded')
+                break
+        else:
+            if self.call_back_engine != None:
+                self.call_back_engine.update_callback_url('Reading mzXML completed',force=True)
         self.db_session.commit()
 
     def store_mzxml_scan(self,mzxmlScan,precScan,namespace):
@@ -753,12 +774,12 @@ class AnnotateEngine(object):
             max_mim='1200'
         mmim=int(float(max_mim)*1e6)
 
-        struct_engine = StructureEngine(self.db_session,"",0)
+        struct_engine = StructureEngine(self.db_session)
 
         # build sorted list of query masses
         mzs=[]
         for scan in self.scans:
-            # if self.db_session.query(Fragment.fragid).filter(Fragment.scanid==scan.scanid).count() > 0: # tijdelijk!
+            #if self.db_session.query(Fragment.fragid).filter(Fragment.scanid==scan.scanid).count() > 0: # tijdelijk!
             for peak in scan.peaks:
                 if not ((not self.use_all_peaks) and peak.childscan==None):
                     mzs.append(peak.mz)
@@ -900,7 +921,9 @@ class AnnotateEngine(object):
                     self.call_back_engine.update_callback_url(status,elapsed_time,time_limit)
                 if time_limit and elapsed_time > time_limit * 60:
                     metids=[] # break out of while-loop
-                    sys.stderr.write('\nThe time limit of '+str(time_limit)+' minutes has been exceeded!\n\n')
+                    if self.call_back_engine != None:
+                        self.call_back_engine.update_callback_url('Annotation stopped: time limit exceeded',force=True)
+                    logging.warn('Annotation stopped: time limit exceeded')
                     break
             self.db_session.commit()
         if self.call_back_engine != None:
