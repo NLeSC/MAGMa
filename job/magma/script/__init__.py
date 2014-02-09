@@ -64,6 +64,8 @@ class MagmaCommand(object):
         sc.add_argument('-m', '--metabolism_types', help="digest,gut,phase1,phase2, (default: %(default)s)", default="phase1,phase2", type=str)
         sc.add_argument('-s', '--scenario', default=None, type=str, help="""Scenario file, each line defines a separate stage:
                                         action(glycosidase/gut/phase1[_selected]/phase2[_selected]/mass_filter),value(nsteps/mass limit)""")
+        sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
+        sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.metabolize)
 
@@ -75,6 +77,8 @@ class MagmaCommand(object):
         sc.add_argument('-l', '--max_ms_level', help="Maximum MS level to be processsed (default: %(default)s)", default=10,type=int)
         sc.add_argument('-a', '--abs_peak_cutoff', help="Absolute intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
         sc.add_argument('-s', '--scan', help="Read only spectral tree specified by MS1 scan number (default: %(default)s)", default=None,type=str)
+        sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
+        sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.read_ms_data)
 
@@ -97,7 +101,7 @@ class MagmaCommand(object):
         sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,incl_halo,min_refscore(only for PubChem) (default: %(default)s)",default=",1200,False",type=str)
         sc.add_argument('--ncpus', help="Number of parallel cpus to use for annotation (default: %(default)s)", default=1,type=int)
         sc.add_argument('--scans', help="Search in specified scans (default: %(default)s)", default="all",type=str)
-        sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=int)
+        sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
         sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
@@ -165,7 +169,7 @@ class MagmaCommand(object):
     def add_structures(self, args, magma_session=None):
         if magma_session == None:
             magma_session = self.get_magma_session(args.db,args.description)
-        struct_engine = magma_session.get_structure_engine() # TODO remove arguments
+        struct_engine = magma_session.get_structure_engine()
         metids=set([])
         if args.structure_format == 'smiles':
             for mol in self.smiles2mols(args.structures):
@@ -186,7 +190,7 @@ class MagmaCommand(object):
     def metabolize(self, args, magma_session=None):
         if magma_session == None:
             magma_session = self.get_magma_session(args.db,args.description)
-        struct_engine = magma_session.get_structure_engine(args.metabolism_types, args.n_reaction_steps) # TODO remove arguments
+        struct_engine = magma_session.get_structure_engine(call_back_url=args.call_back_url)
         if args.scenario != None:
             scenario=[]
             scenario_file=open(args.scenario,'r')
@@ -194,7 +198,7 @@ class MagmaCommand(object):
                 step=line.split('#')[0].rstrip().split(',') # Comments indicated by # are allowed
                 if len(step)>1:
                     scenario.append(step)
-            struct_engine.run_scenario(scenario)
+            struct_engine.run_scenario(scenario,args.time_limit)
         elif args.metids == None:
             metids=struct_engine.metabolize_all(args.metabolism_types, args.n_reaction_steps)
             for metid in metids:
@@ -211,9 +215,9 @@ class MagmaCommand(object):
         if magma_session == None:
             magma_session = self.get_magma_session(args.db,args.description)
         ms_data_engine = magma_session.get_ms_data_engine(abs_peak_cutoff=args.abs_peak_cutoff,
-            max_ms_level=args.max_ms_level)
+            max_ms_level=args.max_ms_level,call_back_url=args.call_back_url)
         if args.ms_data_format == "mzxml":
-            ms_data_engine.store_mzxml_file(args.ms_data.name,args.scan)
+            ms_data_engine.store_mzxml_file(args.ms_data.name,args.scan,args.time_limit)
         else:
             tree_type={"mass_tree":0,"form_tree_neg":-1,"form_tree_pos":1}[args.ms_data_format]
             ms_data_engine.store_manual_tree(args.ms_data.name,tree_type)
