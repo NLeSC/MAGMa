@@ -1,4 +1,5 @@
 """Module for job query"""
+import json
 import os
 from cgi import FieldStorage
 import colander
@@ -116,15 +117,26 @@ class JobQuery(object):
                                        name='max_mz'))
 
     def _addMetabolizeSchema(self, schema):
-        validator = colander.OneOf(['digest', 'gut', 'phase1', 'phase2'])
-        metabolism_type = colander.SchemaNode(colander.String(),
-                                              validator=validator)
+        scenario = colander.SchemaNode(colander.Mapping())
+        transformation_types = colander.OneOf([
+                                               'phase1',
+                                               'phase2',
+                                               'phase2_selected',
+                                               'glycosidase',
+                                               'mass_filter',
+                                               'gut'])
+
+        scenario.add(colander.SchemaNode(colander.String(),
+                                         name='type',
+                                         validator=transformation_types))
+        # TODO add validator for steps, but what are valid options for steps?
+        scenario.add(colander.SchemaNode(colander.String(),
+                                         name='steps'))
+
         schema.add(colander.SchemaNode(colander.Sequence(),
-                                       metabolism_type,
-                                       name='metabolism_types'))
-        schema.add(colander.SchemaNode(colander.Integer(),
-                                       validator=colander.Range(0, 10),
-                                       name='n_reaction_steps'))
+                                       scenario,
+                                       validator=colander.Length(1),
+                                       name='scenario'))
 
     def _addAddStructuresSchema(self, has_ms_data, must_metabolize):
         def textarea_or_file(node, value):
@@ -187,9 +199,7 @@ class JobQuery(object):
         if hasattr(params, 'mixed'):
             # unflatten multidict
             params = params.mixed()
-        if ('metabolism_types' in params and
-                isinstance(params['metabolism_types'], basestring)):
-            params['metabolism_types'] = [params['metabolism_types']]
+        self._deserialize_scenario(params)
 
         params = schema.deserialize(params)
 
@@ -290,6 +300,20 @@ class JobQuery(object):
             msfile.write(params['ms_data'])
         msfile.close()
 
+    def _writeScenarioFile(self, params):
+        with open(os.path.join(self.dir, 'scenario.csv'), 'w') as f:
+            for transformation in params['scenario']:
+                f.write(",".join([transformation['type'],
+                                  transformation['steps']
+                                  ])+"\n")
+
+    def _deserialize_scenario(self, params):
+        if 'scenario' in params:
+            try:
+                params['scenario'] = json.loads(params['scenario'])
+            except TypeError:
+                pass
+
     def _addIonisationToFormulaTree(self, params, schema, orig_params):
         if params['ms_data_format'] == 'form_tree':
             if 'ionisation_mode' in orig_params:
@@ -333,7 +357,8 @@ class JobQuery(object):
         script__substitution = {
             'ms_data_format': self.escape(params['ms_data_format']),
             'max_ms_level': self.escape(params['max_ms_level']),
-            'abs_peak_cutoff': self.escape(params['abs_peak_cutoff'])
+            'abs_peak_cutoff': self.escape(params['abs_peak_cutoff']),
+            'call_back_url': self.status_callback_url
         }
         script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}' "
         script += "-l '{max_ms_level}' "
@@ -348,7 +373,10 @@ class JobQuery(object):
         if not empty_scan and is_mzxml:
             script += "--scan '{scan}' "
             script__substitution['scan'] = self.escape(params['scan'])
+        if self.restricted:
+            script += '--time_limit 1 '
 
+        script += " --call_back_url '{call_back_url}' "
         script += "ms_data.dat {{db}}\n"
         self.script += script.format(**script__substitution)
 
@@ -379,20 +407,23 @@ class JobQuery(object):
         if hasattr(params, 'mixed'):
             # unflatten multidict
             params = params.mixed()
-        if ('metabolism_types' in params and
-                isinstance(params['metabolism_types'], basestring)):
-            params['metabolism_types'] = [params['metabolism_types']]
+
+        self._deserialize_scenario(params)
         params = schema.deserialize(params)
 
+        self._writeScenarioFile(params)
+        self.prestaged.append('scenario.csv')
+
         script = "{{magma}} metabolize"
-        script += " --n_reaction_steps '{n_reaction_steps}'"
-        script += " -m '{metabolism_types}'"
-        metabolism_types = ','.join(params['metabolism_types'])
-        script_substitution = {
-            'n_reaction_steps': self.escape(params['n_reaction_steps']),
-            'metabolism_types': self.escape(metabolism_types)
+        script += " --scenario scenario.csv"
+        script += " --call_back_url '{call_back_url}' "
+        script_substitutions = {
+            'call_back_url': self.status_callback_url,
         }
-        self.script += script.format(**script_substitution)
+        self.script += script.format(**script_substitutions)
+
+        if self.restricted:
+            self.script += '--time_limit 3 '
 
         if from_subset:
             self.script += " -j -"
@@ -411,8 +442,7 @@ class JobQuery(object):
         ``params`` is a MultiDict from which the following keys are used:
 
         * metid, metabolite identifier to metabolize
-        * n_reaction_steps
-        * metabolism_types, comma seperated string with metabolism types
+        * scenario, transformation scenario
 
         If ``has_ms_data`` is True then
             :meth:`~magmaweb.job.JobQuery.annotate` will be called.
@@ -427,19 +457,18 @@ class JobQuery(object):
         if hasattr(params, 'mixed'):
             # unflatten multidict
             params = params.mixed()
-        if ('metabolism_types' in params and
-                isinstance(params['metabolism_types'], basestring)):
-            params['metabolism_types'] = [params['metabolism_types']]
+        self._deserialize_scenario(params)
         params = schema.deserialize(params)
 
+        self._writeScenarioFile(params)
+        self.prestaged.append('scenario.csv')
+
         script = "echo '{metid}' | {{magma}} metabolize -j - "
-        script += "--n_reaction_steps '{n_reaction_steps}' "
-        script += "-m '{metabolism_types}' {{db}}"
-        metabolism_types = ','.join(params['metabolism_types'])
+        script += "--scenario scenario.csv {{db}}"
+        script += " --call_back_url '{call_back_url}' "
         script_substitutions = {
             'metid': self.escape(params['metid']),
-            'n_reaction_steps': self.escape(params['n_reaction_steps']),
-            'metabolism_types': self.escape(metabolism_types)
+            'call_back_url': self.status_callback_url,
         }
         self.script += script.format(**script_substitutions)
 
@@ -575,8 +604,10 @@ class JobQuery(object):
         elif selection == 'example2':
             return cls._example2()
 
-        return dict(n_reaction_steps=2,
-                    metabolism_types=['phase1', 'phase2'],
+        return dict(scenario=[
+                              {'type': 'phase1', 'steps': '2'},
+                              {'type': 'phase2', 'steps': '1'}
+                              ],
                     ms_data_format='mzxml',
                     ms_data_area='',
                     ionisation_mode=1,

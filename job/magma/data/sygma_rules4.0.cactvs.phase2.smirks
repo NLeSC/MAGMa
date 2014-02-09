@@ -35,7 +35,7 @@
 
 # -- glycination --
 [c:1][C:2](=[O:3])[O][H]>>[c:1][C:2](=[O:3])NCC(=O)O	0.107383	glycination_1	y	# 16/149
-[C:1][C:2](=[O:3])[O][H]>>[C:1][C:2](=[O:3])NCC(=O)O	0.022619	glycination_2	y	# 19/840
+[C!$(CN):1][C:2](=[O:3])[O][H]>>[C:1][C:2](=[O:3])NCC(=O)O	0.0336283	glycination_2	y	# 19/565
 
 # -- phosphorylation --
 [O;$(O[CH2]C1AACO1),$(OP([OH1])(=O)OCC1AACO1),$(OP([OH1])(=O)OP(O)(=O)OCC1AACO1):1][H]>>[O:1]P(O)(O)=O	0.402985	phosphorylation	y	# 27/67

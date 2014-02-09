@@ -1,19 +1,19 @@
 import unittest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from magmaweb.models import ReactionSequence, fill_molecules_reactionsequence, Metabolite, Reaction
+from magmaweb.models import ReactionSequence, fill_molecules_reactions, Metabolite, Reaction
 
 
 class TestReactionSequence(unittest.TestCase):
     reactions = {
-       'reactantof': [{
+       'products': [{
           'esterase': {'nr': 123, 'nrp': 45}
        }],
-       'productof': [{
+       'reactants': [{
           'theogallin': {'nr': 678, 'nrp': 90}
        }]
     }
-    reactions_as_json = u'{"reactantof": [{"esterase": {"nr": 123, "nrp": 45}}], "productof": [{"theogallin": {"nr": 678, "nrp": 90}}]}'
+    reactions_as_json = '{"reactants": [{"theogallin": {"nr": 678, "nrp": 90}}], "products": [{"esterase": {"nr": 123, "nrp": 45}}]}'
 
     def setUp(self):
         self.rs = ReactionSequence()
@@ -47,7 +47,7 @@ class TestReactionSequence(unittest.TestCase):
         self.assertEqual(r, {})
 
 
-class TestReactionSequenceFiller(unittest.TestCase):
+class TestFillMoleculeReactions(unittest.TestCase):
     def setUp(self):
         # default use a in memory db
         url = 'sqlite://'
@@ -66,7 +66,7 @@ class TestReactionSequenceFiller(unittest.TestCase):
         ))
         session.flush()
 
-        fill_molecules_reactionsequence(session)
+        fill_molecules_reactions(session)
 
         self.assertDictEqual(self.getReactionSequence(1), {})
 
@@ -81,10 +81,10 @@ class TestReactionSequenceFiller(unittest.TestCase):
                              reactant=1, product=2))
         session.flush()
 
-        fill_molecules_reactionsequence(session)
+        fill_molecules_reactions(session)
 
         expected1 = {
-            u'reactantof': {
+            u'products': {
                 u'esterase': {
                     u'nr': 1,
                     u'nrp': 1
@@ -93,7 +93,7 @@ class TestReactionSequenceFiller(unittest.TestCase):
         }
         self.assertDictEqual(self.getReactionSequence(1), expected1)
         expected2 = {
-            u'productof': {
+            u'reactants': {
                 u'esterase': {
                     u'nr': 1,
                     u'nrp': 1
@@ -115,16 +115,16 @@ class TestReactionSequenceFiller(unittest.TestCase):
                              reactant=2, product=1))
         session.flush()
 
-        fill_molecules_reactionsequence(session)
+        fill_molecules_reactions(session)
 
         expected1 = {
-            u'reactantof': {
+            u'products': {
                 u'esterase': {
                     u'nr': 1,
                     u'nrp': 1
                 }
             },
-            u'productof': {
+            u'reactants': {
                 u'theogallin': {
                     u'nr': 1,
                     u'nrp': 1
@@ -133,13 +133,13 @@ class TestReactionSequenceFiller(unittest.TestCase):
         }
         self.assertDictEqual(self.getReactionSequence(1), expected1)
         expected2 = {
-            u'reactantof': {
+            u'products': {
                 u'theogallin': {
                     u'nr': 1,
                     u'nrp': 1
                 }
             },
-            u'productof': {
+            u'reactants': {
                 u'esterase': {
                     u'nr': 1,
                     u'nrp': 1
@@ -168,30 +168,30 @@ class TestReactionSequenceFiller(unittest.TestCase):
                              reactant=3, product=4))
         session.flush()
 
-        fill_molecules_reactionsequence(session)
+        fill_molecules_reactions(session)
 
         expected1 = {
-            u'reactantof': {u'esterase': {u'nr': 1, u'nrp': 1},
-            u'theogallin': {u'nr': 1, u'nrp': 0}}
+            u'products': {u'esterase': {u'nr': 1, u'nrp': 1},
+                          u'theogallin': {u'nr': 1}}
         }
         self.assertDictEqual(self.getReactionSequence(1), expected1)
         expected2 = {
-            u'productof': {u'esterase': {u'nr': 1, u'nrp': 1}},
-            u'reactantof': {u'dehydrox': {u'nr': 1, u'nrp': 1}}
+            u'reactants': {u'esterase': {u'nr': 1, u'nrp': 1}},
+            u'products': {u'dehydrox': {u'nr': 1, u'nrp': 1}}
         }
         self.assertDictEqual(self.getReactionSequence(2), expected2)
         expected3 = {
-            u'productof': {u'theogallin': {u'nr': 1, u'nrp': 1}},
-            u'reactantof': {u'reduc': {u'nr': 1, u'nrp': 1}}
+            u'reactants': {u'theogallin': {u'nr': 1, u'nrp': 1}},
+            u'products': {u'reduc': {u'nr': 1, u'nrp': 1}}
         }
         self.assertDictEqual(self.getReactionSequence(3), expected3)
         expected4 = {
-            u'productof': {u'dehydrox': {u'nr': 1, u'nrp': 1},
-            u'reduc': {u'nr': 1, u'nrp': 0}}
+            u'reactants': {u'dehydrox': {u'nr': 1, u'nrp': 1},
+                           u'reduc': {u'nr': 1}}
         }
         self.assertDictEqual(self.getReactionSequence(4), expected4)
 
-    def test_reactionson1reaction2products(self):
+    def test_reactionson1reaction2reactants(self):
         """
         1 -1> 2
         1 -1> 3
@@ -206,22 +206,22 @@ class TestReactionSequenceFiller(unittest.TestCase):
                              reactant=1, product=3))
         session.flush()
 
-        fill_molecules_reactionsequence(session)
+        fill_molecules_reactions(session)
 
         expected1 = {
-            u'reactantof': {u'esterase': {u'nr': 2, u'nrp': 2}},
+            u'products': {u'esterase': {u'nr': 2, u'nrp': 2}},
         }
         self.assertDictEqual(self.getReactionSequence(1), expected1)
         expected2 = {
-            u'productof': {u'esterase': {u'nr': 1, u'nrp': 1}},
+            u'reactants': {u'esterase': {u'nr': 1, u'nrp': 1}},
         }
         self.assertDictEqual(self.getReactionSequence(2), expected2)
         expected3 = {
-            u'productof': {u'esterase': {u'nr': 1, u'nrp': 1}},
+            u'reactants': {u'esterase': {u'nr': 1, u'nrp': 1}},
         }
         self.assertDictEqual(self.getReactionSequence(3), expected3)
 
-    def test_reactionson1reaction2reactants(self):
+    def test_reactionson1reaction2products(self):
         """
         1 -1> 2
         3 -1> 2
@@ -236,17 +236,17 @@ class TestReactionSequenceFiller(unittest.TestCase):
                              reactant=3, product=2))
         session.flush()
 
-        fill_molecules_reactionsequence(session)
+        fill_molecules_reactions(session)
 
         expected1 = {
-            u'reactantof': {u'esterase': {u'nr': 1, u'nrp': 1}},
+            u'products': {u'esterase': {u'nr': 1, u'nrp': 1}},
         }
         self.assertDictEqual(self.getReactionSequence(1), expected1)
         expected2 = {
-            u'productof': {u'esterase': {u'nr': 2, u'nrp': 2}},
+            u'reactants': {u'esterase': {u'nr': 2, u'nrp': 2}},
         }
         self.assertDictEqual(self.getReactionSequence(2), expected2)
         expected3 = {
-            u'reactantof': {u'esterase': {u'nr': 1, u'nrp': 1}},
+            u'products': {u'esterase': {u'nr': 1, u'nrp': 1}},
         }
         self.assertDictEqual(self.getReactionSequence(3), expected3)

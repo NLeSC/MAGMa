@@ -109,7 +109,7 @@ class Reaction(Base):
     name = Column(Unicode)
 
 
-def fill_molecules_reactionsequence(session):
+def fill_molecules_reactions(session):
     """Fills the reactionsequence column in the molecules table with info from reactions table.
 
     The molecules query will become to complex when reactionsequence is queried from reactions table.
@@ -199,7 +199,7 @@ class Peak(Base):
     # Intensity of peak (y-coordinate)
     intensity = Column(Float)
     # which metabolite is assigned to this peak
-    assigned_metid = Column(Integer, ForeignKey('metabolites.metid'))
+    assigned_metid = Column(Integer, ForeignKey('metabolites.metid'),index=True)
 
 
 class Fragment(Base):
@@ -208,9 +208,9 @@ class Fragment(Base):
     # Fragment identifier
     fragid = Column(Integer, primary_key=True, autoincrement=True)
     # Metabolite identifier
-    metid = Column(Integer, ForeignKey('metabolites.metid'))
+    metid = Column(Integer, ForeignKey('metabolites.metid'),index=True)
     # Scan identifier
-    scanid = Column(Integer, ForeignKey('scans.scanid'))
+    scanid = Column(Integer, ForeignKey('scans.scanid'),index=True)
     # m/z of peak in scan
     mz = Column(Float)
     # Mass of fragment in Dalton, corrected with h delta
@@ -246,16 +246,6 @@ class Run(Base):
     runid = Column(Integer, primary_key=True, autoincrement=True)
     # Description of the run
     description = Column(Unicode)
-
-    # metabolize parameters
-
-    # Maximum number of reaction steps applied to reactants
-    n_reaction_steps = Column(Integer)
-
-    # Comma separated list of metabolism types, like "phase1"
-    metabolism_types = Column(Unicode)
-    # TODO: remove metabolism type column
-    # will be part of reacton sequence of metabolites
 
     # ms data parsing parameters
     ms_filename = Column(Unicode)

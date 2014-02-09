@@ -13,13 +13,13 @@ down_revision = '28182dc2d089'
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.orm.session import sessionmaker
-from magmaweb.models import fill_molecules_reactionsequence
+from magmaweb.models import fill_molecules_reactions
 
 
 def upgrade():
     connection = op.get_bind()
     Session = sessionmaker(bind=connection)
-    fill_molecules_reactionsequence(Session())
+    fill_molecules_reactions(Session())
 
 
 def downgrade():
