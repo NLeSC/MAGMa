@@ -270,8 +270,11 @@ class StructureEngine(object):
             if len(splitline) == 1:
                 reaction='PARENT'
                 name=line[:-1]
+            elif len(splitline) == 2:
+                reaction=splitline[1][:-1]
+                name=splitline[0]
             else:
-                reaction=" + ".join([r[:-1] for r in splitline[1:]])
+                reaction=metabolism
                 name=splitline[0]
             mol=name+'\n'
             isquery=0

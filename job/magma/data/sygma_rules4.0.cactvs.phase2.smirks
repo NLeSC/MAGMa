@@ -18,9 +18,9 @@
 [nH1;X3:1][H]>>[n:1]C1OC(C(O)=O)C(O)C(O)C1O	0.0382514	N-gluc_8	y	# 7/183
 
 # -- sulfation --
-[c:1][O:2][H]>>[c:1][O:2]S(=O)(=O)O	0.119004	sulfation_1	y	# 129/1084
-[c:1][NH2:2][H]>>[c:1][N:2]S(=O)(=O)O	0.012931	sulfation_2	y	# 3/232
-[C;!$(C=O);!$(CC[OH1]):1][O:2][H]>>[C:1][O:2]S(=O)(=O)O	0.019337	sulfation_3	y	# 35/1810
+[c:1][O:2][H]>>[c:1][O:2]S(=O)(=O)O	0.119004	O-sulf_1	y	# 129/1084
+[c:1][NH2:2][H]>>[c:1][N:2]S(=O)(=O)O	0.012931	N-sulfation	y	# 3/232
+[C;!$(C=O);!$(CC[OH1]):1][O:2][H]>>[C:1][O:2]S(=O)(=O)O	0.019337	O-sulf_2	y	# 35/1810
 
 # -- N-acetylation --
 [c:1][NH2:2][H]>>[c:1][N:2]C(=O)C	0.314655	N-acetyl_1	y	# 73/232
