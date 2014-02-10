@@ -57,8 +57,8 @@ class MagmaSession(object):
             rundata.description=description
         self.db_session.add(rundata)
         self.db_session.commit()
-    def get_structure_engine(self,call_back_url=None):
-        return StructureEngine(self.db_session,call_back_url)
+    def get_structure_engine(self,pubchem_names=False, call_back_url=None):
+        return StructureEngine(self.db_session,pubchem_names,call_back_url)
     def get_ms_data_engine(self,
                  abs_peak_cutoff=1000,
                  max_ms_level=10,
@@ -127,7 +127,7 @@ class CallBackEngine(object):
             r = requests.put(self.url, status, auth=HTTPMacAuth(self.access_token, self.mac_key))
 
 class StructureEngine(object):
-    def __init__(self,db_session,call_back_url=None):
+    def __init__(self,db_session,pubchem_names=False,call_back_url=None):
         self.db_session = db_session
         try:
             rundata=self.db_session.query(Run).one()
@@ -135,6 +135,9 @@ class StructureEngine(object):
             rundata = Run()
         self.db_session.add(rundata)
         self.db_session.commit()
+        self.pubchem_names=pubchem_names
+        if pubchem_names:
+            self.pubchem_engine=PubChemEngine()
 
         if call_back_url != None:
             self.call_back_engine=CallBackEngine(call_back_url)
@@ -183,6 +186,14 @@ class StructureEngine(object):
                     else:
                         sys.stderr.write('Duplicate structure: - kept old one\n')
                         return
+        if self.pubchem_names:
+            in_pubchem=self.pubchem_engine.check_inchi(metab.mim, metab.smiles)
+            if in_pubchem!=False:
+                name,reference=in_pubchem
+                if metab.origin == '':
+                    metab.origin = name
+                if metab.reference == None:
+                    metab.reference = reference
         self.db_session.add(metab)
         #sys.stderr.write('Added: '+name+'\n')
         self.db_session.flush()
@@ -1045,6 +1056,16 @@ class PubChemEngine(object):
                                logp=float(logp)/10.0,
                                ))
         return molecules
+    def check_inchi(self,mim,inchikey):
+        self.c.execute('SELECT cid,name FROM molecules WHERE charge IN (-1,0,1) AND mim between ? and ? and inchikey = ?', (int(mim*1e6)-1,int(mim*1e6)+1,inchikey))
+        result=self.c.fetchall()
+        if len(result)>0:
+            cid,name=result[0]
+            reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
+                                         str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>'
+            return [name,reference]
+        else:
+            return False
 
 class KeggEngine(object):
     def __init__(self,dbfilename='',max_64atoms=False):
