@@ -99,6 +99,10 @@ class MagmaCommand(object):
         sc.add_argument('-f', '--fast', help="Quick calculations for molecules up to 64 atoms (default: %(default)s)", action="store_true")
         sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["pubchem","kegg","hmdb","metacyc"])
         sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,incl_halo,min_refscore(only for PubChem) (default: %(default)s)",default=",1200,False",type=str)
+        sc.add_argument('-a', '--adducts' ,default=None,type=str, help="""Specify adduct (as comma separated list) for matching at MS1.
+                                                                        Positive mode: [Na,K,NH4] Negative mode: [Cl]
+                                                                        (default: %(default)s)""")
+        sc.add_argument('-m', '--max_charge', help="Maximum charge state (default: %(default)s)", default=1,type=int)
         sc.add_argument('--ncpus', help="Number of parallel cpus to use for annotation (default: %(default)s)", default=1,type=int)
         sc.add_argument('--scans', help="Search in specified scans (default: %(default)s)", default="all",type=str)
         sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
@@ -235,6 +239,8 @@ class MagmaCommand(object):
             mz_precision_abs=args.mz_precision_abs,
             precursor_mz_precision=args.precursor_mz_precision,
             use_all_peaks=args.use_all_peaks,
+            adducts=args.adducts,
+            max_charge=args.max_charge,
             call_back_url=args.call_back_url)
         if args.scans == 'all':
             scans='all'
