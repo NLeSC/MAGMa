@@ -76,10 +76,12 @@ class MagmaSession(object):
                  mz_precision_abs=0.001,
                  precursor_mz_precision=0.005,
                  use_all_peaks=False,
+                 adducts='',
+                 max_charge=1,
                  call_back_url=None
                  ):
         return AnnotateEngine(self.db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
-                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,use_all_peaks,call_back_url)
+                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,use_all_peaks,adducts,max_charge,call_back_url)
     def get_select_engine(self):
         return SelectEngine(self.db_session)
     def get_data_analysis_engine(self):
@@ -632,7 +634,7 @@ class MsDataEngine(object):
 class AnnotateEngine(object):
     def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
                  ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,
-                 precursor_mz_precision,use_all_peaks,call_back_url=None):
+                 precursor_mz_precision,use_all_peaks,adducts='',max_charge=1,call_back_url=None):
         self.db_session = db_session
         mz_precision_abs=max(mz_precision_abs,0.000001)
         precursor_mz_precision=max(precursor_mz_precision,0.000001)
@@ -681,10 +683,14 @@ class AnnotateEngine(object):
             self.call_back_engine=CallBackEngine(call_back_url)
         else:
             self.call_back_engine=None
-        iontypes=['+H','+NH4']
-        #iontypes=['-H']
-        maxcharge=1
-        self.ions=self.generate_ions(iontypes,maxcharge)
+        if self.ionisation_mode == 1:
+            iontypes=['+H']
+        if self.ionisation_mode == -1:
+            iontypes=['-H']
+        if adducts!=None:
+            for i in adducts.split(','):
+                iontypes.append('+'+i)
+        self.ions=self.generate_ions(iontypes,max_charge)
         print self.ions
         #print len(self.ions)
         #self.ions=[{0:''},{pars.Hmass:',H+', pars.mims['N']+3*pars.mims['H']:',NH4+'}]
@@ -699,10 +705,12 @@ class AnnotateEngine(object):
             ions.append({})
             for ionmass in ions[c]:
                 for i in iontypes:
-                    ions[c+1][ionmass+pars.ionmasses[i]]=ions[c][ionmass]+i
+                    if i not in pars.ionmasses[self.ionisation_mode]:
+                        exit('invalid adduct: '+i+' for ionisation mode: '+str(self.ionisation_mode))
+                    ions[c+1][ionmass+pars.ionmasses[self.ionisation_mode][i]]=ions[c][ionmass]+i
         for c in range(maxcharge+1):
             for ionmass in ions[c]:
-                ions[c][ionmass]='<br>[M'+ions[c][ionmass]+']'+str(c)*(c>1)+'-'*(self.ionisation_mode<0)+'+'*(self.ionisation_mode>0)
+                ions[c][ionmass]='[M'+ions[c][ionmass]+']'+str(c)*(c>1)+'-'*(self.ionisation_mode<0)+'+'*(self.ionisation_mode>0)
         return ions
 
     def build_spectrum(self,dbscan):
@@ -955,7 +963,10 @@ class AnnotateEngine(object):
         deltappm=None
         if score != None:
             score=score/hit.intensity_weight
-            deltappm=(hit.mz-hit.mass-hit.deltaH+self.ionisation_mode*pars.elmass)/hit.mz*1e6
+            charge=1
+            if hit.ion[-2] in '123456789': # TODO store charge of a hit explicitly 
+                charge=int(hit.ion[-2])
+            deltappm=(hit.mz-(hit.mass+hit.deltaH)/charge+self.ionisation_mode*pars.elmass)/hit.mz*1e6
         # print atomlist, Chem.FragmentSmiles(mol,atomlist)
         self.db_session.add(Fragment(
             metid=metid,
@@ -968,7 +979,7 @@ class AnnotateEngine(object):
             inchikey=hit.inchikey,
             deltah=hit.deltaH,
             deltappm=deltappm,
-            formula=hit.formula+hit.ion
+            formula=hit.formula+'<br>'+hit.ion
             ))
         if len(hit.besthits)>0:
             for childhit in hit.besthits:
@@ -1354,7 +1365,7 @@ def search_structure(mol,mim,molcharge,peaks,max_broken_bonds,max_water_losses,p
                 for childfrag,childscore,childbbreaks,childmass,childH in fragment_engine.find_fragments(mz_neutral,fragment,precision,mz_precision_abs):
                     if childfrag & fragment == childfrag:
                         childhit=gethit(childpeak,childfrag,childscore*(childpeak.intensity**0.5),childbbreaks,childmass,childH*pars.Hmass,\
-                                        '+'*(childH>0)+'-'*(childH<0)+str(abs(childH))*(not -2<childH<2)+'H'*(childH!=0)+'<br>[M]'+'+'*(ionisation_mode>0)+'-'*(ionisation_mode<0))
+                                        '[X'+'+'*(childH>0)+'-'*(childH<0)+str(abs(childH))*(not -2<childH<2)+'H'*(childH!=0)+']'+'+'*(ionisation_mode>0)+'-'*(ionisation_mode<0))
                         if besthit.score==None or besthit.score > childhit.score or \
                                (besthit.score == childhit.score and abs(besthit.deltaH) > abs(childhit.deltaH)) or \
                                fragment_engine.score_fragment_rel2parent(besthit.fragment,fragment) > fragment_engine.score_fragment_rel2parent(childhit.fragment,fragment):
