@@ -51,6 +51,7 @@ class MagmaCommand(object):
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # add_structures arguments
         sc.add_argument('-t', '--structure_format', help="Structure input type (default: %(default)s)", default="smiles", choices=["smiles", "sdf"])
+        sc.add_argument('-p', '--pubchem_names', help="Get references to PubChem (default: %(default)s)", action="store_true")
         sc.add_argument('--mass_filter', help="Filter input structures on maximum monoisotopic mass (default: %(default)s)", default=9999,type=int)
         sc.add_argument('structures', type=argparse.FileType('rb'), help="File with smiles used as structures")
         sc.add_argument('db', type=str, help="Sqlite database file with results")
@@ -65,6 +66,7 @@ class MagmaCommand(object):
         sc.add_argument('-s', '--scenario', default=None, type=str, help="""Scenario file, each line defines a separate stage:
                                         action(glycosidase/gut/phase1[_selected]/phase2[_selected]/mass_filter),value(nsteps/mass limit)""")
         sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
+        sc.add_argument('-p', '--pubchem_names', help="Get references to PubChem (default: %(default)s)", action="store_true")
         sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.metabolize)
@@ -173,20 +175,14 @@ class MagmaCommand(object):
     def add_structures(self, args, magma_session=None):
         if magma_session == None:
             magma_session = self.get_magma_session(args.db,args.description)
-        struct_engine = magma_session.get_structure_engine()
+        struct_engine = magma_session.get_structure_engine(pubchem_names=args.pubchem_names)
         metids=set([])
         if args.structure_format == 'smiles':
             for mol in self.smiles2mols(args.structures):
                 metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 1, mass_filter=args.mass_filter))
         elif args.structure_format == 'sdf':
             for mol in Chem.SDMolSupplier(args.structures.name):
-                try:
-                    ref=mol.GetProp('reference')
-                    prob=mol.GetProp('probability')
-                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), prob, 0, 1, reference=ref, mass_filter=args.mass_filter))
-                except:
-                    #print sys.exc_info()
-                    metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 1, mass_filter=args.mass_filter))
+                metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), None, 0, 1, mass_filter=args.mass_filter))
         magma_session.commit()
         for metid in metids:
             print metid
@@ -194,7 +190,7 @@ class MagmaCommand(object):
     def metabolize(self, args, magma_session=None):
         if magma_session == None:
             magma_session = self.get_magma_session(args.db,args.description)
-        struct_engine = magma_session.get_structure_engine(call_back_url=args.call_back_url)
+        struct_engine = magma_session.get_structure_engine(pubchem_names=args.pubchem_names, call_back_url=args.call_back_url)
         if args.scenario != None:
             scenario=[]
             scenario_file=open(args.scenario,'r')
