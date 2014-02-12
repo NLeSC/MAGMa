@@ -519,8 +519,9 @@ describe('Metabolites', function() {
         ctrl.metabolizeForm.hide();
 
         runs(function() {
+            // scenario gets serialized to json string
             expect(ctrl.metabolizeForm.getForm().getValues()).toEqual({
-                "scenario": [{type: 'phase1', steps: 2}, {type: 'phase2', steps: 1}]
+                "scenario": "[{"type":"phase1","steps":2},{"type":"phase2","steps":1}]"
             });
         });
     });
