@@ -397,15 +397,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       if (!this.application.features.run && this.actionsMenu) {
           this.actionsMenu.hideUploadAction();
       }
-      if (this.application.features.restricted) {
-          this.forceSingleScan();
-      }
       // TODO change tooltip of gears tool
-  },
-  forceSingleScan: function() {
-      // Force 1 spectral tree when mzxml has been selected.
-      var form = this.getUploadForm().getForm();
-      form.findField('scan').allowBlank = false;
   },
   /**
    * In MS Data upload forms loads the example data set.
