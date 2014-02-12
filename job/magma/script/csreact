@@ -1,15 +1,16 @@
 #! /bin/sh
-TK_LIBRARY="/usr/local/lib/cactvs3.409/tk8.5"
-TCL_LIBRARY="/usr/local/lib/cactvs3.409/tcl8.5"
-TCLX_LIBRARY="/usr/local/lib/cactvs3.409/tclx8.4"
-BLT_LIBRARY="/usr/local/lib/cactvs3.409/blt3.0"
-TIX_LIBRARY="/usr/local/lib/cactvs3.409/tix8.4"
+CACTVS_ROOT=$1
+TK_LIBRARY="$CACTVS_ROOT/tk8.5"
+TCL_LIBRARY="$CACTVS_ROOT/tcl8.5"
+TCLX_LIBRARY="$CACTVS_ROOT/tclx8.4"
+BLT_LIBRARY="$CACTVS_ROOT/blt3.0"
+TIX_LIBRARY="$CACTVS_ROOT/tix8.4"
 OS="Linux3.2"
-DATADIR="/usr/local/lib/cactvs3.409"
-PATH="/usr/local/lib/cactvs3.409/lib:$DATADIR:$PATH"
-LD_LIBRARY_PATH="/usr/local/lib/cactvs3.409/lib:$LD_LIBRARY_PATH"
+DATADIR=$CACTVS_ROOT
+PATH="$CACTVS_ROOT/lib:$DATADIR:$PATH"
+LD_LIBRARY_PATH="$CACTVS_ROOT/lib:$LD_LIBRARY_PATH"
 export LD_LIBRARY_PATH TCLX_LIBRARY
 export TK_LIBRARY TCL_LIBRARY BLT_LIBRARY TIX_LIBRARY OS DATADIR
-PGM="/usr/local/lib/cactvs3.409/lib/tclcactvs"
+PGM="$CACTVS_ROOT/lib/tclcactvs"
 exec "$PGM" -f $(dirname $0)/react.sh -- "$@"
 

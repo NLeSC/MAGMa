@@ -3,6 +3,7 @@
 # Name of smirksfile should not contain '>' character !
 # 
 set im [molfile read [molfile open stdin r hydrogens add] "" all]
+set argv [lreplace $argv 0 0]
 set mode [lindex $argv 0]
 set argv [lreplace $argv 0 0]
 foreach arg $argv {
