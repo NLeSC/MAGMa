@@ -5,7 +5,7 @@
         "max_broken_bonds" : 3,
         "max_water_losses" : 1,
         "ionisation_mode" : -1,
-        "metabolism_types" : ["phase1", "phase2"],
+        "scenario": [{type: 'phase1', steps: 2}, {type: 'phase2', steps: 1}],
         "mz_precision" : 5,
 		"mz_precision_abs" : 0.001,
         "ms_intensity_cutoff" : 200000.0,
