@@ -78,9 +78,6 @@ Ext.onReady(function() {
     	}]
     }, {
     	items: [{
-    	    xtype : 'metabolizefieldset',
- 	        margin: '0 0 10 0'
- 	    }, {
     	    xtype : 'annotatefieldset'
     	}]
     }],

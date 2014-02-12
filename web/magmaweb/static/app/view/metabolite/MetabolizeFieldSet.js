@@ -4,7 +4,7 @@
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.magmaweb.view.metabolite.MetabolizeFieldSet', {
-    extend: 'Ext.panel.Panel',
+    extend: 'Ext.form.FieldSet',
     alias: 'widget.metabolizefieldset',
     requires: [
          'Ext.form.field.Checkbox',
