@@ -146,6 +146,7 @@ Ext.onReady(function() {
           if (new_visible) {
               metabolize_fields.show();
           } else {
+              metabolize_fields.getForm().findField('metabolize').setValue(false);
               metabolize_fields.hide();
           }
       }
