@@ -585,7 +585,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
                                   )
         self.assertEqual(query, expected_query)
 
-    def test_restricted_without_scan(self):
+    def test_restricted_without_scan_and_molupload(self):
         self.jobquery.restricted = True
         params = {'ms_data_format': 'mzxml',
                   'ms_data': 'foo',
@@ -599,6 +599,29 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
 
         msg = 'Require MS1 scan number'
         self.assertEquals(e.exception.msg, msg)
+
+    def test_restricted_without_scan_and_structdb(self):
+        self.jobquery.restricted = True
+        params = {'ms_data_format': 'mzxml',
+                  'ms_data': 'foo',
+                  'max_ms_level': 3,
+                  'abs_peak_cutoff': 1000,
+                  'structure_database': 'pubchem',
+                  }
+
+        query = self.jobquery.add_ms_data(params)
+
+        script = "{magma} read_ms_data --ms_data_format 'mzxml'"
+        script += " -l '3' -a '1000.0'"
+        script += " --time_limit 1 --call_back_url '/' ms_data.dat {db}\n"
+        expected_query = JobQuery(directory=self.jobdir,
+                                  prestaged=['ms_data.dat'],
+                                  script=script,
+                                  status_callback_url='/',
+                                  restricted=True,
+                                  )
+        self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
 
     def test_resticted(self):
         self.jobquery.restricted = True
@@ -724,17 +747,12 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
         self.jobquery.restricted = True
         params = MultiDict(scenario=[{'type': 'phase1', 'steps': '2'},
                                      {'type': 'phase2', 'steps': '1'}],
-                           ionisation_mode=1,
-                           max_broken_bonds=4,
-                           max_water_losses=1,
                            structure_database='pubchem',
-                           min_refscore=1,
-                           max_mz=1200,
                            )
 
         from colander import Invalid
         with self.assertRaises(Invalid) as e:
-            self.jobquery.metabolize(params, has_ms_data=True)
+            self.jobquery.metabolize(params)
 
         msg = 'Not allowed to metabolize structure database'
         self.assertEquals(e.exception.msg, msg)
