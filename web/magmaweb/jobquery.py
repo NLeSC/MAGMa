@@ -424,6 +424,10 @@ class JobQuery(object):
 
         if self.restricted:
             self.script += ' --time_limit 3'
+            if has_ms_data and params['structure_database'] is not colander.null:
+                sd = schema['structure_database']
+                msg = 'Not allowed to metabolize structure database'
+                raise colander.Invalid(sd, msg)
 
         if from_subset:
             self.script += " -j -"
