@@ -877,7 +877,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
         script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         script += " --max_water_losses '1' --call_back_url '/'"
         script += " --structure_database 'pubchem'"
-        script += " --db_options ',1200,False,1'"
+        script += " --db_options ',1200,False,,1'"
         script += " --fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=[],
@@ -907,7 +907,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
         script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         script += " --max_water_losses '1' --call_back_url '/'"
         script += " --structure_database 'pubchem'"
-        script += " --db_options ',1200,True,1'"
+        script += " --db_options ',1200,True,,1'"
         script += " --time_limit 3 --fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=[],
@@ -1067,7 +1067,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
         expected_script += " --max_water_losses '1' --call_back_url '/'"
         expected_script += " --structure_database 'pubchem'"
-        expected_script += " --db_options ',1200,False,1'"
+        expected_script += " --db_options ',1200,False,,1'"
         expected_script += " --fast {db}\n"
 
         expected_query = JobQuery(directory=self.jobdir,

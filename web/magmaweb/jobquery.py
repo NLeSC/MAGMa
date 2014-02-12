@@ -542,7 +542,7 @@ class JobQuery(object):
         if params['structure_database'] is not colander.null:
             script += " --structure_database '{structure_database}'"
             script += " --db_options"
-            script += " ',{max_mim},{max_64atoms},{min_refscore}'"
+            script += " ',{max_mim},{max_64atoms},,{min_refscore}'"
             sd = self.escape(params['structure_database'])
             script_substitutions['structure_database'] = sd
             db_options = {'max_mim': self.escape(params['max_mz']),
