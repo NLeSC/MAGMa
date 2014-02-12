@@ -367,9 +367,12 @@ class JobQuery(object):
         is_mzxml = params['ms_data_format'] == 'mzxml'
         empty_scan = params['scan'] is colander.null
         if is_mzxml and self.restricted and empty_scan:
-            sd = schema['scan']
-            msg = 'Require MS1 scan number'
-            raise colander.Invalid(sd, msg)
+            has_structure_database = 'structure_database' in orig_params and orig_params['structure_database']
+            # mzxml + molecules from upload/draw -> single scan not enforced
+            if not has_structure_database:
+                sd = schema['scan']
+                msg = 'Require MS1 scan number'
+                raise colander.Invalid(sd, msg)
         if not empty_scan and is_mzxml:
             script += " --scan '{scan}'"
             script__substitution['scan'] = self.escape(params['scan'])
@@ -409,6 +412,7 @@ class JobQuery(object):
             params = params.mixed()
 
         self._deserialize_scenario(params)
+        orig_params = params
         params = schema.deserialize(params)
 
         self._writeScenarioFile(params)
@@ -424,8 +428,8 @@ class JobQuery(object):
 
         if self.restricted:
             self.script += ' --time_limit 3'
-            if has_ms_data and params['structure_database'] is not colander.null:
-                sd = schema['structure_database']
+            if 'structure_database' in orig_params and orig_params['structure_database']:
+                sd = schema['scenario']
                 msg = 'Not allowed to metabolize structure database'
                 raise colander.Invalid(sd, msg)
 
