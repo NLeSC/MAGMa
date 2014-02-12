@@ -527,35 +527,6 @@ describe('Scans controller', function() {
 
     	  expect(ctrl.actionsMenu.hideUploadAction).toHaveBeenCalledWith();
       });
-
-      it('unrestricted', function() {
-          ctrl.application.features.restricted = false;
-          spyOn(ctrl, 'forceSingleScan');
-
-          ctrl.applyRole();
-
-          expect(ctrl.forceSingleScan).not.toHaveBeenCalledWith();
-      });
-
-      it('restricted', function() {
-          ctrl.application.features.restricted = true;
-          spyOn(ctrl, 'forceSingleScan');
-
-          ctrl.applyRole();
-
-          expect(ctrl.forceSingleScan).toHaveBeenCalledWith();
-      });
-  });
-
-  it('forceSingleScan', function() {
-      var field = { allowBlank: true };
-      mocked_form.findField = function() {return field;};
-      spyOn(mocked_form, 'findField').andCallThrough();
-
-      ctrl.forceSingleScan();
-
-      expect(mocked_form.findField).toHaveBeenCalledWith('scan');
-      expect(field.allowBlank).toBeFalsy();
   });
 
   it('loadExample', function() {
