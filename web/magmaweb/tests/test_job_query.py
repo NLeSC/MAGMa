@@ -600,6 +600,29 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         msg = 'Require MS1 scan number'
         self.assertEquals(e.exception.msg, msg)
 
+    def test_resticted(self):
+        self.jobquery.restricted = True
+        params = {'ms_data_format': 'mzxml',
+                  'ms_data': 'foo',
+                  'max_ms_level': 3,
+                  'abs_peak_cutoff': 1000,
+                  'scan': 5,
+                  }
+
+        query = self.jobquery.add_ms_data(params)
+
+        script = "{magma} read_ms_data --ms_data_format 'mzxml'"
+        script += " -l '3' -a '1000.0' --scan '5'"
+        script += " --time_limit 1 --call_back_url '/' ms_data.dat {db}\n"
+        expected_query = JobQuery(directory=self.jobdir,
+                                  prestaged=['ms_data.dat'],
+                                  script=script,
+                                  status_callback_url='/',
+                                  restricted=True,
+                                  )
+        self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
+
 
 class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 
@@ -672,6 +695,25 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                                   prestaged=['scenario.csv'],
                                   script=script,
                                   status_callback_url='/',
+                                  )
+        self.assertEqual(query, expected_query)
+        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+
+    def test_it_restricted(self):
+        self.jobquery.restricted = True
+        params = MultiDict(scenario=[{'type': 'phase1', 'steps': '2'},
+                                     {'type': 'phase2', 'steps': '1'}]
+                           )
+
+        query = self.jobquery.metabolize(params)
+
+        script = "{magma} metabolize --scenario scenario.csv"
+        script += " --call_back_url '/' --time_limit 3 {db}\n"
+        expected_query = JobQuery(directory=self.jobdir,
+                                  prestaged=['scenario.csv'],
+                                  script=script,
+                                  status_callback_url='/',
+                                  restricted=True,
                                   )
         self.assertEqual(query, expected_query)
         self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
