@@ -257,8 +257,8 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         sf = 'structures.dat'
         scen = 'scenario.csv'
         script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
-        script += "{magma} metabolize --scenario scenario.csv "
-        script += "-j - {db}\n"
+        script += "{magma} metabolize --scenario scenario.csv"
+        script += " --call_back_url '/' -j - {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=[sf, scen],
                                   script=script,
@@ -317,9 +317,10 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_structures(params, True)
 
         sf = 'structures.dat'
-        script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
-        script += "{magma} metabolize --scenario scenario.csv "
-        script += "-j - {db} |"
+        script = "{magma} add_structures -t 'smiles'"
+        script += " structures.dat {db} |"
+        script += "{magma} metabolize --scenario scenario.csv"
+        script += " --call_back_url '/' -j - {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0'"
         script += " -d '10.0'"
         script += " -i '1'"
@@ -386,7 +387,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
+        script += " -l '3' -a '1000.0' --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['ms_data.dat'],
                                   script=script,
@@ -405,7 +406,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
+        script += " -l '3' -a '1000.0' --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['ms_data.dat'],
                                   script=script,
@@ -472,7 +473,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params, True)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml' "
-        script += "-l '3' -a '1000.0' ms_data.dat {db}\n"
+        script += "-l '3' -a '1000.0' --call_back_url '/' ms_data.dat {db}\n"
         script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0'"
         script += " -d '10.0'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
@@ -493,7 +494,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mass_tree'"
-        script += " -l '0' -a '0.0' ms_data.dat {db}\n"
+        script += " -l '0' -a '0.0' --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['ms_data.dat'],
                                   script=script,
@@ -510,7 +511,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'form_tree_pos'"
-        script += " -l '0' -a '0.0' ms_data.dat {db}\n"
+        script += " -l '0' -a '0.0' --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['ms_data.dat'],
                                   script=script,
@@ -527,7 +528,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'form_tree_neg'"
-        script += " -l '0' -a '0.0' ms_data.dat {db}\n"
+        script += " -l '0' -a '0.0' --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['ms_data.dat'],
                                   script=script,
@@ -557,7 +558,8 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -l '3' -a '1000.0' --scan '5' ms_data.dat {db}\n"
+        script += " -l '3' -a '1000.0' --scan '5'"
+        script += " --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['ms_data.dat'],
                                   script=script,
@@ -575,7 +577,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mass_tree'"
-        script += " -l '0' -a '0.0' ms_data.dat {db}\n"
+        script += " -l '0' -a '0.0' --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['ms_data.dat'],
                                   script=script,
@@ -609,7 +611,8 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize(params)
 
-        script = "{magma} metabolize --scenario scenario.csv {db}\n"
+        script = "{magma} metabolize --scenario scenario.csv"
+        script += " --call_back_url '/' {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['scenario.csv'],
                                   script=script,
@@ -625,7 +628,8 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize(params)
 
-        script = "{magma} metabolize --scenario scenario.csv {db}\n"
+        script = "{magma} metabolize --scenario scenario.csv"
+        script += " --call_back_url '/' {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['scenario.csv'],
                                   script=script,
@@ -657,7 +661,8 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                             ])
         query = self.jobquery.metabolize(params, True)
 
-        script = "{magma} metabolize --scenario scenario.csv {db} |"
+        script = "{magma} metabolize --scenario scenario.csv"
+        script += " --call_back_url '/' {db} |"
         script += "{magma} annotate -p '5.0' -q '0.001'"
         script += " -c '200000.0' -d '10.0'"
         script += " -i '1' -b '4' --precursor_mz_precision '0.005' "
@@ -684,7 +689,7 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
         query = self.jobquery.metabolize_one(params)
 
         script = "echo '123' | {magma} metabolize -j - "
-        script += "--scenario scenario.csv {db}\n"
+        script += "--scenario scenario.csv --call_back_url '/' {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['scenario.csv'],
                                   script=script,
@@ -710,12 +715,13 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize_one(params, True)
 
-        script = "echo '123' | {magma} metabolize -j - --scenario scenario.csv {db} |"
-        script += "{magma} annotate -p '5.0' -q '0.001' "
-        script += "-c '200000.0' -d '10.0' "
-        script += "-i '1' -b '4' --precursor_mz_precision '0.005'"
-        script += " --max_water_losses '1' --call_back_url '/' -j - "
-        script += "--fast {db}\n"
+        script = "echo '123' | {magma} metabolize -j - --scenario scenario.csv"
+        script += " --call_back_url '/' {db} |"
+        script += "{magma} annotate -p '5.0' -q '0.001'"
+        script += " -c '200000.0' -d '10.0'"
+        script += " -i '1' -b '4' --precursor_mz_precision '0.005'"
+        script += " --max_water_losses '1' --call_back_url '/' -j -"
+        script += " --fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['scenario.csv'],
                                   script=script,
@@ -865,13 +871,14 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         query = self.jobquery.allinone(params)
 
         expected_script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        expected_script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
+        expected_script += " -l '3' -a '1000.0' --call_back_url '/'"
+        expected_script += " ms_data.dat {db}\n"
 
         expected_script += "{magma} add_structures -t 'smiles'"
         expected_script += " structures.dat {db}\n"
 
         expected_script += "{magma} metabolize --scenario scenario.csv"
-        expected_script += " {db}\n"
+        expected_script += " --call_back_url '/' {db}\n"
 
         expected_script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0'"
         expected_script += " -d '10.0'"
@@ -924,7 +931,8 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         query = self.jobquery.allinone(params)
 
         expected_script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        expected_script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
+        expected_script += " -l '3' -a '1000.0' --call_back_url '/'"
+        expected_script += " ms_data.dat {db}\n"
 
         expected_script += "{magma} add_structures -t 'smiles'"
         expected_script += " structures.dat {db}\n"
@@ -970,7 +978,8 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         query = self.jobquery.allinone(params)
 
         expected_script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        expected_script += " -l '3' -a '1000.0' ms_data.dat {db}\n"
+        expected_script += " -l '3' -a '1000.0' --call_back_url '/'"
+        expected_script += " ms_data.dat {db}\n"
 
         expected_script += "{magma} annotate -p '5.0' -q '0.001' -c '200000.0'"
         expected_script += " -d '10.0'"
