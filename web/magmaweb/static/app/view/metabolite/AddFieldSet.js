@@ -152,5 +152,8 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                 border : false
             }]
         }]
+    }, {
+        xtype : 'metabolizefieldset',
+        margin: '0 0 10 0'
     }]
 });
