@@ -221,8 +221,10 @@ class StructureEngine(object):
                                                            'magma', "data/digest.smirks")
                 }
         elif metabolism_engine=="cactvs":
+            cactvs_root=config.get('magma job','cactvs_root')
             exec_reactor=pkg_resources.resource_filename( #@UndefinedVariable
                                                       'magma', 'script/csreact')
+            exec_reactor+=" "+cactvs_root
             if endpoints:
                 exec_reactor+=" "+"endpoints"
             else:
