@@ -716,7 +716,28 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                                   restricted=True,
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual('phase1,2\nphase2,1\n',
+                                  self.fetch_file('scenario.csv')
+                                  )
+
+    def test_restricted_with_structuredb(self):
+        self.jobquery.restricted = True
+        params = MultiDict(scenario=[{'type': 'phase1', 'steps': '2'},
+                                     {'type': 'phase2', 'steps': '1'}],
+                           ionisation_mode=1,
+                           max_broken_bonds=4,
+                           max_water_losses=1,
+                           structure_database='pubchem',
+                           min_refscore=1,
+                           max_mz=1200,
+                           )
+
+        from colander import Invalid
+        with self.assertRaises(Invalid) as e:
+            self.jobquery.metabolize(params, has_ms_data=True)
+
+        msg = 'Not allowed to metabolize structure database'
+        self.assertEquals(e.exception.msg, msg)
 
 
 class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
