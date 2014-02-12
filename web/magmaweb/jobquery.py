@@ -369,7 +369,7 @@ class JobQuery(object):
         if is_mzxml and self.restricted and empty_scan:
             has_structure_database = 'structure_database' in orig_params and orig_params['structure_database']
             # mzxml + molecules from upload/draw -> single scan not enforced
-            if not has_structure_database:
+            if has_structure_database:
                 sd = schema['scan']
                 msg = 'Require MS1 scan number'
                 raise colander.Invalid(sd, msg)
