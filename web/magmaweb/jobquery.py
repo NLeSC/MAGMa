@@ -360,9 +360,9 @@ class JobQuery(object):
             'abs_peak_cutoff': self.escape(params['abs_peak_cutoff']),
             'call_back_url': self.status_callback_url
         }
-        script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}' "
-        script += "-l '{max_ms_level}' "
-        script += "-a '{abs_peak_cutoff}' "
+        script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}'"
+        script += " -l '{max_ms_level}'"
+        script += " -a '{abs_peak_cutoff}'"
 
         is_mzxml = params['ms_data_format'] == 'mzxml'
         empty_scan = params['scan'] is colander.null
@@ -371,13 +371,13 @@ class JobQuery(object):
             msg = 'Require MS1 scan number'
             raise colander.Invalid(sd, msg)
         if not empty_scan and is_mzxml:
-            script += "--scan '{scan}' "
+            script += " --scan '{scan}'"
             script__substitution['scan'] = self.escape(params['scan'])
         if self.restricted:
-            script += '--time_limit 1 '
+            script += ' --time_limit 1'
 
-        script += " --call_back_url '{call_back_url}' "
-        script += "ms_data.dat {{db}}\n"
+        script += " --call_back_url '{call_back_url}'"
+        script += " ms_data.dat {{db}}\n"
         self.script += script.format(**script__substitution)
 
         self.prestaged.append('ms_data.dat')
@@ -416,14 +416,14 @@ class JobQuery(object):
 
         script = "{{magma}} metabolize"
         script += " --scenario scenario.csv"
-        script += " --call_back_url '{call_back_url}' "
+        script += " --call_back_url '{call_back_url}'"
         script_substitutions = {
             'call_back_url': self.status_callback_url,
         }
         self.script += script.format(**script_substitutions)
 
         if self.restricted:
-            self.script += '--time_limit 3 '
+            self.script += ' --time_limit 3'
 
         if from_subset:
             self.script += " -j -"
@@ -463,9 +463,9 @@ class JobQuery(object):
         self._writeScenarioFile(params)
         self.prestaged.append('scenario.csv')
 
-        script = "echo '{metid}' | {{magma}} metabolize -j - "
-        script += "--scenario scenario.csv {{db}}"
-        script += " --call_back_url '{call_back_url}' "
+        script = "echo '{metid}' | {{magma}} metabolize -j -"
+        script += " --scenario scenario.csv"
+        script += " --call_back_url '{call_back_url}' {{db}}"
         script_substitutions = {
             'metid': self.escape(params['metid']),
             'call_back_url': self.status_callback_url,
@@ -515,7 +515,7 @@ class JobQuery(object):
         script += " -i '{ionisation_mode}' -b '{max_broken_bonds}'"
         script += " --precursor_mz_precision '{precursor_mz_precision}'"
         script += " --max_water_losses '{max_water_losses}'"
-        script += " --call_back_url '{call_back_url}' "
+        script += " --call_back_url '{call_back_url}'"
         pmzp = params['precursor_mz_precision']
         ms_ic = params['ms_intensity_cutoff']
         msms_ic = params['msms_intensity_cutoff']
@@ -532,9 +532,9 @@ class JobQuery(object):
         }
 
         if params['structure_database'] is not colander.null:
-            script += "--structure_database '{structure_database}'"
-            script += " --db_options "
-            script += "',{max_mim},{max_64atoms},{min_refscore}' "
+            script += " --structure_database '{structure_database}'"
+            script += " --db_options"
+            script += " ',{max_mim},{max_64atoms},{min_refscore}'"
             sd = self.escape(params['structure_database'])
             script_substitutions['structure_database'] = sd
             db_options = {'max_mim': self.escape(params['max_mz']),
@@ -546,12 +546,12 @@ class JobQuery(object):
         script = script.format(**script_substitutions)
 
         if from_subset:
-            script += '-j - '
+            script += ' -j -'
 
         if self.restricted:
-            script += '--time_limit 3 '
+            script += ' --time_limit 3'
 
-        script += "--fast {db}\n"
+        script += " --fast {db}\n"
         self.script += script
 
         return self
