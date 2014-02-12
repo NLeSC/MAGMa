@@ -56,30 +56,28 @@ Ext.onReady(function() {
     border: false,
     region: 'center',
     bodyPadding: 5,
-    defaults: { bodyPadding: 5 },
     autoScroll: true,
     trackResetOnLoad: true,
     layout: {
-    	type: 'column'
+    	type: 'column',
     },
     defaults: {
-    	columnWidth: 0.5,
-    	bodyPadding: 5,
-    	border: false
+    	margin: 5,
     },
     items:[{
-    	items: [{
-        	title: 'Molecules',
-        	margin: '0 0 10 0',
-            xtype : 'addstructurefieldset'
-        }, {
-        	title: 'MS Data',
-            xtype : 'uploadmsdatafieldset'
-    	}]
+    	title: 'Molecules',
+        xtype : 'addstructurefieldset',
+        columnWidth: 0.43,
+        minHeight: 550
     }, {
-    	items: [{
-    	    xtype : 'annotatefieldset'
-    	}]
+    	title: 'MS Data',
+        columnWidth: 0.43,
+        xtype : 'uploadmsdatafieldset',
+        minHeight: 550
+    }, {
+        columnWidth: 0.14,
+	    xtype : 'annotatefieldset',
+        minHeight: 550
     }],
     buttons: [{
       text: 'Start from scratch',
