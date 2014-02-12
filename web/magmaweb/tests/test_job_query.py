@@ -743,8 +743,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                                   self.fetch_file('scenario.csv')
                                   )
 
-    def test_restricted_with_structuredb(self):
-        self.jobquery.restricted = True
+    def test_with_structuredb(self):
         params = MultiDict(scenario=[{'type': 'phase1', 'steps': '2'},
                                      {'type': 'phase2', 'steps': '1'}],
                            structure_database='pubchem',
