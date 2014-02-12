@@ -14,12 +14,13 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
     frame: true,
     bodyPadding: '5',
     defaults : {
-        labelWidth : 200
+//        labelWidth : 200
+        labelAlign: 'top'
     },
     items : [{
         fieldLabel : 'Ionisation mode',
         xtype : 'radiogroup',
-        width: 500,
+//        width: 500,
         columns : 2,
         items : [{
                     boxLabel : 'Negative',
