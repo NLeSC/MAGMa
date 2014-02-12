@@ -210,7 +210,7 @@ Ext.onReady(function() {
   /**
    * Don't allow metabolization when Molecules tab 'Database' is selected.
    */
-  function jobtype_toggler() {
+  function jobtype_toggler(is_restricted) {
       var molecule_tab_title = form.down('addstructurefieldset').down('tabpanel').getActiveTab().title;
       var ms_format = form.getForm().findField('ms_data_format').getValue();
       var scan = form.getForm().findField('scan');
@@ -233,13 +233,15 @@ Ext.onReady(function() {
           }
       }
 
-      if (ms_format == 'mzxml' && molecule_tab_title === 'Database') {
-          // molecules from database: only one spectral tree allowed
-          scan.allowBlank = false;
-      } else {
-          // molecules from upload: allow full LC-MSn
-          // or tree format + database -> no scan needed
-          scan.allowBlank = true;
+      if (is_restricted) {
+          if (ms_format == 'mzxml' && molecule_tab_title === 'Database') {
+              // molecules from database: only one spectral tree allowed
+              scan.allowBlank = false;
+          } else {
+              // molecules from upload: allow full LC-MSn
+              // or tree format + database -> no scan needed
+              scan.allowBlank = true;
+          }
       }
   }
 
@@ -260,10 +262,14 @@ Ext.onReady(function() {
       }
       if (features.restricted) {
           Ext.ComponentQuery.query('checkbox[name=metabolize]')[0].boxLabelEl.setHTML('(Only first molecule will be metabolized)');
-          form.down('addstructurefieldset').down('tabpanel').addListener('tabchange', jobtype_toggler);
-          form.getForm().findField('ms_data_format').addListener('change', jobtype_toggler);
-          jobtype_toggler();
       }
+      form.down('addstructurefieldset').down('tabpanel').addListener('tabchange', function() {
+          jobtype_toggler(features.restricted);
+      });
+      form.getForm().findField('ms_data_format').addListener('change', function() {
+          jobtype_toggler(features.restricted);
+      });
+      jobtype_toggler(features.restricted);
       scan_controller.application.features = features;
       scan_controller.applyRole();
   }

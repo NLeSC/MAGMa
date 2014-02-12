@@ -410,9 +410,12 @@ class JobQuery(object):
         if hasattr(params, 'mixed'):
             # unflatten multidict
             params = params.mixed()
+        if 'structure_database' in params and params['structure_database']:
+            sd = schema['scenario']
+            msg = 'Not allowed to metabolize structure database'
+            raise colander.Invalid(sd, msg)
 
         self._deserialize_scenario(params)
-        orig_params = params
         params = schema.deserialize(params)
 
         self._writeScenarioFile(params)
@@ -428,10 +431,6 @@ class JobQuery(object):
 
         if self.restricted:
             self.script += ' --time_limit 3'
-            if 'structure_database' in orig_params and orig_params['structure_database']:
-                sd = schema['scenario']
-                msg = 'Not allowed to metabolize structure database'
-                raise colander.Invalid(sd, msg)
 
         if from_subset:
             self.script += " -j -"
