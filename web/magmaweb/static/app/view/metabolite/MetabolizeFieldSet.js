@@ -19,7 +19,8 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeFieldSet', {
     items: [ {
         fieldLabel: 'Perform metabolization of molecules',
         xtype: 'checkbox',
-        name: 'metabolize'
+        name: 'metabolize',
+        boxLabel: '&nbsp;'
     }, {
         xtype: 'fieldcontainer',
         fieldLabel: 'Scenario',

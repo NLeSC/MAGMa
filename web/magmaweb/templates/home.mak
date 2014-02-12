@@ -126,34 +126,6 @@ Ext.onReady(function() {
     }]
   });
 
-  /**
-   * Don't allow metabolization when Molecules tab 'Database' is selected.
-   */
-  function metabolize_toggler() {
-      var molecule_tab_title = form.down('addstructurefieldset').down('tabpanel').getActiveTab().title;
-      var ms_format = form.getForm().findField('ms_data_format').getValue();
-      var scan = form.getForm().findField('scan').getValue();
-
-      var new_visible = false;
-      if (molecule_tab_title !== 'Database') {
-          new_visible = true;
-      }
-
-      var metabolize_fields = form.down('metabolizefieldset');
-      var current_visible = metabolize_fields.isVisible();
-
-      if (current_visible !== new_visible) {
-          if (new_visible) {
-              metabolize_fields.show();
-          } else {
-              metabolize_fields.hide();
-          }
-      }
-  }
-  form.down('addstructurefieldset').down('tabpanel').addListener('tabchange', metabolize_toggler);
-  form.getForm().findField('scan').addListener('change', metabolize_toggler);
-  form.getForm().findField('ms_data_format').addListener('change', metabolize_toggler);
-
   form.load({
       url: '${request.route_url('defaults.json')}',
       method: 'GET',
@@ -235,6 +207,42 @@ Ext.onReady(function() {
     items: [header, form]
   });
 
+  /**
+   * Don't allow metabolization when Molecules tab 'Database' is selected.
+   */
+  function jobtype_toggler() {
+      var molecule_tab_title = form.down('addstructurefieldset').down('tabpanel').getActiveTab().title;
+      var ms_format = form.getForm().findField('ms_data_format').getValue();
+      var scan = form.getForm().findField('scan');
+      var new_visible = false;
+
+      if (molecule_tab_title !== 'Database') {
+          new_visible = true;
+      }
+
+      var metabolize_fields = form.down('metabolizefieldset');
+      var current_visible = metabolize_fields.isVisible();
+
+      if (current_visible !== new_visible) {
+          if (new_visible) {
+              metabolize_fields.show();
+          } else {
+              // when toggling from Upload/Draw back to Database the metabolization should be disabled to prevent metabolization with db selected
+              metabolize_fields.down('component[name=metabolize]').setValue(false);
+              metabolize_fields.hide();
+          }
+      }
+
+      if (ms_format == 'mzxml' && molecule_tab_title === 'Database') {
+          // molecules from database: only one spectral tree allowed
+          scan.allowBlank = false;
+      } else {
+          // molecules from upload: allow full LC-MSn
+          // or tree format + database -> no scan needed
+          scan.allowBlank = true;
+      }
+  }
+
   function applyRole(features) {
       if (features.authenticated || features.anonymous) {
           Ext.ComponentQuery.query('component[text=Login]')[0].hide();
@@ -247,9 +255,14 @@ Ext.onReady(function() {
       }
       if (!features.run) {
           // hide interactive job run starting points
-          Ext.ComponentQuery.query('metabolizefieldset')[0].hide();
           Ext.ComponentQuery.query('component[text=Start from scratch]')[0].hide();
           Ext.ComponentQuery.query('component[text=Upload result]')[0].hide();
+      }
+      if (features.restricted) {
+          Ext.ComponentQuery.query('checkbox[name=metabolize]')[0].boxLabelEl.setHTML('(Only first molecule will be metabolized)');
+          form.down('addstructurefieldset').down('tabpanel').addListener('tabchange', jobtype_toggler);
+          form.getForm().findField('ms_data_format').addListener('change', jobtype_toggler);
+          jobtype_toggler();
       }
       scan_controller.application.features = features;
       scan_controller.applyRole();
@@ -264,7 +277,7 @@ Ext.onReady(function() {
       authenticated: ${json.dumps(request.user is not None)},
       // should login button be hidden and workspace be shown
       anonymous: ${json.dumps(request.registry.settings.get('auto_register', False))|n},
-      // should restrictions be applied ie force one spectral tree
+      // should restrictions be applied ie force one spectral tree and metabolize toggle
       restricted: ${json.dumps(request.registry.settings.get('restricted', False))|n}
   };
   applyRole(features);
