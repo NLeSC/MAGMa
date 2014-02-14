@@ -15,8 +15,9 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
     ],
     frame: true,
     bodyPadding: '5',
+    layout: 'anchor',
     defaults : {
-        labelWidth : 200
+        labelWidth : 120
     },
     items: [{
         xtype: 'combo',
@@ -26,14 +27,15 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         allowBlank: false,
         fieldLabel: 'Format',
         name: 'ms_data_format',
-        value: 'mzxml'
+        value: 'mzxml',
+        anchor: '75%'
     }, {
         xtype : 'textareatab',
         name : 'ms_data',
         id: 'ms_data_area',
         emptyText : 'Enter MS data in a Tree format or mzXML',
         height : 200,
-        width : 400
+        anchor : '90%'
     }, {
         xtype: 'container',
         layout: 'hbox',
@@ -44,12 +46,15 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
             xtype: 'button',
             margin: '0 5 0 5',
             text: 'Chlorogenic acid (Mass Tree)',
+            flex: 1,
             action: 'loadmsdataexample'
         }, {
             xtype: 'button',
             text: 'Chlorogenic acid (Formula Tree)',
+            flex: 1,
             action: 'loadmsdataexample2'
-        }]
+        }],
+        anchor : '90%'
     }, {
         xtype : 'displayfield',
         value : '<br>or'
@@ -57,7 +62,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         name: 'ms_data_file',
         xtype: 'filefield',
         emptyText: 'Upload MS/MS data file',
-        width: 300
+        anchor: '75%'
     }, {
         xtype: 'displayfield',
         name: 'filter_heading',
@@ -72,7 +77,8 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         allowBlank: false,
         minValue: 1,
         maxValue: 15,
-        allowDecimals: false
+        allowDecimals: false,
+        anchor: '75%'
     }, {
         xtype: 'numberfield',
         name: 'abs_peak_cutoff',
@@ -81,7 +87,8 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         afterLabelTextTpl: '<span class="relation">&lt;</span>',
         labelAttrTpl: 'data-qtip="Absolute intensity threshold for storing peaks in database"',
         allowBlank: false,
-        decimalPrecision: 5
+        decimalPrecision: 5,
+        anchor: '75%'
     }, {
         xtype: 'numberfield',
         fieldLabel: 'MS1 scan number',
@@ -90,6 +97,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         name: 'scan',
         allowBlank: true,
         minValue: 0,
-        allowDecimals: false
+        allowDecimals: false,
+        anchor: '75%'
     }]
 });

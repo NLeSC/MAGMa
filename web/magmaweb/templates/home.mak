@@ -58,26 +58,26 @@ Ext.onReady(function() {
     bodyPadding: 5,
     autoScroll: true,
     trackResetOnLoad: true,
-    layout: {
-    	type: 'column'
-    },
+    layout: 'hbox',
     defaults: {
     	margin: 5
     },
     items:[{
     	title: 'Molecules',
         xtype : 'addstructurefieldset',
-        columnWidth: 0.34,
-        minHeight: 480
+        flex: 1,
+        ## minHeight: 480
     }, {
     	title: 'MS Data',
-        columnWidth: 0.33,
+        ## columnWidth: 0.33,
         xtype : 'uploadmsdatafieldset',
-        minHeight: 480
+        flex: 1,
+        ## minHeight: 480
     }, {
-        columnWidth: 0.33,
+        ## columnWidth: 0.33,
 	    xtype : 'annotatefieldset',
-        minHeight: 480
+	    flex : 1
+        ## minHeight: 480
     }],
     buttons: [{
       text: 'Start from scratch',
