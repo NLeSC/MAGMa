@@ -12,15 +12,14 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeFieldSet', {
          'Esc.magmaweb.view.metabolite.ScenarioField'
     ],
     title: 'Metabolize',
+    checkboxName: 'metabolize',
+    checkboxToggle: true,
     frame: true,
-    defaults: {
-        labelWidth: 200
-    },
-    items: [ {
-        fieldLabel: 'Perform metabolization of molecules',
-        xtype: 'checkbox',
-        name: 'metabolize',
-        boxLabel: '&nbsp;'
+    items: [{
+        xtype: 'displayfield',
+        hidden: true,
+        id: 'onemol_metabolize_warning',
+        value: 'Only first molecule will be metabolized'
     }, {
         xtype: 'fieldcontainer',
         items: [{

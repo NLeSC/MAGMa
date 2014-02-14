@@ -223,7 +223,7 @@ Ext.onReady(function() {
               metabolize_fields.show();
           } else {
               // when toggling from Upload/Draw back to Database the metabolization should be disabled to prevent metabolization with db selected
-              metabolize_fields.down('component[name=metabolize]').setValue(false);
+              metabolize_fields.checkboxCmp.setValue(false);
               metabolize_fields.hide();
           }
       }
@@ -256,7 +256,7 @@ Ext.onReady(function() {
           Ext.ComponentQuery.query('component[text=Upload result]')[0].hide();
       }
       if (features.restricted) {
-          Ext.ComponentQuery.query('checkbox[name=metabolize]')[0].boxLabelEl.setHTML('(Only first molecule will be metabolized)');
+          Ext.ComponentQuery.query('displayfield[id=onemol_metabolize_warning]')[0].show();
       }
       form.down('addstructurefieldset').down('tabpanel').addListener('tabchange', function() {
           jobtype_toggler(features.restricted);
