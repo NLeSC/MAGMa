@@ -14,7 +14,7 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeFieldSet', {
     title: 'Metabolize',
     frame: true,
     defaults: {
-        labelWidth: 300
+        labelWidth: 200
     },
     items: [ {
         fieldLabel: 'Perform metabolization of molecules',
@@ -23,8 +23,8 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeFieldSet', {
         boxLabel: '&nbsp;'
     }, {
         xtype: 'fieldcontainer',
-        fieldLabel: 'Scenario',
         items: [{
+            title: 'Scenario',
             xtype: 'scenariofield',
             name: 'scenario'
         }]

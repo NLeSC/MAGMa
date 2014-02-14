@@ -59,25 +59,25 @@ Ext.onReady(function() {
     autoScroll: true,
     trackResetOnLoad: true,
     layout: {
-    	type: 'column',
+    	type: 'column'
     },
     defaults: {
-    	margin: 5,
+    	margin: 5
     },
     items:[{
     	title: 'Molecules',
         xtype : 'addstructurefieldset',
-        columnWidth: 0.43,
-        minHeight: 550
+        columnWidth: 0.34,
+        minHeight: 480
     }, {
     	title: 'MS Data',
-        columnWidth: 0.43,
+        columnWidth: 0.33,
         xtype : 'uploadmsdatafieldset',
-        minHeight: 550
+        minHeight: 480
     }, {
-        columnWidth: 0.14,
+        columnWidth: 0.33,
 	    xtype : 'annotatefieldset',
-        minHeight: 550
+        minHeight: 480
     }],
     buttons: [{
       text: 'Start from scratch',
@@ -290,7 +290,7 @@ Ext.onReady(function() {
 	<div id="sketcher_content" class="x-hidden">
 		<script type="text/javascript">
 			var sketcher = new ChemDoodle.SketcherCanvas(
-		        'sketcher_canvas', 500, 300, {
+		        'sketcher_canvas', 400, 300, {
 	        		useServices: false, oneMolecule: true
 	        	}
 		    );
