@@ -56,33 +56,28 @@ Ext.onReady(function() {
     border: false,
     region: 'center',
     bodyPadding: 5,
-    defaults: { bodyPadding: 5 },
     autoScroll: true,
     trackResetOnLoad: true,
     layout: {
     	type: 'column'
     },
     defaults: {
-    	columnWidth: 0.5,
-    	bodyPadding: 5,
-    	border: false
+    	margin: 5
     },
     items:[{
-    	items: [{
-        	title: 'Molecules',
-        	margin: '0 0 10 0',
-            xtype : 'addstructurefieldset'
-        }, {
-        	title: 'MS Data',
-            xtype : 'uploadmsdatafieldset'
-    	}]
+    	title: 'Molecules',
+        xtype : 'addstructurefieldset',
+        columnWidth: 0.34,
+        minHeight: 480
     }, {
-    	items: [{
-    	    xtype : 'metabolizefieldset',
- 	        margin: '0 0 10 0'
- 	    }, {
-    	    xtype : 'annotatefieldset'
-    	}]
+    	title: 'MS Data',
+        columnWidth: 0.33,
+        xtype : 'uploadmsdatafieldset',
+        minHeight: 480
+    }, {
+        columnWidth: 0.33,
+	    xtype : 'annotatefieldset',
+        minHeight: 480
     }],
     buttons: [{
       text: 'Start from scratch',
@@ -228,7 +223,7 @@ Ext.onReady(function() {
               metabolize_fields.show();
           } else {
               // when toggling from Upload/Draw back to Database the metabolization should be disabled to prevent metabolization with db selected
-              metabolize_fields.down('component[name=metabolize]').setValue(false);
+              metabolize_fields.checkboxCmp.setValue(false);
               metabolize_fields.hide();
           }
       }
@@ -261,7 +256,7 @@ Ext.onReady(function() {
           Ext.ComponentQuery.query('component[text=Upload result]')[0].hide();
       }
       if (features.restricted) {
-          Ext.ComponentQuery.query('checkbox[name=metabolize]')[0].boxLabelEl.setHTML('(Only first molecule will be metabolized)');
+          Ext.ComponentQuery.query('displayfield[id=onemol_metabolize_warning]')[0].show();
       }
       form.down('addstructurefieldset').down('tabpanel').addListener('tabchange', function() {
           jobtype_toggler(features.restricted);
@@ -295,7 +290,7 @@ Ext.onReady(function() {
 	<div id="sketcher_content" class="x-hidden">
 		<script type="text/javascript">
 			var sketcher = new ChemDoodle.SketcherCanvas(
-		        'sketcher_canvas', 500, 300, {
+		        'sketcher_canvas', 400, 300, {
 	        		useServices: false, oneMolecule: true
 	        	}
 		    );

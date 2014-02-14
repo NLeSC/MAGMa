@@ -33,7 +33,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         id: 'ms_data_area',
         emptyText : 'Enter MS data in a Tree format or mzXML',
         height : 200,
-        width : 500
+        width : 400
     }, {
         xtype: 'container',
         layout: 'hbox',

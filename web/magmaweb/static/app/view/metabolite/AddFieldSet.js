@@ -109,7 +109,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                 id : 'structures_area',
                 emptyText : 'Enter SDF, or smiles strings followed by space and name on each line',
                 height : 200,
-                width : 500,
+                width : 400,
                 /**
                  * Use validator to write sketched molecule in textarea as molblock.
                  * A sketched molecule will overwrite the textarea.
@@ -141,7 +141,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                 name : 'structures_file',
                 id : 'structures_filefield',
                 emptyText : 'Upload structures from file',
-                width : 300
+                width : 200
             }]
         }, {
             title : 'Draw',
@@ -152,5 +152,8 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                 border : false
             }]
         }]
+    }, {
+        xtype : 'metabolizefieldset',
+        margin: '0 0 10 0'
     }]
 });
