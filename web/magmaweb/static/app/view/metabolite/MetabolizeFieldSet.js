@@ -4,7 +4,7 @@
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.magmaweb.view.metabolite.MetabolizeFieldSet', {
-    extend: 'Ext.panel.Panel',
+    extend: 'Ext.form.FieldSet',
     alias: 'widget.metabolizefieldset',
     requires: [
          'Ext.form.field.Checkbox',
@@ -12,19 +12,18 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeFieldSet', {
          'Esc.magmaweb.view.metabolite.ScenarioField'
     ],
     title: 'Metabolize',
+    checkboxName: 'metabolize',
+    checkboxToggle: true,
     frame: true,
-    defaults: {
-        labelWidth: 300
-    },
-    items: [ {
-        fieldLabel: 'Perform metabolization of molecules',
-        xtype: 'checkbox',
-        name: 'metabolize',
-        boxLabel: '&nbsp;'
+    items: [{
+        xtype: 'displayfield',
+        hidden: true,
+        id: 'onemol_metabolize_warning',
+        value: 'Only first molecule will be metabolized'
     }, {
         xtype: 'fieldcontainer',
-        fieldLabel: 'Scenario',
         items: [{
+            title: 'Scenario',
             xtype: 'scenariofield',
             name: 'scenario'
         }]
