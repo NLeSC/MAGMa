@@ -120,6 +120,7 @@ class JobQuery(object):
         scenario = colander.SchemaNode(colander.Mapping())
         transformation_types = colander.OneOf([
                                                'phase1',
+                                               'phase1_selected',
                                                'phase2',
                                                'phase2_selected',
                                                'glycosidase',
