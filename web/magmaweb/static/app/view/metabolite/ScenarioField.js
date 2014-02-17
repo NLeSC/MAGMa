@@ -47,11 +47,12 @@ Ext.define('Esc.magmaweb.view.metabolite.ScenarioField', {
                    triggerAction: 'all',
                    store: [
                        'phase1',
+                       'phase1_selected',
                        'phase2',
                        'phase2_selected',
                        'glycosidase',
-                       'mass_filter',
-                       'gut'
+                       'gut',
+                       'mass_filter'
                    ]
                }
             }, {
