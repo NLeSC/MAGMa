@@ -18,7 +18,7 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeFieldSet', {
     items: [{
         xtype: 'displayfield',
         hidden: true,
-        id: 'onemol_metabolize_warning',
+        itemId: 'onemol_metabolize_warning',
         value: 'Only first molecule will be metabolized'
     }, {
         xtype: 'fieldcontainer',
