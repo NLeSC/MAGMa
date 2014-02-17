@@ -203,7 +203,10 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
       return this.getView().getHeaderCt().getVisibleGridColumns().map(function(v) {return v.dataIndex}).filter(function(v) { return v});
   },
   hideCommandsColumn: function() {
-      this.getCommandsColumn().hide();
+      var cmds = this.getCommandsColumn();
+      cmds.disableAction(0);
+      cmds.disable();
+      cmds.hide();
   },
   setPageSize: function(size) {
       Ext.ComponentQuery.query('component[action=pagesizeCombo]')[0].select(size);
