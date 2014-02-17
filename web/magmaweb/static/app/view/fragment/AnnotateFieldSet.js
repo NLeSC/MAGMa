@@ -36,8 +36,8 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         xtype: 'displayfield',
         value: '<br>Substructure options:'
     }, {
-        fieldLabel: 'Bond breaks',
-        labelAttrTpl: 'data-qtip="Maximum number of bond breaks to generate substructures"',
+        fieldLabel: 'Bond dissociations',
+        labelAttrTpl: 'data-qwidth=200 data-qtip="Maximum number of bond breaks to generate substructures"',
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         name : 'max_broken_bonds',
@@ -48,8 +48,8 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         decimalPrecision : 0,
         anchor: '75%'
     }, {
-        fieldLabel: 'Additional water losses',
-        labelAttrTpl: 'data-qtip="Maximum number of additional neutral water losses"',
+        fieldLabel: 'Additional small losses',
+        labelAttrTpl: 'data-qwidth=200 data-qtip="Maximum number of additional water (OH) and/or ammonia (NH2) losses"',
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         name : 'max_water_losses',
@@ -69,7 +69,7 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         fieldLabel: 'Relative (ppm)',
-        labelAttrTpl: 'data-qtip="Mass precision (ppm) for matching calculated masses with peaks"',
+        labelAttrTpl: 'data-qwidth=200 data-qtip="Mass precision (ppm) for matching calculated masses with m/z values"',
         allowBlank : false,
         maxValue : 1000,
         minValue : 0,
@@ -81,7 +81,7 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         fieldLabel: 'Absolute (Da)',
-        labelAttrTpl: 'data-qtip="Mass precision (Da) for matching calculated masses with peaks"',
+        labelAttrTpl: 'data-qwidth=200 data-qtip="Mass precision (Da) for matching calculated masses with m/z values"',
         allowBlank : false,
         maxValue : 1,
         minValue : 0,
@@ -93,7 +93,7 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         fieldLabel: 'Precursor m/z (Da)',
-        labelAttrTpl: 'data-qtip="Mass precision for matching peaks and precursor ions"',
+        labelAttrTpl: 'data-qwidth=200 data-qtip="Mass precision for matching peaks and precursor ions"',
         allowBlank: false,
         maxValue : 1,
         minValue : 0,
@@ -109,7 +109,7 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         fieldLabel: 'MS<sup>1</sup> (abs.)',
-        labelAttrTpl: 'data-qtip="Minimum intensity of level 1 peaks to be annotated"',
+        labelAttrTpl: 'data-qwidth=200 data-qtip="Minimum intensity of MS1 precursor ion peaks to be annotated"',
         allowBlank : false,
         decimalPrecision : 5,
         anchor: '75%'
@@ -119,7 +119,7 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         fieldLabel: 'MS<sup>n&gt;1</sup> (% of base peak)',
-        labelAttrTpl: 'data-qtip="Minimum intensity of fragment peaks to be annotated, as percentage of basepeak"',
+        labelAttrTpl: 'data-qwidth=200 data-qtip="Minimum intensity of fragment peaks to be annotated, as percentage of basepeak"',
         allowBlank : false,
         decimalPrecision : 5,
         anchor: '75%'
