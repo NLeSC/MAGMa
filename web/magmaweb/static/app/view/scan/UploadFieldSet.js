@@ -41,7 +41,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         layout: 'hbox',
         items: [{
             xtype: 'displayfield',
-            value : '<a title="Information on examples" href="help/example">Examples:</a>'
+            value : '<a title="Information on examples">Examples:</a>'
         }, {
             xtype: 'button',
             margin: '0 5 0 5',
@@ -73,7 +73,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         fieldLabel: 'MS level',
-        labelAttrTpl: 'data-qtip="Maximum MS level"',
+        labelAttrTpl: 'data-qwidth=100 data-qtip="Maximum MS level"',
         allowBlank: false,
         minValue: 1,
         maxValue: 15,
@@ -85,7 +85,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         fieldLabel: 'Noise filter',
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&lt;</span>',
-        labelAttrTpl: 'data-qtip="Absolute intensity threshold for storing peaks in database"',
+        labelAttrTpl: 'data-qwidth=200 data-qtip="Absolute intensity threshold for storing peaks in database"',
         allowBlank: false,
         decimalPrecision: 5,
         anchor: '75%'
@@ -93,7 +93,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         xtype: 'numberfield',
         fieldLabel: 'MS1 scan number',
         labelSeparator: '',
-        labelAttrTpl: 'data-qtip="Read only spectral tree specified by MS1 scan number"',
+        labelAttrTpl: 'data-qwidth=200 data-qtip="Read only spectral tree specified by MS1 scan number"',
         name: 'scan',
         allowBlank: true,
         minValue: 0,
