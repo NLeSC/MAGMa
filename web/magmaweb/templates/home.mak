@@ -256,7 +256,7 @@ Ext.onReady(function() {
           Ext.ComponentQuery.query('component[text=Upload result]')[0].hide();
       }
       if (features.restricted) {
-          Ext.ComponentQuery.query('displayfield[id=onemol_metabolize_warning]')[0].show();
+          Ext.ComponentQuery.query('displayfield[itemId=onemol_metabolize_warning]')[0].show();
       }
       form.down('addstructurefieldset').down('tabpanel').addListener('tabchange', function() {
           jobtype_toggler(features.restricted);
