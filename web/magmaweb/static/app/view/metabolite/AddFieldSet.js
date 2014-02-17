@@ -42,8 +42,9 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
         items : [{
             title: 'Database',
             id: 'structure_database_tab',
+            layout: 'anchor',
             defaults : {
-                labelWidth : 200
+                labelWidth : 170
             },
             items: [{
                 xtype: 'combo',
@@ -56,6 +57,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                     ['kegg', 'Kegg'],
                     ['hmdb', 'HMDB']
                 ],
+                anchor: '80%',
                 listeners: {
                     /**
                      * Only show 'PubChem reference score' when 'pubchem' is selected.
@@ -80,7 +82,8 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                 name: 'min_refscore',
                 minValue: 1,
                 value: 1,
-                hidden: true
+                hidden: true,
+                anchor: '80%'
             }, {
                 xtype: 'numberfield',
                 fieldLabel: 'Mass',
@@ -89,12 +92,14 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                 afterLabelTextTpl: '<span class="relation">&le;</span>',
                 name: 'max_mz',
                 minValue: 1,
-                value: 1200
+                value: 1200,
+                anchor: '80%'
             }]
         }, {
             title : 'Upload',
+            layout: 'anchor',
             defaults : {
-                labelWidth : 200
+                labelWidth : 150
             },
             items : [{
                 xtype : 'combo',
@@ -102,14 +107,15 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                 fieldLabel: 'Format',
                 store : ['smiles', 'sdf'],
                 allowBlank : false,
-                value : 'smiles'
+                value : 'smiles',
+                anchor: '75%'
             }, {
                 xtype : 'textareatab',
                 name : 'structures',
                 id : 'structures_area',
                 emptyText : 'Enter SDF, or smiles strings followed by space and name on each line',
                 height : 200,
-                width : 400,
+                anchor: '90%',
                 /**
                  * Use validator to write sketched molecule in textarea as molblock.
                  * A sketched molecule will overwrite the textarea.
@@ -141,7 +147,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                 name : 'structures_file',
                 id : 'structures_filefield',
                 emptyText : 'Upload structures from file',
-                width : 200
+                anchor: '75%'
             }]
         }, {
             title : 'Draw',
