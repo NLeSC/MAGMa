@@ -13,13 +13,15 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
     title : 'Annotate',
     frame: true,
     bodyPadding: '5',
+    layout: 'anchor',
     defaults : {
-        labelWidth : 200
+        labelWidth : 150
     },
     items : [{
         fieldLabel : 'Ionisation mode',
         xtype : 'radiogroup',
-        columns : 2,
+        columns: 1,
+        vertical : true,
         items : [{
                     boxLabel : 'Negative',
                     name : 'ionisation_mode',
@@ -28,7 +30,8 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
                     boxLabel : 'Positve',
                     name : 'ionisation_mode',
                     inputValue : 1
-                }]
+                }],
+        anchor: '75%'
     }, {
         xtype: 'displayfield',
         value: '<br>Substructure options:'
@@ -42,7 +45,8 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         allowBlank : false,
         maxValue : 4,
         minValue : 0,
-        decimalPrecision : 0
+        decimalPrecision : 0,
+        anchor: '75%'
     }, {
         fieldLabel: 'Additional water losses',
         labelAttrTpl: 'data-qtip="Maximum number of additional neutral water losses"',
@@ -53,7 +57,8 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         allowBlank : false,
         maxValue : 4,
         minValue : 0,
-        decimalPrecision : 0
+        decimalPrecision : 0,
+        anchor: '75%'
     }, {
         xtype: 'displayfield',
         name: 'precision_heading',
@@ -68,7 +73,8 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         allowBlank : false,
         maxValue : 1000,
         minValue : 0,
-        decimalPrecision : 5
+        decimalPrecision : 5,
+        anchor: '75%'
     }, {
         xtype : 'numberfield',
         name : 'mz_precision_abs',
@@ -79,7 +85,8 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         allowBlank : false,
         maxValue : 1,
         minValue : 0,
-        decimalPrecision : 5
+        decimalPrecision : 5,
+        anchor: '75%'
     },{
         xtype: 'numberfield',
         name: 'precursor_mz_precision',
@@ -90,7 +97,8 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         allowBlank: false,
         maxValue : 1,
         minValue : 0,
-        decimalPrecision: 5
+        decimalPrecision: 5,
+        anchor: '75%'
     }, {
         xtype: 'displayfield',
         name: 'intensity_heading',
@@ -103,7 +111,8 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         fieldLabel: 'MS<sup>1</sup> (abs.)',
         labelAttrTpl: 'data-qtip="Minimum intensity of level 1 peaks to be annotated"',
         allowBlank : false,
-        decimalPrecision : 5
+        decimalPrecision : 5,
+        anchor: '75%'
     }, {
         xtype : 'numberfield',
         name : 'msms_intensity_cutoff',
@@ -112,6 +121,7 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         fieldLabel: 'MS<sup>n&gt;1</sup> (% of base peak)',
         labelAttrTpl: 'data-qtip="Minimum intensity of fragment peaks to be annotated, as percentage of basepeak"',
         allowBlank : false,
-        decimalPrecision : 5
+        decimalPrecision : 5,
+        anchor: '75%'
     }]
 });
