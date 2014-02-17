@@ -13,8 +13,7 @@ Ext.define('Esc.magmaweb.view.metabolite.ScenarioField', {
         'Esc.magmaweb.store.Scenarios',
         'Ext.grid.column.Action',
         'Ext.selection.CellModel',
-        'Ext.grid.plugin.CellEditing',
-        'Ext.grid.plugin.DragDrop'
+        'Ext.grid.plugin.CellEditing'
     ],
     height: 180,
     initComponent: function() {

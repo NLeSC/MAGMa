@@ -187,11 +187,17 @@ loader2jsb3.pl looks like:
       'App' => 'static/app'
    );
    my @files;
+   my %cache;
 
    while (<>) {
      my $line = $_;
      chomp($line);
      for my $dep (split(/,/,$line)) {
+       if ($cache{$dep}) {
+         next;
+       } else {
+         $cache{$dep}++;
+       }
        my ($path, $name) = $dep =~ /(.*)\.(.*)/;
        $name .= '.js';
        $path =~ s/\./\//g;
