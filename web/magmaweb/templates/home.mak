@@ -66,18 +66,16 @@ Ext.onReady(function() {
     	title: 'Molecules',
         xtype : 'addstructurefieldset',
         flex: 1,
-        ## minHeight: 480
+        minHeight: 490
     }, {
     	title: 'MS Data',
-        ## columnWidth: 0.33,
         xtype : 'uploadmsdatafieldset',
         flex: 1,
-        ## minHeight: 480
+        minHeight: 490
     }, {
-        ## columnWidth: 0.33,
 	    xtype : 'annotatefieldset',
-	    flex : 1
-        ## minHeight: 480
+	    flex : 1,
+        minHeight: 490
     }],
     buttons: [{
       text: 'Start from scratch',
