@@ -63,13 +63,13 @@ Ext.onReady(function() {
     	margin: 5
     },
     items:[{
-    	title: 'Molecules',
-        xtype : 'addstructurefieldset',
+    	title: 'MS Data',
+        xtype : 'uploadmsdatafieldset',
         flex: 1,
         minHeight: 490
     }, {
-    	title: 'MS Data',
-        xtype : 'uploadmsdatafieldset',
+        title: 'Molecules',
+        xtype : 'addstructurefieldset',
         flex: 1,
         minHeight: 490
     }, {
