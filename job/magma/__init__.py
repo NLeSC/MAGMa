@@ -61,10 +61,13 @@ class MagmaSession(object):
         return StructureEngine(self.db_session,pubchem_names,call_back_url)
     def get_ms_data_engine(self,
                  abs_peak_cutoff=1000,
+                 mz_precision=5.0,
+                 mz_precision_abs=0.001,
+                 precursor_mz_precision=0.005,
                  max_ms_level=10,
                  call_back_url=None
                  ):
-        return MsDataEngine(self.db_session,abs_peak_cutoff,max_ms_level,call_back_url)
+        return MsDataEngine(self.db_session,abs_peak_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,max_ms_level,call_back_url)
     def get_annotate_engine(self,
                  ionisation_mode=1,
                  skip_fragmentation=False,
@@ -72,16 +75,13 @@ class MagmaSession(object):
                  max_water_losses=1,
                  ms_intensity_cutoff=1e6,
                  msms_intensity_cutoff=5,
-                 mz_precision=5.0,
-                 mz_precision_abs=0.001,
-                 precursor_mz_precision=0.005,
                  use_all_peaks=False,
                  adducts='',
                  max_charge=1,
                  call_back_url=None
                  ):
         return AnnotateEngine(self.db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
-                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,use_all_peaks,adducts,max_charge,call_back_url)
+                 ms_intensity_cutoff,msms_intensity_cutoff,use_all_peaks,adducts,max_charge,call_back_url)
     def get_select_engine(self):
         return SelectEngine(self.db_session)
     def get_data_analysis_engine(self):
@@ -405,8 +405,11 @@ class StructureEngine(object):
         return metids
 
 class MsDataEngine(object):
-    def __init__(self,db_session,abs_peak_cutoff,max_ms_level,call_back_url=None):
+    def __init__(self,db_session,abs_peak_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,max_ms_level,call_back_url=None):
         self.db_session = db_session
+        mz_precision_abs=max(mz_precision_abs,0.000001)
+        precursor_mz_precision=max(precursor_mz_precision,0.000001)
+        # a small mz_precision_abs is required, even when matching theoretical masses, because of finite floating point precision
         try:
             rundata=self.db_session.query(Run).one()
         except:
@@ -415,16 +418,25 @@ class MsDataEngine(object):
             rundata.abs_peak_cutoff=abs_peak_cutoff
         if rundata.max_ms_level == None:
             rundata.max_ms_level=max_ms_level
+        if rundata.mz_precision == None:
+            rundata.mz_precision=mz_precision
+        if rundata.mz_precision_abs == None:
+            rundata.mz_precision_abs=mz_precision_abs
+        if rundata.precursor_mz_precision == None:
+            rundata.precursor_mz_precision=precursor_mz_precision
         self.db_session.add(rundata)
         self.db_session.commit()
         self.abs_peak_cutoff=rundata.abs_peak_cutoff
         self.max_ms_level=rundata.max_ms_level
-        self.precision=1.00001 # TODO read as options (move option from annotate to read_ms_data)
-        self.mz_precision_abs=0.002 # TODO idem
+        self.mz_precision=rundata.mz_precision*2 # Difference between lowest and highest possible value
+        self.precision=1+2*rundata.mz_precision/1e6 # Difference between lowest and highest possible value
+        self.mz_precision_abs=rundata.mz_precision_abs*2
+        self.precursor_mz_precision=rundata.precursor_mz_precision
         if call_back_url != None:
             self.call_back_engine=CallBackEngine(call_back_url)
         else:
             self.call_back_engine=None
+        print self.mz_precision,self.precision
 
     def store_mzxml_file(self,mzxml_file,scan_filter=None,time_limit=None):
         logging.warn('Store mzxml file')
@@ -649,12 +661,8 @@ class MsDataEngine(object):
 
 class AnnotateEngine(object):
     def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
-                 ms_intensity_cutoff,msms_intensity_cutoff,mz_precision,mz_precision_abs,
-                 precursor_mz_precision,use_all_peaks,adducts='',max_charge=1,call_back_url=None):
+                 ms_intensity_cutoff,msms_intensity_cutoff,use_all_peaks,adducts='',max_charge=1,call_back_url=None):
         self.db_session = db_session
-        mz_precision_abs=max(mz_precision_abs,0.000001)
-        precursor_mz_precision=max(precursor_mz_precision,0.000001)
-        # a small mz_precision_abs is required, even when matching theoretical masses, because of finite floating point precision
         try:
             rundata=self.db_session.query(Run).one()
         except:
@@ -671,12 +679,6 @@ class AnnotateEngine(object):
             rundata.ms_intensity_cutoff=ms_intensity_cutoff
         if rundata.msms_intensity_cutoff == None:
             rundata.msms_intensity_cutoff=msms_intensity_cutoff
-        if rundata.mz_precision == None:
-            rundata.mz_precision=mz_precision
-        if rundata.mz_precision_abs == None:
-            rundata.mz_precision_abs=mz_precision_abs
-        if rundata.precursor_mz_precision == None:
-            rundata.precursor_mz_precision=precursor_mz_precision
         if rundata.use_all_peaks == None:
             rundata.use_all_peaks=use_all_peaks
         self.db_session.add(rundata)

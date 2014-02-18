@@ -78,6 +78,9 @@ class MagmaCommand(object):
         sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml", "mass_tree","form_tree_pos","form_tree_neg"])
         sc.add_argument('-l', '--max_ms_level', help="Maximum MS level to be processsed (default: %(default)s)", default=10,type=int)
         sc.add_argument('-a', '--abs_peak_cutoff', help="Absolute intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
+        sc.add_argument('-p', '--mz_precision', help="Relative maximum m/z error (ppm) (default: %(default)s)", default=5,type=float)
+        sc.add_argument('-q', '--mz_precision_abs', help="Absolute maximum m/z error (Da) (default: %(default)s)", default=0.001,type=float)
+        sc.add_argument('--precursor_mz_precision', help="Absolute maximum error of precursor m/z values (default: %(default)s)", default=0.005,type=float)
         sc.add_argument('-s', '--scan', help="Read only spectral tree specified by MS1 scan number (default: %(default)s)", default=None,type=str)
         sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
         sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
@@ -87,15 +90,12 @@ class MagmaCommand(object):
         sc = subparsers.add_parser("annotate", help=self.annotate.__doc__, description=self.annotate.__doc__)
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # annotate arguments
-        sc.add_argument('-p', '--mz_precision', help="Mass precision (ppm) for matching calculated masses with peaks (default: %(default)s)", default=5,type=float)
-        sc.add_argument('-q', '--mz_precision_abs', help="Mass precision (Da) for matching calculated masses with peaks (default: %(default)s)", default=0.001,type=float)
         sc.add_argument('-c', '--ms_intensity_cutoff', help="Minimum intensity of level 1 peaks to be annotated (default: %(default)s)", default=1e6,type=float)
         sc.add_argument('-d', '--msms_intensity_cutoff', help="Minimum intensity of of fragment peaks to be annotated, as percentage of basepeak (default: %(default)s)", default=5,type=float)
         sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
         sc.add_argument('-j', '--metids', help="structure ids, comma separated", type=str)
         sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bond breaks to generate substructures (default: %(default)s)", default=3,type=int)
         sc.add_argument('-w', '--max_water_losses', help="Maximum number of additional neutral water losses (default: %(default)s)", default=1,type=int)
-        sc.add_argument('--precursor_mz_precision', help="Mass precision for matching peaks and precursor ions (default: %(default)s)", default=0.005,type=float)
         sc.add_argument('-u', '--use_all_peaks', help="Annotate all level 1 peaks, including those not fragmented (default: %(default)s)", action="store_true")
         sc.add_argument('--skip_fragmentation', help="Skip substructure annotation of fragment peaks (default: %(default)s)", action="store_true")
         sc.add_argument('-f', '--fast', help="Quick calculations for molecules up to 64 atoms (default: %(default)s)", action="store_true")
@@ -215,7 +215,11 @@ class MagmaCommand(object):
         if magma_session == None:
             magma_session = self.get_magma_session(args.db,args.description)
         ms_data_engine = magma_session.get_ms_data_engine(abs_peak_cutoff=args.abs_peak_cutoff,
-            max_ms_level=args.max_ms_level,call_back_url=args.call_back_url)
+                mz_precision=args.mz_precision,
+                mz_precision_abs=args.mz_precision_abs,
+                precursor_mz_precision=args.precursor_mz_precision,
+                max_ms_level=args.max_ms_level,
+                call_back_url=args.call_back_url)
         if args.ms_data_format == "mzxml":
             ms_data_engine.store_mzxml_file(args.ms_data.name,args.scan,args.time_limit)
         else:
@@ -231,9 +235,6 @@ class MagmaCommand(object):
             max_water_losses=args.max_water_losses,
             ms_intensity_cutoff=args.ms_intensity_cutoff,
             msms_intensity_cutoff=args.msms_intensity_cutoff,
-            mz_precision=args.mz_precision,
-            mz_precision_abs=args.mz_precision_abs,
-            precursor_mz_precision=args.precursor_mz_precision,
             use_all_peaks=args.use_all_peaks,
             adducts=args.adducts,
             max_charge=args.max_charge,
