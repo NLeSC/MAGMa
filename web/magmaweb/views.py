@@ -311,10 +311,11 @@ class InCompleteJobViews(object):
         # parse job launcher request
         if self.request.content_type == 'application/json':
             status = json.loads(self.request.body)
-            if status['done']:
-                if status['exception'] is None:
-                    jobstate = 'STOPPED'
-                else:
+            if status[u'done']:
+                jobstate = 'STOPPED'
+                if status[u'exitCode'] is not None and status[u'exitCode'] != 0:
+                    jobstate = 'ERROR'
+                if status[u'exception']:
                     jobstate = 'ERROR'
             else:
                 jobstate = status['state']
@@ -406,6 +407,13 @@ class InCompleteJobViews(object):
         """
         self.job = self.job.job
         return self.job_status()
+
+    @view_config(route_name='stderr.txt', permission='view',)
+    def stderr(self):
+        """Returns file object of stderr.txt file of job"""
+        response = Response(content_type='text/plain')
+        response.app_iter = self.job.stderr()
+        return response
 
 
 @view_defaults(context=Job, permission='view')
@@ -760,13 +768,6 @@ class JobViews(object):
             return fragments
         except FragmentNotFound:
             raise HTTPNotFound()
-
-    @view_config(route_name='stderr.txt')
-    def stderr(self):
-        """Returns file object of stderr.txt file of job"""
-        response = Response(content_type='text/plain')
-        response.app_iter = self.job.stderr()
-        return response
 
     @view_config(route_name='runinfo.json', renderer="json")
     def runinfojson(self):

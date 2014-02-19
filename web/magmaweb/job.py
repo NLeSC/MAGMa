@@ -52,6 +52,10 @@ class JobException(Exception):
         Exception.__init__(self)
         self.message = message
         self.job = job
+        try:
+            self.__acl__ = job.__acl__
+        except AttributeError:
+            pass
 
 
 class JobNotFound(JobIdException):

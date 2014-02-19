@@ -563,10 +563,28 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(response, dict(status='STOPPED', jobid='bla'))
         self.assertEqual(job.state, 'STOPPED')
 
-    def test_set_jobstatus_withjson_doneerr(self):
+    def test_set_jobstatus_withjson_doneerr_killed(self):
         body = '{"state": "KILLED", "exitCode": 0, "running": false, '
         body += '"done": true, "schedulerSpecficInformation": null, '
-        body += '"exception": "Process cancelled by user."}'
+        body += '"exception": "local adaptor: Process cancelled by user."}'
+        request = testing.DummyRequest(content_type='application/json',
+                                       charset='UTF-8',
+                                       body=body,
+                                       )
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'PENDING'
+        views = InCompleteJobViews(job, request)
+
+        response = views.set_job_status()
+
+        self.assertEqual(response, dict(status='ERROR', jobid='bla'))
+        self.assertEqual(job.state, 'ERROR')
+
+    def test_set_jobstatus_withjson_doneerr_exitcode(self):
+        body = '{"state": "STOPPED", "exitCode": 1, "running": false, '
+        body += '"done": true, "schedulerSpecficInformation": null, '
+        body += '"exception": null}'
         request = testing.DummyRequest(content_type='application/json',
                                        charset='UTF-8',
                                        body=body,
@@ -712,6 +730,21 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
                             )
         self.assertDictEqual(response, exp_response)
         has_permission.assert_called_with('run', job, request)
+
+    def test_stderr(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        import StringIO
+        log = StringIO.StringIO()
+        log.write('bla')
+        log.seek(0)
+        job.stderr.return_value = log
+        views = InCompleteJobViews(job, request)
+
+        response = views.stderr()
+
+        self.assertEqual(response.content_type, 'text/plain')
+        self.assertMultiLineEqual(response.app_iter.read(), 'bla')
 
 
 class JobViewsTestCase(AbstractViewsTestCase):
@@ -989,21 +1022,6 @@ class JobViewsTestCase(AbstractViewsTestCase):
         from pyramid.httpexceptions import HTTPNotFound
         with self.assertRaises(HTTPNotFound):
             views.fragments()
-
-    def test_stderr(self):
-        request = testing.DummyRequest()
-        job = self.fake_job()
-        import StringIO
-        log = StringIO.StringIO()
-        log.write('bla')
-        log.seek(0)
-        job.stderr.return_value = log
-        views = JobViews(job, request)
-
-        response = views.stderr()
-
-        self.assertEqual(response.content_type, 'text/plain')
-        self.assertMultiLineEqual(response.app_iter.read(), 'bla')
 
     def test_runinfojson(self):
         request = testing.DummyRequest()
