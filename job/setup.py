@@ -46,7 +46,7 @@ setup(
                    "Topic :: Scientific/Engineering :: Chemistry",
                    ],
     packages=find_packages(),
-    install_requires=['sqlalchemy', 'lxml', 'numpy', 'pp', 'requests==0.14.2', 'macauthlib', 'mock'],
+    install_requires=['sqlalchemy', 'lxml', 'numpy', 'pp', 'requests', 'macauthlib', 'mock'],
     package_data={
         'magma': ['data/*.smirks', 'script/reactor'],
         },
