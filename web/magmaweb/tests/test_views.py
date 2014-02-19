@@ -514,6 +514,64 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
                                         is_complete=True,
                                         ))
 
+    def test_jobstatus_completewitherror(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'ERROR'
+        job.is_complete.side_effect = JobError(job)
+        views = InCompleteJobViews(job, request)
+
+        with self.assertRaises(JobError) as e:
+            views.job_status()
+
+        self.assertEquals(e.exception.job, job)
+
+    def test_jobstatusjson_complete(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'RUNNING'
+        job.is_complete.side_effect = JobIncomplete(job)
+        views = InCompleteJobViews(job, request)
+
+        response = views.job_status_json()
+
+        self.assertEqual(response, dict(status='RUNNING',
+                                        jobid='bla',
+                                        is_complete=False,
+                                        ))
+
+    def test_jobstatusjson_incomplete(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'STOPPED'
+        job.is_complete.return_value = True
+        views = InCompleteJobViews(job, request)
+
+        response = views.job_status_json()
+
+        self.assertEqual(response, dict(status='STOPPED',
+                                        jobid='bla',
+                                        is_complete=True,
+                                        ))
+
+    def test_jobstatusjson_completewitherror(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        job.id = 'bla'
+        job.state = 'ERROR'
+        job.is_complete.side_effect = JobError(job)
+        views = InCompleteJobViews(job, request)
+
+        response = views.job_status_json()
+
+        self.assertEqual(response, dict(status='ERROR',
+                                        jobid='bla',
+                                        is_complete=True,
+                                        ))
+
     def test_set_jobstatus(self):
         request = testing.DummyRequest(content_type='text/plain')
         request.body = 'STOPPED'
