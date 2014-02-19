@@ -12,6 +12,8 @@ See http://code.google.com/p/rdkit/wiki/BuildingWithCmake for RDKit installation
 
 And make sure libxml2-dev and libxslt-dev are installed for mzxml file parsing.
 
+MAGMa requires CactVS. See http://www2.ccc.uni-erlangen.de/software/cactvs/
+
 Development installation
 ------------------------
 
@@ -55,6 +57,9 @@ Exampe config file ::
 
    # choose cdk or rdkit as chemical engine
    chemical_engine = rdkit
+
+   # Cactvs is needed to perform reactions
+   cactvs_root = /usr/local/lib/cactvs3.409
 
 Running on cluster
 ------------------
