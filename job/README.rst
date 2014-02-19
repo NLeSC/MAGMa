@@ -34,6 +34,8 @@ See http://code.google.com/p/rdkit/wiki/BuildingWithCmake for RDKit installation
 
 To `env/bin/activate` add:
 
+.. code-block:: bash
+
    export RDBASE=<somedir>/RDKit_2013_09_2
    export LD_LIBRARY_PATH=$RDBASE/lib
    export PYTHONPATH=$PYTHONPATH:$RDBASE
