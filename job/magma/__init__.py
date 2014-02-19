@@ -231,13 +231,13 @@ class StructureEngine(object):
                 exec_reactor+=" "+"parallel"
             metabolism_files={
                 "phase1": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/sygma_rules4.0.cactvs.phase1.smirks"),
+                                                           'magma', "data/sygma_rules.phase1.cactvs.smirks"),
                 "phase2": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/sygma_rules4.0.cactvs.phase2.smirks"),
+                                                           'magma', "data/sygma_rules.phase2.cactvs.smirks"),
                 "phase1_selected": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/sygma_rules4.0.cactvs.phase1_GE0.05.smirks"),
+                                                           'magma', "data/sygma_rules.phase1_GE0.05.cactvs.smirks"),
                 "phase2_selected": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/sygma_rules4.0.cactvs.phase2_GE0.05.smirks"),
+                                                           'magma', "data/sygma_rules.phase2_GE0.05.cactvs.smirks"),
                 "gut": pkg_resources.resource_filename( #@UndefinedVariable
                                                            'magma', "data/gut.cactvs.smirks"),
                 "glycosidase": pkg_resources.resource_filename( #@UndefinedVariable
