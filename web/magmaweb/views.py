@@ -251,10 +251,6 @@ class InCompleteJobViews(object):
     @view_config(route_name='status',
                  renderer='status.mak',
                  permission='run')
-    @view_config(route_name='status.json',
-                 renderer='json',
-                 permission='run',
-                 request_method='GET')
     def job_status(self):
         """Returns status of a job
 
@@ -277,6 +273,31 @@ class InCompleteJobViews(object):
         except JobIncomplete:
             is_complete = False
         return dict(status=jobstate, jobid=str(jobid), is_complete=is_complete)
+
+    @view_config(route_name='status.json',
+                 renderer='json',
+                 permission='run',
+                 request_method='GET')
+    def job_status_json(self):
+        """Returns status of a job
+
+        Example json response:
+
+        .. code-block:: python
+
+            {
+                "status" : "RUNNING",
+                "complete": False,
+                "jobid" : "b1eee101-dcc6-435e-baa8-d35e688c408e"
+            }
+
+        """
+        jobid = self.job.id
+        jobstate = self.job.state
+        try:
+            return self.job_status()
+        except JobError:
+            return dict(status=jobstate, jobid=str(jobid), is_complete=True)
 
     @view_config(route_name='status.json', renderer='json',
                  permission='monitor',
