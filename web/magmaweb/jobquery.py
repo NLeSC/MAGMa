@@ -74,18 +74,6 @@ class JobQuery(object):
     def _addAnnotateSchema(self, schema):
         schema.add(colander.SchemaNode(colander.Float(),
                                        missing=0.0,
-                                       validator=colander.Range(0, 1),
-                                       name='precursor_mz_precision'))
-        schema.add(colander.SchemaNode(colander.Float(),
-                                       missing=0.0,
-                                       validator=colander.Range(0, 1000),
-                                       name='mz_precision'))
-        schema.add(colander.SchemaNode(colander.Float(),
-                                       missing=0.0,
-                                       validator=colander.Range(0, 1),
-                                       name='mz_precision_abs'))
-        schema.add(colander.SchemaNode(colander.Float(),
-                                       missing=0.0,
                                        name='ms_intensity_cutoff'))
         schema.add(colander.SchemaNode(colander.Float(),
                                        missing=0.0,
@@ -284,6 +272,18 @@ class JobQuery(object):
                                        missing=colander.null,
                                        validator=colander.Range(min=0),
                                        name='scan'))
+        schema.add(colander.SchemaNode(colander.Float(),
+                                       missing=0.0,
+                                       validator=colander.Range(0, 1),
+                                       name='precursor_mz_precision'))
+        schema.add(colander.SchemaNode(colander.Float(),
+                                       missing=0.0,
+                                       validator=colander.Range(0, 1000),
+                                       name='mz_precision'))
+        schema.add(colander.SchemaNode(colander.Float(),
+                                       missing=0.0,
+                                       validator=colander.Range(0, 1),
+                                       name='mz_precision_abs'))
         return schema
 
     def _writeMsFile(self, params):
@@ -337,6 +337,9 @@ class JobQuery(object):
         * ms_data_file, file-like object with MS data
         * max_ms_level
         * abs_peak_cutoff
+        * precursor_mz_precision
+        * mz_precision
+        * mz_precsion_abs
 
         If ``has_metabolites`` is True then
             :meth:`~magmaweb.job.JobQuery.annotate` will be called.
@@ -355,15 +358,21 @@ class JobQuery(object):
 
         self._addIonisationToFormulaTree(params, schema, orig_params)
 
+        pmzp = params['precursor_mz_precision']
         script__substitution = {
             'ms_data_format': self.escape(params['ms_data_format']),
             'max_ms_level': self.escape(params['max_ms_level']),
             'abs_peak_cutoff': self.escape(params['abs_peak_cutoff']),
-            'call_back_url': self.status_callback_url
+            'call_back_url': self.status_callback_url,
+            'precursor_mz_precision': self.escape(pmzp),
+            'mz_precision': self.escape(params['mz_precision']),
+            'mz_precision_abs': self.escape(params['mz_precision_abs']),
         }
         script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}'"
         script += " -l '{max_ms_level}'"
         script += " -a '{abs_peak_cutoff}'"
+        script += " -p '{mz_precision}' -q '{mz_precision_abs}'"
+        script += " --precursor_mz_precision '{precursor_mz_precision}'"
 
         is_mzxml = params['ms_data_format'] == 'mzxml'
         empty_scan = params['scan'] is colander.null
@@ -496,9 +505,6 @@ class JobQuery(object):
 
         ``params`` is a dict from which the following keys are used:
 
-        * precursor_mz_precision
-        * mz_precision
-        * mz_precsion_abs
         * ms_intensity_cutoff
         * msms_intensity_cutoff
         * ionisation_mode
@@ -518,19 +524,13 @@ class JobQuery(object):
         params = schema.deserialize(params)
 
         script = "{{magma}} annotate"
-        script += " -p '{mz_precision}' -q '{mz_precision_abs}'"
         script += " -c '{ms_intensity_cutoff}' -d '{msms_intensity_cutoff}'"
         script += " -i '{ionisation_mode}' -b '{max_broken_bonds}'"
-        script += " --precursor_mz_precision '{precursor_mz_precision}'"
         script += " --max_water_losses '{max_water_losses}'"
         script += " --call_back_url '{call_back_url}'"
-        pmzp = params['precursor_mz_precision']
         ms_ic = params['ms_intensity_cutoff']
         msms_ic = params['msms_intensity_cutoff']
         script_substitutions = {
-            'precursor_mz_precision': self.escape(pmzp),
-            'mz_precision': self.escape(params['mz_precision']),
-            'mz_precision_abs': self.escape(params['mz_precision_abs']),
             'ms_intensity_cutoff': self.escape(ms_ic),
             'msms_intensity_cutoff': self.escape(msms_ic),
             'ionisation_mode': self.escape(params['ionisation_mode']),
