@@ -73,6 +73,7 @@ Ext.onReady(function() {
         flex: 1,
         minHeight: 490
     }, {
+        title: 'Parameter options',
 	    xtype : 'annotatefieldset',
 	    flex : 1,
         minHeight: 490
