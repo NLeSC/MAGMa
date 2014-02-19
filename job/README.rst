@@ -7,18 +7,67 @@ Magma subproject which performs actual calculations.
 Requirements
 ------------
 
-MAGMa requires RDKit with INCHI support.
+MAGMa requires
+* RDKit with INCHI support.
+* libxml2-dev and libxslt-dev for mzxml file parsing.
+* CactVS. See http://www2.ccc.uni-erlangen.de/software/cactvs/
+
+RDKit installation
+~~~~~~~~~~~~~~~~~~
+
 See http://code.google.com/p/rdkit/wiki/BuildingWithCmake for RDKit installation instructions.
 
-And make sure libxml2-dev and libxslt-dev are installed for mzxml file parsing.
+.. code-block:: bash
 
-MAGMa requires CactVS. See http://www2.ccc.uni-erlangen.de/software/cactvs/
+   sudo apt-get install flex bison build-essential python-numpy cmake python-dev sqlite3 libsqlite3-dev libboost-dev libboost-python-dev libboost-regex-dev
+   virtualenv env
+   . env/bin/activate
+   pip install numpy
+   tar -zxf RDKit_2013_09_2.tgz
+   cd RDKit_2013_09_2/
+   cd ../External/INCHI-API/
+   mkdir build
+   cd build
+   cmake -DRDK_BUILD_INCHI_SUPPORT=ON ..
+   make -j 4
+   make install
+
+To `env/bin/activate` add:
+
+   export RDBASE=<somedir>/RDKit_2013_09_2
+   export LD_LIBRARY_PATH=$RDBASE/lib
+   export PYTHONPATH=$PYTHONPATH:$RDBASE
+
+`<somedir>` should be replaced with path where RDKit was untarred.
+
+Cactvs installation
+~~~~~~~~~~~~~~~~~~~
+
+1. On http://www.xemistry.com/ follow the Academic downloads link.
+2. Download the tarball for your OS.
+
+.. code-block:: bash
+
+   cd /tmp
+   mkdir v
+   cd v
+   tar -zxf ../cactvstools-Linux3.1-SuSE12.1-64-3.420.tar.gz
+   ./installme
+   # use defaults
+
+MAGMa requires the path where Cactvs was installed.
+For example during `./installme` of Cactvs version `3.420`, filled in `/usr/local/lib` for the libraries location then MAGMa
+requires `/usr/local/lib/cactvs3.420`.
+
+If metabolism is not working compare `magma/script/csreact` with `csbr` (available in Cactvs bin dir).
+The `magma/script/csreact` must use the same paths/versions as the `csbr` script.
 
 Development installation
 ------------------------
 
 .. code-block:: bash
 
+   pip install cython
    python setup.py develop
 
 Usage
@@ -57,6 +106,9 @@ Exampe config file ::
 
    # choose cdk or rdkit as chemical engine
    chemical_engine = rdkit
+
+   # choose cactvs or reactor as metabolism engine
+   metabolism_engine = cactvs
 
    # Cactvs is needed to perform reactions
    cactvs_root = /usr/local/lib/cactvs3.409
