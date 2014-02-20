@@ -62,14 +62,14 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
     }, {
         xtype: 'displayfield',
         name: 'precision_heading',
-        value: '<br>Precision:'
+        value: '<br>Accuracy:'
     }, {
         xtype : 'numberfield',
         name : 'mz_precision',
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         fieldLabel: 'Relative (ppm)',
-        labelAttrTpl: 'data-qwidth=200 data-qtip="Mass precision (ppm) for matching calculated masses with m/z values"',
+        labelAttrTpl: 'data-qwidth=200 data-qtip="Maximum relative m/z error (ppm)"',
         allowBlank : false,
         maxValue : 1000,
         minValue : 0,
@@ -81,7 +81,7 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         fieldLabel: 'Absolute (Da)',
-        labelAttrTpl: 'data-qwidth=200 data-qtip="Mass precision (Da) for matching calculated masses with m/z values"',
+        labelAttrTpl: 'data-qwidth=200 data-qtip="Maximum absolute m/z error (Da)"',
         allowBlank : false,
         maxValue : 1,
         minValue : 0,
@@ -93,7 +93,7 @@ Ext.define('Esc.magmaweb.view.fragment.AnnotateFieldSet', {
         labelSeparator: '',
         afterLabelTextTpl: '<span class="relation">&le;</span>',
         fieldLabel: 'Precursor m/z (Da)',
-        labelAttrTpl: 'data-qwidth=200 data-qtip="Mass precision for matching peaks and precursor ions"',
+        labelAttrTpl: 'data-qwidth=200 data-qtip="Maximum absolute error of precursor m/z values"',
         allowBlank: false,
         maxValue : 1,
         minValue : 0,
