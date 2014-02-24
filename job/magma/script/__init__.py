@@ -53,7 +53,8 @@ class MagmaCommand(object):
         sc.add_argument('-t', '--structure_format', help="Structure input type (default: %(default)s)", default="smiles", choices=["smiles", "sdf"])
         sc.add_argument('-p', '--pubchem_names', help="Get references to PubChem (default: %(default)s)", action="store_true")
         sc.add_argument('--mass_filter', help="Filter input structures on maximum monoisotopic mass (default: %(default)s)", default=9999,type=int)
-        sc.add_argument('structures', type=argparse.FileType('rb'), help="File with smiles used as structures")
+        sc.add_argument('--log', help="Set logging level (default: %(default)s)", default='warn',choices=['debug','info','warn','error'])
+        sc.add_argument('structures', type=argparse.FileType('rb'), help="File with structures")
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.add_structures)
 
@@ -67,6 +68,7 @@ class MagmaCommand(object):
                                         action(glycosidase/gut/phase1[_selected]/phase2[_selected]/mass_filter),value(nsteps/mass limit)""")
         sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
         sc.add_argument('-p', '--pubchem_names', help="Get references to PubChem (default: %(default)s)", action="store_true")
+        sc.add_argument('--log', help="Set logging level (default: %(default)s)", default='warn',choices=['debug','info','warn','error'])
         sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.metabolize)
@@ -83,6 +85,7 @@ class MagmaCommand(object):
         sc.add_argument('--precursor_mz_precision', help="Maximum absolute error of precursor m/z values (default: %(default)s)", default=0.005,type=float)
         sc.add_argument('-s', '--scan', help="Read only spectral tree specified by MS1 scan number (default: %(default)s)", default=None,type=str)
         sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
+        sc.add_argument('--log', help="Set logging level (default: %(default)s)", default='warn',choices=['debug','info','warn','error'])
         sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.read_ms_data)
@@ -108,6 +111,7 @@ class MagmaCommand(object):
         sc.add_argument('--ncpus', help="Number of parallel cpus to use for annotation (default: %(default)s)", default=1,type=int)
         sc.add_argument('--scans', help="Search in specified scans (default: %(default)s)", default="all",type=str)
         sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
+        sc.add_argument('--log', help="Set logging level (default: %(default)s)", default='warn',choices=['debug','info','warn','error'])
         sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
@@ -122,22 +126,11 @@ class MagmaCommand(object):
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.writeSDF)
         
-        sc = subparsers.add_parser("sd2smiles", help=self.sd2smiles.__doc__, description=self.sd2smiles.__doc__)
-        sc.add_argument('input', type=argparse.FileType('rb'), help="Sd file")
-        sc.add_argument('output', type=argparse.FileType('w'), help="File with smiles which can be used as metabolite reactantss")
-        sc.set_defaults(func=self.sd2smiles)
-
-        sc = subparsers.add_parser("smiles2sd", help=self.smiles2sd.__doc__, description=self.smiles2sd.__doc__)
-        sc.add_argument('input', type=argparse.FileType('r'), help="File with smiles which can be used as metabolite reactantss")
-        sc.add_argument('output', type=argparse.FileType('w'), help="Sd file")
-        sc.add_argument('-d', '--depiction', help="Depiction (default: %(default)s)", default="2D", choices=["1D", "2D", "3D"])
-        sc.set_defaults(func=self.smiles2sd)
-
     def version(self):
         return '1.0' # TODO move to main magma package and reuse in setup.py so version is specified in one place
 
-    def get_magma_session(self, db, description=""):
-        return magma.MagmaSession(db, description)
+    def get_magma_session(self, db, description="",log='warn'):
+        return magma.MagmaSession(db, description,log)
 
     def all_in_one(self, args):
         """Reads reactants file and MS/MS datafile, generates metabolites from reactants and matches them to peaks"""
@@ -174,22 +167,17 @@ class MagmaCommand(object):
 
     def add_structures(self, args, magma_session=None):
         if magma_session == None:
-            magma_session = self.get_magma_session(args.db,args.description)
+            magma_session = self.get_magma_session(args.db,args.description,args.log)
         struct_engine = magma_session.get_structure_engine(pubchem_names=args.pubchem_names)
-        metids=set([])
         if args.structure_format == 'smiles':
-            for mol in self.smiles2mols(args.structures):
-                metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), 1.0, 0, 1, mass_filter=args.mass_filter))
+            struct_engine.read_smiles(args.structures.name,args.mass_filter)
         elif args.structure_format == 'sdf':
-            for mol in Chem.SDMolSupplier(args.structures.name):
-                metids.add(struct_engine.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), None, 0, 1, mass_filter=args.mass_filter))
+            struct_engine.read_sdf(args.structures.name,args.mass_filter)
         magma_session.commit()
-        for metid in metids:
-            print metid
 
     def metabolize(self, args, magma_session=None):
         if magma_session == None:
-            magma_session = self.get_magma_session(args.db,args.description)
+            magma_session = self.get_magma_session(args.db,args.description,args.log)
         struct_engine = magma_session.get_structure_engine(pubchem_names=args.pubchem_names, call_back_url=args.call_back_url)
         if args.scenario != None:
             scenario=[]
@@ -213,7 +201,7 @@ class MagmaCommand(object):
 
     def read_ms_data(self, args, magma_session=None):
         if magma_session == None:
-            magma_session = self.get_magma_session(args.db,args.description)
+            magma_session = self.get_magma_session(args.db,args.description,args.log)
         ms_data_engine = magma_session.get_ms_data_engine(abs_peak_cutoff=args.abs_peak_cutoff,
                 mz_precision=args.mz_precision,
                 mz_precision_abs=args.mz_precision_abs,
@@ -228,7 +216,7 @@ class MagmaCommand(object):
 
     def annotate(self, args, magma_session=None):
         if magma_session == None:
-            magma_session = self.get_magma_session(args.db,args.description)
+            magma_session = self.get_magma_session(args.db,args.description,args.log)
         annotate_engine = magma_session.get_annotate_engine(ionisation_mode=args.ionisation_mode,
             skip_fragmentation=args.skip_fragmentation,
             max_broken_bonds=args.max_broken_bonds,
@@ -291,53 +279,6 @@ class MagmaCommand(object):
             magma_session = self.get_magma_session(args.db)
         analysis_engine = magma_session.get_data_analysis_engine()
         analysis_engine.write_SDF()
-
-    def sd2smiles(self, args):
-        """ Convert sd file to smiles """
-        mols = Chem.SDMolSupplier(args.input)
-        for mol in mols:
-            args.output.writeln(
-                               '%s|%s'.format(
-                                              Chem.MolToSmiles(mol),
-                                              mol.GetProp('_Name')
-                                              )
-                               )
-
-    def smiles2sd(self, args):
-        """ Convert smiles to sd file"""
-        w = Chem.SDWriter(args.output.name)
-        for line in args.input:
-            line = line.strip()
-            if line=="":
-                continue
-            (smilestring, molname) = line.split(' ')
-            mol = Chem.MolFromSmiles(smilestring)
-            if (args.depiction == '2D'):
-                AllChem.Compute2DCoords(mol)
-            elif (args.depiction == '3D'):
-                AllChem.EmbedMolecule(mol)
-                AllChem.UFFOptimizeMolecule(mol)
-            mol.SetProp('_Name', molname)
-            w.write(mol)
-
-    def smiles2mols(self, smiles):
-        mols = []
-        nonames=0
-        for line in smiles:
-            line = line.strip()
-            if line=="":
-                continue
-            splitline = line.split()
-            mol = Chem.MolFromSmiles(splitline[0])
-            if len(splitline) > 1:
-                name=splitline[1]
-            else:
-                nonames+=1
-                name="Noname"+str(nonames)
-            mol.SetProp('_Name', name)
-            AllChem.Compute2DCoords(mol)
-            mols.append(mol)
-        return mols
 
     def run(self, argv=sys.argv[1:]):
         """Parse arguments and runs subcommand"""
