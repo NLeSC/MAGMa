@@ -66,17 +66,35 @@ Ext.onReady(function() {
     	title: 'MS Data',
         xtype : 'uploadmsdatafieldset',
         flex: 1,
-        minHeight: 490
+        minHeight: 490,
+        tools: [{
+            type: 'help',
+            handler: function() {
+                window.open('${request.route_url('help')}#msdata', 'magmaHelp','width=700,height=500');
+            }
+        }]
     }, {
         title: 'Molecules',
         xtype : 'addstructurefieldset',
         flex: 1,
-        minHeight: 490
+        minHeight: 490,
+        tools: [{
+            type: 'help',
+            handler: function() {
+                window.open('${request.route_url('help')}#molecules', 'magmaHelp','width=700,height=500');
+            }
+        }]
     }, {
         title: 'Parameter settings',
 	    xtype : 'annotatefieldset',
 	    flex : 1,
-        minHeight: 490
+        minHeight: 490,
+        tools: [{
+            type: 'help',
+            handler: function() {
+                window.open('${request.route_url('help')}#settings', 'magmaHelp','width=700,height=500');
+            }
+        }]
     }],
     buttons: [{
       text: 'Start from scratch',

@@ -9,7 +9,7 @@
     <h2>Home page</h2>
     The home page enables to run a new MAGMa job. This requires three types of
     input:
-    <h3>MS Data</h3>
+    <h3 id="msdata">MS Data</h3>
     MS Data can be imported, either as file or via the text field, as:
     <ul>
       <li>mzXML: a public dataformat that can be generated with
@@ -63,7 +63,7 @@
     </ul>
     <ul>
     </ul>
-    <h3>Molecules</h3>
+    <h3 id="molecules">Molecules</h3>
     Molecules can be imported by:
     <ul>
       <li>Retrieval from a Database (PubChem, Kegg or Human Metabolite
@@ -98,20 +98,20 @@
     this case only the end products are used for further processing.<br>
     <ul>
     </ul>
-    <h3>Annotate options</h3>
+    <h3 id="settings">Parameters settings</h3>
     <ul>
     </ul>
     <ul>
       <li>Ionisation mode</li>
       <li>Substructure options
         <ul>
-          <li>Bond breaks: maximum number of bonds to break when generating
+          <li>Bond dissociations: maximum number of bonds to break when generating
             substructures</li>
-          <li>Additional water losses: maximum additional OH groups to remove
+          <li>Additional small losses: maximum number of additional water (OH) and/or ammonia (NH2) losses
             from substructures</li>
         </ul>
       </li>
-      <li>Precision:
+      <li>Accuracy:
         <ul>
           <li>Relative (ppm) and Absolute (Da) mass tolerance for matching
             (sub)structures with m/z values. (The maximum of these two is used.)</li>
@@ -141,7 +141,7 @@
     <br>
     <h2>Results page</h2>
     The results page consists of 4 panels:
-    <h3>Molecules table (upper left)</h3>
+    <h3 id="molpanel">Molecules table (upper left)</h3>
     <ul>
       <li>Contains the candidate molecules, imported or retrieved from the
         structure database </li>
@@ -183,7 +183,7 @@
       <li>The buttons in the upper right corner can be used to export the
         displayed molecules and to clear the table filters.</li>
     </ul>
-    <h3>Chromatogram (bottom left)</h3>
+    <h3 id="chromatogram">Chromatogram (bottom left)</h3>
     <ul>
       <li>Appears only when LC-MSn data has been imported </li>
       <li>A spectral tree can be selected by clicking one of the green
@@ -213,7 +213,7 @@
     </ul>
     <i><b>Only when you have selected both a molecule and a precursor, the
         annotated MSn spectra become available on the right.</b></i>
-    <h3>Substructures (upper right)</h3>
+    <h3 id=substructures>Substructures (upper right)</h3>
     <ul>
       <li>This table has a tree structure: the folder icons allow you to open
         up, or close, the next level of substructures. At the same time, the
@@ -221,7 +221,7 @@
       <li>Selecting a substructure highlights the corresponding peak in the
         spectrum below</li>
     </ul>
-    <h3>MS spectral tree (bottom right)</h3>
+    <h3 id=scan>MS scans (bottom right)</h3>
     <ul>
       <li>Selecting a peak by clicking one of the green triangles highlights the
         corresponding substructure. </li>
