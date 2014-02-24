@@ -56,3 +56,9 @@ def GetFormulaProps(mol):
         mim+=GetExtendedAtomMass(mol,a)
     formula_string=Chem.rdMolDescriptors.CalcMolFormula(mol)
     return mim,formula_string
+def SmilesToMol(smiles,name=None):
+    mol = Chem.MolFromSmiles(smiles)
+    mol.SetProp('_Name', name)
+    AllChem.Compute2DCoords(mol)
+    return mol
+
