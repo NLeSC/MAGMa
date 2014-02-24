@@ -358,8 +358,11 @@ class StructureEngine(object):
 
     def run_scenario(self, scenario, time_limit=None):
         print 'RUNNING METABOLIC SCENARIO'
-        result=self.db_session.query(Metabolite.metid).all()
-        metids={x[0] for x in result} #set comprehension
+        if time_limit == None:
+            result=self.db_session.query(Metabolite.metid).all()
+            metids={x[0] for x in result} #set comprehension
+        else: # in case of time_limit only metabolize the first compound
+            metids=set([self.db_session.query(Metabolite.metid).first()[0]])
         start_time=time.time()
         for step in range(len(scenario)):
             action,value = scenario[step]
