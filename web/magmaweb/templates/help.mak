@@ -213,7 +213,7 @@
     </ul>
     <i><b>Only when you have selected both a molecule and a precursor, the
         annotated MSn spectra become available on the right.</b></i>
-    <h3 id=substructures>Substructures (upper right)</h3>
+    <h3 id="substructures">Substructures (upper right)</h3>
     <ul>
       <li>This table has a tree structure: the folder icons allow you to open
         up, or close, the next level of substructures. At the same time, the
@@ -221,7 +221,7 @@
       <li>Selecting a substructure highlights the corresponding peak in the
         spectrum below</li>
     </ul>
-    <h3 id=scan>MS scans (bottom right)</h3>
+    <h3 id="scan">MS scans (bottom right)</h3>
     <ul>
       <li>Selecting a peak by clicking one of the green triangles highlights the
         corresponding substructure. </li>
