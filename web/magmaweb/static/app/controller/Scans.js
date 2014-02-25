@@ -208,7 +208,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
         me.showUploadForm();
     } else if (data.scans.length === 1) {
         me.selectScan(data.scans[0].id, false);
-        me.getChromatogramPanel().hide();
+        me.getChromatogramPanel().collapse();
     }
     me.application.fireEvent('chromatogramload', chromatogram);
   },
