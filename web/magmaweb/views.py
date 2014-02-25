@@ -436,6 +436,13 @@ class InCompleteJobViews(object):
         response.app_iter = self.job.stderr()
         return response
 
+    @view_config(route_name='stdout.txt', permission='view',)
+    def stdout(self):
+        """Returns file object of stdout.txt file of job"""
+        response = Response(content_type='text/plain')
+        response.app_iter = self.job.stdout()
+        return response
+
 
 @view_defaults(context=Job, permission='view')
 class JobViews(object):

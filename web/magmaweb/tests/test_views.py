@@ -804,6 +804,21 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(response.content_type, 'text/plain')
         self.assertMultiLineEqual(response.app_iter.read(), 'bla')
 
+    def test_stdout(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        import StringIO
+        log = StringIO.StringIO()
+        log.write('bla')
+        log.seek(0)
+        job.stdout.return_value = log
+        views = InCompleteJobViews(job, request)
+
+        response = views.stdout()
+
+        self.assertEqual(response.content_type, 'text/plain')
+        self.assertMultiLineEqual(response.app_iter.read(), 'bla')
+
 
 class JobViewsTestCase(AbstractViewsTestCase):
     """ Test case for magmaweb.views.JobViews"""

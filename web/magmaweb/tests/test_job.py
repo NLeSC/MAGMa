@@ -602,6 +602,9 @@ class JobTestCase(unittest.TestCase):
         stderr = open(os.path.join(self.jobdir, 'stderr.txt'), 'w')
         stderr.write('Error log')
         stderr.close()
+        stdout = open(os.path.join(self.jobdir, 'stdout.txt'), 'w')
+        stdout.write('Log')
+        stdout.close()
         self.job = Job(self.meta, self.jobdir, self.db)
 
     def tearDown(self):
@@ -654,6 +657,18 @@ class JobTestCase(unittest.TestCase):
         open_stub = Mock(side_effect=IOError('File not found'))
         with patch('__builtin__.open', open_stub):
             log = self.job.stderr()
+            self.assertEqual(log.read(), '')
+
+    def test_stdout(self):
+        log = self.job.stdout()
+        self.assertIsInstance(log, file)
+        self.assertEqual(log.name, self.jobdir + '/stdout.txt')
+        self.assertEqual(log.read(), 'Log')
+
+    def test_stdout_empty(self):
+        open_stub = Mock(side_effect=IOError('File not found'))
+        with patch('__builtin__.open', open_stub):
+            log = self.job.stdout()
             self.assertEqual(log.read(), '')
 
     def test_jobquery(self):
