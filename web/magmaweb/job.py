@@ -474,6 +474,13 @@ class Job(object):
         except IOError:
             return StringIO.StringIO()
 
+    def stdout(self):
+        """Returns stdout text file or empty file if stdout does not exist"""
+        try:
+            return open(os.path.join(self.dir, 'stdout.txt'), 'rb')
+        except IOError:
+            return StringIO.StringIO()
+
     @property
     def created_at(self):
         """Datetime when job was created"""

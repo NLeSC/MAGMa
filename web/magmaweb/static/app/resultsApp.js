@@ -166,6 +166,14 @@ Ext.define('Esc.magmaweb.resultsApp', {
     return this.urls.home+'results/'+this.jobid+'/metabolites.'+format;
   },
   /**
+   * Get url of log file of job
+   *
+   * @return {String}
+   */
+  getLogUrl: function() {
+      return this.urls.home+'results/'+this.jobid+'/stdout.txt';
+  },
+  /**
    * Creates mspectraspanels and viewport and fires/listens for mspectra events
    * Registers error handle
    */
@@ -245,7 +253,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
             type: 'save',
             tooltip: 'Save log file',
             handler: function() {
-                window.open(me.urls.stderr, 'Log');
+                window.open(me.getLogUrl(), 'Log');
             }
         }]
     });

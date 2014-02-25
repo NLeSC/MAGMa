@@ -84,6 +84,7 @@ def configure(config):
     add_job_route('extractedionchromatogram.json',
                   '/results/{jobid}/extractedionchromatogram/{metid}.json')
     add_job_route('stderr.txt', '/results/{jobid}/stderr.txt')
+    add_job_route('stdout.txt', '/results/{jobid}/stdout.txt')
     add_job_route('runinfo.json', '/results/{jobid}/runinfo.json')
 
     # for job owner
