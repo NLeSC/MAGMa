@@ -41,6 +41,9 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
         itemcollapse: this.onFragmentCollapse,
         itemexpand: this.onFragmentExpand
       },
+      'fragmenttree component[action=help]': {
+          click: this.showHelp
+      },
       'annotateform component[action=annotate]': {
           click: this.annotateHandler
       },
@@ -400,5 +403,8 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
       if (!this.application.features.assign) {
           this.getAssignStruct2PeakButton().hide();
       }
+  },
+  showHelp: function() {
+      this.application.showHelp('substructures');
   }
 });

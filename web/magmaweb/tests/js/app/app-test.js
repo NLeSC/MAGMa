@@ -35,6 +35,7 @@ Ext.onReady(function() {
       // use test files for metabolites in data/
       metabolitesUrl: function(format) {
           return 'data/metabolites.'+format;
-      }
+      },
+      showHelp: function(section) {}
   });
 });

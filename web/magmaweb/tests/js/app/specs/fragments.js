@@ -604,5 +604,15 @@ describe('Fragments', function() {
 
   	  expect(assignbut.hide).toHaveBeenCalledWith();
     });
+
+
+    it('showHelp', function() {
+       spyOn(ctrl.application, 'showHelp');
+
+       ctrl.showHelp();
+
+       expect(ctrl.application.showHelp).toHaveBeenCalledWith('substructures');
+    });
+
   });
 });

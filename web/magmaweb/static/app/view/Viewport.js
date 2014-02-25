@@ -28,7 +28,8 @@ Ext.define('Esc.magmaweb.view.Viewport', {
                   hrefTarget: '_self'
               }, {
                   text: 'Help',
-                  href: '../help'
+                  href: '../help',
+                  hrefTarget: '_new'
               }, {
                   text: 'Annotate',
                   tooltip: 'Annotate all structures',
