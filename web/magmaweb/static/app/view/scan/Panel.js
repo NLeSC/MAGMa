@@ -28,6 +28,10 @@ Ext.define('Esc.magmaweb.view.scan.Panel', {
     type: 'gear',
     tooltip: 'Upload MS data & Change zoom direction',
     action: 'actions'
+  }, {
+    type: 'help',
+    tooltip: 'Help',
+    action: 'help'
   }],
   layout: 'card',
   items: [{

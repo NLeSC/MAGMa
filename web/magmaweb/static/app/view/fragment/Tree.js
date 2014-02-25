@@ -34,9 +34,13 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
     }
   },
   tools: [{
-     type: 'save',
-     disabled: true,
-     tooltip: 'Save fragment tree'
+      type: 'save',
+      disabled: true,
+      tooltip: 'Save fragment tree'
+  }, {
+      type: 'help',
+      tooltip: 'Help',
+      action: 'help'
   }],
   dockedItems: [{
       xtype: 'toolbar',

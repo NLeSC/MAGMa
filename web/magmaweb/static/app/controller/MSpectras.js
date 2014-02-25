@@ -144,6 +144,12 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
             type: 'save',
             disabled: true,
             tooltip: 'Save scan'
+          }, {
+            type: 'help',
+            tooltip: 'Help',
+            action: 'help',
+            handler: this.showHelp,
+            scope: this
           }],
           items: this.mspectras[mslevel]
       });
@@ -358,5 +364,8 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   center: function(tool) {
       var mspectra = tool.up('panel').down('mspectra');
       mspectra.resetScales();
+  },
+  showHelp: function() {
+      this.application.showHelp('scan');
   }
 });

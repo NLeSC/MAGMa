@@ -60,6 +60,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       'scanpanel tool[action=actions]': {
         click: this.showActionsMenu
       },
+      'scanpanel tool[action=help]': {
+          click: this.showHelp
+      },
       'scanuploadform component[action=uploadmsdata]': {
         click: this.uploadHandler
       },
@@ -494,5 +497,8 @@ Ext.define('Esc.magmaweb.controller.Scans', {
               'msms_intensity_cutoff'
           ]);
       }
+  },
+  showHelp: function() {
+      this.application.showHelp('chromatogram');
   }
 });

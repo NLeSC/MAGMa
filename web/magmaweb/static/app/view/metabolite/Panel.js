@@ -12,13 +12,17 @@ Ext.define('Esc.magmaweb.view.metabolite.Panel', {
     'Esc.magmaweb.view.metabolite.AddForm'
   ],
   tools: [{
-     type: 'save',
-     tooltip: 'Save metabolites',
-     action: 'download'
+      type: 'save',
+      tooltip: 'Save metabolites',
+      action: 'download'
   }, {
-     type: 'gear',
-     tooltip: 'Perform actions on metabolites',
-     action: 'actions'
+      type: 'gear',
+      tooltip: 'Perform actions on metabolites',
+      action: 'actions'
+  }, {
+      type: 'help',
+      tooltip: 'Help',
+      action: 'help'
   }],
   layout: 'card',
   items: [{

@@ -370,4 +370,13 @@ describe('MSpectras controller', function() {
       expect(mspectra.resetScales).toHaveBeenCalled();
       mspectra.destroy();
   });
+
+
+  it('showHelp', function() {
+     spyOn(ctrl.application, 'showHelp');
+
+     ctrl.showHelp();
+
+     expect(ctrl.application.showHelp).toHaveBeenCalledWith('scan');
+  });
 });

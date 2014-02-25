@@ -655,4 +655,12 @@ describe('Scans controller', function() {
         expect(mocked_form.getFieldStates()).toEqual(estates);
 	});
   });
+
+  it('showHelp', function() {
+     spyOn(ctrl.application, 'showHelp');
+
+     ctrl.showHelp();
+
+     expect(ctrl.application.showHelp).toHaveBeenCalledWith('chromatogram');
+  });
 });

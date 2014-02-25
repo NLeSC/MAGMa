@@ -276,5 +276,9 @@ Ext.define('Esc.magmaweb.resultsApp', {
         Ext.ComponentQuery.query('component[text=Logout]')[0].hide();
         Ext.ComponentQuery.query('component[text=Workspace]')[0].hide();
     }
+  },
+  showHelp: function(section) {
+      var url = this.urls.home + 'help#' + section;
+      window.open(url, 'magmaHelp','width=700,height=500');
   }
 });

@@ -521,7 +521,8 @@ describe('Metabolites', function() {
         runs(function() {
             // scenario gets serialized to json string
             expect(ctrl.metabolizeForm.getForm().getValues()).toEqual({
-                "scenario": "[{"type":"phase1","steps":2},{"type":"phase2","steps":1}]"
+                "metabolize": "on",
+                "scenario": '[{"type":"phase1","steps":2},{"type":"phase2","steps":1}]'
             });
         });
     });
@@ -683,6 +684,14 @@ describe('Metabolites', function() {
   	  ctrl.applyRole();
 
   	  expect(assignbut.hideCommandsColumn).toHaveBeenCalledWith();
+    });
+
+    it('showHelp', function() {
+       spyOn(ctrl.application, 'showHelp');
+
+       ctrl.showHelp();
+
+       expect(ctrl.application.showHelp).toHaveBeenCalledWith('molpanel');
     });
   });
 });

@@ -47,6 +47,9 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       'metabolitepanel component[action=actions]': {
         click: this.showActionsMenu
       },
+      'metabolitepanel component[action=help]': {
+          click: this.showHelp
+      },
       'metaboliteaddform component[action=addstructures]': {
         click: this.addStructuresHandler
       },
@@ -506,6 +509,9 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
           this.actionsMenu.getComponent('metabolizeaction').hide();
           this.getMetaboliteList().hideCommandsColumn();
       }
+  },
+  showHelp: function() {
+      this.application.showHelp('molpanel');
   }
 });
 
