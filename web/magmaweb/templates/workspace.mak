@@ -121,6 +121,12 @@ Ext.onReady(function() {
     title: 'Jobs',
     store: job_store,
     height: 500,
+    tools: [{
+      type: 'help',
+      handler: function() {
+        window.open('${request.route_url('help')}#workspace', 'magmaHelp','width=700,height=500');
+      }
+    }],
     plugins: [cellEditing],
     listeners: {
       edit: function(editor, e) {
