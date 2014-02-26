@@ -6,7 +6,7 @@
   </head>
   <body>
     <h1>MAGMa Help page</h1>
-    <h2>Home page</h2>
+    <h2 id="home">Home page</h2>
     The home page enables to run a new MAGMa job. This requires three types of
     input:
     <h3 id="msdata">MS Data</h3>
@@ -105,10 +105,10 @@
       <li>Ionisation mode</li>
       <li>Substructure options
         <ul>
-          <li>Bond dissociations: maximum number of bonds to break when generating
-            substructures</li>
-          <li>Additional small losses: maximum number of additional water (OH) and/or ammonia (NH2) losses
-            from substructures</li>
+          <li>Bond dissociations: maximum number of bonds to break when
+            generating substructures</li>
+          <li>Additional small losses: maximum number of additional water (OH)
+            and/or ammonia (NH2) losses from substructures</li>
         </ul>
       </li>
       <li>Accuracy:
@@ -135,11 +135,15 @@
     <br>
     <i><b>Start the calculation with the Submit button on the lower right of the
         start page. When the calculation has finished it will automatically open
-        the results page. If the browser is closed during the calculation, it
-        will continue running. You will be able to access the results from the
-        workspace (see below).</b></i> <br>
+        the <a href="#results">results page</a>. If the browser is closed
+        during the calculation, it will continue running. You will be able to
+        access the results from the <a href="#workspace">workspace</a>. When
+        the MAGMa processing fails an error message will appear. You can check
+        the log file via the Information panel (click "Information" on the
+        top-left button group, then click the "Save" icon on the top right of
+        the Information panel).</b></i> <br>
     <br>
-    <h2>Results page</h2>
+    <h2 id="results">Results page</h2>
     The results page consists of 4 panels:
     <h3 id="molpanel">Molecules table (upper left)</h3>
     <ul>
@@ -148,10 +152,10 @@
       <li>The Reference column provides links to original database entries </li>
       <li>You can sort on a column by clicking the header </li>
       <li>You can filter, hide and show columns via the drop-down menu that is
-        available at the column header. When a filter is applied to the molecules
-        table, the green triangles in the Chromatogram panel are filtered
-        accordingly, to show only matching precursor peaks, i.e. the corresponding
-        precursor MS1 scans.</li>
+        available at the column header. When a filter is applied to the
+        molecules table, the green triangles in the Chromatogram panel are
+        filtered accordingly, to show only matching precursor peaks, i.e. the
+        corresponding precursor MS1 scans.</li>
       <li>You can change order and width of the columns by drag and drop </li>
       <li>When you have imported LC-MSn data:
         <ul>
@@ -204,10 +208,10 @@
       <li>Zooming in/out can be performed using the mouse-wheel </li>
       <li>The buttons in the upper right corner can perform the following tasks
         <ul>
-          Select a spectral tree by scan number
-          <li>Clear the scan selection </li>
-          <li>Reset the zoom </li>
-          <li>Turn on/off zooming in X and Y direction </li>
+          <li>Select a spectral tree by scan number</li>
+          <li>Clear the scan selection</li>
+          <li>Reset the zoom</li>
+          <li>Turn on/off zooming in X and Y direction</li>
         </ul>
       </li>
     </ul>
@@ -219,13 +223,13 @@
         up, or close, the next level of substructures. At the same time, the
         corresponding spectrum is shown, or hidden, at the bottom. </li>
       <li>Selecting a substructure highlights the corresponding peak in the
-        spectrum below</li>
+        spectrum below.</li>
     </ul>
     <h3 id="scan">MS scans (bottom right)</h3>
     <ul>
       <li>Selecting a peak by clicking one of the green triangles highlights the
         corresponding substructure. </li>
-      <li>You can zoom in using the mouse-wheel </li>
+      <li>You can zoom in using the mouse-wheel.</li>
     </ul>
     <h3>“Assign molecule to peak” button</h3>
     With this button a selected candidate molecule can be assigned to an MS1
@@ -233,20 +237,35 @@
     corresponding scan is highlighted in the Chromatochram panel. (To provide an
     overview of all assignments), and the Assigned column in the Molecules table
     is updated.
-    <h2>Workspace</h2>
-    The workspace page gives a list of annotations that have performed. Old data
-    can be removed by clicking the minus button in the right column. Fields of
-    the job list can be edited by clicking them:
+    <h2>The top-left button group</h2>
+    <p>The button group on the top-left of the screen provides links to
+      different components of MAGMa.</p>
+    <ul>
+      <li>Home: go to the MAGMa <a href="#home">home page</a> to start a new
+        job</li>
+      <li>Help: to to this help page</li>
+      <li>Workspace: go to the <a href="#workspace">workspace</a> to manage
+        MAGMa annotated datasets</li>
+      <li>Information: opens an information panel with all parameters settings
+        used for the current dataset.</li>
+      <ul>
+        <li>The "save" icon on the top-right of this panel will open the log
+          file generated during the MAGMa processing.</li>
+      </ul>
+    </ul>
+    <h2 id="workspace">Workspace</h2>
+    The workspace page gives an overview of (and links to) automatic annotations
+    that have performed. Old data can be removed by clicking the minus button in
+    the right column. Fields of the job list can be edited by clicking them:
     <ul>
       <li>Description, allows typing a brief description for annotation
         purposes.</li>
       <li>MS filename, allows typing a file name of the MS data input file for
         annotation purposes.</li>
-      <li>Public?, by default jobs are private. They can only be seen by the
+      <li>Public? By default jobs are private, i.e. they can only be seen by the
         person who submitted it. The job can be toggled to Public. A public job
-        can be seen by % if request.registry.settings.get('auto_register',
-        False): another authenticated user % else: anyone % endif knowing the
-        job url.</li>
+        can be seen by another authenticated user (or anyone in case of the
+        public website) knowing the job url.</li>
     </ul>
   </body>
 </html>
