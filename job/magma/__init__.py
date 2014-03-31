@@ -77,7 +77,7 @@ class MagmaSession(object):
                  ms_intensity_cutoff=1e6,
                  msms_intensity_cutoff=5,
                  use_all_peaks=False,
-                 adducts='',
+                 adducts=None,
                  max_charge=1,
                  call_back_url=None
                  ):
@@ -179,6 +179,9 @@ class StructureEngine(object):
     def add_molecule(self,molecule,mass_filter=9999,check_duplicates=True,merge=False):
         if molecule.mim > mass_filter:
             return
+        mol=Chem.MolFromMolBlock(molecule.molblock)
+        if mol==None:
+            return
         metab=Metabolite(
             mol=unicode(molecule.molblock, 'utf-8', 'xmlcharrefreplace'),
             level=molecule.level,
@@ -223,7 +226,7 @@ class StructureEngine(object):
                 if metab.reference == None:
                     metab.reference = unicode(reference)
         self.db_session.add(metab)
-        logging.debug('Added molecule: '+Chem.MolToSmiles(Chem.MolFromMolBlock(str(metab.mol))))
+        logging.debug('Added molecule: '+Chem.MolToSmiles(mol))
         self.db_session.flush()
         return metab.metid
 
@@ -691,7 +694,7 @@ class MsDataEngine(object):
 
 class AnnotateEngine(object):
     def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
-                 ms_intensity_cutoff,msms_intensity_cutoff,use_all_peaks,adducts='',max_charge=1,call_back_url=None):
+                 ms_intensity_cutoff,msms_intensity_cutoff,use_all_peaks,adducts=None,max_charge=1,call_back_url=None):
         self.db_session = db_session
         try:
             rundata=self.db_session.query(Run).one()
@@ -1029,6 +1032,7 @@ class AnnotateEngine(object):
         logging.info(str(total_frags)+' fragments generated in total.')
         print self.db_session.query(Fragment.metid).filter(Fragment.parentfragid==0).distinct().count(),'Molecules matched with',
         print self.db_session.query(Fragment.scanid).filter(Fragment.parentfragid==0).distinct().count(),'precursor ions, in total\n'
+        job_server.destroy()
 
     def store_hit(self,hit,metid,parentfragid):
         global fragid
@@ -1114,7 +1118,6 @@ class PubChemEngine(object):
                                inchikey=inchikey,
                                prob=refscore,
                                level=1,
-                               sequence="",
                                isquery=1,
                                reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
                                          str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>',
@@ -1311,7 +1314,7 @@ class DataAnalysisEngine(object):
         self.db_session = db_session
 
     def get_scores(self,scanid):
-        return self.db_session.query(Fragment.score,Metabolite.molformula).\
+        return self.db_session.query(Fragment.score,Metabolite.smiles,Metabolite.molformula).\
             join((Metabolite,and_(Fragment.metid==Metabolite.metid))).\
             filter(Fragment.parentfragid==0).\
             filter(Fragment.scanid==scanid).\
@@ -1345,6 +1348,16 @@ class DataAnalysisEngine(object):
                 if column[:1] != '_' and column != 'mol' and column != 'metadata':
                     file.write('> <'+column+'>\n'+str(molecule.__getattribute__(column))+'\n\n')
             file.write('$$$$\n')
+
+    def write_smiles(self,file=sys.stdout,molecules=None,columns=None,sortcolumn=None,descend=False):
+        if molecules==None:
+            if descend:
+                molecules=self.db_session.query(Metabolite).order_by(desc(sortcolumn)).all()
+            else:
+                molecules=self.db_session.query(Metabolite).order_by(sortcolumn).all()
+        for molecule in molecules:
+            file.write(str(molecule.origin).split()[-1][1:-1]+'_'+str(molecule.smiles)+' ')
+            file.write(Chem.MolToSmiles(Chem.MolFromMolBlock(str(molecule.mol)))+'\n')
 
     def write_network1(self,filename):
         f=open(filename+'.sif','w')
