@@ -68,11 +68,23 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                     change: function(t, value) {
                         var min_refscore = this.up('form').down('numberfield[name="min_refscore"]');
                         min_refscore.setVisible(value == 'pubchem');
+                        var excl_halo = this.up('form').down('checkbox[name="excl_halo"]');
+                        excl_halo.setVisible(value == 'pubchem' || value == 'kegg');
                     }
                 }
             }, {
                 xtype: 'displayfield',
                 value: '<br>Filter options:'
+            }, {
+                xtype: 'numberfield',
+                fieldLabel: 'Mass',
+                labelSeparator: '',
+                labelAttrTpl: 'data-qwidth=200 data-qtip="Mass limit for retrieving candidate molecules"',
+                afterLabelTextTpl: '<span class="relation">&le;</span>',
+                name: 'max_mz',
+                minValue: 1,
+                value: 1200,
+                anchor: '80%'
             }, {
                 xtype: 'numberfield',
                 fieldLabel: 'PubChem reference score',
@@ -85,14 +97,13 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                 hidden: true,
                 anchor: '80%'
             }, {
-                xtype: 'numberfield',
-                fieldLabel: 'Mass',
+                xtype: 'checkbox',
+                fieldLabel: 'No halogenated compounds',
                 labelSeparator: '',
-                labelAttrTpl: 'data-qwidth=200 data-qtip="Mass limit for retrieving candidate molecules"',
-                afterLabelTextTpl: '<span class="relation">&le;</span>',
-                name: 'max_mz',
-                minValue: 1,
-                value: 1200,
+                labelAttrTpl: 'data-qwidth=200 data-qtip="Exclude halogenated compounds"',
+                name: 'excl_halo',
+                checked: true,
+                hidden: true,
                 anchor: '80%'
             }]
         }, {

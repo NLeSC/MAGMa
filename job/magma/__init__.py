@@ -1074,7 +1074,7 @@ class PubChemEngine(object):
         self.conn.text_factory=str
         self.c = self.conn.cursor()
         self.incl_halo=False
-        if incl_halo!='':
+        if incl_halo!='' and incl_halo!='False':
             self.incl_halo=True
             if incl_halo=='True':
                 halo_filename=config.get('magma job','structure_database.pubchem_halo')
