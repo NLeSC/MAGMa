@@ -103,6 +103,9 @@ class JobQuery(object):
                                        missing=colander.null,
                                        validator=colander.Range(min=1),
                                        name='max_mz'))
+        schema.add(colander.SchemaNode(colander.Boolean(),
+                                       missing=False,
+                                       name='excl_halo'))
 
     def _addMetabolizeSchema(self, schema):
         scenario = colander.SchemaNode(colander.Mapping())
@@ -542,12 +545,13 @@ class JobQuery(object):
         if params['structure_database'] is not colander.null:
             script += " --structure_database '{structure_database}'"
             script += " --db_options"
-            script += " ',{max_mim},{max_64atoms},,{min_refscore}'"
+            script += " ',{max_mim},{max_64atoms},{incl_halo},{min_refscore}'"
             sd = self.escape(params['structure_database'])
             script_substitutions['structure_database'] = sd
             db_options = {'max_mim': self.escape(params['max_mz']),
                           'min_refscore': self.escape(params['min_refscore']),
                           'max_64atoms': self.restricted,
+                          'incl_halo': self.escape(not params['excl_halo'])
                           }
             script_substitutions.update(db_options)
 
