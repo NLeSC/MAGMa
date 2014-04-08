@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+"""Generate local compound databases for MAGMa
+"""
 
 import os,re
 import zlib,gzip
@@ -6,23 +8,21 @@ import sqlite3
 import time
 import sys,argparse
 
-"""Script to generate local compounds databases for MAGMa """
 
 def version():
     return '1.0'
 
-def pubchem(args):
-    """Update local PubChem database"""
-    print args
+def process(args):
+    """Update local PubChem database
+    Has to be run twice, with and without -f option
+    to generate db's for halogenated and non-halogenated compounds respectively"""
     kegg_info={}
     if args.kegg != None:
         kegg_info=parse_kegg_file(args.kegg)
         print len(kegg_info),'kegg compound names read'
-    if not args.skip_update:
-        update_data(args.data_dir)
+    if not args.skip_names:
         create_names_db(args.data_dir)
-    if not args.update_only:
-        create_pubchem_dbs(args.data_dir,args.database_dir,kegg_info,args.halogens)
+    create_pubchem_dbs(args.data_dir,args.database_dir,kegg_info,args.halogens)
 
 def create_names_db(data_dir):
     "Generate Pubchem_names.db which is used later by create_pubchem_dbs"
@@ -64,11 +64,11 @@ def create_names_db(data_dir):
         #    print curr_cid,name,sid_count,names_count,sid_count*names_count
     conn.commit()
 
-def update_data(data_dir):
+def update(args):
     """Update downloads from PubChem server"""
     command1 = ""
-    if data_dir != None:
-        command1 = "cd "+data_dir+'; '
+    if args.data_dir != None:
+        command1 = "cd "+args.data_dir+'; '
     command2 = 'wget --mirror --accept "*.sdf.gz" ftp://ftp.ebi.ac.uk/pub/databases/pubchem/Compound/Extras/CID-MeSH.gz'
     os.system(command1+command2)
     command2 = 'wget --mirror --accept "*.sdf.gz" ftp://ftp.ebi.ac.uk/pub/databases/pubchem/Compound/Extras/CID-Synonym-filtered.gz'
@@ -364,19 +364,22 @@ mainparser = argparse.ArgumentParser(description=__doc__)
 mainparser.add_argument('--version', action='version', version='%(prog)s ' + version())
 subparsers = mainparser.add_subparsers(title='Sub-commands')
 
-sc = subparsers.add_parser("pubchem", help=pubchem.__doc__, description=pubchem.__doc__)
+sc = subparsers.add_parser("update", help=update.__doc__, description=update.__doc__)
+sc.add_argument('-d', '--data_dir', help="Directory where PubChem data is stored (default: %(default)s)", default="./",type=str)
+sc.set_defaults(func=update)
+
+sc = subparsers.add_parser("process", help=process.__doc__, description=process.__doc__)
 sc.add_argument('-k', '--kegg', default=None,type=str,help="""File with information of Kegg compounds in PubChem.
                         Must be downloaded from http://pubchem.ncbi.nlm.nih.gov/ as follows:
-                        Substance => Advanced Search => Source=KEGG => Search
-                        Display Settings: Format = ID Map => Apply
+                        Substance => Advanced Search => Source=KEGG => Search;
+                        Display Settings: Format = ID Map => Apply;
                         Send to: File
                         (default: %(default)s)""")
-sc.add_argument('-s', '--skip_update', help="Skip update of PubChem data (default: %(default)s)", action="store_true")
-sc.add_argument('-u', '--update_only', help="Only perform updata of PubChem data (default: %(default)s)", action="store_true")
+sc.add_argument('-s', '--skip_names', help="Skip update of PubChem names db (default: %(default)s)", action="store_true")
 sc.add_argument('-f', '--halogens', help="Generate database with halogenated compounds (default: %(default)s)", action="store_true")
 sc.add_argument('-d', '--data_dir', help="Directory where PubChem data is stored (default: %(default)s)", default="./",type=str)
 sc.add_argument('-b', '--database_dir', help="Directory where PubChem databases are stored (default: %(default)s)", default="./",type=str)
-sc.set_defaults(func=pubchem)
+sc.set_defaults(func=process)
 
 args = mainparser.parse_args(sys.argv[1:])
 args.func(args)
