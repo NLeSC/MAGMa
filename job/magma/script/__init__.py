@@ -253,7 +253,7 @@ class MagmaCommand(object):
             if args.structure_database == 'pubchem':
                 query_engine=magma.PubChemEngine(db_opts[0],(db_opts[2]=='True'),db_opts[3],db_opts[4])
             elif args.structure_database == 'kegg':
-                query_engine=magma.KeggEngine(db_opts[0],(db_opts[2]=='True'))
+                query_engine=magma.KeggEngine(db_opts[0],(db_opts[2]=='True'),db_opts[3])
             elif args.structure_database == 'hmdb':
                 query_engine=magma.HmdbEngine(db_opts[0],(db_opts[2]=='True'))
             elif args.structure_database == 'metacyc':
