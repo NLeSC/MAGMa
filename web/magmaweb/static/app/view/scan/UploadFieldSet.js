@@ -84,7 +84,7 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
         name: 'abs_peak_cutoff',
         fieldLabel: 'Noise filter',
         labelSeparator: '',
-        afterLabelTextTpl: '<span class="relation">&lt;</span>',
+        afterLabelTextTpl: '<span class="relation">&gt;</span>',
         labelAttrTpl: 'data-qwidth=200 data-qtip="Absolute intensity threshold for storing peaks in database"',
         allowBlank: false,
         decimalPrecision: 5,

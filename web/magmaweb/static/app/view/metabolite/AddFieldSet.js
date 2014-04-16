@@ -98,7 +98,7 @@ Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
                 anchor: '80%'
             }, {
                 xtype: 'checkbox',
-                fieldLabel: 'No halogenated compounds',
+                fieldLabel: 'Excl. halogenated compounds',
                 labelSeparator: '',
                 labelAttrTpl: 'data-qwidth=200 data-qtip="Exclude halogenated compounds"',
                 name: 'excl_halo',
