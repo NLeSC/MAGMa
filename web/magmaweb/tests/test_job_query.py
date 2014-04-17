@@ -905,7 +905,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
         script += " -i '1' -b '4'"
         script += " --max_water_losses '1' --call_back_url '/'"
         script += " --structure_database 'pubchem'"
-        script += " --db_options ',1200,False,,1'"
+        script += " --db_options ',1200,False,True,1'"
         script += " --fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=[],
@@ -932,7 +932,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
         script += " -i '1' -b '4'"
         script += " --max_water_losses '1' --call_back_url '/'"
         script += " --structure_database 'pubchem'"
-        script += " --db_options ',1200,True,,1'"
+        script += " --db_options ',1200,True,True,1'"
         script += " --time_limit 3 --fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=[],
@@ -942,6 +942,32 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                                   )
         self.assertEqual(query, expected_query)
 
+    def test_with_structure_database_exclude_halo(self):
+        params = {'ms_intensity_cutoff': 200000,
+                  'msms_intensity_cutoff': 10,
+                  'ionisation_mode': 1,
+                  'max_broken_bonds': 4,
+                  'max_water_losses': 1,
+                  'structure_database': 'pubchem',
+                  'min_refscore': 1,
+                  'max_mz': 1200,
+                  'excl_halo': True,
+                  }
+
+        query = self.jobquery.annotate(params, False)
+
+        script = "{magma} annotate -c '200000.0' -d '10.0'"
+        script += " -i '1' -b '4'"
+        script += " --max_water_losses '1' --call_back_url '/'"
+        script += " --structure_database 'pubchem'"
+        script += " --db_options ',1200,False,False,1'"
+        script += " --fast {db}\n"
+        expected_query = JobQuery(directory=self.jobdir,
+                                  prestaged=[],
+                                  script=script,
+                                  status_callback_url='/',
+                                  )
+        self.assertEqual(query, expected_query)
 
 class JobQueryAllInOneTestCase(JobQueryActionTestCase):
 
@@ -1103,7 +1129,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += " -i '1' -b '4'"
         expected_script += " --max_water_losses '1' --call_back_url '/'"
         expected_script += " --structure_database 'pubchem'"
-        expected_script += " --db_options ',1200,False,,1'"
+        expected_script += " --db_options ',1200,False,True,1'"
         expected_script += " --fast {db}\n"
 
         expected_query = JobQuery(directory=self.jobdir,
