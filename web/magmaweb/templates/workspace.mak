@@ -137,15 +137,16 @@ Ext.onReady(function() {
       text: 'ID', dataIndex: 'id', renderer: function(v, m, r) {
         return Ext.String.format('<a href="{0}">{1}</a>', r.data.url, v);
       },
-      width: 220
+      width: 100
     }, {
       text: 'Description', dataIndex: 'description',
-      flex: 1,
+      flex: 2,
       editor: {
         xtype: 'textfield'
       }
     }, {
       text: 'MS filename', dataIndex: 'ms_filename',
+      flex: 1,
       editor: {
         xtype: 'textfield'
       }
