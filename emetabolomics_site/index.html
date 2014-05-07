@@ -1,102 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<title>eMetabolomics</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="">
-<meta name="author" content="">
-
-<!-- Le styles -->
-<link href="bootstrap/css/bootstrap.css" rel="stylesheet">
-<style type="text/css">
+  <head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type">
+    <title>eMetabolomics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <!-- Le styles -->
+    <link href="bootstrap/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
 body {
     padding-top: 60px;
     padding-bottom: 40px;
 }
-</style>
-<link href="bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
-
-<!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
-<!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-
-</head>
-
-<body>
-
-
+</style> <link href="bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>    <![endif]-->
+  </head>
+  <body>
     <div class="container">
-
-        <!-- Main hero unit for a primary marketing message or call to action -->
-        <div class="hero-unit">
-            <h1>The eMetabolomics research project</h1>
-            <p>
-                The eMetabolomics project is funded by the <a
-                    href="http://www.esciencecenter.com">Netherlands eScience Center</a>
-                and is carried out at <a href="http://www.wur.nl">Wageningen University</a> and the Netherlands eScience Center
-                in collaboration with the <a href="http://www.metabolomicscentre.nl">Netherlands Metabolomics Centre</a>.
-                The project develops chemo-informatics based
-                methods for metabolite identification and biochemical network
-                reconstruction in an integrative metabolomics data analysis
-                workflow.
-            </p>
+      <!-- Main hero unit for a primary marketing message or call to action -->
+      <div class="hero-unit">
+        <h1>The eMetabolomics research project</h1>
+        <p> The eMetabolomics project is funded by the <a href="http://www.esciencecenter.com">Netherlands
+            eScience Center</a> and is carried out at <a href="http://www.wur.nl">Wageningen
+            University</a> and the Netherlands eScience Center in collaboration
+          with the <a href="http://www.metabolomicscentre.nl">Netherlands
+            Metabolomics Centre</a>. The project develops chemo-informatics
+          based methods for metabolite identification and biochemical network
+          reconstruction in an integrative metabolomics data analysis workflow.
+        </p>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <h2>MAGMa Online</h2>
+          <p> MAGMa is an online application for the automatic chemical
+            annotation of accurate multistage MS<sup>n</sup> spectral data. </p>
+          <ul>
+            <li>MS<sup>n</sup> data can be uploaded as a hierarchical tree of
+              fragment peaks, either based on m/z values or elemental formulas,
+              or as an mzXML file of the raw data.</li>
+            <li>Candidate molecules are automatically retrieved from PubChem,
+              from a subset of PubChem compounds present in Kegg, or from the
+              Human Metabolome Database.</li>
+            <li>Candidate molecules can be predicted based on in silico reaction
+              rules describing microbiotic and human biotransformations</li>
+            <li>For each candidate molecule, substructures are generated and
+              matched with the observed fragment peaks.</li>
+            <li>The web browser enables efficient mining of the automatically
+              annotated data.</li>
+          </ul>
+          <p> <a class="btn" href="http://www.emetabolomics.org/magma">Go to
+              MAGMa</a> </p>
+          <br>
+          <h2>Publications</h2>
+          <ol>
+            <li> The MAGMa algorithm for substructure based annotation of
+              multistage MS<sup>n</sup> spectra is described in <a href="http://dx.doi.org/10.1002/rcm.6364">Ridder
+                et al. 2012</a>. The results presented in this paper are <a href="results.html">available
+                via the MAGMa interface</a>. </li>
+            <li> <a href="http://dx.doi.org/10.1021/ac400861a">Ridder et al.
+                2013:</a> MAGMa is used for the automatic annotation of a
+              complete <a href="http://www.emetabolomics.org/magma/results/ded5cb2f-c8a9-4f9f-ae11-680c25022a83">metabolite
+                profile of green tea</a>. </li>
+            <li> <a href="http://dx.doi.org/10.1021/ac403875b">Ridder et al.
+                2014:</a> The new metabolite prediction module in MAGMa is used
+              to annotate <a href="results_tea_urine.html">urinary metabolites
+                of the compounds in green tea</a>.<br>
+            </li>
+          </ol>
+          <br>
+          <p> For more information or feedback, contact: <a href="mailto:Lars.Ridder@wur.nl">Lars.Ridder@wur.nl</a>
+          </p>
         </div>
-
-        <div class="row">
-            <div class="span12">
-                <h2>MAGMa Online</h2>
-                <p>
-                    MAGMa is an online application for the automatic chemical annotation of accurate multistage MS<sup>n</sup> spectral data.
-                    <ul>
-                        <li>MS<sup>n</sup> data can be uploaded as a hierarchical tree of fragment peaks, either based on m/z values or elemental formulas,
-                        or as an mzXML file of the raw data.</li>
-                        <li>Candidate molecules are automatically retrieved from PubChem, from a subset of PubChem compounds present in Kegg,
-                        or from the Human Metabolome Database.</li>
-                        <li>For each candidate molecule, substructures are generated and matched with the observed fragment peaks.</li>
-                        <li>The web browser enables efficient mining of the automatically annotated data.</li>
-                    </ul>
-                </p>
-                <p>
-                    <a class="btn" href="http://www.emetabolomics.org/magma">Go to MAGMa</a>
-                </p>
-                </br>
-                <h2>Publications</h2>
-                <ol><li>
-                    The MAGMa algorithm for substructure based annotation of  multistage MS<sup>n</sup> spectra is described in <a href="http://dx.doi.org/10.1002/rcm.6364">Ridder et al. 2012</a>.
-                    The results presented in this paper are <a href="results.html">available via the MAGMa interface</a>.
-                    </li><li>
-                    In <a href="http://dx.doi.org/10.1021/ac400861a">Ridder et al. 2013</a>, MAGMa is used for the automatic annotation of a complete <a href="http://www.emetabolomics.org/magma/results/ded5cb2f-c8a9-4f9f-ae11-680c25022a83">metabolite profile of green tea</a>.
-                </li></ol>
-                </br>
-
-                <p>
-                    For more information, contact: <a href="mailto:Lars.Ridder@wur.nl">Lars.Ridder@wur.nl</a>
-                </p>
-
-            </div>
+      </div>
+      <br>
+      <div class="row">
+        <div class="span4"> <a href="http://www.esciencecenter.com"><img src="logos/nlesc.jpg"></a>
         </div>
-        </br>
-
-        <div class="row">
-            <div class="span4">
-                <a href="http://www.esciencecenter.com"><img
-                    src="logos/nlesc.jpg"></a>
-            </div>
-            <div class="span4">
-                <a href="http://www.wur.nl"><img src="logos/wur.gif"></a>
-            </div>
-            <div class="span4">
-                <a href="http://www.metabolomicscentre.nl"><img
-                    src="logos/nmc.png"></a>
-            </div>
+        <div class="span4"> <a href="http://www.wur.nl"><img src="logos/wur.gif"></a>
         </div>
-
-        <hr>
-
-
-    </div>
+        <div class="span4"> <a href="http://www.metabolomicscentre.nl"><img src="logos/nmc.png"></a>
+        </div>
+      </div>
+      <hr> </div>
     <!-- /container -->
-</body>
+  </body>
 </html>
