@@ -786,17 +786,16 @@ class AnnotateEngine(object):
                     prec_peak=peak
                     prec_intensity=peak.intensity
             # if present, process the childscan as its child spectrum
-            if prec_intensity>0.0:
-                prec_peak.childscan,depth=self.build_spectrum(dbchildscan)
-                for childpeak in prec_peak.childscan.peaks:
-                    prec_peak.missing_fragment_score+=childpeak.missing_fragment_score
-                max_depth=max(depth,max_depth)
-#            else:
-#                if dbchildscan.precursorintensity >= cutoff:
-#                    scan.peaks.append(types.PeakType(dbchildscan.precursormz,dbchildscan.precursorintensity,scan.scanid,missingfragmentpenalty*(dbchildscan.precursorintensity**0.5)))
-#                    scan.peaks[-1].childscan=self.build_spectrum(dbchildscan)
-#                    for childpeak in scan.peaks[-1].childscan.peaks:
-#                        scan.peaks[-1].missing_fragment_score+=childpeak.missing_fragment_score
+            if prec_intensity==0.0:
+                if dbchildscan.precursorintensity >= cutoff:
+                    scan.peaks.append(types.PeakType(dbchildscan.precursormz,dbchildscan.precursorintensity,scan.scanid,pars.missingfragmentpenalty*(dbchildscan.precursorintensity**0.5)))
+                    prec_peak=scan.peaks[-1]
+                else:
+                    continue
+            prec_peak.childscan,depth=self.build_spectrum(dbchildscan)
+            for childpeak in prec_peak.childscan.peaks:
+                prec_peak.missing_fragment_score+=childpeak.missing_fragment_score
+            max_depth=max(depth,max_depth)
         max_depth+=1
         return scan,max_depth
 
@@ -1447,6 +1446,8 @@ def search_structure(mol,mim,molcharge,peaks,max_broken_bonds,max_water_losses,p
     def massmatch(peak,mim,molcharge):
         lowmz=min(peak.mz/precision,peak.mz-mz_precision_abs)
         highmz=max(peak.mz*precision,peak.mz+mz_precision_abs)
+        #lowmz=peak.mz/precision
+        #highmz=peak.mz*precision
         for charge in range(1,len(ions)):
             for ionmass in ions[charge-molcharge]: 
                 if lowmz <= (mim+ionmass)/charge-ionisation_mode*pars.elmass <= highmz:
