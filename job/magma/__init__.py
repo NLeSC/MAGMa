@@ -803,18 +803,17 @@ class AnnotateEngine(object):
         print 'BUILDING SPECTRAL TREES'
         ndepths={}
         if scans=='all':
-            for dbscan in self.db_session.query(Scan).filter(Scan.mslevel==1).all():
-                spectrum,depth=self.build_spectrum(dbscan)
-                if depth > 1:
-                    if depth in ndepths:
-                        ndepths[depth]+=1
-                    else:
-                        ndepths[depth]=1
-                self.scans.append(spectrum)
+            queryscans=self.db_session.query(Scan).filter(Scan.mslevel==1).all()
         else:
-            print 'for scans: '+str(scans)
-            for dbscan in self.db_session.query(Scan).filter(Scan.mslevel==1).filter(Scan.scanid.in_(scans)).all():
-                self.scans.append(self.build_spectrum(dbscan))
+            queryscans=self.db_session.query(Scan).filter(Scan.mslevel==1).filter(Scan.scanid.in_(scans)).all()
+        for dbscan in queryscans:
+            spectrum,depth=self.build_spectrum(dbscan)
+            if depth > 1:
+                if depth in ndepths:
+                    ndepths[depth]+=1
+                else:
+                    ndepths[depth]=1
+            self.scans.append(spectrum)
         print str(len(self.scans))+' MS1 spectra'
         for depth in ndepths:
             print str(ndepths[depth]),'spectral trees of depth',depth
