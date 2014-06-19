@@ -507,15 +507,25 @@ class MsDataEngine(object):
     def store_mzxml_scan(self,mzxmlScan,precScan,namespace):
         if mzxmlScan.attrib['peaksCount']=='0':
             return
+        try:
+            lowmz=float(mzxmlScan.attrib['lowMz'])
+            highmz=float(mzxmlScan.attrib['highMz'])
+        except:
+            lowmz=None
+            highmz=None
+        try:
+            totioncurrent=float(mzxmlScan.attrib['totIonCurrent'])
+        except:
+            totioncurrent=None
         scan=Scan(
             scanid=int(mzxmlScan.attrib['num']),
             mslevel=int(mzxmlScan.attrib['msLevel']),
             rt=float(mzxmlScan.attrib['retentionTime'].strip('PTS'))/60,
-            lowmz=float(mzxmlScan.attrib['lowMz']),
-            highmz=float(mzxmlScan.attrib['highMz']),
+            lowmz=lowmz,
+            highmz=highmz,
             basepeakmz=float(mzxmlScan.attrib['basePeakMz']),
             basepeakintensity=float(mzxmlScan.attrib['basePeakIntensity']),
-            totioncurrent=float(mzxmlScan.attrib['totIonCurrent']),
+            totioncurrent=totioncurrent,
             precursorscanid=precScan
             )
         logging.info('Processing scan '+str(scan.scanid)+' (level '+str(scan.mslevel)+')') 
@@ -769,6 +779,7 @@ class AnnotateEngine(object):
 
     def build_spectrum(self,dbscan):
         scan=types.ScanType(dbscan.scanid,dbscan.mslevel)
+        logging.info('Building scan '+str(dbscan.scanid))
         if scan.mslevel==1:
             cutoff=self.ms_intensity_cutoff
         else:
