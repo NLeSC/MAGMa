@@ -171,8 +171,8 @@ class StructureEngine(object):
             try:
                 mol = Chem.SmilesToMol(smiles,name)
             except:
-                print 'ERROR: Failed to read smiles: '+smiles+' ('+name+')'
-                exit()
+                print 'WARNING: Failed to read smiles: '+smiles+' ('+name+')'
+                continue
             metids.add(self.add_structure(Chem.MolToMolBlock(mol), name, 1.0, 0, 1, mass_filter=mass_filter))
         print str(len(metids))+' molecules added to library\n'
 
