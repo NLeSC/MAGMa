@@ -168,7 +168,11 @@ class StructureEngine(object):
             else:
                 nonames+=1
                 name="Noname"+str(nonames)
-            mol = Chem.SmilesToMol(smiles,name)
+            try:
+                mol = Chem.SmilesToMol(smiles,name)
+            except:
+                print 'ERROR: Failed to read smiles: '+smiles+' ('+name+')'
+                exit()
             metids.add(self.add_structure(Chem.MolToMolBlock(mol), name, 1.0, 0, 1, mass_filter=mass_filter))
         print str(len(metids))+' molecules added to library\n'
 
@@ -212,10 +216,10 @@ class StructureEngine(object):
                         metab.metid=dups[0].metid
                         self.db_session.delete(dups[0])
                         #self.db_session.add(metab)
-                        print 'Duplicate structure: - old one removed'
+                        print 'Duplicate structure, first one removed: '+molecule.origin
                     # TODO remove any fragments related to this structure as well
                     else:
-                        print 'Duplicate structure: - kept old one'
+                        print 'Duplicate structure, kept first one: '+metab.origin
                         return
         if self.pubchem_names:
             in_pubchem=self.pubchem_engine.check_inchi(metab.mim, metab.smiles)
@@ -474,7 +478,8 @@ class MsDataEngine(object):
         print 'READING MZXML FILE'
         rundata=self.db_session.query(Run).one()
         if rundata.ms_filename != None:
-            sys.exit('ERROR: Attempt to read MS data twice')
+            print 'ERROR: Attempt to read MS data twice'
+            exit()
         rundata.ms_filename=unicode(mzxml_file)
         self.db_session.add(rundata)
         self.ms_filename=mzxml_file
@@ -662,7 +667,8 @@ class MsDataEngine(object):
                 self.global_scanid+=1
                 self.store_manual_subtree(tree_list,scanid,mz,intensity,mslevel+1,tree_type)
             elif tree_item!=',' and tree_item!='':
-                exit('Corrupt Tree format ...')
+                print 'Corrupt Tree format ...'
+                exit()
         if npeaks>0:
             self.db_session.add(Scan(
                 scanid=scanid,
@@ -689,7 +695,8 @@ class MsDataEngine(object):
                 m=pars.mims[form[:1]]
                 form=form[1:]
             else:
-                exit('Element not allowed in formula tree: '+form)
+                print 'ERROR: Element not allowed in formula tree: '+form
+                exit()
             x=0
             while len(form)>x and form[x] in '0123456789':
                 x+=1
@@ -732,7 +739,8 @@ class AnnotateEngine(object):
         self.ms_intensity_cutoff=rundata.ms_intensity_cutoff
         self.msms_intensity_cutoff=rundata.msms_intensity_cutoff
         if rundata.mz_precision == None:
-            exit('ERROR: No MS data parameters read.')
+            print 'ERROR: No MS data parameters read.'
+            exit()
         self.mz_precision=rundata.mz_precision
         self.precision=1+rundata.mz_precision/1e6
         self.mz_precision_abs=rundata.mz_precision_abs
@@ -766,7 +774,8 @@ class AnnotateEngine(object):
             for ionmass in ions[c]:
                 for i in iontypes:
                     if i not in pars.ionmasses[self.ionisation_mode]:
-                        exit('invalid adduct: '+i+' for ionisation mode: '+str(self.ionisation_mode))
+                        print 'ERROR: Invalid adduct: '+i+' for ionisation mode: '+str(self.ionisation_mode)
+                        exit()
                     ions[c+1][ionmass+pars.ionmasses[self.ionisation_mode][i]]=ions[c][ionmass]+i
         for c in range(maxcharge+1):
             for ionmass in ions[c]:
