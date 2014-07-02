@@ -538,9 +538,8 @@ class MsDataEngine(object):
                     scan.precursorscanid=float(child.attrib['precursorScanNum'])
                 if scan.precursorscanid == 0: 
                     # MS>1 scan is not in a hierarchy and does not contain precursor scan information
-                    # assume that the last scan at the precursor MS level is the precursor scan
-                    result=self.db_session.query(Scan.scanid).filter(Scan.mslevel==scan.mslevel-1).all()
-                    scan.precursorscanid=result[-1][0]
+                    # assume that the preceding (based on retention time) scan at the precursor MS level is the precursor scan
+                    scan.precursorscanid=self.db_session.query(Scan.scanid).filter(Scan.mslevel==scan.mslevel-1).filter(Scan.rt<scan.rt).order_by(desc(Scan.rt)).first()[0]
                     print 'Assigning precursor scanid '+str(scan.precursorscanid)+' to scan '+str(scan.scanid)
                 #check for existing scan with the same precursor
                 comp=self.db_session.query(Scan).filter(Scan.precursorscanid==scan.precursorscanid, \
