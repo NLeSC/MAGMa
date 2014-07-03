@@ -164,16 +164,15 @@ class StructureEngine(object):
             splitline = line.split()
             smiles=splitline[0]
             if len(splitline) > 1:
-                name=splitline[1]
+                name='_'.join(splitline[1:])
             else:
                 nonames+=1
                 name="Noname"+str(nonames)
             try:
                 mol = Chem.SmilesToMol(smiles,name)
+                metids.add(self.add_structure(Chem.MolToMolBlock(mol), name, 1.0, 0, 1, mass_filter=mass_filter))
             except:
                 print 'WARNING: Failed to read smiles: '+smiles+' ('+name+')'
-                continue
-            metids.add(self.add_structure(Chem.MolToMolBlock(mol), name, 1.0, 0, 1, mass_filter=mass_filter))
         print str(len(metids))+' molecules added to library\n'
 
     def add_structure(self,molblock,name,prob,level,isquery,mim=None,natoms=None,inchikey=None,molform=None,reference=None,logp=None,mass_filter=9999):
