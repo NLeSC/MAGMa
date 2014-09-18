@@ -5,6 +5,9 @@ Web service consumer
 MAGMa has a nice web user interface.
 The user interface recieves/sends data using a JSON web service.
 The JSON web service can also be used by other applications.
+
+The Web service api documentation is available at http://nlesc.github.io/MAGMA-apiary/ or at http://docs.magma.apiary.io/
+
 Below is an example how to use the web service using `curl <http://curl.haxx.se/>`_, a command line HTTP client.
 
 .. contents::
