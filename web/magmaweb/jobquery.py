@@ -79,9 +79,6 @@ class JobQuery(object):
                                        missing=0.0,
                                        name='msms_intensity_cutoff'))
         schema.add(colander.SchemaNode(colander.Integer(),
-                                       validator=colander.OneOf([-1, 1]),
-                                       name='ionisation_mode'))
-        schema.add(colander.SchemaNode(colander.Integer(),
                                        validator=colander.Range(0, 4),
                                        name='max_broken_bonds'))
         schema.add(colander.SchemaNode(colander.Integer(),
@@ -275,6 +272,10 @@ class JobQuery(object):
                                        missing=colander.null,
                                        validator=colander.Range(min=0),
                                        name='scan'))
+        schema.add(colander.SchemaNode(colander.Integer(),
+                                       missing=1,
+                                       validator=colander.OneOf([-1, 1]),
+                                       name='ionisation_mode'))
         schema.add(colander.SchemaNode(colander.Float(),
                                        missing=0.0,
                                        validator=colander.Range(0, 1),
@@ -336,6 +337,7 @@ class JobQuery(object):
         ``params`` is a dict from which the following keys are used:
 
         * ms_data_format
+        * ionisation_mode
         * ms_data, string with MS data
         * ms_data_file, file-like object with MS data
         * max_ms_level
@@ -364,6 +366,7 @@ class JobQuery(object):
         pmzp = params['precursor_mz_precision']
         script__substitution = {
             'ms_data_format': self.escape(params['ms_data_format']),
+            'ionisation_mode': self.escape(params['ionisation_mode']),
             'max_ms_level': self.escape(params['max_ms_level']),
             'abs_peak_cutoff': self.escape(params['abs_peak_cutoff']),
             'call_back_url': self.status_callback_url,
@@ -372,7 +375,7 @@ class JobQuery(object):
             'mz_precision_abs': self.escape(params['mz_precision_abs']),
         }
         script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}'"
-        script += " -l '{max_ms_level}'"
+        script += " -i '{ionisation_mode}' -l '{max_ms_level}'"
         script += " -a '{abs_peak_cutoff}'"
         script += " -p '{mz_precision}' -q '{mz_precision_abs}'"
         script += " --precursor_mz_precision '{precursor_mz_precision}'"
@@ -510,7 +513,6 @@ class JobQuery(object):
 
         * ms_intensity_cutoff
         * msms_intensity_cutoff
-        * ionisation_mode
         * max_broken_bonds
         * max_water_losses
         * structure_database,
@@ -528,7 +530,7 @@ class JobQuery(object):
 
         script = "{{magma}} annotate"
         script += " -c '{ms_intensity_cutoff}' -d '{msms_intensity_cutoff}'"
-        script += " -i '{ionisation_mode}' -b '{max_broken_bonds}'"
+        script += " -b '{max_broken_bonds}'"
         script += " --max_water_losses '{max_water_losses}'"
         script += " --call_back_url '{call_back_url}'"
         ms_ic = params['ms_intensity_cutoff']
@@ -536,7 +538,6 @@ class JobQuery(object):
         script_substitutions = {
             'ms_intensity_cutoff': self.escape(ms_ic),
             'msms_intensity_cutoff': self.escape(msms_ic),
-            'ionisation_mode': self.escape(params['ionisation_mode']),
             'max_broken_bonds': self.escape(params['max_broken_bonds']),
             'max_water_losses': self.escape(params['max_water_losses']),
             'call_back_url': self.status_callback_url,

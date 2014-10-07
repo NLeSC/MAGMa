@@ -61,6 +61,7 @@ class MagmaSession(object):
     def get_structure_engine(self,pubchem_names=False, call_back_url=None):
         return StructureEngine(self.db_session,pubchem_names,call_back_url)
     def get_ms_data_engine(self,
+                 ionisation_mode=1,
                  abs_peak_cutoff=1000,
                  mz_precision=5.0,
                  mz_precision_abs=0.001,
@@ -68,9 +69,8 @@ class MagmaSession(object):
                  max_ms_level=10,
                  call_back_url=None
                  ):
-        return MsDataEngine(self.db_session,abs_peak_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,max_ms_level,call_back_url)
+        return MsDataEngine(self.db_session,ionisation_mode,abs_peak_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,max_ms_level,call_back_url)
     def get_annotate_engine(self,
-                 ionisation_mode=1,
                  skip_fragmentation=False,
                  max_broken_bonds=3,
                  max_water_losses=1,
@@ -81,7 +81,7 @@ class MagmaSession(object):
                  max_charge=1,
                  call_back_url=None
                  ):
-        return AnnotateEngine(self.db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
+        return AnnotateEngine(self.db_session,skip_fragmentation,max_broken_bonds,max_water_losses,
                  ms_intensity_cutoff,msms_intensity_cutoff,use_all_peaks,adducts,max_charge,call_back_url)
     def get_select_engine(self):
         return SelectEngine(self.db_session)
@@ -441,7 +441,7 @@ class StructureEngine(object):
         return metids
 
 class MsDataEngine(object):
-    def __init__(self,db_session,abs_peak_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,max_ms_level,call_back_url=None):
+    def __init__(self,db_session,ionisation_mode,abs_peak_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,max_ms_level,call_back_url=None):
         self.db_session = db_session
         mz_precision_abs=max(mz_precision_abs,0.000001)
         precursor_mz_precision=max(precursor_mz_precision,0.000001)
@@ -450,6 +450,8 @@ class MsDataEngine(object):
             rundata=self.db_session.query(Run).one()
         except:
             rundata = Run()
+        if rundata.ionisation_mode == None:
+            rundata.ionisation_mode=ionisation_mode
         if rundata.abs_peak_cutoff == None:
             rundata.abs_peak_cutoff=abs_peak_cutoff
         if rundata.max_ms_level == None:
@@ -462,6 +464,10 @@ class MsDataEngine(object):
             rundata.precursor_mz_precision=precursor_mz_precision
         self.db_session.add(rundata)
         self.db_session.commit()
+        if rundata.ionisation_mode==-1:
+            self.polarity="-"
+        else:
+            self.polarity="+"
         self.abs_peak_cutoff=rundata.abs_peak_cutoff
         self.max_ms_level=rundata.max_ms_level
         self.mz_precision=rundata.mz_precision*2 # Difference between lowest and highest possible value
@@ -490,8 +496,8 @@ class MsDataEngine(object):
         start_time=time.time()
         for mzxmlScan in root.findall(mzxml_query):
             elapsed_time=time.time()-start_time
-            if scan_filter == None or mzxmlScan.attrib['num'] == scan_filter or \
-                    (int(mzxmlScan.attrib['msLevel'])>1 and mzxmlScan.find(namespace+'precursorMz').attrib['precursorScanNum'] in prec_scans):
+            if mzxmlScan.attrib['polarity'] == self.polarity and (scan_filter == None or mzxmlScan.attrib['num'] == scan_filter or \
+                    (int(mzxmlScan.attrib['msLevel'])>1 and mzxmlScan.find(namespace+'precursorMz').attrib['precursorScanNum'] in prec_scans)):
                 self.store_mzxml_scan(mzxmlScan,0,namespace)
                 prec_scans.append(mzxmlScan.attrib['num']) # in case of non-hierarchical mzXML, also find child scans
                 if self.call_back_engine != None:
@@ -708,15 +714,13 @@ class MsDataEngine(object):
         return mass
 
 class AnnotateEngine(object):
-    def __init__(self,db_session,ionisation_mode,skip_fragmentation,max_broken_bonds,max_water_losses,
+    def __init__(self,db_session,skip_fragmentation,max_broken_bonds,max_water_losses,
                  ms_intensity_cutoff,msms_intensity_cutoff,use_all_peaks,adducts=None,max_charge=1,call_back_url=None):
         self.db_session = db_session
         try:
             rundata=self.db_session.query(Run).one()
         except:
             rundata = Run()
-        if rundata.ionisation_mode == None:
-            rundata.ionisation_mode=ionisation_mode
         if rundata.skip_fragmentation == None:
             rundata.skip_fragmentation=skip_fragmentation
         if rundata.max_broken_bonds == None:
