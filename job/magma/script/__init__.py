@@ -78,6 +78,7 @@ class MagmaCommand(object):
         # read_ms_data arguments
         sc.add_argument('ms_data', type=argparse.FileType('r'), help="file with MS/MS data")
         sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml", "mass_tree","form_tree_pos","form_tree_neg"])
+        sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
         sc.add_argument('-l', '--max_ms_level', help="Maximum MS level to be processsed (default: %(default)s)", default=10,type=int)
         sc.add_argument('-a', '--abs_peak_cutoff', help="Absolute intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
         sc.add_argument('-p', '--mz_precision', help="Maximum relative m/z error (ppm) (default: %(default)s)", default=5,type=float)
@@ -95,7 +96,6 @@ class MagmaCommand(object):
         # annotate arguments
         sc.add_argument('-c', '--ms_intensity_cutoff', help="Minimum intensity of MS1 precursor ion peaks to be annotated (default: %(default)s)", default=1e6,type=float)
         sc.add_argument('-d', '--msms_intensity_cutoff', help="Minimum intensity of of fragment peaks to be annotated, as percentage of basepeak (default: %(default)s)", default=5,type=float)
-        sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
         sc.add_argument('-j', '--metids', help="structure ids, comma separated", type=str)
         sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bond breaks to generate substructures (default: %(default)s)", default=3,type=int)
         sc.add_argument('-w', '--max_water_losses', help="Maximum number of additional water (OH) and/or ammonia (NH2) losses (default: %(default)s)", default=1,type=int)
@@ -202,7 +202,8 @@ class MagmaCommand(object):
     def read_ms_data(self, args, magma_session=None):
         if magma_session == None:
             magma_session = self.get_magma_session(args.db,args.description,args.log)
-        ms_data_engine = magma_session.get_ms_data_engine(abs_peak_cutoff=args.abs_peak_cutoff,
+        ms_data_engine = magma_session.get_ms_data_engine(ionisation_mode=args.ionisation_mode,
+                abs_peak_cutoff=args.abs_peak_cutoff,
                 mz_precision=args.mz_precision,
                 mz_precision_abs=args.mz_precision_abs,
                 precursor_mz_precision=args.precursor_mz_precision,
@@ -217,8 +218,7 @@ class MagmaCommand(object):
     def annotate(self, args, magma_session=None):
         if magma_session == None:
             magma_session = self.get_magma_session(args.db,args.description,args.log)
-        annotate_engine = magma_session.get_annotate_engine(ionisation_mode=args.ionisation_mode,
-            skip_fragmentation=args.skip_fragmentation,
+        annotate_engine = magma_session.get_annotate_engine(skip_fragmentation=args.skip_fragmentation,
             max_broken_bonds=args.max_broken_bonds,
             max_water_losses=args.max_water_losses,
             ms_intensity_cutoff=args.ms_intensity_cutoff,
