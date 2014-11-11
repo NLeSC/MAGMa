@@ -152,9 +152,12 @@ class StructureEngine(object):
             metids.add(self.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), None, 0, 1, mass_filter=mass_filter))
         print str(len(metids))+' molecules added to library\n'
 
-    def read_smiles(self,file_name,mass_filter):
+    def read_smiles(self,smiles,mass_filter):
         print 'READING SMILES'
-        smiles_file=open(file_name)
+        try:
+            smiles_file=open(smiles)
+        except:
+            smiles_file=[smiles]
         metids=set([])
         nonames=0
         for line in smiles_file:
