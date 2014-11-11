@@ -54,7 +54,7 @@ class MagmaCommand(object):
         sc.add_argument('-p', '--pubchem_names', help="Get references to PubChem (default: %(default)s)", action="store_true")
         sc.add_argument('--mass_filter', help="Filter input structures on maximum monoisotopic mass (default: %(default)s)", default=9999,type=int)
         sc.add_argument('--log', help="Set logging level (default: %(default)s)", default='warn',choices=['debug','info','warn','error'])
-        sc.add_argument('structures', type=argparse.FileType('rb'), help="File with structures")
+        sc.add_argument('structures', type=str, help="File with structures, or a single smiles string")
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.add_structures)
 
@@ -170,9 +170,9 @@ class MagmaCommand(object):
             magma_session = self.get_magma_session(args.db,args.description,args.log)
         struct_engine = magma_session.get_structure_engine(pubchem_names=args.pubchem_names)
         if args.structure_format == 'smiles':
-            struct_engine.read_smiles(args.structures.name,args.mass_filter)
+            struct_engine.read_smiles(args.structures,args.mass_filter)
         elif args.structure_format == 'sdf':
-            struct_engine.read_sdf(args.structures.name,args.mass_filter)
+            struct_engine.read_sdf(args.structures,args.mass_filter)
         magma_session.commit()
 
     def metabolize(self, args, magma_session=None):
