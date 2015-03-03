@@ -11,7 +11,7 @@ from sqlalchemy import create_engine, and_
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, aliased, scoped_session
 from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import desc, asc, null
+from sqlalchemy.sql.expression import desc, asc, null, distinct
 from sqlalchemy.orm.exc import NoResultFound
 import transaction
 import requests
@@ -971,11 +971,17 @@ class JobDb(object):
             })
 
         precursor = {'id': scan.precursorscanid, 'mz': scan.precursormz}
-        return {'peaks': peaks,
-                'cutoff': cutoff,
-                'mslevel': scan.mslevel,
-                'precursor': precursor,
-                }
+        response = {'peaks': peaks,
+                    'cutoff': cutoff,
+                    'mslevel': scan.mslevel,
+                    'precursor': precursor,
+                    }
+        if (scan.mslevel == 1):
+            fragments = []
+            for fragment in self.session.query(distinct(Fragment.mz).label('mz')).filter_by(scanid=scanid):
+                fragments.append({'mz': fragment.mz})
+            response['fragments'] = fragments
+        return response
 
     def _fragmentsQuery(self):
         return self.session.query(Fragment,
