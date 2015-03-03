@@ -772,7 +772,8 @@ class JobMSpectraTestCase(JobDbTestCaseAbstract):
                 ],
                 'cutoff': 200000.0,
                 'mslevel': 1,
-                'precursor': {'id': None, 'mz': None}
+                'precursor': {'id': None, 'mz': None},
+                'fragments': [{'mz': 109.0295639038086}],
             }
         )
 
@@ -790,7 +791,8 @@ class JobMSpectraTestCase(JobDbTestCaseAbstract):
                 ],
                 'cutoff': 200000.0,
                 'mslevel': 1,
-                'precursor': {'id': None, 'mz': None}
+                'precursor': {'id': None, 'mz': None},
+                'fragments': [{'mz': 109.0295639038086}],
             }
         )
 
@@ -830,7 +832,8 @@ class JobMSpectraTestCase(JobDbTestCaseAbstract):
                 ],
                 'cutoff': 200000.0,
                 'mslevel': 1,
-                'precursor': {'id': None, 'mz': None}
+                'precursor': {'id': None, 'mz': None},
+                'fragments': [{'mz': 109.0295639038086}],
             }
         )
 

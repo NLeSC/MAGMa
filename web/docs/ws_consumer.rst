@@ -278,13 +278,15 @@ Example response:
          "assigned_metid": null,
          "mz": 353.087494
       }],
-      "mslevel": 1
+      "mslevel": 1,
+      "fragments": [{"mz": 1353.087494}]
    }
 
 Fields:
 
 - ``precursor``, The precursor scan identifier and mz of current scan.
 - ``peaks``, list of peaks for current scan.
+- ``fragments``, Peaks which have one or more fragments.
 
 Extracted ion chromatogram
 --------------------------
