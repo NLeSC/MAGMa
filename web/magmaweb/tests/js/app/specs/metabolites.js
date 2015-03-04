@@ -249,6 +249,7 @@ describe('Metabolites', function() {
            mockedstore = {
                setScanFilter: function() {},
                removeScanFilter: function() {},
+               removeMzFilter: function() {},
                sorters: new Ext.util.AbstractMixedCollection(false, function(item) {
                    return item.id || item.property;
                })
@@ -256,6 +257,7 @@ describe('Metabolites', function() {
            spyOn(ctrl, 'getMetabolitesStore').andReturn(mockedstore);
            spyOn(mockedstore, 'setScanFilter');
            spyOn(mockedstore, 'removeScanFilter');
+           spyOn(mockedstore, 'removeMzFilter');
        });
 
        it('without score filter and sort', function() {
@@ -301,6 +303,58 @@ describe('Metabolites', function() {
        expect(f.callback).toHaveBeenCalledWith('metabolitenoselect');
        Ext.util.Observable.releaseCapture(ctrl.application);
      });
+
+     describe('applyMzFilter', function() {
+    	var store = null,list = null;
+    	beforeEach(function() {
+    		store = {
+    			isFilteredOnScan: function() { return true;}
+    		};
+    		spyOn(ctrl, 'getMetabolitesStore').andReturn(store);
+    		list = jasmine.createSpyObj('list', ['setMzFilterToEqual']);
+    		spyOn(ctrl, 'getMetaboliteList').andReturn(list);
+    	});
+
+    	it('should not filter on mz of level > 1 scan', function() {
+    		ctrl.applyMzFilter(122.0373001, 2);
+
+    		expect(list.setMzFilterToEqual).not.toHaveBeenCalled();
+    	});
+
+    	it('should not filter on mz when no scan is selected', function() {
+    		store.isFilteredOnScan = function() { return false;};
+
+    		ctrl.applyMzFilter(122.0373001, 1);
+
+    		expect(list.setMzFilterToEqual).not.toHaveBeenCalled();
+    	});
+
+	    it('should tell list to filter on mz', function() {
+		  ctrl.applyMzFilter(122.0373001, 1);
+
+		  expect(list.setMzFilterToEqual).toHaveBeenCalledWith(122.0373001);
+		});
+	  });
+
+	  describe('clearMzFilter', function() {
+	    	var list = null;
+	    	beforeEach(function() {
+	    		list = jasmine.createSpyObj('list', ['clearMzFilter']);
+	    		spyOn(ctrl, 'getMetaboliteList').andReturn(list);
+	    	});
+
+		  it('should not filter on mz of level > 1 scan', function() {
+	    		ctrl.clearMzFilter(122.0373001, 2);
+
+	    		expect(list.clearMzFilter).not.toHaveBeenCalled();
+	    	});
+
+	    it('should tell store to filter on mz', function() {
+		  ctrl.clearMzFilter(122.0373001, 1);
+
+		  expect(list.clearMzFilter).toHaveBeenCalledWith();
+		});
+	  });
 
      describe('onChromatrogramLoad', function() {
         var form;

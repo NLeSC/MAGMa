@@ -86,6 +86,9 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         'metabolize'
     ]);
 
+    var numberFilter = {
+        	type: 'numeric', fieldCfg: {lt: {decimalPrecision: 18}, gt: {decimalPrecision: 18}, eq: {decimalPrecision: 18}}
+    };
     Ext.apply(this, {
       columns: [
         {text: 'ID', width:40, dataIndex: 'metid', hidden: true, filter: { type: 'numeric' }},
@@ -93,20 +96,21 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
             type: 'numeric', value:{gt:0}, active: true
         }},
         {text: 'Assigned', width:60, dataIndex: 'assigned', hidden: false, xtype:'booleancolumn', trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
-        {text: 'Candidate score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
+        {text: 'Candidate score', dataIndex: 'score', hidden: true, filter: numberFilter, xtype: 'numbercolumn', format: '0.00000'},
         molcol,
         {text: 'Inchikey', dataIndex: 'smiles', hidden:true},
         {text: 'Formula', width:100, dataIndex: 'molformula', filter: { type: 'string' }},
-        {text: 'Mass', width:80, dataIndex: 'mim', filter: { type: 'numeric' }, hidden: false, xtype: 'numbercolumn', format: '0.00000'},
-        {text: '&Delta;Mass (ppm)', width:80, dataIndex: 'deltappm', hidden: true, filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
+        {text: 'Mass', width:80, dataIndex: 'mim', filter: numberFilter, hidden: false, xtype: 'numbercolumn', format: '0.00000'},
+        {text: '&Delta;Mass (ppm)', width:80, dataIndex: 'deltappm', hidden: true, filter: numberFilter, xtype: 'numbercolumn', format: '0.00000'},
+        {text: 'M/z', width:80, dataIndex: 'mz', hidden: true, filter: numberFilter , xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Name', dataIndex: 'origin', flex:1, filter: { type: 'string' }},
         {
             text: 'Reactions', dataIndex: 'reactionsequence', flex:1, filter: { type: 'reaction' },
             xtype: 'reactioncolumn'
         },
-        {text: 'Refscore', width:80, dataIndex: 'probability', filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
+        {text: 'Refscore', width:80, dataIndex: 'probability', filter: numberFilter, xtype: 'numbercolumn', format: '0.00000'},
         // {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: ['0','1','2','3'] }, hidden:true},
-        {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true, xtype: 'numbercolumn', format: '0.00000'},
+        {text: 'LogP', dataIndex: 'logp', filter: numberFilter, hidden: true, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Reference', dataIndex: 'reference', filter: { type: 'string' }, sortable: false },
         {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', hidden: true, trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
         {xtype: 'actioncolumn', width:30, text:'Commands', hidden: true,
@@ -210,5 +214,19 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
   },
   setPageSize: function(size) {
       Ext.ComponentQuery.query('component[action=pagesizeCombo]')[0].select(size);
+  },
+  getMzFilter: function() {
+	 var filter = this.getFilter();
+	 return filter.filters.get('mz');
+  },
+  setMzFilterToEqual: function(mz) {
+	  var mzfilter = this.getMzFilter();
+	  mzfilter.setActive(true);
+	  mzfilter.setValue({'eq': mz});
+  },
+  clearMzFilter: function() {
+	  var mzfilter = this.getMzFilter();
+	  mzfilter.setValue({});
+	  mzfilter.setActive(false);
   }
 });

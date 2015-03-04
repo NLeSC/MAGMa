@@ -323,13 +323,26 @@ describe('Fragments', function() {
       });
     });
 
-    it('selectFragmentByPeak', function() {
-      fill(function() {
-        spyOn(ctrl, 'selectFragment');
-        ctrl.selectFragmentByPeak(122.0373001, 2);
-        expect(ctrl.selectFragment).toHaveBeenCalled();
-        expect(ctrl.selectFragment.mostRecentCall.args[0].data.fragid).toEqual(2471);
-      });
+    describe('selectFragmentByPeak', function() {
+    	it('should select fragment when peak has fragment', function() {
+	      fill(function() {
+	          spyOn(ctrl, 'selectFragment');
+	          ctrl.selectFragmentByPeak(122.0373001, 2);
+	          expect(ctrl.selectFragment).toHaveBeenCalled();
+	          expect(ctrl.selectFragment.mostRecentCall.args[0].data.fragid).toEqual(2471);
+          });
+    	});
+
+    	it('should not select fragment when peak has no fragment does not exist', function() {
+	      fill(function() {
+
+	    	  spyOn(ctrl, 'selectFragment');
+
+	          ctrl.selectFragmentByPeak(1193.35278320312, 1);
+
+	          expect(ctrl.selectFragment).not.toHaveBeenCalled();
+          });
+    	});
     });
 
     it('initMolecules', function() {

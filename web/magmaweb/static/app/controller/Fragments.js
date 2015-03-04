@@ -242,7 +242,9 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
   selectFragmentByPeak: function(mz, mslevel) {
     // find fragment based on mz + mslevel
     var node = this.getFragmentsStore().getNodeByMzMslevel(mz, mslevel);
-    this.selectFragment(node);
+    if (node) {
+    	this.selectFragment(node);
+    }
   },
   /**
    * Forces molecules canvases to be drawn

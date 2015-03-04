@@ -66,6 +66,8 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
 
     this.application.on('selectscan', this.applyScanFilter, this);
     this.application.on('noselectscan', this.clearScanFilter, this);
+    this.application.on('peakselect', this.applyMzFilter, this);
+    this.application.on('peakdeselect', this.clearMzFilter, this);
 
     /**
      * @property {Boolean} hasMSData
@@ -283,7 +285,6 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       ]);
       store.setScanFilter(scanid);
       this.getMetaboliteList().showFragmentScoreColumn();
-      // TODO in spectra add markers for metabolites present in scan
   },
   /**
    * Removes scan filter from metabolite store.
@@ -303,6 +304,23 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       }
       store.removeScanFilter();
       this.getMetaboliteList().hideFragmentScoreColumn();
+  },
+  applyMzFilter: function(mz, mslevel) {
+	  if (mslevel > 1) {
+		  return;
+	  }
+      var store = this.getMetabolitesStore();
+	  var list = this.getMetaboliteList();
+	  if (store.isFilteredOnScan()) {
+		  list.setMzFilterToEqual(mz);
+	  }
+  },
+  clearMzFilter: function(mz, mslevel) {
+	  if (mslevel > 1) {
+		  return;
+	  }
+	  var list = this.getMetaboliteList();
+	  list.clearMzFilter();
   },
   onPageSizeChange: function(combo) {
       this.getMetabolitesStore().setPageSize(combo.getValue());
