@@ -211,7 +211,7 @@ class StructureEngine(object):
                         metab.origin=unicode(str(metab.origin)+'</br>'+molecule.name, 'utf-8', 'xmlcharrefreplace')
                     if metab.reference == None and molecule.reference != "":
                         metab.reference=unicode(molecule.reference)
-                    if molecule.probability > 0:
+                    if molecule.probability > 0 and molecule.probability>metab.probability:
                         metab.probability=molecule.probability
                 else:
                     if dups[0].probability < molecule.probability:
@@ -305,6 +305,7 @@ class StructureEngine(object):
         metids=set()
         line=reactor.stdout.readline()
         while line != "":
+            # line is first line in a new record
             splitline=line[:-1].split(" {>")
             if len(splitline) == 1:
                 reaction='PARENT'
@@ -318,14 +319,15 @@ class StructureEngine(object):
             mol=name+'\n'
             isquery=0
             while line != 'M  END\n':
+                # read all lines until end of connection table and store in mol
                 line=reactor.stdout.readline()
                 mol+=line
             line=reactor.stdout.readline()
             while line != '$$$$\n' and line != "":
-                #if line=='> <Probability>\n':
-                #    prob=float(reactor.stdout.readline())
-                #elif line=='> <Level>\n':
-                #    level=int(reactor.stdout.readline())
+                if line=='> <Probability>\n':
+                    prob=float(reactor.stdout.readline())
+                elif line=='> <Level>\n':
+                    level=int(reactor.stdout.readline())
                 if line=='> <ReactionSequence>\n':
                     line=reactor.stdout.readline()
                     reaction=line[:-1]
@@ -335,7 +337,7 @@ class StructureEngine(object):
                         line=reactor.stdout.readline()
                 line=reactor.stdout.readline()
             if reaction!='PARENT':
-                molecule=types.MoleculeType(mol,"",None,None,isquery)
+                molecule=types.MoleculeType(mol,"",prob*parent.probability,None,isquery)
                 new_metid=self.add_molecule(molecule,merge=True)
                 metids.add(new_metid)
                 reactid=self.db_session.query(Reaction.reactid).filter(Reaction.reactant==metid,Reaction.product==new_metid,Reaction.name==reaction).all()
