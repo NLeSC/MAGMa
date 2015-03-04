@@ -646,6 +646,7 @@ class JobDb(object):
             if ('score' in r.keys()):
                 row['score'] = r.score
                 row['deltappm'] = r.deltappm
+                row['mz'] = r.mz
             mets.append(row)
 
         return mets
@@ -667,6 +668,11 @@ class JobDb(object):
             elif (col3['property'] == 'deltappm'):
                 if (scanid is not None):
                     col2 = fragal.deltappm
+                else:
+                    raise ScanRequiredError()
+            elif (col3['property'] == 'mz'):
+                if (scanid is not None):
+                    col2 = fragal.mz
                 else:
                     raise ScanRequiredError()
             else:
@@ -713,7 +719,7 @@ class JobDb(object):
         fragal = aliased(Fragment)
         if (scanid is not None):
             # TODO: add score column + order by score
-            q = q.add_columns(fragal.score, fragal.deltappm)
+            q = q.add_columns(fragal.score, fragal.deltappm, fragal.mz)
             q = q.join(fragal.metabolite)
             q = q.filter(fragal.parentfragid == 0)
             q = q.filter(fragal.scanid == scanid)
@@ -738,6 +744,11 @@ class JobDb(object):
             elif afilter['field'] == 'deltappm':
                 if scanid is not None:
                     col = fragal.deltappm
+                else:
+                    raise ScanRequiredError()
+            elif afilter['field'] == 'mz':
+                if scanid is not None:
+                    col = fragal.mz
                 else:
                     raise ScanRequiredError()
             else:
@@ -852,6 +863,8 @@ class JobDb(object):
                 fq = self.extjsgridfilter(fq, Fragment.score, afilter)
             elif (afilter['field'] == 'deltappm'):
                 fq = self.extjsgridfilter(fq, Fragment.deltappm, afilter)
+            elif (afilter['field'] == 'mz'):
+                fq = self.extjsgridfilter(fq, Fragment.mz, afilter)
             elif (afilter['field'] == 'assigned'):
                 afilter['type'] = 'null'
                 fq = fq.join(Peak, and_(Fragment.scanid == Peak.scanid,

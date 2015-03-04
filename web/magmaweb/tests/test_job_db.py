@@ -1,6 +1,6 @@
 """Tests for magmaweb.job.JobDb"""
 import unittest
-from magmaweb.job import JobDb
+from magmaweb.job import JobDb, ScanRequiredError
 from magmaweb.models import Scan, Peak, Run, Metabolite, Fragment
 from magmaweb.tests.test_job import initTestingDB
 
@@ -248,6 +248,7 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
         response = self.job.metabolites(scanid=641)
         self.assertIn('score', response['rows'][0])
         self.assertIn('deltappm', response['rows'][0])
+        self.assertIn('mz', response['rows'][0])
         self.assertEqual(response['total'], 1)
 
     def test_filteredon_nrscanseq(self):
@@ -304,7 +305,6 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
         self.assertEqual(response['total'], 1)
 
     def test_filteredon_score_without_scan(self):
-        from magmaweb.job import ScanRequiredError
         with self.assertRaises(ScanRequiredError):
             self.job.metabolites(filters=[{"type": "numeric",
                                            "comparison": "eq",
@@ -320,12 +320,26 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
         self.assertEqual(response['total'], 1)
 
     def test_filteredon_deltappm_without_scan(self):
-        from magmaweb.job import ScanRequiredError
         with self.assertRaises(ScanRequiredError):
             self.job.metabolites(filters=[{"type": "numeric",
                                            "comparison": "eq",
                                            "value": -1.84815979523607e-08,
                                            "field": "deltappm"}])
+
+    def test_filteredon_mz(self):
+        filters = [{"type": "numeric", "comparison": "eq",
+                    "value": 109.0295639038086, "field": "mz"}]
+
+        response = self.job.metabolites(scanid=641, filters=filters)
+
+        self.assertEqual(response['total'], 1)
+
+    def test_filteredon_mz_without_scan(self):
+        with self.assertRaises(ScanRequiredError):
+            self.job.metabolites(filters=[{"type": "numeric",
+                                           "comparison": "eq",
+                                           "value": 109.0295639038086,
+                                           "field": "mz"}])
 
     def test_filteredon_not_assigned(self):
         response = self.job.metabolites(filters=[{"type": "boolean",
@@ -379,7 +393,6 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
         self.assertEqual(response['total'], 1)
 
     def test_sort_score_without_scan(self):
-        from magmaweb.job import ScanRequiredError
         with self.assertRaises(ScanRequiredError):
             self.job.metabolites(sorts=[{"property": "score",
                                          "direction": "DESC"}])
@@ -393,10 +406,23 @@ class JobDbMetabolitesTestCase(JobDbTestCaseAbstract):
 
     def test_sort_deltappm_without_scan(self):
         sorts = [{"property": "deltappm", "direction": "DESC"}]
-        from magmaweb.job import ScanRequiredError
 
         with self.assertRaises(ScanRequiredError):
             self.job.metabolites(sorts=sorts)
+
+    def test_sort_mz(self):
+        sorts = [{"property": "mz", "direction": "DESC"}]
+
+        response = self.job.metabolites(scanid=641, sorts=sorts)
+
+        self.assertEqual(response['total'], 1)
+
+    def test_sort_mz_without_scan(self):
+        sorts = [{"property": "mz", "direction": "DESC"}]
+
+        with self.assertRaises(ScanRequiredError):
+            self.job.metabolites(sorts=sorts)
+
 
 
 class JobDbMetabolitesReactionFilterTestCase(JobDbTestCaseAbstract):
@@ -754,6 +780,18 @@ class JobScansWithMetabolitesTestCase(JobDbTestCaseAbstract):
         self.assertEqual(response, [
             {'id': 641, 'rt': 933.317},
             {'id': 870, 'rt': 1254.15}
+        ])
+
+    def test_filteron_mz(self):
+        filters = [{"type": "numeric", "comparison": "gt",
+                    "value": 0, "field": "nhits"},
+                   {"type": "numeric", "value": "200",
+                    "comparison": "gt", "field": "mz"}]
+
+        response = self.job.scansWithMetabolites(filters=filters)
+
+        self.assertEqual(response, [
+            {'id': 870, 'rt': 1254.15},
         ])
 
 
