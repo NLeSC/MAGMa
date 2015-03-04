@@ -215,7 +215,17 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     mspectra.scanid = scanid;
     mspectra.cutoff = data.cutoff;
     mspectra.setData(data.peaks);
-    mspectra.setMarkers(markers);
+    if (mslevel === 1) {
+    	// level one gets markers from server
+    	mspectra.setMarkers(data.fragments);
+    	// select peak if there is only one with fragments
+    	if (data.fragments.length === 1) {
+    		mspectra.selectPeak(data.fragments[0].mz);
+    	}
+    } else {
+    	// level >1 gets markers from selected fragment
+    	mspectra.setMarkers(markers);
+    }
     mspectra.up('panel').down('tool[action=center]').enable();
     this.application.fireEvent('mspectraload', scanid, mslevel);
   },
@@ -264,12 +274,8 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   loadMSpectrasFromFragment: function(parent, children) {
     if (parent.isRoot()) {
       // lvl1 fragment
-      Ext.log({}, 'Selecting metabolite peak in lvl1 mspectra and loading lvl2 mspectra');
+      Ext.log({}, 'loading lvl2 mspectra');
       var mspectra = this.getMSpectra(1);
-      // set markers in lvl1 scan
-      mspectra.setMarkers(
-        children.map(function(r) { return {mz: r.data.mz}; })
-      );
       // lvl1 fragment is a peak in lvl1 scan
       var metabolite_fragment = parent.firstChild;
       mspectra.selectPeak(metabolite_fragment.data.mz);
@@ -278,7 +284,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
         this.loadMSpectra2(
             metabolite_fragment.firstChild.data.scanid,
             metabolite_fragment.childNodes.map(
-                function(r) { return {mz: r.data.mz}; }
+                function(d) { return {mz: d.data.mz}; }
             )
         );
       }
@@ -319,7 +325,6 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
    * Clears all mspectra >=lvl2 and clears lvl1 markers
    */
   clearMSpectraFrom2: function() {
-    this.getMSpectra(1).setMarkers([]);
     this.clearMSpectraFrom(2);
   },
   /**

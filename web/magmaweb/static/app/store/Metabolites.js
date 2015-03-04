@@ -60,6 +60,9 @@ Ext.define('Esc.magmaweb.store.Metabolites', {
     this.getProxy().extraParams.scanid = scanid;
     this.loadPage(1);
   },
+  isFilteredOnScan: function() {
+	  return 'scanid' in this.getProxy().extraParams;
+  },
   /**
    * Sets the pagesize of the store and reloads store to first page.
    *
