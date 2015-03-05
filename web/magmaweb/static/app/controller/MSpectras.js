@@ -121,10 +121,12 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
         ),
         listeners: {
           selectpeak: function(mz) {
-            app.fireEvent('peakselect', mz, this.mslevel);
+        	console.log('peakselect', mz, this.mslevel, this.scanid);
+            app.fireEvent('peakselect', mz, this.mslevel, this.scanid);
           },
           unselectpeak: function(mz) {
-            app.fireEvent('peakdeselect', mz, this.mslevel);
+          	console.log('peaksdeselect', mz, this.mslevel, this.scanid);
+            app.fireEvent('peakdeselect', mz, this.mslevel, this.scanid);
           },
           mouseoverpeak: function(peak) {
             app.fireEvent('peakmouseover', peak, this.mslevel, this.scanid);
@@ -220,7 +222,9 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     	mspectra.setMarkers(data.fragments);
     	// select peak if there is only one with fragments
     	if (data.fragments.length === 1) {
+    		console.log('peakselect one peak with fragments', data.fragments[0].mz, mslevel, scanid);
     		mspectra.selectPeak(data.fragments[0].mz);
+    		this.application.fireEvent('peakselect', data.fragments[0].mz, mslevel, scanid);
     	}
     } else {
     	// level >1 gets markers from selected fragment
@@ -275,11 +279,8 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     if (parent.isRoot()) {
       // lvl1 fragment
       Ext.log({}, 'loading lvl2 mspectra');
-      var mspectra = this.getMSpectra(1);
-      // lvl1 fragment is a peak in lvl1 scan
+      // load optional child lvl2 scans
       var metabolite_fragment = parent.firstChild;
-      mspectra.selectPeak(metabolite_fragment.data.mz);
-      // with a optional child lvl2 scan
       if (metabolite_fragment.hasChildNodes()) {
         this.loadMSpectra2(
             metabolite_fragment.firstChild.data.scanid,
@@ -349,11 +350,8 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
       this.getMSpectra(i).clearPeakSelection();
     }
     // select parent peaks
-    if (mslevel == 2 ) {
-      this.getMSpectra(1).selectPeak(fragment.parentNode.data.mz);
-    } else if (mslevel == 3) {
+    if (mslevel == 3) {
       this.getMSpectra(2).selectPeak(fragment.parentNode.data.mz);
-      this.getMSpectra(1).selectPeak(fragment.parentNode.parentNode.data.mz);
     } else if (mslevel > 3) {
       // TODO use recursive func to select parent peaks
     }

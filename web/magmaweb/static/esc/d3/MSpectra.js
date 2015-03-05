@@ -205,9 +205,11 @@ Ext.define('Esc.d3.MSpectra', {
       return (mz == e.mz && me.selectedpeak != e.mz);
     });
     if (mz != me.selectedpeak) {
+      console.log('selectpeak', mz);
       me.fireEvent('selectpeak', mz);
       me.selectedpeak = mz;
     } else {
+      console.log('unselectpeak', mz);
       me.fireEvent('unselectpeak', mz);
       me.selectedpeak = -1;
     }
@@ -230,12 +232,14 @@ Ext.define('Esc.d3.MSpectra', {
     this.markerSelect(function(d) {
       return (d.mz == mz);
     });
+    console.log('selectPeak no fire', mz);
     this.selectedpeak = mz;
   },
   /**
    * Clears any selected peaks
    */
   clearPeakSelection: function() {
+    console.log('clearPeakSelection');
     this.markerSelect(false);
     this.selectedpeak = -1;
   },

@@ -226,15 +226,27 @@ Ext.define('Esc.magmaweb.resultsApp', {
     }, this);
     this.on('metabolitedeselect', function() {
         if (this.selected.metid && this.selected.scanid) {
-            this.fireEvent('scanandmetabolitenoselect');
+            this.fireEvent('mzandmetaboliteselect');
         }
         this.selected.metid = false;
     }, this);
     this.on('metabolitenoselect', function() {
         if (this.selected.metid && this.selected.scanid) {
-            this.fireEvent('scanandmetabolitenoselect');
+            this.fireEvent('mzandmetaboliteselect');
         }
         this.selected.metid = false;
+    }, this);
+    this.on('peakselect', function(mz) {
+        this.selected.mz = mz;
+        if (this.selected.metid && this.selected.mz) {
+            this.fireEvent('mzandmetaboliteselect', mz, this.selected.metid);
+        }
+    }, this);
+    this.on('peakdeselect', function() {
+        if (this.selected.metid && this.selected.mz) {
+            this.fireEvent('mzandmetabolitenoselect');
+        }
+        this.selected.mz = false;
     }, this);
 
     Ext.log({}, 'Launch app');
