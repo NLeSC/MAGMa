@@ -1,0 +1,21 @@
+{
+  "name": "MAGMa-js",
+  "type": "code",
+  "creator": "NLeSC",
+  "summary": "Short summary",
+  "detailedDescription": "Long description of package",
+  "version": "1.0.0",
+  "compatVersion": "1.0.0",
+  "format": "1",
+  "local": true,
+  "requires": [],
+  "devDependencies": {
+    "karma": "^0.12.16",
+    "karma-chrome-launcher": "^0.1.7",
+    "karma-coverage": "^0.2.4",
+    "karma-firefox-launcher": "^0.1.4",
+    "karma-jasmine": "^0.1.5",
+    "karma-junit-reporter": "^0.2.2",
+    "karma-phantomjs-launcher": "^0.1.1"
+  }
+}

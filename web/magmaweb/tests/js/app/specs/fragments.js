@@ -1,6 +1,6 @@
 describe('Fragments', function() {
   describe('store', function() {
-    var url = 'data/fragments.s1133.m352.json';
+    var url = 'base/magmaweb/tests/js/app/data/fragments.s1133.m352.json';
     var store = null;
 
     beforeEach(function() {
