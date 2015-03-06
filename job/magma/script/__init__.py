@@ -17,32 +17,6 @@ class MagmaCommand(object):
         self.parser.add_argument('--version', action='version', version='%(prog)s ' + self.version())
         subparsers = self.parser.add_subparsers(title='Sub-commands')
 
-#        sc = subparsers.add_parser("all_in_one", help=self.all_in_one.__doc__, description=self.all_in_one.__doc__)
-#        sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
-#        # read_ms_data arguments
-#        sc.add_argument('ms_data', type=argparse.FileType('r'), help="file with MS/MS data")
-#        sc.add_argument('--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml"])
-#        sc.add_argument('-l', '--max_ms_level', help="Maximum MS level to be processsed (default: %(default)s)", default=10,type=int)
-#        sc.add_argument('-a', '--abs_peak_cutoff', help="Absolute intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
-#        sc.add_argument('-r', '--rel_peak_cutoff', help="fraction of basepeak intensity threshold for storing peaks in database (default: %(default)s)", default=0.01,type=float)
-#        # add_structures arguments
-#        sc.add_argument('structures', type=argparse.FileType('rb'), help="File with smiles used as structures")
-#        sc.add_argument('-t', '--structure_format', help="Structure input type (default: %(default)s)", default="smiles", choices=["smiles", "sdf"])
-#        sc.add_argument('-n', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=2,type=int)
-#        sc.add_argument('-m', '--metabolism_types', help="1 and/or 2 for phase 1 and 2 biotransformations (default: %(default)s)", default="phase1,phase2", type=str)
-#        # annotate arguments
-#        sc.add_argument('-p', '--mz_precision', help="Mass precision for matching calculated masses with peaks (default: %(default)s)", default=0.001,type=float)
-#        sc.add_argument('-c', '--ms_intensity_cutoff', help="Minimum intensity of level 1 peaks to be annotated (default: %(default)s)", default=1e6,type=float)
-#        sc.add_argument('-d', '--msms_intensity_cutoff', help="Minimum intensity of of fragment peaks to be annotated, as fraction of basepeak (default: %(default)s)", default=0.1,type=float)
-#        sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
-#        sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bond breaks to generate substructures (default: %(default)s)", default=4,type=int)
-#        sc.add_argument('--precursor_mz_precision', help="Mass precision for matching peaks and precursor ions (default: %(default)s)", default=0.005,type=float)
-#        sc.add_argument('-u', '--use_all_peaks', help="Annotate all level 1 peaks, including those not fragmented (default: %(default)s)", action="store_true")
-#        sc.add_argument('-f', '--skip_fragmentation', help="Skip substructure annotation of fragment peaks", action="store_true")
-#        sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["chebi","pubchem"])
-#        sc.add_argument('db', type=str, help="Sqlite database file with results")
-#        sc.set_defaults(func=self.all_in_one)
-
         sc = subparsers.add_parser("init_db", help=self.init_db.__doc__, description=self.init_db.__doc__)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.init_db)
@@ -60,7 +34,7 @@ class MagmaCommand(object):
 
         sc = subparsers.add_parser("metabolize", help=self.metabolize.__doc__, description=self.metabolize.__doc__)
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
-        # add_structures arguments
+        # metabolize arguments
         sc.add_argument('-j', '--metids', type=argparse.FileType('rb'), help="File with structure ids")
         sc.add_argument('-n', '--n_reaction_steps', help="Maximum number of reaction steps (default: %(default)s)", default=1,type=int)
         sc.add_argument('-m', '--metabolism_types', help="digest,gut,phase1,phase2, (default: %(default)s)", default="phase1,phase2", type=str)
@@ -132,38 +106,9 @@ class MagmaCommand(object):
     def get_magma_session(self, db, description="",log='warn'):
         return magma.MagmaSession(db, description,log)
 
-    def all_in_one(self, args):
-        """Reads reactants file and MS/MS datafile, generates metabolites from reactants and matches them to peaks"""
-
-        magma_session = self.get_magma_session(args.db,args.description)
-        self._add_structures(args, magma_session)
-        self._read_ms_data(args, magma_session)
-        self._annotate(args, magma_session)
-
     def init_db(self,args):
         """Initialize database"""
         magma_session = self.get_magma_session(args.db,"")
-
-#    def add_structures(self, args):
-#        """Reads reactants file and existing result databass"""
-#        magma_session = self.get_magma_session(args.db,args.description)
-#        metids=self._add_structures(args, magma_session)
-#        magma_session.close()
-#        for metid in metids:
-#            print metid
-
-#    def metabolize(self, args):
-#        """Generates metabolites from reactants"""
-#        magma_session = self.get_magma_session(args.db,args.description)
-#        self._metabolize(args, magma_session)
-
-#    def read_ms_data(self, args):
-#        magma_session = self.get_magma_session(args.db,args.description)
-#        self._read_ms_data(args, magma_session)
-
-#    def annotate(self, args):
-#        magma_session = self.get_magma_session(args.db,args.description)
-#        self._annotate(args, magma_session)
 
     def add_structures(self, args, magma_session=None):
         if magma_session == None:
@@ -234,16 +179,6 @@ class MagmaCommand(object):
             for s in args.scans.split(','):
                scans.add(int(s))
         annotate_engine.build_spectra(scans)
-#        if args.structure_database == 'chebi':
-#            struct_engine = magma_session.get_structure_engine()
-#            candidates=annotate_engine.get_chebi_candidates()
-#            metids=set([])
-#            for id in candidates:
-#                try:
-#                    metids.add(struct_engine.add_structure(str(candidates[id][0]),str(candidates[id][1]),1.0,1,"",1))
-#                except:
-#                    pass
-#            annotate_engine.search_structures(metids=metids,ncpus=args.ncpus,fast=args.fast)
         pubchem_metids=[]
         if args.structure_database != "":
             db_opts=['','','','','']
