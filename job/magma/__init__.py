@@ -149,7 +149,7 @@ class StructureEngine(object):
         print 'READING SDF (Structure Data File)'
         molids=set([])
         for mol in Chem.SDMolSupplier(file_name):
-            molids.add(self.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), None, 0, 1, mass_filter=mass_filter))
+            molids.add(self.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), None, 1, mass_filter=mass_filter))
         print str(len(molids))+' molecules added to library\n'
 
     def read_smiles(self,smiles,mass_filter):
@@ -173,7 +173,7 @@ class StructureEngine(object):
                 name="Noname"+str(nonames)
             try:
                 mol = Chem.SmilesToMol(smiles,name)
-                molids.add(self.add_structure(Chem.MolToMolBlock(mol), name, 1.0, 0, 1, mass_filter=mass_filter))
+                molids.add(self.add_structure(Chem.MolToMolBlock(mol), name, 1.0, 1, mass_filter=mass_filter))
             except:
                 print 'WARNING: Failed to read smiles: '+smiles+' ('+name+')'
         print str(len(molids))+' molecules added to library\n'
@@ -208,7 +208,7 @@ class StructureEngine(object):
                     metab=dups[0]
                     if metab.name == "" and molecule.name != "":
                         metab.name=unicode(str(metab.name)+'</br>'+molecule.name, 'utf-8', 'xmlcharrefreplace')
-                    if metab.reference == None and molecule.reference != "":
+                    if metab.reference == "None" and molecule.reference != "":
                         metab.reference=unicode(molecule.reference)
                     if molecule.refscore > 0 and molecule.refscore>metab.refscore:
                         metab.refscore=molecule.refscore
@@ -225,11 +225,13 @@ class StructureEngine(object):
         if self.pubchem_names:
             in_pubchem=self.pubchem_engine.check_inchi(metab.mim, metab.inchikey14)
             if in_pubchem!=False:
-                name,reference=in_pubchem
+                name,reference,refscore=in_pubchem
                 if metab.name == '':
                     metab.name = unicode(name, 'utf-8', 'xmlcharrefreplace')
-                if metab.reference == None:
+                if metab.reference == "None":
                     metab.reference = unicode(reference)
+                if metab.refscore == None:
+                    metab.refscore = refscore
         self.db_session.add(metab)
         logging.debug('Added molecule: '+Chem.MolToSmiles(mol))
         self.db_session.flush()
@@ -253,8 +255,8 @@ class StructureEngine(object):
                                                            'magma', "data/sygma_rules.phase2.smirks"),
                 "gut": pkg_resources.resource_filename( #@UndefinedVariable
                                                            'magma', "data/gut.smirks"),
-                "digest": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/digest.smirks")
+                "glycosidase": pkg_resources.resource_filename( #@UndefinedVariable
+                                                           'magma', "data/glycosidase.smirks"),
                 }
         elif metabolism_engine=="cactvs":
             cactvs_root=config.get('magma job','cactvs_root')
@@ -285,16 +287,26 @@ class StructureEngine(object):
                 "plant": pkg_resources.resource_filename( #@UndefinedVariable
                                                            'magma', "data/plant.cactvs.smirks")
                 }
+            prob_dict={}
         try:
             parent = self.db_session.query(Molecule).filter_by(molid=molid).one()
         except:
             print 'Molecule record ',molid,' does not exist.'
             return
+        if parent.refscore == None or parent.refscore > 1:
+            parentscore = 1.0
+        else:
+            parentscore = parent.refscore
         for m in metabolism.split(','):
             if m in metabolism_files:
                 if metabolism_engine=="reactor":
                     exec_reactor+=" -q"
                 exec_reactor+=" "+metabolism_files[m]
+                if metabolism_engine=="cactvs":
+                    for line in open(metabolism_files[m]):
+                        if line[0] != "#" and line[0] != "\n":
+                            splitline=line.split()
+                            prob_dict[splitline[2]]=float(splitline[1])
         logging.debug('Execute reactions: '+exec_reactor)
 
         reactor=subprocess.Popen(exec_reactor, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
@@ -307,16 +319,21 @@ class StructureEngine(object):
             # line is first line in a new record
             splitline=line[:-1].split(" {>")
             if len(splitline) == 1:
-                reaction='PARENT'
+                sequence=['PARENT']
+                prob=1.0
                 name=line[:-1]
-            elif len(splitline) == 2:
-                reaction=splitline[1][:-1]
+            elif len(splitline) > 1:
+                sequence=[]
+                prob=1
+                for x in range(1,len(splitline)):
+                    reaction=splitline[1][:-1]
+                    sequence.append(reaction)
+                    prob*=prob_dict[reaction]
                 name=splitline[0]
             else:
-                reaction=metabolism
+                sequence=metabolism
                 name=splitline[0]
             mol=name+'\n'
-            isparent=0
             while line != 'M  END\n':
                 # read all lines until end of connection table and store in mol
                 line=reactor.stdout.readline()
@@ -329,22 +346,27 @@ class StructureEngine(object):
                     level=int(reactor.stdout.readline())
                 if line=='> <ReactionSequence>\n':
                     line=reactor.stdout.readline()
-                    reaction=line[:-1]
+                    sequence=[line[:-1]]
                     line=reactor.stdout.readline()
                     while line != '\n':
-                        reaction+=' + '+line[:-1]
+                        sequence.append(line[:-1])
                         line=reactor.stdout.readline()
                 line=reactor.stdout.readline()
-            if reaction!='PARENT':
-                molecule=types.MoleculeType(mol,"",prob*parent.refscore,None,isparent)
+            if sequence!=['PARENT']:
+                try:
+                    molecule=types.MoleculeType(mol,"",prob*parentscore,0)
+                except:
+                    logging.warn('Predicted metabolite ignored:\n' + mol)
+                    line=reactor.stdout.readline()
+                    continue
                 new_molid=self.add_molecule(molecule,merge=True)
                 molids.add(new_molid)
-                reactid=self.db_session.query(Reaction.reactid).filter(Reaction.reactant==molid,Reaction.product==new_molid,Reaction.name==reaction).all()
+                reactid=self.db_session.query(Reaction.reactid).filter(Reaction.reactant==molid,Reaction.product==new_molid,Reaction.name==" + ".join(sequence)).all()
                 if len(reactid)==0:
                     react=Reaction(
                         reactant=molid,
                         product=new_molid,
-                        name=reaction
+                        name=" + ".join(sequence)
                         )
                     self.db_session.add(react)
                     self.db_session.flush()
@@ -1137,13 +1159,13 @@ class PubChemEngine(object):
                            ))
 
     def check_inchi(self,mim,inchikey14):
-        self.c.execute('SELECT cid,name FROM molecules WHERE charge IN (-1,0,1) AND mim between ? and ? and inchikey = ?', (int(mim*1e6)-1,int(mim*1e6)+1,inchikey14))
+        self.c.execute('SELECT cid,name,refscore FROM molecules WHERE charge IN (-1,0,1) AND mim between ? and ? and inchikey = ?', (int(mim*1e6)-1,int(mim*1e6)+1,inchikey14))
         result=self.c.fetchall()
         if len(result)>0:
-            cid,name=result[0]
+            cid,name,refscore=result[0]
             reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
                                          str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>'
-            return [name,reference]
+            return [name,reference,refscore]
         else:
             return False
 
