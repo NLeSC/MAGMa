@@ -108,7 +108,7 @@ Molecules
 
 .. code-block:: bash
 
-   curl -c cookie.jar -b cookie.jar 'http://www.emetabolomics.org/magma/results/844bcea5-058b-4b7f-8d29-ba2cc131a568/metabolites.json?start=0;limit=10'
+   curl -c cookie.jar -b cookie.jar 'http://www.emetabolomics.org/magma/results/844bcea5-058b-4b7f-8d29-ba2cc131a568/molecules.json?start=0;limit=10'
 
 Parameters:
 
@@ -124,19 +124,19 @@ Example response:
       "totalUnfiltered": 1,
       "total": 1,
       "rows": [{
-         "origin": "CHLOROGENIC ACID (1794427)",
+         "name": "CHLOROGENIC ACID (1794427)",
          "smiles": "CWVRJTMFETXNAD",
-         "probability": 10234.0,
-         "molformula": "C16H18O9",
+         "refscore": 10234.0,
+         "formula": "C16H18O9",
          "assigned": false,
          "reference": "hyperlink ....",
          "mol": "molblock ....",
          "reactionsequence": [],
-         "isquery": true,
+         "predicted": true,
          "mim": 354.095082,
          "logp": -0.4,
          "level": 1,
-         "metid": 1,
+         "molid": 1,
          "nhits": 1
       }],
       "scans": [{"rt": null, "id": 1}]}
@@ -145,8 +145,8 @@ Long values have been replaced with `....`.
 
 Fields:
 
-- ``metid`` is the molecule identifier.
-- ``origin`` is the name of the molecule.
+- ``molid`` is the molecule identifier.
+- ``name`` is the name of the molecule.
 
 Molecules for one scan
 ----------------------
@@ -155,7 +155,7 @@ To fetch a ranked list of molecules which are annotated for a certain scan.
 
 .. code-block:: bash
 
-   curl -c cookie.jar -b cookie.jar 'http://www.emetabolomics.org/magma/results/844bcea5-058b-4b7f-8d29-ba2cc131a568/metabolites.json?start=0;limit=10;scanid=1;sort=%5B%7B%22property%22%3A%22score%22%2C%22direction%22%3A%22ASC%22%7D%5D'
+   curl -c cookie.jar -b cookie.jar 'http://www.emetabolomics.org/magma/results/844bcea5-058b-4b7f-8d29-ba2cc131a568/molecules.json?start=0;limit=10;scanid=1;sort=%5B%7B%22property%22%3A%22score%22%2C%22direction%22%3A%22ASC%22%7D%5D'
 
 ``%5B%7B%22property%22%3A%22score%22%2C%22direction%22%3A%22ASC%22%7D%5D``
 is the URL encoded (see http://www.faqs.org/rfcs/rfc3986) version of
@@ -188,7 +188,7 @@ Example response:
             "deltappm" : -0.8824098991817264,
             "mol" : "molblock ....",
             "formula": "C16H17O9",
-            "metid" : 23,
+            "molid" : 23,
             "fragid" : 5,
             "score" : 3,
             "mass" : 370.1263823051,
@@ -205,7 +205,7 @@ Example response:
                   "deltappm" : -1.861685339415437,
                   "mol" : "molblock ....",
                   "formula" : "C7H11O6",
-                  "metid" : 23,
+                  "molid" : 23,
                   "fragid" : 6,
                   "score" : 2,
                   "mass" : 115.039519091,
@@ -224,7 +224,7 @@ Example response:
 Fields:
 
 - ``fragid`` is the fragment identifier.
-- ``metid`` is the molecule identifier.
+- ``molid`` is the molecule identifier.
 - ``scanid`` is the scan identifier.
 
 Chromatogram
@@ -275,7 +275,7 @@ Example response:
       "cutoff": 0.0,
       "peaks": [{
          "intensity": 69989984.0,
-         "assigned_metid": null,
+         "assigned_molid": null,
          "mz": 353.087494
       }],
       "mslevel": 1

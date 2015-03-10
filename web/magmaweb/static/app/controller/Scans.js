@@ -22,9 +22,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
          'Esc.magmaweb.view.fragment.AnnotateFieldSet'
   ],
   /**
-   * Cached scans which belong to (filtered) metabolites
+   * Cached scans which belong to (filtered) molecules
    */
-  scans_of_metabolites: [],
+  scans_of_molecules: [],
   init: function() {
     Ext.log({}, 'Scans controller init');
     var me = this;
@@ -38,10 +38,10 @@ Ext.define('Esc.magmaweb.controller.Scans', {
             me.application.fireEvent('noselectscan', scanid);
         },
         mouseoverscan: function(scan) {
-            if ('metaboliteintensity' in scan) {
+            if ('moleculeintensity' in scan) {
               this.getChromatogramPanel().setTitle(Ext.String.format(
-                      'Chromatogram (rt={0}, basepeak intensity={1}, metabolite intensity={2}, scan={3})',
-                      scan.rt, scan.intensity, scan.metaboliteintensity, scan.id
+                      'Chromatogram (rt={0}, basepeak intensity={1}, molecule intensity={2}, scan={3})',
+                      scan.rt, scan.intensity, scan.moleculeintensity, scan.id
               ));
             } else {
               this.getChromatogramPanel().setTitle(Ext.String.format('Chromatogram (rt={0}, intensity={1}, scan={2})', scan.rt, scan.intensity, scan.id));
@@ -80,13 +80,13 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       }
     });
 
-    this.application.on('metaboliteload', this.setScansOfMetabolites, this);
-    this.application.on('metaboliteselect', this.loadExtractedIonChromatogram, this);
-    this.application.on('metabolitedeselect', function() {
+    this.application.on('moleculeload', this.setScansOfMolecules, this);
+    this.application.on('moleculeselect', this.loadExtractedIonChromatogram, this);
+    this.application.on('moleculedeselect', function() {
         this.resetScans();
         this.clearExtractedIonChromatogram();
     }, this);
-    this.application.on('metabolitenoselect', function() {
+    this.application.on('moleculenoselect', function() {
         this.resetScans();
         this.clearExtractedIonChromatogram();
     }, this);
@@ -219,15 +219,15 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     this.getChromatogram().setExtractedIonChromatogram([]);
   },
   /**
-   * Download the extracted ion chromatogram of a metabolite on the chromatogram.
-   * @param {Number} metid Metobolite identifier
+   * Download the extracted ion chromatogram of a molecule on the chromatogram.
+   * @param {Number} molid Metobolite identifier
    */
-  loadExtractedIonChromatogram: function(metid) {
+  loadExtractedIonChromatogram: function(molid) {
     Ext.log({}, 'Loading extracted ion chromatogram');
     this.getChromatogram().setLoading(true);
     var me = this;
     d3.json(
-      Ext.String.format(this.application.getUrls().extractedionchromatogram, metid),
+      Ext.String.format(this.application.getUrls().extractedionchromatogram, molid),
       function(data) {
           me.loadExtractedIonChromatogramCallback(data);
       }
@@ -236,8 +236,8 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   /**
    * Callback for loading a extracted ion chromatogram
    * @param {Object} data
-   * @param {Array} data.scans Scans in which metabolite has hits
-   * @param {Array} data.chromatogram Foreach scan the intensity of the peak with metabolite m/z
+   * @param {Array} data.scans Scans in which molecule has hits
+   * @param {Array} data.chromatogram Foreach scan the intensity of the peak with molecule m/z
    */
   loadExtractedIonChromatogramCallback: function(data) {
     if (data === null) {
@@ -279,21 +279,21 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     this.application.fireEvent('selectscan', scanid);
   },
   /**
-   * Each time the metabolite grid is loaded the response also contains a list of scans
-   * where the filtered metabolites have hits, we use this to mark the scans that can be selected
+   * Each time the molecule grid is loaded the response also contains a list of scans
+   * where the filtered molecules have hits, we use this to mark the scans that can be selected
    *
-   * @param {Esc.magmaweb.store.Metabolites} metabolitestore rawdata of store reader has scans
+   * @param {Esc.magmaweb.store.Molecules} moleculestore rawdata of store reader has scans
    */
-  setScansOfMetabolites: function(metabolitestore) {
-      this.hasStructures = metabolitestore.getTotalCount() > 0;
-      this.scans_of_metabolites = metabolitestore.getProxy().getReader().rawData.scans;
-      this.setScans(this.scans_of_metabolites);
+  setScansOfMolecules: function(moleculestore) {
+      this.hasStructures = moleculestore.getTotalCount() > 0;
+      this.scans_of_molecules = moleculestore.getProxy().getReader().rawData.scans;
+      this.setScans(this.scans_of_molecules);
   },
   /**
-   * Sets scans markers to scans where current metabolite filter has hits.
+   * Sets scans markers to scans where current molecule filter has hits.
    */
   resetScans: function() {
-    this.setScans(this.scans_of_metabolites);
+    this.setScans(this.scans_of_molecules);
   },
   /**
    * Add scan markers to chromatogram that can be selected.

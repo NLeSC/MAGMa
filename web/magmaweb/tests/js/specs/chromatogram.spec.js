@@ -163,7 +163,7 @@ describe('Esc.d3.Chromatogram', function() {
           chart.onZoom();
 
           expect(chart.svg.select).toHaveBeenCalledWith('path.line');
-          expect(chart.svg.select).toHaveBeenCalledWith('path.metaboliteline');
+          expect(chart.svg.select).toHaveBeenCalledWith('path.moleculeline');
           expect(chart.svg.attr).not.toHaveBeenCalledWith('transform', jasmine.any(Function));
           expect(chart.svg.attr).toHaveBeenCalledWith('x1', jasmine.any(Function));
           expect(chart.svg.attr).toHaveBeenCalledWith('x2', jasmine.any(Function));
@@ -387,7 +387,7 @@ describe('Esc.d3.Chromatogram', function() {
     chart.initAxes(); // line drawing requires line factory which is made there
     chart.setExtractedIonChromatogram(eic);
 
-    expect(chart.metabolitedata).toEqual(eic);
-    expect(chart.svg.attr).toHaveBeenCalledWith('class', 'metaboliteline');
+    expect(chart.moleculedata).toEqual(eic);
+    expect(chart.svg.attr).toHaveBeenCalledWith('class', 'moleculeline');
   });
 });

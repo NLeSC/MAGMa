@@ -1,7 +1,7 @@
 import unittest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from magmaweb.models import ReactionSequence, fill_molecules_reactions, Metabolite, Reaction
+from magmaweb.models import ReactionSequence, fill_molecules_reactions, Molecule, Reaction
 
 
 class TestReactionSequence(unittest.TestCase):
@@ -56,13 +56,13 @@ class TestFillMoleculeReactions(unittest.TestCase):
         from magmaweb.models import Base
         Base.metadata.create_all(engine)  # @UndefinedVariable
 
-    def getReactionSequence(self, metid):
-        return self.Session().query(Metabolite).get(metid).reactionsequence
+    def getReactionSequence(self, molid):
+        return self.Session().query(Molecule).get(molid).reactionsequence
 
     def test_noreactions(self):
         session = self.Session()
-        session.add(Metabolite(
-            metid=1, nhits=1
+        session.add(Molecule(
+            molid=1, nhits=1
         ))
         session.flush()
 
@@ -75,8 +75,8 @@ class TestFillMoleculeReactions(unittest.TestCase):
         1 -1> 2
         """
         session = self.Session()
-        session.add(Metabolite(metid=1, nhits=1))
-        session.add(Metabolite(metid=2, nhits=1))
+        session.add(Molecule(molid=1, nhits=1))
+        session.add(Molecule(molid=2, nhits=1))
         session.add(Reaction(reactid=1, name='esterase',
                              reactant=1, product=2))
         session.flush()
@@ -107,8 +107,8 @@ class TestFillMoleculeReactions(unittest.TestCase):
         1 -1> 2 -2> 1
         """
         session = self.Session()
-        session.add(Metabolite(metid=1, nhits=1))
-        session.add(Metabolite(metid=2, nhits=1))
+        session.add(Molecule(molid=1, nhits=1))
+        session.add(Molecule(molid=2, nhits=1))
         session.add(Reaction(reactid=1, name='esterase',
                              reactant=1, product=2))
         session.add(Reaction(reactid=2, name='theogallin',
@@ -154,10 +154,10 @@ class TestFillMoleculeReactions(unittest.TestCase):
         1 -2> 3 -4> 4
         """
         session = self.Session()
-        session.add(Metabolite(metid=1, nhits=1))
-        session.add(Metabolite(metid=2, nhits=1))
-        session.add(Metabolite(metid=3, nhits=0))
-        session.add(Metabolite(metid=4, nhits=1))
+        session.add(Molecule(molid=1, nhits=1))
+        session.add(Molecule(molid=2, nhits=1))
+        session.add(Molecule(molid=3, nhits=0))
+        session.add(Molecule(molid=4, nhits=1))
         session.add(Reaction(reactid=1, name='esterase',
                              reactant=1, product=2))
         session.add(Reaction(reactid=2, name='theogallin',
@@ -197,9 +197,9 @@ class TestFillMoleculeReactions(unittest.TestCase):
         1 -1> 3
         """
         session = self.Session()
-        session.add(Metabolite(metid=1, nhits=1))
-        session.add(Metabolite(metid=2, nhits=1))
-        session.add(Metabolite(metid=3, nhits=1))
+        session.add(Molecule(molid=1, nhits=1))
+        session.add(Molecule(molid=2, nhits=1))
+        session.add(Molecule(molid=3, nhits=1))
         session.add(Reaction(reactid=1, name='esterase',
                              reactant=1, product=2))
         session.add(Reaction(reactid=2, name='esterase',
@@ -227,9 +227,9 @@ class TestFillMoleculeReactions(unittest.TestCase):
         3 -1> 2
         """
         session = self.Session()
-        session.add(Metabolite(metid=1, nhits=1))
-        session.add(Metabolite(metid=2, nhits=1))
-        session.add(Metabolite(metid=3, nhits=1))
+        session.add(Molecule(molid=1, nhits=1))
+        session.add(Molecule(molid=2, nhits=1))
+        session.add(Molecule(molid=3, nhits=1))
         session.add(Reaction(reactid=1, name='esterase',
                              reactant=1, product=2))
         session.add(Reaction(reactid=2, name='esterase',

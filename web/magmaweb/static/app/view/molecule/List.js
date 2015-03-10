@@ -1,19 +1,19 @@
 /**
- * Grid of metabolites.
+ * Grid of molecules.
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.magmaweb.view.metabolite.List', {
+Ext.define('Esc.magmaweb.view.molecule.List', {
   extend: 'Ext.grid.Panel',
-  alias: 'widget.metabolitelist',
+  alias: 'widget.moleculelist',
   requires: [
     'Ext.ux.grid.FiltersFeature', 'Esc.chemdoodle.Column',
     'Ext.toolbar.Paging', 'Ext.grid.column.Boolean',
     'Ext.grid.column.Action', 'Ext.selection.CheckboxModel',
     'Ext.grid.column.Number',
-    'Esc.magmaweb.view.metabolite.ReactionColumn',
-    'Esc.magmaweb.view.metabolite.ReactionFilter'
+    'Esc.magmaweb.view.molecule.ReactionColumn',
+    'Esc.magmaweb.view.molecule.ReactionFilter'
   ],
-  store: 'Metabolites',
+  store: 'Molecules',
   viewConfig: {
     emptyText: 'No structures available: Add structures or relax filters'
   },
@@ -25,7 +25,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
   },
   dockedItems: [{
     xtype: 'pagingtoolbar',
-    store: 'Metabolites',   // same store GridPanel is using
+    store: 'Molecules',   // same store GridPanel is using
     dock: 'bottom',
     displayInfo: true,
     items: [{
@@ -88,7 +88,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
 
     Ext.apply(this, {
       columns: [
-        {text: 'ID', width:40, dataIndex: 'metid', hidden: true, filter: { type: 'numeric' }},
+        {text: 'ID', width:40, dataIndex: 'molid', hidden: true, filter: { type: 'numeric' }},
         {text: 'Scans', width:50, dataIndex: 'nhits', filter: {
             type: 'numeric', value:{gt:0}, active: true
         }},
@@ -96,19 +96,19 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
         {text: 'Candidate score', dataIndex: 'score', hidden: true, filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
         molcol,
         {text: 'Inchikey', dataIndex: 'smiles', hidden:true},
-        {text: 'Formula', width:100, dataIndex: 'molformula', filter: { type: 'string' }},
+        {text: 'Formula', width:100, dataIndex: 'formula', filter: { type: 'string' }},
         {text: 'Mass', width:80, dataIndex: 'mim', filter: { type: 'numeric' }, hidden: false, xtype: 'numbercolumn', format: '0.00000'},
         {text: '&Delta;Mass (ppm)', width:80, dataIndex: 'deltappm', hidden: true, filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
-        {text: 'Name', dataIndex: 'origin', flex:1, filter: { type: 'string' }},
+        {text: 'Name', dataIndex: 'name', flex:1, filter: { type: 'string' }},
         {
             text: 'Reactions', dataIndex: 'reactionsequence', flex:1, filter: { type: 'reaction' },
             xtype: 'reactioncolumn'
         },
-        {text: 'Refscore', width:80, dataIndex: 'probability', filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
+        {text: 'Refscore', width:80, dataIndex: 'refscore', filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
         // {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: ['0','1','2','3'] }, hidden:true},
         {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Reference', dataIndex: 'reference', filter: { type: 'string' }, sortable: false },
-        {text: 'Query', dataIndex: 'isquery', xtype:'booleancolumn', hidden: true, trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
+        {text: 'Predicted', dataIndex: 'predicted', xtype:'booleancolumn', hidden: true, trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},
         {xtype: 'actioncolumn', width:30, text:'Commands', hidden: true,
             items: [{
                 tooltip: 'Metabolize',
@@ -132,7 +132,7 @@ Ext.define('Esc.magmaweb.view.metabolite.List', {
       return this.getView().getFeature('mfilter');
   },
   /**
-   * Clears all filters applied to metabolites
+   * Clears all filters applied to molecules
    */
   clearFilters: function() {
     this.getFilter().clearFilters();

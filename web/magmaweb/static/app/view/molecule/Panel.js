@@ -1,23 +1,23 @@
 /**
- * Panel for metabolites contains grid and add form.
+ * Panel for molecules contains grid and add form.
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.magmaweb.view.metabolite.Panel', {
+Ext.define('Esc.magmaweb.view.molecule.Panel', {
   extend: 'Ext.panel.Panel',
-  alias: 'widget.metabolitepanel',
-  id: 'metabolitepanel',
+  alias: 'widget.moleculepanel',
+  id: 'moleculepanel',
   title: 'Molecules',
   requires: [
-    'Esc.magmaweb.view.metabolite.List',
-    'Esc.magmaweb.view.metabolite.AddForm'
+    'Esc.magmaweb.view.molecule.List',
+    'Esc.magmaweb.view.molecule.AddForm'
   ],
   tools: [{
       type: 'save',
-      tooltip: 'Save metabolites',
+      tooltip: 'Save molecules',
       action: 'download'
   }, {
       type: 'gear',
-      tooltip: 'Perform actions on metabolites',
+      tooltip: 'Perform actions on molecules',
       action: 'actions'
   }, {
       type: 'help',
@@ -26,9 +26,9 @@ Ext.define('Esc.magmaweb.view.metabolite.Panel', {
   }],
   layout: 'card',
   items: [{
-      xtype: 'metabolitelist'
+      xtype: 'moleculelist'
   }, {
-      xtype: 'metaboliteaddform',
+      xtype: 'moleculeaddform',
       bodyPadding: 10
   }],
   /**
