@@ -634,6 +634,7 @@ class JobDb(object):
                    'refscore': met.refscore,
                    'reactionsequence': met.reactionsequence,
                    'smiles': met.smiles,
+                   'inchikey14': met.inchikey14,
                    'formula': met.formula,
                    'predicted': met.predicted,
                    'name': met.name,

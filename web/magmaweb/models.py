@@ -78,8 +78,10 @@ class Molecule(Base):
     refscore = Column(Float)
     # A newline seperated list of reactions
     reactionsequence = Column(ReactionSequence, default={})
+    # Inchikey first 14 chars
+    inchikey14 = Column(Unicode(), unique=True)
     # Smile string
-    smiles = Column(Unicode, unique=True)
+    smiles = Column(Unicode)
     # Molecular formula
     formula = Column(Unicode)
     # Whether molecule was given as query or is a result a of reaction
@@ -225,7 +227,7 @@ class Fragment(Base):
     deltah = Column(Float)
     # (mz+deltah*1.007825032-mass)/(mz*1e6)  as deltappm
     deltappm = Column(Float)
-    inchikey = Column(Unicode)
+    smiles = Column(Unicode)
     # molecular formula of fragment
     formula = Column(Unicode)
     #: A fragment can have child fragments

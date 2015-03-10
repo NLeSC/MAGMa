@@ -16,6 +16,8 @@ Ext.define('Esc.magmaweb.model.Molecule', {
   },{
     name: 'reactionsequence'
   },{
+    name: 'inchikey14'
+  },{
     name: 'smiles'
   },{
     name: 'formula'
