@@ -799,7 +799,7 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
     def test_it(self):
 
-        params = MultiDict(metid=123,
+        params = MultiDict(molid=123,
                            scenario=[{'type': 'phase1', 'steps': '2'},
                                      {'type': 'phase2', 'steps': '1'}],
                            )
@@ -818,7 +818,7 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
     def test_with_annotate(self):
 
-        params = MultiDict(metid=123,
+        params = MultiDict(molid=123,
                            scenario=[{'type': 'phase1', 'steps': '2'},
                                      {'type': 'phase2', 'steps': '1'}],
                            ms_intensity_cutoff=200000,

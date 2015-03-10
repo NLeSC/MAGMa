@@ -1,7 +1,7 @@
 /**
  * Store for fragments.
  *
- * Fragments are loaded when a scan and metabolite are selected.
+ * Fragments are loaded when a scan and molecule are selected.
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.magmaweb.store.Fragments', {

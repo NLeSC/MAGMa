@@ -1,11 +1,11 @@
-describe('Metabolites', function() {
+describe('Molecules', function() {
   describe('store', function() {
     var store = null;
-    var url = 'data/metabolites.json';
+    var url = 'data/molecules.json';
 
     beforeEach(function() {
       if (!store) {
-        store = Ext.create('Esc.magmaweb.store.Metabolites');
+        store = Ext.create('Esc.magmaweb.store.Molecules');
       }
     });
 
@@ -67,7 +67,7 @@ describe('Metabolites', function() {
         proxy.fireEvent('exception', proxy, 'bla', 'foo');
 
         expect(Ext.Error.handle).toHaveBeenCalledWith({
-            msg: 'Failed to load metabolites from server',
+            msg: 'Failed to load molecules from server',
             response: 'bla',
             operation: 'foo'
         });
@@ -95,11 +95,11 @@ describe('Metabolites', function() {
 
      beforeEach(function() {
         if (!ctrl) {
-            ctrl = Application.getController('Metabolites');
+            ctrl = Application.getController('Molecules');
         }
 
         if (!store) {
-            store = ctrl.getStore('Metabolites');
+            store = ctrl.getStore('Molecules');
             // disable reselecting selected row, tested in describe('reselect'
             store.removeListener('beforeLoad', ctrl.onBeforeLoad, ctrl);
             // mock onLaunch of controller
@@ -126,12 +126,12 @@ describe('Metabolites', function() {
         }
      });
 
-     it('should have metabolites', function() {
+     it('should have molecules', function() {
         expect(store.getCount()).toBeGreaterThan(1);
      });
 
      it('controller configured store', function() {
-        expect(store.getProxy().url).toEqual('data/metabolites.json');
+        expect(store.getProxy().url).toEqual('data/molecules.json');
      });
 
      it('scan filter', function() {
@@ -157,7 +157,7 @@ describe('Metabolites', function() {
          expect(store.setPageSize).toHaveBeenCalledWith(123);
      });
 
-     it('select metabolite', function() {
+     it('select molecule', function() {
          var record = store.getById(352);
          var rm = Ext.create('Ext.selection.RowModel');
 
@@ -166,27 +166,27 @@ describe('Metabolites', function() {
          Ext.util.Observable.capture(ctrl.application, f.callback);
 
          ctrl.onSelect(rm, record);
-         //ctrl.getMetaboliteList().getSelectionModel().select([record]);
+         //ctrl.getMoleculeList().getSelectionModel().select([record]);
 
-         expect(f.callback).toHaveBeenCalledWith('metaboliteselect', 352, jasmine.any(Object));
+         expect(f.callback).toHaveBeenCalledWith('moleculeselect', 352, jasmine.any(Object));
          Ext.util.Observable.releaseCapture(ctrl.application);
      });
 
-     it('before select metabolite with scans', function() {
+     it('before select molecule with scans', function() {
        var record = store.getById(352);
        var rm = Ext.create('Ext.selection.RowModel');
        expect(record.data.nhits).toBeGreaterThan(0);
        expect(ctrl.beforeSelect(rm, record)).toBeTruthy();
      });
 
-     it('before select metabolite without scans', function() {
+     it('before select molecule without scans', function() {
        var record = store.getById(78);
        var rm = Ext.create('Ext.selection.RowModel');
        expect(record.data.nhits).toEqual(0);
        expect(ctrl.beforeSelect(rm, record)).toBeFalsy();
      });
 
-     it('deselect metabolite', function() {
+     it('deselect molecule', function() {
        var record = store.getById(352);
        var rm = Ext.create('Ext.selection.RowModel');
 
@@ -197,7 +197,7 @@ describe('Metabolites', function() {
        ctrl.onSelect(rm, record);
        ctrl.onDeselect(rm, record);
 
-       expect(f.callback).toHaveBeenCalledWith('metabolitedeselect', 352, jasmine.any(Object));
+       expect(f.callback).toHaveBeenCalledWith('moleculedeselect', 352, jasmine.any(Object));
        Ext.util.Observable.releaseCapture(ctrl.application);
      });
 
@@ -206,7 +206,7 @@ describe('Metabolites', function() {
        var list = {
          showFragmentScoreColumn: function() {}
        };
-       spyOn(ctrl, 'getMetaboliteList').andReturn(list);
+       spyOn(ctrl, 'getMoleculeList').andReturn(list);
        spyOn(list, 'showFragmentScoreColumn');
 
        // mock store
@@ -216,7 +216,7 @@ describe('Metabolites', function() {
                return item.id || item.property;
            })
        };
-       spyOn(ctrl, 'getMetabolitesStore').andReturn(mockedstore);
+       spyOn(ctrl, 'getMoleculesStore').andReturn(mockedstore);
        spyOn(mockedstore, 'setScanFilter');
 
        var scanid = 1133;
@@ -226,10 +226,10 @@ describe('Metabolites', function() {
        expect(mockedstore.setScanFilter).toHaveBeenCalledWith(scanid);
        expect(mockedstore.sorters.indexOfKey('score')).toEqual(0);
        expect(mockedstore.sorters.getByKey('score').direction).toEqual('ASC');
-       expect(mockedstore.sorters.indexOfKey('probability')).toEqual(1);
-       expect(mockedstore.sorters.getByKey('probability').direction).toEqual('DESC');
-       expect(mockedstore.sorters.indexOfKey('metid')).toEqual(2);
-       expect(mockedstore.sorters.getByKey('metid').direction).toEqual('ASC');
+       expect(mockedstore.sorters.indexOfKey('refscore')).toEqual(1);
+       expect(mockedstore.sorters.getByKey('refscore').direction).toEqual('DESC');
+       expect(mockedstore.sorters.indexOfKey('molid')).toEqual(2);
+       expect(mockedstore.sorters.getByKey('molid').direction).toEqual('ASC');
      });
 
      describe('clear scan filter', function() {
@@ -243,7 +243,7 @@ describe('Metabolites', function() {
            };
 
            spyOn(list, 'hideFragmentScoreColumn');
-           spyOn(ctrl, 'getMetaboliteList').andReturn(list);
+           spyOn(ctrl, 'getMoleculeList').andReturn(list);
 
            // mock store
            mockedstore = {
@@ -253,7 +253,7 @@ describe('Metabolites', function() {
                    return item.id || item.property;
                })
            };
-           spyOn(ctrl, 'getMetabolitesStore').andReturn(mockedstore);
+           spyOn(ctrl, 'getMoleculesStore').andReturn(mockedstore);
            spyOn(mockedstore, 'setScanFilter');
            spyOn(mockedstore, 'removeScanFilter');
        });
@@ -287,7 +287,7 @@ describe('Metabolites', function() {
      it('clear filters', function() {
        // mock list
        var list = { clearFilters: function() {} };
-       spyOn(ctrl, 'getMetaboliteList').andReturn(list);
+       spyOn(ctrl, 'getMoleculeList').andReturn(list);
        spyOn(list, 'clearFilters');
 
        // mock application eventbus
@@ -298,7 +298,7 @@ describe('Metabolites', function() {
        ctrl.clearFilters();
 
        expect(list.clearFilters).toHaveBeenCalled();
-       expect(f.callback).toHaveBeenCalledWith('metabolitenoselect');
+       expect(f.callback).toHaveBeenCalledWith('moleculenoselect');
        Ext.util.Observable.releaseCapture(ctrl.application);
      });
 
@@ -309,7 +309,7 @@ describe('Metabolites', function() {
                 setDisabledAnnotateFieldset: function() {}
             };
             spyOn(form, 'setDisabledAnnotateFieldset');
-            spyOn(ctrl, 'getMetaboliteAddForm').andReturn(form);
+            spyOn(ctrl, 'getMoleculeAddForm').andReturn(form);
         });
 
         it('initially', function() {
@@ -331,7 +331,7 @@ describe('Metabolites', function() {
         });
      });
 
-     it('load metabolites', function() {
+     it('load molecules', function() {
        spyOn(ctrl, 'metabolizable');
        var f = { callback: function() {} };
        spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
@@ -339,13 +339,13 @@ describe('Metabolites', function() {
 
        store.fireEvent('load', store);
 
-       expect(f.callback).toHaveBeenCalledWith('metaboliteload', jasmine.any(Object));
+       expect(f.callback).toHaveBeenCalledWith('moleculeload', jasmine.any(Object));
        expect(ctrl.metabolizable).toHaveBeenCalledWith(true);
 
        Ext.util.Observable.releaseCapture(ctrl.application);
      });
 
-     it('load metabolites, one metabolite', function() {
+     it('load molecules, one molecule', function() {
        // mock list
        var sm = { hasSelection: function() {}, select: function() {} };
        spyOn(ctrl, 'getSelectionModel').andReturn(sm);
@@ -358,7 +358,7 @@ describe('Metabolites', function() {
 
        Ext.util.Observable.capture(ctrl.application, f.callback);
 
-       // fake loading a filtered list of metabolites with only one metabolite
+       // fake loading a filtered list of molecules with only one molecule
        var record = store.getById(352);
        store.loadRecords([record]);
        store.fireEvent('load', store);
@@ -366,12 +366,12 @@ describe('Metabolites', function() {
        expect(store.getCount()).toEqual(1);
        expect(sm.hasSelection).toHaveBeenCalled();
        expect(sm.select).toHaveBeenCalledWith(0);
-       expect(f.callback).toHaveBeenCalledWith('metaboliteload', jasmine.any(Object));
+       expect(f.callback).toHaveBeenCalledWith('moleculeload', jasmine.any(Object));
        expect(ctrl.metabolizable).toHaveBeenCalledWith(true);
        Ext.util.Observable.releaseCapture(ctrl.application);
     });
 
-    it('load metabolites, zero metabolites', function() {
+    it('load molecules, zero molecules', function() {
        spyOn(ctrl, 'metabolizable');
        spyOn(ctrl, 'showAddStructuresForm');
        var f = { callback: function() {} };
@@ -387,37 +387,37 @@ describe('Metabolites', function() {
        });
        store.fireEvent('load', store);
 
-       expect(f.callback).toHaveBeenCalledWith('metaboliteload', jasmine.any(Object));
+       expect(f.callback).toHaveBeenCalledWith('moleculeload', jasmine.any(Object));
        expect(ctrl.metabolizable).toHaveBeenCalledWith(false);
        expect(ctrl.showAddStructuresForm).toHaveBeenCalledWith();
 
        Ext.util.Observable.releaseCapture(ctrl.application);
     });
 
-    describe('download metabolites in csv', function() {
+    describe('download molecules in csv', function() {
       it('default', function() {
           spyOn(window, 'open');
-          spyOn(ctrl, 'getMetaboliteList').andReturn({
+          spyOn(ctrl, 'getMoleculeList').andReturn({
              getFilterQuery: function() { return []},
-             getVisiblColumnIndices: function() { return ['origin', 'score']}
+             getVisiblColumnIndices: function() { return ['name', 'score']}
           })
 
           ctrl.download_csv();
 
-          var url = Ext.urlAppend('data/metabolites.csv', Ext.Object.toQueryString({
+          var url = Ext.urlAppend('data/molecules.csv', Ext.Object.toQueryString({
               page: 1,
               start: 0,
               limit: 10,
               sort: Ext.JSON.encode([{
-                property: 'probability',
+                property: 'refscore',
                 direction: 'DESC'
               },{
-                property: 'metid',
+                property: 'molid',
                 direction: 'ASC'
               }]),
-              cols: Ext.JSON.encode(['origin', 'score'])
+              cols: Ext.JSON.encode(['name', 'score'])
           }));
-          expect(window.open).toHaveBeenCalledWith(url ,'metabolitescsv');
+          expect(window.open).toHaveBeenCalledWith(url ,'moleculescsv');
       });
 
       it('filtered', function() {
@@ -433,29 +433,29 @@ describe('Metabolites', function() {
               comparison: 'gt'
           }])
           spyOn(window, 'open');
-          spyOn(ctrl, 'getMetaboliteList').andReturn({
+          spyOn(ctrl, 'getMoleculeList').andReturn({
              getFilterQuery: function() { return {filter: filter}},
-             getVisiblColumnIndices: function() { return ['origin', 'score']}
+             getVisiblColumnIndices: function() { return ['name', 'score']}
           })
 
           ctrl.download_csv();
 
-          var url = Ext.urlAppend('data/metabolites.csv', Ext.Object.toQueryString({
+          var url = Ext.urlAppend('data/molecules.csv', Ext.Object.toQueryString({
               scanid: 50,
               page: 1,
               start: 0,
               limit: 10,
               sort: Ext.JSON.encode([{
-                property: 'probability',
+                property: 'refscore',
                 direction: 'DESC'
               },{
-                property: 'metid',
+                property: 'molid',
                 direction: 'ASC'
               }]),
               filter: filter,
-              cols: Ext.JSON.encode(['origin', 'score'])
+              cols: Ext.JSON.encode(['name', 'score'])
           }));
-          expect(window.open).toHaveBeenCalledWith(url ,'metabolitescsv');
+          expect(window.open).toHaveBeenCalledWith(url ,'moleculescsv');
       });
     });
 
@@ -465,10 +465,10 @@ describe('Metabolites', function() {
             loadDefaults: function() {}
         };
         spyOn(addform, 'loadDefaults');
-        spyOn(ctrl, 'getMetaboliteAddForm').andReturn(addform);
+        spyOn(ctrl, 'getMoleculeAddForm').andReturn(addform);
         var panel = { setActiveItem: function() {} };
         spyOn(panel, 'setActiveItem');
-        spyOn(ctrl, 'getMetabolitePanel').andReturn(panel);
+        spyOn(ctrl, 'getMoleculePanel').andReturn(panel);
 
         ctrl.showAddStructuresForm();
 
@@ -479,7 +479,7 @@ describe('Metabolites', function() {
     it('showGrid', function() {
         var panel = { setActiveItem: function() {} };
         spyOn(panel, 'setActiveItem');
-        spyOn(ctrl, 'getMetabolitePanel').andReturn(panel);
+        spyOn(ctrl, 'getMoleculePanel').andReturn(panel);
 
         ctrl.showGrid();
 
@@ -493,7 +493,7 @@ describe('Metabolites', function() {
         };
         spyOn(form, 'submit');
         var panel = { getForm: function() { return form; } };
-        spyOn(ctrl, 'getMetaboliteAddForm').andReturn(panel);
+        spyOn(ctrl, 'getMoleculeAddForm').andReturn(panel);
 
         ctrl.addStructuresHandler();
 
@@ -550,18 +550,18 @@ describe('Metabolites', function() {
     it('showMetabolizeStructureForm', function() {
         ctrl.hasMSData = false;
         var form = {
-            setMetabolite: function() {},
+            setMolecule: function() {},
             setDisabledAnnotateFieldset: function() {},
             show: function() {}
         };
-        spyOn(form, 'setMetabolite');
+        spyOn(form, 'setMolecule');
         spyOn(form, 'setDisabledAnnotateFieldset');
         spyOn(form, 'show');
         ctrl.metabolizeStructureForm = form;
 
         ctrl.showMetabolizeStructureForm(1234);
 
-        expect(form.setMetabolite).toHaveBeenCalledWith(1234);
+        expect(form.setMolecule).toHaveBeenCalledWith(1234);
         expect(form.setDisabledAnnotateFieldset).toHaveBeenCalledWith(true);
         expect(form.show).toHaveBeenCalledWith();
     });
@@ -617,12 +617,12 @@ describe('Metabolites', function() {
 
     it('has selection model', function() {
         var list = { getSelectionModel: function() {} };
-        spyOn(ctrl, 'getMetaboliteList').andReturn(list);
+        spyOn(ctrl, 'getMoleculeList').andReturn(list);
         spyOn(list, 'getSelectionModel');
 
         ctrl.getSelectionModel();
 
-        expect(ctrl.getMetaboliteList).toHaveBeenCalled();
+        expect(ctrl.getMoleculeList).toHaveBeenCalled();
         expect(list.getSelectionModel).toHaveBeenCalled();
     });
 
@@ -668,18 +668,18 @@ describe('Metabolites', function() {
     			},
     			setPageSize: function() {}
     	};
-     	spyOn(ctrl, 'getMetaboliteList').andReturn(mocklist);
+     	spyOn(ctrl, 'getMoleculeList').andReturn(mocklist);
 
     	ctrl.onLaunch();
 
     	expect(ctrl.applyRole).toHaveBeenCalledWith();
-    	expect(ctrl.getMetaboliteList).toHaveBeenCalledWith();
+    	expect(ctrl.getMoleculeList).toHaveBeenCalledWith();
     });
 
     it('cantrun', function() {
   	  ctrl.application.canRun = false;
       assignbut = jasmine.createSpyObj('abut', [ 'hideCommandsColumn']);
-      spyOn(ctrl,'getMetaboliteList').andReturn(assignbut);
+      spyOn(ctrl,'getMoleculeList').andReturn(assignbut);
 
   	  ctrl.applyRole();
 

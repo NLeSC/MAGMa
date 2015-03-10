@@ -23,14 +23,14 @@ class RpcViewsTestCase(unittest.TestCase):
         self.job = Job(jobmeta, '/mydir', Mock(JobDb))
         self.job.jobquery = Mock(return_value=self.jobquery)
         self.job.db.maxMSLevel.return_value = 1
-        self.job.db.metabolitesTotalCount.return_value = 1
+        self.job.db.moleculesTotalCount.return_value = 1
 
         self.jobid2 = 'fe144547-cf16-44bb-8e97-e2ffe5675154'
         jobmeta2 = JobMeta(uuid.UUID(self.jobid2), owner='bob')
         self.job2 = Job(jobmeta2, '/mydir', Mock(JobDb))
         self.job2.jobquery = Mock(return_value=self.jobquery)
         self.job2.db.maxMSLevel.return_value = 1
-        self.job2.db.metabolitesTotalCount.return_value = 1
+        self.job2.db.moleculesTotalCount.return_value = 1
 
         self.rpc = RpcViews(self.job, testing.DummyRequest(post=self.post))
         self.rpc.new_job = Mock(return_value=self.job2)
@@ -108,7 +108,7 @@ class RpcViewsTestCase(unittest.TestCase):
         response = self.rpc.add_ms_data()
 
         self.jobquery.add_ms_data.assert_called_with(post, True)
-        self.job2.db.metabolitesTotalCount.assert_called_with()
+        self.job2.db.moleculesTotalCount.assert_called_with()
         self.assertEqual(self.job2.ms_filename, 'Uploaded as text')
         self.rpc.new_job.assert_called_with()
         self._assert_status_callback_url()
@@ -126,7 +126,7 @@ class RpcViewsTestCase(unittest.TestCase):
         response = self.rpc.add_ms_data()
 
         self.jobquery.add_ms_data.assert_called_with(post, True)
-        self.job2.db.metabolitesTotalCount.assert_called_with()
+        self.job2.db.moleculesTotalCount.assert_called_with()
         self.assertEqual(self.job2.ms_filename, 'c:\bla\bla\F1234.mzxml')
         self.rpc.new_job.assert_called_with()
         self._assert_status_callback_url()
@@ -181,23 +181,23 @@ class RpcViewsTestCase(unittest.TestCase):
         expected_json = {'success': False, 'msg': 'Unable to submit query'}
         self.assertEquals(json.loads(e.exception.body), expected_json)
 
-    def test_assign_metabolite2peak(self):
+    def test_assign_molecule2peak(self):
         self.rpc.request.POST = {'scanid': 641,
                                  'mz': 109.029563903808,
-                                 'metid': 72}
+                                 'molid': 72}
 
-        response = self.rpc.assign_metabolite2peak()
+        response = self.rpc.assign_molecule2peak()
 
-        assigned_func = self.job.db.assign_metabolite2peak
+        assigned_func = self.job.db.assign_molecule2peak
         assigned_func.assert_called_with(641, 109.029563903808, 72)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})
 
-    def test_unassign_metabolite2peak(self):
+    def test_unassign_molecule2peak(self):
         self.rpc.request.POST = {'scanid': 641,
                                  'mz': 109.029563903808}
 
-        response = self.rpc.unassign_metabolite2peak()
+        response = self.rpc.unassign_molecule2peak()
 
-        unassign_func = self.job.db.unassign_metabolite2peak
+        unassign_func = self.job.db.unassign_molecule2peak
         unassign_func.assert_called_with(641, 109.029563903808)
         self.assertEquals(response, {'success': True, 'jobid': self.jobid})

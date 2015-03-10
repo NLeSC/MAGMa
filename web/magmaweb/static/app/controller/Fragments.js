@@ -55,13 +55,13 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
       }
     });
 
-    this.application.on('scanandmetaboliteselect', this.loadFragments, this);
-    this.application.on('scanandmetabolitenoselect', this.clearFragments, this);
+    this.application.on('scanandmoleculeselect', this.loadFragments, this);
+    this.application.on('scanandmoleculenoselect', this.clearFragments, this);
     this.application.on('mspectraload', this.initMolecules, this);
     this.application.on('peakdeselect', this.clearFragmentSelection, this);
     this.application.on('peakselect', this.selectFragmentByPeak, this);
 
-    this.application.on('metaboliteload', function(store) {
+    this.application.on('moleculeload', function(store) {
         this.annotatable.structures = store.getTotalUnfilteredCount() > 0;
         if (this.annotatable.structures && this.annotatable.msdata) {
             this.getAnnotateActionButton().enable();
@@ -116,7 +116,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
        * Triggered when a structure/peak assignent is changed (assigned or unassigned).
        * @param {Boolean} isAssigned
        * @param {Object} params
-       * @param {Number} params.metid Metaobolite identifier
+       * @param {Number} params.molid Metaobolite identifier
        * @param {Number} params.scanid Scan identifier
        * @param {Number} params.mz M/z of peak
        */
@@ -127,29 +127,29 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     this.applyRole();
   },
   /**
-   * Loads lvl 1 and 2 fragments of a metabolite scan combination.
+   * Loads lvl 1 and 2 fragments of a molecule scan combination.
    *
    * @param {Number} scanid Scan identifier.
-   * @param {Number} metid Metabolite idenfitier.
+   * @param {Number} molid Molecule idenfitier.
    */
-  loadFragments: function (scanid, metid) {
+  loadFragments: function (scanid, molid) {
     this.clearFragments();
-    Ext.log({}, 'Show fragments of scan '+scanid+' metabolite '+metid);
+    Ext.log({}, 'Show fragments of scan '+scanid+' molecule '+molid);
     var store = this.getFragmentsStore();
-    store.setProxy(this.fragmentProxyFactory(scanid, metid));
+    store.setProxy(this.fragmentProxyFactory(scanid, molid));
     store.load();
   },
   /**
-   * Need to change url of fragment proxy so use a factory to create a new proxy foreach scan/metabolite combo
+   * Need to change url of fragment proxy so use a factory to create a new proxy foreach scan/molecule combo
    *
    * @param {Number} scanid Scan identifier.
-   * @param {Number} metid Metabolite idenfitier.
+   * @param {Number} molid Molecule idenfitier.
    * @private
    */
-  fragmentProxyFactory: function (scanid, metid) {
+  fragmentProxyFactory: function (scanid, molid) {
     return Ext.create('Ext.data.proxy.Ajax', {
-      // url is build when scan and metabolite are selected
-      url: Ext.String.format(this.application.getUrls().fragments, scanid, metid),
+      // url is build when scan and molecule are selected
+      url: Ext.String.format(this.application.getUrls().fragments, scanid, molid),
       listeners: {
         exception: function(proxy, response, operation) {
           Ext.Error.raise({
@@ -217,7 +217,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
         // remember which molecule to which peak to assign
         var abut = this.getAssignStruct2PeakButton();
         var data = parent.childNodes[0].data;
-        abut.setParams({ scanid: data.scanid, metid: data.metid, mz: data.mz});
+        abut.setParams({ scanid: data.scanid, molid: data.molid, mz: data.mz});
         abut.toggle(data.isAssigned);
         abut.enable();
     }
