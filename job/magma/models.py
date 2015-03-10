@@ -76,8 +76,10 @@ class Molecule(Base):
     mol = Column(Unicode)
     # A newline seperated list of reactions
     reactionsequence = Column(ReactionSequence, default={})
-    # Smile string
+    # Inchikey first 14 chars
     inchikey14 = Column(Unicode, unique=True)
+    # Smile string
+    smiles = Column(Unicode)
     # Molecular formula
     formula = Column(Unicode)
     # Whether molecule was given as query or is a result a of reaction
