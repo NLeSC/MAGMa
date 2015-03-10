@@ -130,12 +130,6 @@ class CallBackEngine(object):
 class StructureEngine(object):
     def __init__(self,db_session,pubchem_names=False,call_back_url=None):
         self.db_session = db_session
-        try:
-            rundata=self.db_session.query(Run).one()
-        except:
-            rundata = Run()
-        self.db_session.add(rundata)
-        self.db_session.commit()
         self.pubchem_names=pubchem_names
         if pubchem_names:
             self.pubchem_engine=PubChemEngine()
