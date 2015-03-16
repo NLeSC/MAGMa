@@ -62,12 +62,12 @@ class FunctionalPrivateTests(FunctionalTests):
         res = self.testapp.get('/', status=200)
         self.assertTrue('Submit' in res.body)
 
-    def test_metabolites(self):
+    def test_molecules(self):
         self.do_login()
         jobid = self.fake_jobid()
 
         res_url = '/results/' + str(jobid)
-        res_url += '/metabolites.json?limit=10&start=0'
+        res_url += '/molecules.json?limit=10&start=0'
         res = self.testapp.get(res_url, status=200)
         url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
         url1 += '?cid=289">CID: 289</a>'
@@ -84,14 +84,14 @@ class FunctionalPrivateTests(FunctionalTests):
                 'id': 870
             }],
             'rows': [{
-                'metid': 72,
-                'isquery': True,
+                'molid': 72,
+                'predicted': False,
                 'level': 0,
                 'mol': u'Molfile',
-                'molformula': u'C6H6O2',
+                'formula': u'C6H6O2',
                 'nhits': 1,
-                'origin': u'pyrocatechol',
-                'probability': 1.0,
+                'name': u'pyrocatechol',
+                'refscore': 1.0,
                 'reactionsequence': {
                                          u'reactantof': {
                                              u'esterase': {
@@ -105,12 +105,12 @@ class FunctionalPrivateTests(FunctionalTests):
                 'assigned': False,
                 'reference': url1
             }, {
-                'isquery': True, 'level': 0, 'metid': 352,
+                'predicted': False, 'level': 0, 'molid': 352,
                 'mol': "Molfile of dihydroxyphenyl-valerolactone",
-                'molformula': "C11H12O4",
+                'formula': "C11H12O4",
                 'nhits': 1,
-                'origin': "dihydroxyphenyl-valerolactone",
-                'probability': 1,
+                'name': "dihydroxyphenyl-valerolactone",
+                'refscore': 1,
                 'reactionsequence': {
                                          u'productof': {
                                              u'theogallin': {

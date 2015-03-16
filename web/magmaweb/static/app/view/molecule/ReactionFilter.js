@@ -18,7 +18,7 @@
  * Current molecule is the molecule filtered on as reactant or product.
  *
  */
-Ext.define('Esc.magmaweb.view.metabolite.ReactionFilter', {
+Ext.define('Esc.magmaweb.view.molecule.ReactionFilter', {
     extend: 'Ext.ux.grid.filter.Filter',
     alias: ['gridfilter.reaction'],
     createMenu: function(config) {

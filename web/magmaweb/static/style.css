@@ -29,7 +29,7 @@ path.line {
 	stroke-width: 2px;
 }
 
-path.metaboliteline {
+path.moleculeline {
 	fill: none;
 	stroke: #6d6;
 	stroke-width: 2px;

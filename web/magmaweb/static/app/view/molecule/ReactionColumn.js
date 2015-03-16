@@ -29,7 +29,7 @@
  * Clicking on 'esterase' will filter molecules on which are products of 'esterase' reaction with current molecule as reactant.
  *
  */
-Ext.define('Esc.magmaweb.view.metabolite.ReactionColumn', {
+Ext.define('Esc.magmaweb.view.molecule.ReactionColumn', {
     extend: 'Ext.grid.column.Template',
     alias: ['widget.reactioncolumn'],
     alternateClassName: 'Ext.grid.ReactionColumn',
@@ -78,13 +78,13 @@ Ext.define('Esc.magmaweb.view.metabolite.ReactionColumn', {
                 if (match[1] === 'r') {
                     // 'reactant of' clicked
                     reaction_filter.setValue({
-                        'reactant': record.data.metid
+                        'reactant': record.data.molid
                     });
                     return reaction_filter.setActive(true);
                 } else if (match[1] === 'p') {
                     // 'product of' clicked
                     reaction_filter.setValue({
-                        'product': record.data.metid
+                        'product': record.data.molid
                     });
                     return reaction_filter.setActive(true);
                 }
@@ -93,14 +93,14 @@ Ext.define('Esc.magmaweb.view.metabolite.ReactionColumn', {
                     // reaction name of reactant clicked
                     reaction_filter.setValue({
                         'name': target.innerText,
-                        'reactant': record.data.metid,
+                        'reactant': record.data.molid,
                     });
                     return reaction_filter.setActive(true);
                 } else if (match[1] === 'p') {
                     // reaction name of product clicked
                     reaction_filter.setValue({
                         'name': target.innerText,
-                        'product': record.data.metid
+                        'product': record.data.molid
                     });
                     return reaction_filter.setActive(true);
                 }

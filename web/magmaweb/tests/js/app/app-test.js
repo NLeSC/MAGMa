@@ -32,9 +32,9 @@ Ext.onReady(function() {
       },
       // mock runinfo url to a static file
       runInfoUrl: function() { return 'data/runinfo.json' },
-      // use test files for metabolites in data/
-      metabolitesUrl: function(format) {
-          return 'data/metabolites.'+format;
+      // use test files for molecules in data/
+      moleculesUrl: function(format) {
+          return 'data/molecules.'+format;
       },
       showHelp: function(section) {}
   });

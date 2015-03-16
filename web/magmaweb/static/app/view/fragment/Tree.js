@@ -27,7 +27,7 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
     animate: false,
     blockRefresh: false,
     deferEmptyText: false,
-    emptyText: 'Select a metabolite and scan, to show its fragments',
+    emptyText: 'Select a molecule and scan, to show its fragments',
     getRowClass: function(record) {
       // Make transition between mslevel visible by giving even/odd mslevel different bg color
       return record.get("mslevel") % 2 === 0 ? this.altRowCls : "";
@@ -122,7 +122,7 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
         { text: 'Formula', dataIndex: 'formula', hidden: false},
         { text: 'ID', dataIndex: 'fragid', hidden: true},
         fmolcol,
-        { text: 'Molecule ID', dataIndex: 'metid', hidden: true},
+        { text: 'Molecule ID', dataIndex: 'molid', hidden: true},
         { text: 'Fragment atoms', dataIndex: 'atoms', hidden: true},
         { text: 'Score', dataIndex: 'score', width: 120, renderer: function(value) {
             // can't use numbercolumn or we will loose depth visualisation, so use renderer

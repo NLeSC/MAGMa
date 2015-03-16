@@ -3,7 +3,7 @@
  *
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.magmaweb.view.metabolite.ScenarioField', {
+Ext.define('Esc.magmaweb.view.molecule.ScenarioField', {
     extend: 'Ext.grid.Panel',
     mixins: {
         field: 'Ext.form.field.Field'
