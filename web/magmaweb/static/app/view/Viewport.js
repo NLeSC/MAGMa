@@ -8,7 +8,7 @@ Ext.define('Esc.magmaweb.view.Viewport', {
     'Ext.toolbar.Spacer',
     'Ext.container.ButtonGroup',
     'Esc.magmaweb.view.fragment.Tree',
-    'Esc.magmaweb.view.metabolite.Panel',
+    'Esc.magmaweb.view.molecule.Panel',
     'Esc.magmaweb.view.scan.Panel'
   ],
   initComponent: function() {
@@ -76,7 +76,7 @@ Ext.define('Esc.magmaweb.view.Viewport', {
           items:[{
             region:'center',
             border: false,
-            xtype: 'metabolitepanel'
+            xtype: 'moleculepanel'
           },{
             region:'south',
             hideCollapseTool: true,

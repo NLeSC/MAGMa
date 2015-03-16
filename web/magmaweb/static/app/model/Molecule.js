@@ -1,34 +1,36 @@
 /**
- * Metabolite model.
+ * Molecule model.
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.magmaweb.model.Metabolite', {
-  idProperty: 'metid',
+Ext.define('Esc.magmaweb.model.Molecule', {
+  idProperty: 'molid',
   extend:'Ext.data.Model',
   fields: [{
-    name: 'metid'
+    name: 'molid'
   },{
     name: 'mol', type:'string'
   },{
     name: 'level'
   },{
-    name: 'probability'
+    name: 'refscore'
   },{
     name: 'reactionsequence'
   },{
+    name: 'inchikey14'
+  },{
     name: 'smiles'
   },{
-    name: 'molformula'
+    name: 'formula'
   },{
-    name: 'isquery', type: 'bool'
+    name: 'predicted', type: 'bool'
   },{
-    name: 'origin'
+    name: 'name'
   },{
     name: 'nhits', type:'number'
   },{
     name: 'atoms', defaultValue: [] // array of atom indexes of molecule which are the substructure of the query
   },{
-    name: 'scans', defaultValue: [] // Filled when metabolite is selected
+    name: 'scans', defaultValue: [] // Filled when molecule is selected
   },{
     name: 'score', type:'number' // Only filled when scan is selected
   },{

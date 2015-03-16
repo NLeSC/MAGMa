@@ -1,16 +1,16 @@
 /**
- * Form to add metabolites.
+ * Form to add molecules.
  *
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.magmaweb.view.metabolite.AddForm', {
+Ext.define('Esc.magmaweb.view.molecule.AddForm', {
     extend: 'Ext.form.Panel',
-    alias: 'widget.metaboliteaddform',
+    alias: 'widget.moleculeaddform',
     autoScroll: true,
     trackResetOnLoad: true,
     requires: [
-       'Esc.magmaweb.view.metabolite.AddFieldSet',
-       'Esc.magmaweb.view.metabolite.MetabolizeFieldSet',
+       'Esc.magmaweb.view.molecule.AddFieldSet',
+       'Esc.magmaweb.view.molecule.MetabolizeFieldSet',
        'Esc.magmaweb.view.fragment.AnnotateFieldSet'
     ],
     items : [{

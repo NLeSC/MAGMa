@@ -67,26 +67,28 @@ class ReactionSequence(TypeDecorator):
         return value
 
 
-class Metabolite(Base):
-    """Metabolite model for metabolites table"""
-    __tablename__ = 'metabolites'
-    # Id of a metabolite
-    metid = Column(Integer, primary_key=True, autoincrement=True)
+class Molecule(Base):
+    """Molecule model for molecules table"""
+    __tablename__ = 'molecules'
+    # Id of a molecule
+    molid = Column(Integer, primary_key=True, autoincrement=True)
     # molfile as string
     mol = Column(Unicode)
     level = Column(Integer)
-    probability = Column(Float)
+    refscore = Column(Float)
     # A newline seperated list of reactions
     reactionsequence = Column(ReactionSequence, default={})
+    # Inchikey first 14 chars
+    inchikey14 = Column(Unicode(), unique=True)
     # Smile string
-    smiles = Column(Unicode, unique=True)
+    smiles = Column(Unicode)
     # Molecular formula
-    molformula = Column(Unicode)
-    # Whether metabolite was given as query or is a result a of reaction
-    isquery = Column(Boolean)
+    formula = Column(Unicode)
+    # Whether molecule was given as query or is a result a of reaction
+    predicted = Column(Boolean)
     # Name of molecule
-    origin = Column(Unicode)
-    # Number of lvl1 scans fragments are found for this metabolite
+    name = Column(Unicode)
+    # Number of lvl1 scans fragments are found for this molecule
     nhits = Column(Integer)
     # Monoisotopic mass
     mim = Column(Float)
@@ -95,8 +97,8 @@ class Metabolite(Base):
     # Calculated logP
     logp = Column(Float)
     reference = Column(Unicode)
-    # each metabolite is fragmented into fragments
-    fragments = relationship('Fragment', backref='metabolite')
+    # each molecule is fragmented into fragments
+    fragments = relationship('Fragment', backref='molecule')
 
 
 class Reaction(Base):
@@ -104,8 +106,8 @@ class Reaction(Base):
     __tablename__ = 'reactions'
     # Id of a reaction
     reactid = Column(Integer, primary_key=True, autoincrement=True)
-    reactant = Column(Integer, ForeignKey('metabolites.metid'))
-    product = Column(Integer, ForeignKey('metabolites.metid'))
+    reactant = Column(Integer, ForeignKey('molecules.molid'))
+    product = Column(Integer, ForeignKey('molecules.molid'))
     name = Column(Unicode)
 
 
@@ -125,31 +127,31 @@ def fill_molecules_reactions(session):
     from sqlalchemy.sql import func
 
     reactions = {}
-    for metid, rname, nr in session.query(Reaction.product, Reaction.name, func.count('*')).group_by(Reaction.product, Reaction.name):
-        if metid not in reactions:
-            reactions[metid] = {}
-        if 'reactants' not in reactions[metid]:
-            reactions[metid]['reactants'] = {}
-        reactions[metid]['reactants'][rname] = {'nr': nr}
+    for molid, rname, nr in session.query(Reaction.product, Reaction.name, func.count('*')).group_by(Reaction.product, Reaction.name):
+        if molid not in reactions:
+            reactions[molid] = {}
+        if 'reactants' not in reactions[molid]:
+            reactions[molid]['reactants'] = {}
+        reactions[molid]['reactants'][rname] = {'nr': nr}
 
-    for metid, rname, nrp in session.query(Reaction.product, Reaction.name, func.count('*')).join(Metabolite, Metabolite.metid == Reaction.reactant).filter(Metabolite.nhits > 0).group_by(Reaction.product, Reaction.name):
+    for molid, rname, nrp in session.query(Reaction.product, Reaction.name, func.count('*')).join(Molecule, Molecule.molid == Reaction.reactant).filter(Molecule.nhits > 0).group_by(Reaction.product, Reaction.name):
         # dont need checks for keys because query above is always superset of this query
-        reactions[metid]['reactants'][rname]['nrp'] = nrp
+        reactions[molid]['reactants'][rname]['nrp'] = nrp
 
-    for metid, rname, nr in session.query(Reaction.reactant, Reaction.name, func.count('*')).group_by(Reaction.reactant, Reaction.name):
-        if metid not in reactions:
-            reactions[metid] = {}
-        if 'products' not in reactions[metid]:
-            reactions[metid]['products'] = {}
-        reactions[metid]['products'][rname] = {'nr': nr}
+    for molid, rname, nr in session.query(Reaction.reactant, Reaction.name, func.count('*')).group_by(Reaction.reactant, Reaction.name):
+        if molid not in reactions:
+            reactions[molid] = {}
+        if 'products' not in reactions[molid]:
+            reactions[molid]['products'] = {}
+        reactions[molid]['products'][rname] = {'nr': nr}
 
-    for metid, rname, nrp in session.query(Reaction.reactant, Reaction.name, func.count('*')).join(Metabolite, Metabolite.metid == Reaction.product).filter(Metabolite.nhits > 0).group_by(Reaction.reactant, Reaction.name):
+    for molid, rname, nrp in session.query(Reaction.reactant, Reaction.name, func.count('*')).join(Molecule, Molecule.molid == Reaction.product).filter(Molecule.nhits > 0).group_by(Reaction.reactant, Reaction.name):
         # dont need checks for keys because query above is always superset of this query
-        reactions[metid]['products'][rname]['nrp'] = nrp
+        reactions[molid]['products'][rname]['nrp'] = nrp
 
-    for mol in session.query(Metabolite):
-        if mol.metid in reactions:
-            reaction = reactions[mol.metid]
+    for mol in session.query(Molecule):
+        if mol.molid in reactions:
+            reaction = reactions[mol.molid]
         else:
             reaction = {}
         mol.reactionsequence = reaction
@@ -198,8 +200,8 @@ class Peak(Base):
     mz = Column(Float, primary_key=True)
     # Intensity of peak (y-coordinate)
     intensity = Column(Float)
-    # which metabolite is assigned to this peak
-    assigned_metid = Column(Integer, ForeignKey('metabolites.metid'),index=True)
+    # which molecule is assigned to this peak
+    assigned_molid = Column(Integer, ForeignKey('molecules.molid'),index=True)
 
 
 class Fragment(Base):
@@ -207,25 +209,25 @@ class Fragment(Base):
     __tablename__ = 'fragments'
     # Fragment identifier
     fragid = Column(Integer, primary_key=True, autoincrement=True)
-    # Metabolite identifier
-    metid = Column(Integer, ForeignKey('metabolites.metid'),index=True)
+    # Molecule identifier
+    molid = Column(Integer, ForeignKey('molecules.molid'),index=True)
     # Scan identifier
     scanid = Column(Integer, ForeignKey('scans.scanid'),index=True)
     # m/z of peak in scan
     mz = Column(Float)
     # Mass of fragment in Dalton, corrected with h delta
     mass = Column(Float)
-    # Score of how good the metabolite fragment matches the mass spectras
+    # Score of how good the molecule fragment matches the mass spectras
     score = Column(Float)
     # From which fragment this fragment is a fragment of
     parentfragid = Column(Integer, ForeignKey('fragments.fragid'))
-    # Atom indices of metabolite which are the fragment
+    # Atom indices of molecule which are the fragment
     # is a comma seperated list, starting with 0
     atoms = Column(Unicode)
     deltah = Column(Float)
     # (mz+deltah*1.007825032-mass)/(mz*1e6)  as deltappm
     deltappm = Column(Float)
-    inchikey = Column(Unicode)
+    smiles = Column(Unicode)
     # molecular formula of fragment
     formula = Column(Unicode)
     #: A fragment can have child fragments
@@ -254,21 +256,21 @@ class Run(Base):
     # maximum ms level to be included in the analysis
     max_ms_level = Column(Integer)
 
-    # parameters for matching metabolites and fragments with peaks
+    # parameters for matching molecules and fragments with peaks
     ionisation_mode = Column(Integer)
     skip_fragmentation = Column(Boolean)
-    # max number of bonds broken in substructures generated from metabolites
+    # max number of bonds broken in substructures generated from molecules
     max_broken_bonds = Column(Integer)
     # max number of additional neutral water losses
     max_water_losses = Column(Integer)
     # Absolute intensity minimum of lvl1 scan peaks
-    # which are matched with metabolites
+    # which are matched with molecules
     ms_intensity_cutoff = Column(Float)
     # Ratio of basepeak intensity
     msms_intensity_cutoff = Column(Float)
-    # precision for matching a metabolite mim to m/z of a peak (in ppm)
+    # precision for matching a molecule mim to m/z of a peak (in ppm)
     mz_precision = Column(Float)
-    # precision for matching a metabolite mim to m/z of a peak (in Da)
+    # precision for matching a molecule mim to m/z of a peak (in Da)
     mz_precision_abs = Column(Float)
     # precision for matching precursor mz with peak mz in parent scan
     precursor_mz_precision = Column(Float)

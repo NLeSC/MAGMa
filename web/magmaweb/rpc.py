@@ -93,9 +93,9 @@ class RpcViews(object):
             job.ms_filename = self.request.POST['ms_data_file'].filename
         except AttributeError:
             job.ms_filename = 'Uploaded as text'
-        has_metabolites = job.db.metabolitesTotalCount() > 0
+        has_molecules = job.db.moleculesTotalCount() > 0
         jobquery = job.jobquery(self._status_url(job), self.restricted)
-        jobquery = jobquery.add_ms_data(self.request.POST, has_metabolites)
+        jobquery = jobquery.add_ms_data(self.request.POST, has_molecules)
         self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}
 
@@ -139,22 +139,22 @@ class RpcViews(object):
         return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.assign', renderer='json')
-    def assign_metabolite2peak(self):
-        """Assigns molecule with `metid` to peak `mz` in scan `scanid`.
+    def assign_molecule2peak(self):
+        """Assigns molecule with `molid` to peak `mz` in scan `scanid`.
         """
         job = self.job
         scanid = self.request.POST['scanid']
         mz = self.request.POST['mz']
-        metid = self.request.POST['metid']
-        job.db.assign_metabolite2peak(scanid, mz, metid)
+        molid = self.request.POST['molid']
+        job.db.assign_molecule2peak(scanid, mz, molid)
         return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.unassign', renderer='json')
-    def unassign_metabolite2peak(self):
+    def unassign_molecule2peak(self):
         """Unassigns any molecule from peak `mz` in scan `scanid`.
         """
         job = self.job
         scanid = self.request.POST['scanid']
         mz = self.request.POST['mz']
-        job.db.unassign_metabolite2peak(scanid, mz)
+        job.db.unassign_molecule2peak(scanid, mz)
         return {'success': True, 'jobid': str(job.id)}
