@@ -74,12 +74,10 @@ class Molecule(Base):
     molid = Column(Integer, primary_key=True, autoincrement=True)
     # molfile as string
     mol = Column(Unicode)
-    level = Column(Integer)
-    refscore = Column(Float)
     # A newline seperated list of reactions
     reactionsequence = Column(ReactionSequence, default={})
     # Inchikey first 14 chars
-    inchikey14 = Column(Unicode(), unique=True)
+    inchikey14 = Column(Unicode, unique=True)
     # Smile string
     smiles = Column(Unicode)
     # Molecular formula
@@ -96,6 +94,7 @@ class Molecule(Base):
     natoms = Column(Integer)
     # Calculated logP
     logp = Column(Float)
+    refscore = Column(Float)
     reference = Column(Unicode)
     # each molecule is fragmented into fragments
     fragments = relationship('Fragment', backref='molecule')
