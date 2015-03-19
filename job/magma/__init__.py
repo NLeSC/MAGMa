@@ -16,6 +16,7 @@ from requests.auth import AuthBase
 import pp
 import cPickle as pickle
 import types
+from magma.errors import FileFormatError,DataProcessingError
 import pars
 from operator import itemgetter
 
@@ -29,9 +30,15 @@ config.read(['magma_job.ini', os.path.expanduser('~/magma_job.ini')])
 
 if config.get('magma job','chemical_engine')=="rdkit":
     import rdkit_engine as Chem     # Use rdkit_engine
+    from rdkit.rdBase import DisableLog
+    DisableLog('rdApp.warning')
 elif config.get('magma job','chemical_engine')=="cdk":
     import cdk_engine               # Use cdk_engine
     Chem=cdk_engine.engine()
+
+logging.basicConfig(format='%(levelname)s: %(message)s')
+logger=logging.getLogger('MagmaLogger')
+
 
 """
 RDkit dependencies:
@@ -43,7 +50,7 @@ generate smiles
 
 
 class MagmaSession(object):
-    def __init__(self,db_name,description="",loglevel='warning'):
+    def __init__(self,db_name,description="",loglevel='info'):
         engine = create_engine('sqlite:///'+db_name,echo=False)
         session = sessionmaker()
         session.configure(bind=engine)
@@ -57,7 +64,7 @@ class MagmaSession(object):
             rundata.description=unicode(description)
         self.db_session.add(rundata)
         self.db_session.commit()
-        logging.basicConfig(format='%(levelname)s: %(message)s', level=getattr(logging, loglevel.upper()))
+        logger.setLevel(getattr(logging, loglevel.upper()))
     def get_structure_engine(self,pubchem_names=False, call_back_url=None):
         return StructureEngine(self.db_session,pubchem_names,call_back_url)
     def get_ms_data_engine(self,
@@ -140,14 +147,14 @@ class StructureEngine(object):
             self.call_back_engine=None
 
     def read_sdf(self,file_name,mass_filter):
-        print 'READING SDF (Structure Data File)'
+        logger.info('READING SDF (Structure Data File)')
         molids=set([])
         for mol in Chem.SDMolSupplier(file_name):
             molids.add(self.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), None, 1, mass_filter=mass_filter))
-        print str(len(molids))+' molecules added to library\n'
+        logger.info(str(len(molids))+' molecules added to library\n')
 
-    def read_smiles(self,smiles,mass_filter):
-        print 'READING SMILES'
+    def read_smiles(self,smiles,mass_filter=9999):
+        logger.info('READING SMILES')
         try:
             smiles_file=open(smiles)
         except:
@@ -169,11 +176,11 @@ class StructureEngine(object):
                 mol = Chem.SmilesToMol(smiles,name)
                 molids.add(self.add_structure(Chem.MolToMolBlock(mol), name, 1.0, 1, mass_filter=mass_filter))
             except:
-                print 'WARNING: Failed to read smiles: '+smiles+' ('+name+')'
-        print str(len(molids))+' molecules added to library\n'
+                logger.warn('Failed to read smiles: '+smiles+' ('+name+')')
+        logger.info(str(len(molids))+' molecules added to library\n')
 
-    def add_structure(self,molblock,name,refscore,isparent,mim=None,natoms=None,inchi=None,molform=None,reference=None,logp=None,mass_filter=9999):
-        molecule=types.MoleculeType(molblock,name,refscore,isparent,mim,natoms,inchi,molform,reference,logp)
+    def add_structure(self,molblock,name,refscore,predicted,mim=None,natoms=None,inchi=None,molform=None,reference=None,logp=None,mass_filter=9999):
+        molecule=types.MoleculeType(molblock,name,refscore,predicted,mim,natoms,inchi,molform,reference,logp)
         return self.add_molecule(molecule,mass_filter)
 
     def add_molecule(self,molecule,mass_filter=9999,check_duplicates=True,merge=False):
@@ -187,16 +194,17 @@ class StructureEngine(object):
             refscore=molecule.refscore,
             inchikey14=unicode(molecule.inchikey14),
             formula=unicode(molecule.formula),
-            isparent=molecule.isparent,
+            predicted=molecule.predicted,
             name=unicode(molecule.name, 'utf-8', 'xmlcharrefreplace'),
             nhits=0,
             mim=molecule.mim,
             natoms=molecule.natoms,
             reference=unicode(molecule.reference),
-            logp=molecule.logp
+            logp=molecule.logp,
+            reactionsequence={}
             )
         if check_duplicates:
-            dups=self.db_session.query(Molecule).filter_by(inchikey14=molecule.inchikey14).all()
+            dups=self.db_session.query(Molecule).filter_by(inchikey14=unicode(molecule.inchikey14)).all()
             if len(dups)>0:
                 if merge:
                     metab=dups[0]
@@ -211,10 +219,10 @@ class StructureEngine(object):
                         metab.molid=dups[0].molid
                         self.db_session.delete(dups[0])
                         #self.db_session.add(metab)
-                        print 'Duplicate structure, first one removed: '+molecule.name
+                        logger.info('Duplicate structure, first one removed: '+molecule.name)
                     # TODO remove any fragments related to this structure as well
                     else:
-                        print 'Duplicate structure, kept first one: '+metab.name
+                        logger.info('Duplicate structure, kept first one: '+metab.name)
                         return
         if self.pubchem_names:
             in_pubchem=self.pubchem_engine.check_inchi(metab.mim, metab.inchikey14)
@@ -227,7 +235,7 @@ class StructureEngine(object):
                 if metab.refscore == None:
                     metab.refscore = refscore
         self.db_session.add(metab)
-        logging.debug('Added molecule: '+Chem.MolToSmiles(mol))
+        logger.debug('Added molecule: '+Chem.MolToSmiles(mol))
         self.db_session.flush()
         return metab.molid
 
@@ -285,7 +293,7 @@ class StructureEngine(object):
         try:
             parent = self.db_session.query(Molecule).filter_by(molid=molid).one()
         except:
-            print 'Molecule record ',molid,' does not exist.'
+            logger.warn('Molecule record ',molid,' does not exist.')
             return
         if parent.refscore == None or parent.refscore > 1:
             parentscore = 1.0
@@ -301,7 +309,7 @@ class StructureEngine(object):
                         if line[0] != "#" and line[0] != "\n":
                             splitline=line.split()
                             prob_dict[splitline[2]]=float(splitline[1])
-        logging.debug('Execute reactions: '+exec_reactor)
+        logger.debug('Execute reactions: '+exec_reactor)
 
         reactor=subprocess.Popen(exec_reactor, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
         reactor.stdin.write(parent.mol+'$$$$\n')
@@ -350,17 +358,17 @@ class StructureEngine(object):
                 try:
                     molecule=types.MoleculeType(mol,"",prob*parentscore,0)
                 except:
-                    logging.warn('Predicted metabolite ignored:\n' + mol)
+                    logger.warn('Predicted metabolite ignored')
                     line=reactor.stdout.readline()
                     continue
                 new_molid=self.add_molecule(molecule,merge=True)
                 molids.add(new_molid)
-                reactid=self.db_session.query(Reaction.reactid).filter(Reaction.reactant==molid,Reaction.product==new_molid,Reaction.name==" + ".join(sequence)).all()
+                reactid=self.db_session.query(Reaction.reactid).filter(Reaction.reactant==molid,Reaction.product==new_molid,Reaction.name==unicode(" + ".join(sequence))).all()
                 if len(reactid)==0:
                     react=Reaction(
                         reactant=molid,
                         product=new_molid,
-                        name=" + ".join(sequence)
+                        name=unicode(" + ".join(sequence))
                         )
                     self.db_session.add(react)
                     self.db_session.flush()
@@ -375,7 +383,7 @@ class StructureEngine(object):
         return molids
 
     def metabolize_all(self,metabolism,endpoints=False):
-        print 'Metabolize all'
+        logger.info('Metabolize all')
         parentids = self.db_session.query(Molecule.molid).all()
         molids=set([])
         for parentid, in parentids:
@@ -383,7 +391,7 @@ class StructureEngine(object):
         return molids
 
     def run_scenario(self, scenario, time_limit=None):
-        print 'RUNNING METABOLIC SCENARIO'
+        logger.info('RUNNING METABOLIC SCENARIO')
         if time_limit == None:
             result=self.db_session.query(Molecule.molid).all()
             molids={x[0] for x in result} #set comprehension
@@ -392,18 +400,17 @@ class StructureEngine(object):
         start_time=time.time()
         for step in range(len(scenario)):
             action,value = scenario[step]
-            print "Stage "+str(step+1)+":"
+            logger.info("Stage "+str(step+1)+":")
             endpoints=False
+            prev_molids=molids
             if action=='mass_filter':
                 result=self.db_session.query(Molecule.molid).filter(Molecule.mim<float(value),Molecule.molid.in_(molids)).all()
                 molids={x[0] for x in result} #set comprehension
-                print "   from",len(molids),"compounds,",len(molids),"were selected with mass <",value
+                logger.info('    from '+str(len(prev_molids))+' compounds, '+str(len(molids))+' were selected with mass <'+str(value))
             else:
-                prev_molids=molids
                 if value=='complete':
                     endpoints=True
                     value=1
-                print "  ",len(molids),"metabolites",
                 new_molids=set()
                 for molid in molids:
                     new_molids |= self.metabolize(molid,action,endpoints)
@@ -430,19 +437,19 @@ class StructureEngine(object):
                         molids |= new_molids
                         if time_limit and time.time()-start_time > time_limit * 60:
                             break
-                print 'were metabolized according to',action,'rules ('+str(int(value))+' steps)'
-                print '   yielding',len(molids),'metabolites'
+                logger.info('    '+str(len(prev_molids))+' compounds were metabolized according to '+str(action)+' rules ('+str(int(value))+' steps)')
+                logger.info('    yielding '+str(len(molids))+' metabolites')
                 if not endpoints:
                     molids |= prev_molids
             if time_limit and time.time()-start_time > time_limit * 60:
                 if self.call_back_engine != None:
                     self.call_back_engine.update_callback_url('Transformation stopped: time limit exceeded',force=True)
-                print 'WARNING: Transformation stopped: time limit exceeded'
+                logger.warn('Transformation stopped: time limit exceeded')
                 break
         else:
             if self.call_back_engine != None:
                 self.call_back_engine.update_callback_url('Transformations completed',force=True)
-        print self.db_session.query(Molecule).count(),'molecules in library\n'        
+        logger.info(str(self.db_session.query(Molecule).count())+' molecules in library\n')      
  
     def retrieve_structures(self,mass):
         dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
@@ -500,11 +507,10 @@ class MsDataEngine(object):
             self.call_back_engine=None
 
     def store_mzxml_file(self,mzxml_file,scan_filter=None,time_limit=None):
-        print 'READING MZXML FILE'
+        logger.info('READING MZXML FILE')
         rundata=self.db_session.query(Run).one()
         if rundata.ms_filename != None:
-            print 'ERROR: Attempt to read MS data twice'
-            exit()
+            raise DataProcessingError('Attempt to read MS data twice')
         rundata.ms_filename=unicode(mzxml_file)
         self.db_session.add(rundata)
         self.ms_filename=mzxml_file
@@ -526,13 +532,13 @@ class MsDataEngine(object):
             if time_limit and elapsed_time > time_limit * 60:
                 if self.call_back_engine != None:
                     self.call_back_engine.update_callback_url('Reading mzXML stopped: time limit exceeded',force=True)
-                print 'WARNING: Reading mzXML stopped: time limit exceeded'
+                logger.warn('Reading mzXML stopped: time limit exceeded\n')
                 break
         else:
             if self.call_back_engine != None:
                 self.call_back_engine.update_callback_url('Reading mzXML completed',force=True)
         self.db_session.commit()
-        print self.db_session.query(Scan).count(),'spectra read from file\n'
+        logger.info(str(self.db_session.query(Scan).count())+' spectra read from file\n')
 
     def store_mzxml_scan(self,mzxmlScan,precScan,namespace):
         if mzxmlScan.attrib['peaksCount']=='0':
@@ -558,7 +564,7 @@ class MsDataEngine(object):
             totioncurrent=totioncurrent,
             precursorscanid=precScan
             )
-        logging.info('Processing scan '+str(scan.scanid)+' (level '+str(scan.mslevel)+')') 
+        logger.debug('Processing scan '+str(scan.scanid)+' (level '+str(scan.mslevel)+')') 
         comp=None
         for child in mzxmlScan:
             if child.tag == namespace+'precursorMz':
@@ -570,7 +576,7 @@ class MsDataEngine(object):
                     # MS>1 scan is not in a hierarchy and does not contain precursor scan information
                     # assume that the preceding (based on retention time) scan at the precursor MS level is the precursor scan
                     scan.precursorscanid=self.db_session.query(Scan.scanid).filter(Scan.mslevel==scan.mslevel-1).filter(Scan.rt<scan.rt).order_by(desc(Scan.rt)).first()[0]
-                    print 'Assigning precursor scanid '+str(scan.precursorscanid)+' to scan '+str(scan.scanid)
+                    logger.info('Assigning precursor scanid '+str(scan.precursorscanid)+' to scan '+str(scan.scanid)+'\n')
                 #check for existing scan with the same precursor
                 comp=self.db_session.query(Scan).filter(Scan.precursorscanid==scan.precursorscanid, \
                                                         Scan.precursormz==scan.precursormz, \
@@ -593,7 +599,7 @@ class MsDataEngine(object):
         self.db_session.flush()
 
     def merge_spectrum(self,existing_scan,newscan,decoded):
-        print 'Merging scans '+str(existing_scan.scanid)+' and '+str(newscan.scanid)
+        logger.info('Merging scans '+str(existing_scan.scanid)+' and '+str(newscan.scanid))
         if existing_scan.lowmz > newscan.lowmz:
             existing_scan.lowmz = newscan.lowmz
         if existing_scan.highmz < newscan.highmz:
@@ -692,8 +698,7 @@ class MsDataEngine(object):
                 self.global_scanid+=1
                 self.store_manual_subtree(tree_list,scanid,mz,intensity,mslevel+1,tree_type)
             elif tree_item!=',' and tree_item!='':
-                print 'Corrupt Tree format ...'
-                exit()
+                raise FileFormatError('Corrupt Tree format ...')
         if npeaks>0:
             self.db_session.add(Scan(
                 scanid=scanid,
@@ -720,8 +725,7 @@ class MsDataEngine(object):
                 m=pars.mims[form[:1]]
                 form=form[1:]
             else:
-                print 'ERROR: Element not allowed in formula tree: '+form
-                exit()
+                raise FileFormatError('Element not allowed in formula tree: '+form)
             x=0
             while len(form)>x and form[x] in '0123456789':
                 x+=1
@@ -762,8 +766,7 @@ class AnnotateEngine(object):
         self.ms_intensity_cutoff=rundata.ms_intensity_cutoff
         self.msms_intensity_cutoff=rundata.msms_intensity_cutoff
         if rundata.mz_precision == None:
-            print 'ERROR: No MS data parameters read.'
-            exit()
+            raise DataProcessingError('No MS data parameters read.')
         self.mz_precision=rundata.mz_precision
         self.precision=1+rundata.mz_precision/1e6
         self.mz_precision_abs=rundata.mz_precision_abs
@@ -776,11 +779,8 @@ class AnnotateEngine(object):
             self.call_back_engine=CallBackEngine(call_back_url)
         else:
             self.call_back_engine=None
-        print 'SETTINGS FOR MATCHING PRECURSOR IONS AND CANDIDATES:'
-        print 'Ionisation mode:',self.ionisation_mode
-        print 'Precursor intensity threshold:',self.ms_intensity_cutoff
-        print 'Maximum relative m/z error (ppm):',self.mz_precision
-        print 'Maximum absolute m/z error (Da):',self.mz_precision_abs
+        logger.info('SETTINGS FOR MATCHING PRECURSOR IONS AND CANDIDATES:')
+        logger.info('Ionisation mode: '+str(self.ionisation_mode))
         if self.ionisation_mode == 1:
             iontypes=['+H']
         if self.ionisation_mode == -1:
@@ -789,6 +789,9 @@ class AnnotateEngine(object):
             for i in adducts.split(','):
                 iontypes.append('+'+i)
         self.ions=self.generate_ions(iontypes,max_charge)
+        logger.info('Precursor intensity threshold: '+str(self.ms_intensity_cutoff))
+        logger.info('Maximum relative m/z error (ppm): '+str(self.mz_precision))
+        logger.info('Maximum absolute m/z error (Da): '+str(self.mz_precision_abs)+'\n')
 
     def generate_ions(self,iontypes,maxcharge):
         ions=[{0:''}]
@@ -797,20 +800,18 @@ class AnnotateEngine(object):
             for ionmass in ions[c]:
                 for i in iontypes:
                     if i not in pars.ionmasses[self.ionisation_mode]:
-                        print 'ERROR: Invalid adduct: '+i+' for ionisation mode: '+str(self.ionisation_mode)
-                        exit()
+                        raise DataProcessingError('Invalid adduct: '+i+' for ionisation mode: '+str(self.ionisation_mode))
                     ions[c+1][ionmass+pars.ionmasses[self.ionisation_mode][i]]=ions[c][ionmass]+i
         for c in range(maxcharge+1):
             for ionmass in ions[c]:
                 ions[c][ionmass]='[M'+ions[c][ionmass]+']'+str(c)*(c>1)+'-'*(self.ionisation_mode<0)+'+'*(self.ionisation_mode>0)
         for c in range(1,maxcharge+1):
-            print 'Adducts with charge '+str(self.ionisation_mode*c)+': '+str(ions[c].values())
-        print ''
+            logger.info('Adducts with charge '+str(self.ionisation_mode*c)+': '+str(ions[c].values()))
         return ions
 
     def build_spectrum(self,dbscan):
         scan=types.ScanType(dbscan.scanid,dbscan.mslevel)
-        logging.info('Building scan '+str(dbscan.scanid))
+        logger.debug('Building scan '+str(dbscan.scanid))
         if scan.mslevel==1:
             cutoff=self.ms_intensity_cutoff
         else:
@@ -842,7 +843,7 @@ class AnnotateEngine(object):
         return scan,max_depth
 
     def build_spectra(self,scans='all'):
-        print 'BUILDING SPECTRAL TREES'
+        logger.info('BUILDING SPECTRAL TREES')
         ndepths={}
         if scans=='all':
             queryscans=self.db_session.query(Scan).filter(Scan.mslevel==1).all()
@@ -856,10 +857,10 @@ class AnnotateEngine(object):
                 else:
                     ndepths[depth]=1
             self.scans.append(spectrum)
-        print str(len(self.scans))+' MS1 spectra'
+        logger.info(str(len(self.scans))+' MS1 spectra')
         for depth in ndepths:
-            print str(ndepths[depth]),'spectral trees of depth',depth
-        print ''
+            logger.info(str(ndepths[depth])+' spectral trees of depth '+str(depth))
+        logger.info('')
         self.indexed_peaks={}   # dictionary: sets of peaks for each integer m/z value
         for scan in self.scans:
             for peak in scan.peaks:
@@ -909,11 +910,11 @@ class AnnotateEngine(object):
         return db_candidates
 
     def get_db_candidates(self,query_engine,max_mim=""):
-        print 'RETRIEVING CANDIDATE MOLECULES FROM: '+str(query_engine.name)
+        logger.info('RETRIEVING CANDIDATE MOLECULES FROM: '+str(query_engine.name))
         if max_mim=='':
             max_mim='1200'
         mmim=int(float(max_mim)*1e6)
-        print 'Mass limit:',max_mim
+        logger.info('Mass limit: '+str(max_mim))
 
         struct_engine = StructureEngine(self.db_session)
 
@@ -937,18 +938,18 @@ class AnnotateEngine(object):
                     result=query_engine.query_on_mim(ql,qh,0)
                     for molecule in result:
                         candidate[molecule.inchikey14]=molecule #remove duplicates
-                    logging.info(str(ql)+','+str(qh)+' --> '+str(len(candidate))+' candidates')
+                    logger.debug(str(ql)+','+str(qh)+' --> '+str(len(candidate))+' candidates')
                 for ionmass in self.ions[charge-1]: # include singly charged candidates from database
                     ql=int(1e6*((min(mz/self.precision,mz-self.mz_precision_abs)-ionmass)*charge+self.ionisation_mode*pars.elmass))
                     qh=int(1e6*((max(mz*self.precision,mz+self.mz_precision_abs)-ionmass)*charge+self.ionisation_mode*pars.elmass))
                     result=query_engine.query_on_mim(ql,qh,self.ionisation_mode)
                     for molecule in result:
                         candidate[molecule.inchikey14]=molecule #remove duplicates
-                    logging.info(str(ql)+','+str(qh)+' --> '+str(len(candidate))+' candidates')
-
+                    logger.debug(str(ql)+','+str(qh)+' --> '+str(len(candidate))+' candidates')
+        logger.info('Storing '+str(len(candidate))+' candidates')
         # in case of an empty database, no check for existing duplicates needed
         check_duplicates = (self.db_session.query(Molecule.molid).count() > 0)
-        logging.debug('check duplicates: '+str(check_duplicates))
+        logger.debug('check duplicates: '+str(check_duplicates))
         molids=set([])
         for molecule in candidate.itervalues():
             molid=struct_engine.add_molecule(molecule,check_duplicates=check_duplicates,merge=True)
@@ -956,17 +957,16 @@ class AnnotateEngine(object):
 
         # All candidates are stored in dbsession, resulting molids are returned
         self.db_session.commit()
-        print str(len(molids))+' candidates retrieved\n'
         return molids
 
     def search_structures(self,molids=None,ncpus=1,fast=False,time_limit=None):
-        print 'MATCHING CANDIDATE MOLECULES'
+        logger.info('MATCHING CANDIDATE MOLECULES')
         global fragid
         fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
         if fragid == None:
             fragid = 0
         ppservers = ()
-        logging.info('calculating on '+str(ncpus)+' cpus!')
+        logger.info('calculating on '+str(ncpus)+' cpus')
         job_server = pp.Server(ncpus, ppservers=ppservers)
         if molids==None:
             if time_limit == None:
@@ -987,7 +987,7 @@ class AnnotateEngine(object):
             for structure in structures:
                 # skip molecule if it has already been used for annotation
                 if self.db_session.query(Fragment.fragid).filter(Fragment.molid == structure.molid).count() > 0:
-                    logging.warn('Molecule '+str(structure.molid)+': Already annotated, skipped')
+                    logger.warn('Molecule '+str(structure.molid)+': Already annotated, skipped')
                     continue
                 # collect all peaks with masses within 3 Da range
                 molcharge=0
@@ -1010,7 +1010,7 @@ class AnnotateEngine(object):
                         except:
                             pass
                 if len(peaks)==0:
-                    logging.info('Molecule '+str(structure.molid)+': No match')
+                    logger.debug('Molecule '+str(structure.molid)+': No match')
                     continue
                 if fast and structure.natoms<=64:
                     fragmentation_module='magma.fragmentation_cy'
@@ -1041,19 +1041,18 @@ class AnnotateEngine(object):
             for structure,job in jobs:
                 raw_result=job(raw_result=True)
                 result,sout = pickle.loads(raw_result)
-                logging.debug(sout)
+                logger.debug(sout)
                 (hits,frags)=result
                 total_frags+=frags
-                logging.debug(' -> '+str(frags)+' fragments')
                 structure.nhits=len(hits)
                 self.db_session.add(structure)
                 if len(hits) == 0:
-                    logging.info('Molecule '+str(structure.molid)+': No match')
+                    logger.debug('Molecule '+str(structure.molid)+': No match')
                 else:
-                    print 'Molecule',str(structure.molid)+':',structure.name.encode('utf-8')
+                    logger.debug('Molecule '+str(structure.molid)+': '+structure.name.encode('utf-8')+' -> '+str(frags)+' fragments')
                     for hit in hits:
-                        print 'Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - '+'Score:',
-                        print self.store_hit(hit,structure.molid,0)
+                        score=self.store_hit(hit,structure.molid,0)
+                        logger.debug('Scan: '+str(hit.scan)+' - Mz: '+str(hit.mz)+' - '+'Score: '+str(score))
                 self.db_session.flush()
                 count+=1
                 elapsed_time=time.time()-start_time
@@ -1064,14 +1063,16 @@ class AnnotateEngine(object):
                     molids=[] # break out of while-loop
                     if self.call_back_engine != None:
                         self.call_back_engine.update_callback_url('Annotation stopped: time limit exceeded',force=True)
-                    print 'WARNING: Annotation stopped: time limit exceeded'
+                    logger.warn('Annotation stopped: time limit exceeded')
                     break
             self.db_session.commit()
+            logger.info(str(total_molids-len(molids))+' molecules processed')
         if self.call_back_engine != None:
             self.call_back_engine.update_callback_url('Annotation completed',force=True)
-        logging.info(str(total_frags)+' fragments generated in total.')
-        print self.db_session.query(Fragment.molid).filter(Fragment.parentfragid==0).distinct().count(),'Molecules matched with',
-        print self.db_session.query(Fragment.scanid).filter(Fragment.parentfragid==0).distinct().count(),'precursor ions, in total\n'
+        logger.info(str(total_frags)+' fragments generated in total.')
+        nmols=(self.db_session.query(Fragment.molid).filter(Fragment.parentfragid==0).distinct().count())
+        nprecursors=(self.db_session.query(Fragment.scanid).filter(Fragment.parentfragid==0).distinct().count())
+        logger.info(str(nmols)+' Molecules matched with '+str(nprecursors)+' precursor ions, in total\n')
         job_server.destroy()
 
     def store_hit(self,hit,molid,parentfragid):
@@ -1146,7 +1147,7 @@ class PubChemEngine(object):
                            molform=molform,
                            inchikey14=inchikey,
                            refscore=refscore,
-                           isparent=1,
+                           predicted=0,
                            reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
                                      str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>',
                            logp=float(logp)/10.0,
@@ -1206,7 +1207,7 @@ class KeggEngine(object):
                            molform=molform,
                            inchikey14=inchikey,
                            refscore=None,
-                           isparent=1,
+                           predicted=0,
                            reference=keggrefs,
                            logp=float(logp)/10.0,
                            ))
@@ -1238,7 +1239,7 @@ class HmdbEngine(object):
                            molform=molform,
                            inchikey14=inchikey,
                            refscore=None,
-                           isparent=1,
+                           predicted=0,
                            reference=hmdb_refs,
                            logp=float(logp)/10.0,
                            ))
@@ -1271,7 +1272,7 @@ class MetaCycEngine(object):
                            molform=molform,
                            inchikey14=inchikey,
                            refscore=None,
-                           isparent=1,
+                           predicted=0,
                            reference=metacyc_refs,
                            logp=float(logp)/10.0,
                            ))
@@ -1430,9 +1431,9 @@ class DataAnalysisEngine(object):
         result=self.db_session.query(distinct(Peak.assigned_molid)).all()
         assigned_molids=[x[0] for x in result]
         start_compound={}
-        result=self.db_session.query(Molecule.molid,Molecule.isparent).all()
-        for molid,isparent in result:
-            start_compound[molid]=isparent
+        result=self.db_session.query(Molecule.molid,Molecule.predicted).all()
+        for molid,predicted in result:
+            start_compound[molid]=predicted
         print result
         print assigned_molids
         nnodes=len(nodes)+1

@@ -52,8 +52,7 @@ class ReactionSequence(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         if value is not None:
-            value = json.dumps(value)
-
+            value = unicode(json.dumps(value))
         return value
 
     def process_result_value(self, value, dialect):
@@ -83,7 +82,7 @@ class Molecule(Base):
     # Molecular formula
     formula = Column(Unicode)
     # Whether molecule was given as query or is a result a of reaction
-    isparent = Column(Boolean)
+    predicted = Column(Boolean)
     # Name of molecule
     name = Column(Unicode)
     # Number of lvl1 scans fragments are found for this molecule

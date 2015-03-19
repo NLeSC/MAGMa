@@ -47,7 +47,7 @@ class HitType(object):
         #print "childscan",peak.childscan
 
 class MoleculeType(object):
-    def __init__(self,molblock,name,refscore,isparent=1,mim=None,natoms=None,inchikey14=None,molform=None,reference=None,logp=None):
+    def __init__(self,molblock,name,refscore,predicted=0,mim=None,natoms=None,inchikey14=None,molform=None,reference=None,logp=None):
         if inchikey14==None or mim==None or molform==None or logp==None or natoms==None:
             mol=Chem.MolFromMolBlock(molblock)
             inchikey14=Chem.MolToInchiKey(mol)[:14]
@@ -59,7 +59,7 @@ class MoleculeType(object):
         self.refscore = refscore
         self.inchikey14 = inchikey14 #: Smile string
         self.formula = molform #: Molecular formula
-        self.isparent = isparent #: Whether metabolite was given as query or is a result a of reaction
+        self.predicted = predicted #: Whether metabolite was given as query or is a result a of reaction
         self.name = name #: Name of molecule
         # self.nhits = Column(Integer)
         self.mim = mim #: Monoisotopic mass
