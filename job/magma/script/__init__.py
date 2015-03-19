@@ -27,7 +27,7 @@ class MagmaCommand(object):
         sc.add_argument('-t', '--structure_format', help="Structure input type (default: %(default)s)", default="smiles", choices=["smiles", "sdf"])
         sc.add_argument('-p', '--pubchem_names', help="Get references to PubChem (default: %(default)s)", action="store_true")
         sc.add_argument('-m', '--mass_filter', help="Filter input structures on maximum monoisotopic mass (default: %(default)s)", default=9999,type=int)
-        sc.add_argument('-l', '--log', help="Set logging level (default: %(default)s)", default='warn',choices=['debug','info','warn','error'])
+        sc.add_argument('-l', '--log', help="Set logging level (default: %(default)s)", default='info',choices=['debug','info','warn','error'])
         sc.add_argument('structures', type=str, help="File with structures, or a single smiles string")
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.add_structures)
@@ -42,7 +42,7 @@ class MagmaCommand(object):
                                         action(glycosidase/gut/phase1[_selected]/phase2[_selected]/mass_filter),value(nsteps/mass limit)""")
         sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
         sc.add_argument('-p', '--pubchem_names', help="Get references to PubChem (default: %(default)s)", action="store_true")
-        sc.add_argument('-l', '--log', help="Set logging level (default: %(default)s)", default='warn',choices=['debug','info','warn','error'])
+        sc.add_argument('-l', '--log', help="Set logging level (default: %(default)s)", default='info',choices=['debug','info','warn','error'])
         sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.metabolize)
@@ -60,7 +60,7 @@ class MagmaCommand(object):
         sc.add_argument('--precursor_mz_precision', help="Maximum absolute error of precursor m/z values (default: %(default)s)", default=0.005,type=float)
         sc.add_argument('-s', '--scan', help="Read only spectral tree specified by MS1 scan number (default: %(default)s)", default=None,type=str)
         sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
-        sc.add_argument('-l', '--log', help="Set logging level (default: %(default)s)", default='warn',choices=['debug','info','warn','error'])
+        sc.add_argument('-l', '--log', help="Set logging level (default: %(default)s)", default='info',choices=['debug','info','warn','error'])
         sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.read_ms_data)
@@ -85,7 +85,7 @@ class MagmaCommand(object):
         sc.add_argument('-n', '--ncpus', help="Number of parallel cpus to use for annotation (default: %(default)s)", default=1,type=int)
         sc.add_argument('--scans', help="Search in specified scans (default: %(default)s)", default="all",type=str)
         sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
-        sc.add_argument('-l', '--log', help="Set logging level (default: %(default)s)", default='warn',choices=['debug','info','warn','error'])
+        sc.add_argument('-l', '--log', help="Set logging level (default: %(default)s)", default='info',choices=['debug','info','warn','error'])
         sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
@@ -111,97 +111,121 @@ class MagmaCommand(object):
         magma_session = self.get_magma_session(args.db,"")
 
     def add_structures(self, args, magma_session=None):
-        if magma_session == None:
-            magma_session = self.get_magma_session(args.db,args.description,args.log)
-        struct_engine = magma_session.get_structure_engine(pubchem_names=args.pubchem_names)
-        if args.structure_format == 'smiles':
-            struct_engine.read_smiles(args.structures,args.mass_filter)
-        elif args.structure_format == 'sdf':
-            struct_engine.read_sdf(args.structures,args.mass_filter)
-        magma_session.commit()
+        try:
+            if magma_session == None:
+                magma_session = self.get_magma_session(args.db,args.description,args.log)
+            struct_engine = magma_session.get_structure_engine(pubchem_names=args.pubchem_names)
+            if args.structure_format == 'smiles':
+                struct_engine.read_smiles(args.structures,mass_filter=args.mass_filter)
+            elif args.structure_format == 'sdf':
+                struct_engine.read_sdf(args.structures,args.mass_filter)
+            magma_session.commit()
+        except Exception as error:
+            if args.log == 'debug':
+                logging.exception(error) #This includes a traceback
+            else:
+                logging.error(error) #This only prints an error message
 
     def metabolize(self, args, magma_session=None):
-        if magma_session == None:
-            magma_session = self.get_magma_session(args.db,args.description,args.log)
-        struct_engine = magma_session.get_structure_engine(pubchem_names=args.pubchem_names, call_back_url=args.call_back_url)
-        if args.scenario != None:
-            scenario=[]
-            scenario_file=open(args.scenario,'r')
-            for line in scenario_file:
-                step=line.split('#')[0].rstrip().split(',') # Comments indicated by # are allowed
-                if len(step)>1:
-                    scenario.append(step)
-            struct_engine.run_scenario(scenario,args.time_limit)
-        elif args.molids == None:
-            molids=struct_engine.metabolize_all(args.metabolism_types, args.n_reaction_steps)
-            for molid in molids:
-                print molid
-        else:
-            molids=[]
-            for reactantid in args.molids:
-                molids.extend(struct_engine.metabolize(reactantid,args.metabolism_types, args.n_reaction_steps))
-            for molid in set(molids):
-                print molid
-        magma_session.fill_molecules_reactions()
+        try:
+            if magma_session == None:
+                magma_session = self.get_magma_session(args.db,args.description,args.log)
+            struct_engine = magma_session.get_structure_engine(pubchem_names=args.pubchem_names, call_back_url=args.call_back_url)
+            if args.scenario != None:
+                scenario=[]
+                scenario_file=open(args.scenario,'r')
+                for line in scenario_file:
+                    step=line.split('#')[0].rstrip().split(',') # Comments indicated by # are allowed
+                    if len(step)>1:
+                        scenario.append(step)
+                struct_engine.run_scenario(scenario,args.time_limit)
+            elif args.molids == None:
+                molids=struct_engine.metabolize_all(args.metabolism_types, args.n_reaction_steps)
+                for molid in molids:
+                    print molid
+            else:
+                molids=[]
+                for reactantid in args.molids:
+                    molids.extend(struct_engine.metabolize(reactantid,args.metabolism_types, args.n_reaction_steps))
+                for molid in set(molids):
+                    print molid
+            magma_session.fill_molecules_reactions()
+        except Exception as error:
+            if args.log == 'debug':
+                logging.exception(error)
+            else:
+                logging.error(error)
 
     def read_ms_data(self, args, magma_session=None):
-        if magma_session == None:
-            magma_session = self.get_magma_session(args.db,args.description,args.log)
-        ms_data_engine = magma_session.get_ms_data_engine(ionisation_mode=args.ionisation_mode,
-                abs_peak_cutoff=args.abs_peak_cutoff,
-                mz_precision=args.mz_precision,
-                mz_precision_abs=args.mz_precision_abs,
-                precursor_mz_precision=args.precursor_mz_precision,
-                max_ms_level=args.max_ms_level,
-                call_back_url=args.call_back_url)
-        if args.ms_data_format == "mzxml":
-            ms_data_engine.store_mzxml_file(args.ms_data.name,args.scan,args.time_limit)
-        else:
-            tree_type={"mass_tree":0,"form_tree_neg":-1,"form_tree_pos":1}[args.ms_data_format]
-            ms_data_engine.store_manual_tree(args.ms_data.name,tree_type)
+        try:
+            if magma_session == None:
+                magma_session = self.get_magma_session(args.db,args.description,args.log)
+            ms_data_engine = magma_session.get_ms_data_engine(ionisation_mode=args.ionisation_mode,
+                    abs_peak_cutoff=args.abs_peak_cutoff,
+                    mz_precision=args.mz_precision,
+                    mz_precision_abs=args.mz_precision_abs,
+                    precursor_mz_precision=args.precursor_mz_precision,
+                    max_ms_level=args.max_ms_level,
+                    call_back_url=args.call_back_url)
+            if args.ms_data_format == "mzxml":
+                ms_data_engine.store_mzxml_file(args.ms_data.name,args.scan,args.time_limit)
+            else:
+                tree_type={"mass_tree":0,"form_tree_neg":-1,"form_tree_pos":1}[args.ms_data_format]
+                ms_data_engine.store_manual_tree(args.ms_data.name,tree_type)
+        except Exception as error:
+            if args.log == 'debug':
+                logging.exception(error)
+            else:
+                logging.error(error)
 
     def annotate(self, args, magma_session=None):
-        if magma_session == None:
-            magma_session = self.get_magma_session(args.db,args.description,args.log)
-        annotate_engine = magma_session.get_annotate_engine(skip_fragmentation=args.skip_fragmentation,
-            max_broken_bonds=args.max_broken_bonds,
-            max_water_losses=args.max_water_losses,
-            ms_intensity_cutoff=args.ms_intensity_cutoff,
-            msms_intensity_cutoff=args.msms_intensity_cutoff,
-            use_all_peaks=args.use_all_peaks,
-            adducts=args.adducts,
-            max_charge=args.max_charge,
-            call_back_url=args.call_back_url)
-        if args.scans == 'all':
-            scans='all'
-        else:
-            scans=set([])
-            for s in args.scans.split(','):
-               scans.add(int(s))
-        annotate_engine.build_spectra(scans)
-        pubchem_molids=[]
-        if args.structure_database != "":
-            db_opts=['','','','','']
-            db_options=args.db_options.split(',')
-            for x in range(len(db_options)):
-                db_opts[x]=db_options[x]
-            if args.structure_database == 'pubchem':
-                query_engine=magma.PubChemEngine(db_opts[0],(db_opts[2]=='True'),db_opts[3],db_opts[4])
-            elif args.structure_database == 'kegg':
-                query_engine=magma.KeggEngine(db_opts[0],(db_opts[2]=='True'),db_opts[3])
-            elif args.structure_database == 'hmdb':
-                query_engine=magma.HmdbEngine(db_opts[0],(db_opts[2]=='True'))
-            elif args.structure_database == 'metacyc':
-                query_engine=magma.MetaCycEngine(db_opts[0],(db_opts[2]=='True'))
-            pubchem_molids=annotate_engine.get_db_candidates(query_engine,db_opts[1])
-        if args.molids == None:
-            annotate_engine.search_structures(ncpus=args.ncpus,fast=args.fast,time_limit=args.time_limit)
-        else:
-            molids=args.molids.split(',')+pubchem_molids
-            annotate_engine.search_structures(molids=molids,ncpus=args.ncpus,fast=args.fast,time_limit=args.time_limit)
-        magma_session.commit()
-        magma_session.fill_molecules_reactions()
-            # annotate_engine.search_some_structures(molids)
+        try:
+            if magma_session == None:
+                magma_session = self.get_magma_session(args.db,args.description,args.log)
+            annotate_engine = magma_session.get_annotate_engine(skip_fragmentation=args.skip_fragmentation,
+                max_broken_bonds=args.max_broken_bonds,
+                max_water_losses=args.max_water_losses,
+                ms_intensity_cutoff=args.ms_intensity_cutoff,
+                msms_intensity_cutoff=args.msms_intensity_cutoff,
+                use_all_peaks=args.use_all_peaks,
+                adducts=args.adducts,
+                max_charge=args.max_charge,
+                call_back_url=args.call_back_url)
+            if args.scans == 'all':
+                scans='all'
+            else:
+                scans=set([])
+                for s in args.scans.split(','):
+                   scans.add(int(s))
+            annotate_engine.build_spectra(scans)
+            pubchem_molids=[]
+            if args.structure_database != "":
+                db_opts=['','','','','']
+                db_options=args.db_options.split(',')
+                for x in range(len(db_options)):
+                    db_opts[x]=db_options[x]
+                if args.structure_database == 'pubchem':
+                    query_engine=magma.PubChemEngine(db_opts[0],(db_opts[2]=='True'),db_opts[3],db_opts[4])
+                elif args.structure_database == 'kegg':
+                    query_engine=magma.KeggEngine(db_opts[0],(db_opts[2]=='True'),db_opts[3])
+                elif args.structure_database == 'hmdb':
+                    query_engine=magma.HmdbEngine(db_opts[0],(db_opts[2]=='True'))
+                elif args.structure_database == 'metacyc':
+                    query_engine=magma.MetaCycEngine(db_opts[0],(db_opts[2]=='True'))
+                pubchem_molids=annotate_engine.get_db_candidates(query_engine,db_opts[1])
+            if args.molids == None:
+                annotate_engine.search_structures(ncpus=args.ncpus,fast=args.fast,time_limit=args.time_limit)
+            else:
+                molids=args.molids.split(',')+pubchem_molids
+                annotate_engine.search_structures(molids=molids,ncpus=args.ncpus,fast=args.fast,time_limit=args.time_limit)
+            magma_session.commit()
+            magma_session.fill_molecules_reactions()
+                # annotate_engine.search_some_structures(molids)
+        except Exception as error:
+            if args.log == 'debug':
+                logging.exception(error)
+            else:
+                logging.error(error)
 
     def select(self, args):
         shutil.copy(args.db_in,args.db_out)
