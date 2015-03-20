@@ -8,6 +8,7 @@ from magmaweb.job import JobQuery
 
 
 class JobQueryTestCase(unittest.TestCase):
+
     def setUp(self):
         self.jobdir = '/somedir'
         self.jobquery = JobQuery(self.jobdir)
@@ -58,22 +59,22 @@ class JobQueryTestCase(unittest.TestCase):
 
     def test_defaults(self):
         expected = dict(scenario=[
-                                  {'type': 'phase1', 'steps': '2'},
-                                  {'type': 'phase2', 'steps': '1'}
-                                  ],
-                        ionisation_mode=1,
-                        ms_data_format='mzxml',
-                        ms_data_area='',
-                        ms_intensity_cutoff=0.0,
-                        msms_intensity_cutoff=5,
-                        mz_precision=5.0,
-                        mz_precision_abs=0.001,
-                        abs_peak_cutoff=5000,
-                        max_ms_level=10,
-                        precursor_mz_precision=0.005,
-                        max_broken_bonds=3,
-                        max_water_losses=1,
-                        )
+            {'type': 'phase1', 'steps': '2'},
+            {'type': 'phase2', 'steps': '1'}
+        ],
+            ionisation_mode=1,
+            ms_data_format='mzxml',
+            ms_data_area='',
+            ms_intensity_cutoff=0.0,
+            msms_intensity_cutoff=5,
+            mz_precision=5.0,
+            mz_precision_abs=0.001,
+            abs_peak_cutoff=5000,
+            max_ms_level=10,
+            precursor_mz_precision=0.005,
+            max_broken_bonds=3,
+            max_water_losses=1,
+        )
         self.assertDictEqual(expected, JobQuery.defaults())
 
     def test_defaults_example(self):
@@ -162,6 +163,7 @@ class JobQueryTestCase(unittest.TestCase):
 
 
 class JobQueryFileTestCase(unittest.TestCase):
+
     def test_valid(self):
         from cgi import FieldStorage
         f = FieldStorage()
@@ -191,6 +193,7 @@ class JobQueryFileTestCase(unittest.TestCase):
 
 
 class JobQueryActionTestCase(unittest.TestCase):
+
     def setUp(self):
         self.jobdir = tempfile.mkdtemp()
         self.jobquery = JobQuery(directory=self.jobdir,
@@ -206,6 +209,7 @@ class JobQueryActionTestCase(unittest.TestCase):
 
 
 class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
+
     def test_structures_as_string(self):
         params = {'structure_format': 'smiles', 'structures': 'CCO Ethanol'}
         query = self.jobquery.add_structures(params)
@@ -247,9 +251,9 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                            structures='CCO Ethanol',
                            metabolize='on',
                            scenario=[
-                                     {'type': 'phase1', 'steps': '2'},
-                                     {'type': 'phase2', 'steps': '1'}
-                                     ],
+                               {'type': 'phase1', 'steps': '2'},
+                               {'type': 'phase2', 'steps': '1'}
+                           ],
                            )
 
         query = self.jobquery.add_structures(params)
@@ -265,8 +269,10 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('CCO Ethanol', self.fetch_file('structures.dat'))
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'CCO Ethanol', self.fetch_file('structures.dat'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_with_annotate(self):
         params = {'structure_format': 'smiles',
@@ -290,7 +296,8 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('CCO Ethanol', self.fetch_file('structures.dat'))
+        self.assertMultiLineEqual(
+            'CCO Ethanol', self.fetch_file('structures.dat'))
 
     def test_with_metabolize_and_annotate(self):
 
@@ -321,8 +328,10 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('CCO Ethanol', self.fetch_file('structures.dat'))
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'CCO Ethanol', self.fetch_file('structures.dat'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_without_structures(self):
         params = {'structure_format': 'smiles',
@@ -738,7 +747,8 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_with_jsonified_scenario(self):
         scenario = '[{"steps": "2", "type": "phase1"}, '
@@ -755,7 +765,8 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_with_misformatjsonified_scenario(self):
         scenario = 'xxxxxx[{"steps": "2", "type": "phase1"}, '
@@ -789,7 +800,8 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_it_restricted(self):
         self.jobquery.restricted = True
@@ -845,7 +857,8 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_with_annotate(self):
 
@@ -873,7 +886,8 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
 
 class JobQueryAnnotateTestCase(JobQueryActionTestCase):
@@ -992,6 +1006,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                                   )
         self.assertEqual(query, expected_query)
 
+
 class JobQueryAllInOneTestCase(JobQueryActionTestCase):
 
     def test_with_metabolize(self):
@@ -1055,7 +1070,8 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         self.assertMultiLineEqual(params['structures'],
                                   self.fetch_file('structures.dat'))
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_without_metabolize(self):
         self.maxDiff = 100000

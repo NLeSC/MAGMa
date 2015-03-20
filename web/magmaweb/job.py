@@ -1,5 +1,4 @@
-"""Module for job submission and job data alteration/retrieval
-"""
+"""Module for job submission and job data alteration/retrieval."""
 import uuid
 import os
 import csv
@@ -24,27 +23,32 @@ logger = logging.getLogger('magmaweb')
 
 
 class ScanRequiredError(Exception):
+
     """Raised when a scan identifier is required, but non is supplied"""
     pass
 
 
 class ScanNotFound(Exception):
+
     """Raised when a scan identifier is not found"""
     pass
 
 
 class FragmentNotFound(Exception):
+
     """Raised when a fragment is not found"""
     pass
 
 
 class JobIdException(Exception):
+
     def __init__(self, message, jobid):
         Exception.__init__(self, message)
         self.jobid = jobid
 
 
 class JobException(Exception):
+
     def __init__(self,
                  job,
                  message='Calculation failed for an unknown reason',
@@ -59,22 +63,27 @@ class JobException(Exception):
 
 
 class JobNotFound(JobIdException):
+
     """Raised when a job with a identifier is not found"""
 
 
 class JobSubmissionError(IOError):
+
     """Raised when a job fails to be submitted"""
 
 
 class JobIncomplete(JobException):
+
     """Raised when a complete job is required but job isnt"""
 
 
 class JobError(JobException):
+
     """Job which failed during run"""
 
 
 class MissingDataError(JobError):
+
     """Raised when job is missing data like molecules, peaks, or fragments"""
 
 
@@ -94,7 +103,9 @@ def make_job_factory(params):
 
 
 class JobFactory(object):
+
     """Factory which can create jobs """
+
     def __init__(self,
                  root_dir,
                  init_script='',
@@ -196,7 +207,7 @@ class JobFactory(object):
         # create job dir
         jdir = self._makeJobDir(jobid)
 
-        #copy dbfile into jobdir
+        # copy dbfile into jobdir
         self._copyFile(dbfile, jobid)
 
         # session for job db
@@ -204,7 +215,7 @@ class JobFactory(object):
         db = JobDb(session)
         run = db.runInfo()
 
-        #register job in user db
+        # register job in user db
         jobmeta = magmaweb.user.JobMeta(jobid, owner,
                                         description=run.description,
                                         ms_filename=run.ms_filename)
@@ -230,7 +241,7 @@ class JobFactory(object):
         Base.metadata.create_all(session.connection())  # @UndefinedVariable
         db = JobDb(session)
 
-        #register job in user db
+        # register job in user db
         jobmeta = magmaweb.user.JobMeta(jobid, owner)
         self._addJobMeta(jobmeta)
 
@@ -261,7 +272,7 @@ class JobFactory(object):
         # create job dir
         jdir = self._makeJobDir(jobid)
 
-        #copy db of old job into new jobdir
+        # copy db of old job into new jobdir
         src = open(self.id2db(job.id))
         self._copyFile(src, jobid)
         src.close()
@@ -270,7 +281,7 @@ class JobFactory(object):
         session = self._makeJobSession(jobid)
         db = JobDb(session)
 
-        #register job in user db
+        # register job in user db
         jobmeta = magmaweb.user.JobMeta(jobid, owner,
                                         description=job.description,
                                         ms_filename=job.ms_filename,
@@ -378,6 +389,7 @@ class JobFactory(object):
 
 
 class Job(object):
+
     """Job contains results database of Magma calculation run"""
 
     def __init__(self, meta, directory, db=None):
@@ -555,7 +567,9 @@ class Job(object):
 
 
 class JobDb(object):
+
     """Database of a job"""
+
     def __init__(self, session):
         """SQLAlchemy session which is connected to database of job"""
         self.session = session
@@ -651,11 +665,11 @@ class JobDb(object):
         return mets
 
     def _addSortingToMoleculesQuery(self,
-                                      sorts,
-                                      scanid,
-                                      q,
-                                      fragal,
-                                      assign_q):
+                                    sorts,
+                                    scanid,
+                                    q,
+                                    fragal,
+                                    assign_q):
         for col3 in sorts:
             if col3['property'] == 'assigned':
                 col2 = assign_q.c.assigned
@@ -680,9 +694,9 @@ class JobDb(object):
         return q
 
     def molecules(self,
-                    start=0, limit=10,
-                    sorts=None, scanid=None,
-                    filters=None):
+                  start=0, limit=10,
+                  sorts=None, scanid=None,
+                  filters=None):
         """Returns dict with total and rows attribute
 
         start
@@ -749,7 +763,7 @@ class JobDb(object):
         total = q.count()
 
         q = self._addSortingToMoleculesQuery(sorts, scanid,
-                                               q, fragal, assign_q)
+                                             q, fragal, assign_q)
 
         mets = self._moleculesQuery2Rows(start, limit, q)
 
@@ -843,9 +857,9 @@ class JobDb(object):
             fq = fq.filter(Fragment.molid == molid)
 
         for afilter in filters:
-            has_no_hit_filter = (afilter['field'] == 'nhits'
-                                 and afilter['comparison'] == 'gt'
-                                 and afilter['value'] == 0)
+            has_no_hit_filter = (afilter['field'] == 'nhits' and
+                                 afilter['comparison'] == 'gt' and
+                                 afilter['value'] == 0)
             if has_no_hit_filter:
                 continue
             if (afilter['field'] == 'score'):

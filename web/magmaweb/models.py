@@ -14,6 +14,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.schema import ForeignKeyConstraint
+from sqlalchemy.sql import func
 
 Base = declarative_base()
 
@@ -26,12 +27,14 @@ class ReactionSequence(TypeDecorator):
     * products, reactions which have current row as reactant
     * reactants, reactions which have current row as product
 
-    Reactions is a dict with key as the reaction name and the value a dict with keys:
+    Reactions is a dict with key as the reaction name and
+    the value a dict with keys:
 
     * nr, number of molecules which are product/reactant
         of current molecule with this reaction
     * nrp, number of molecules which are product/reactant
-        of current molecule with this reaction and which have been matched to at least one scan
+        of current molecule with this reaction and
+        which have been matched to at least one scan
 
     Example:
 
@@ -52,8 +55,7 @@ class ReactionSequence(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         if value is not None:
-            value = json.dumps(value)
-
+            value = unicode(json.dumps(value))
         return value
 
     def process_result_value(self, value, dialect):
@@ -110,11 +112,54 @@ class Reaction(Base):
     name = Column(Unicode)
 
 
-def fill_molecules_reactions(session):
-    """Fills the reactionsequence column in the molecules table with info from reactions table.
+def fill_molecules_reactions_reactants(session, reactions):
+    qrnr = session.query(Reaction.product, Reaction.name, func.count('*'))
+    qrnr = qrnr.group_by(Reaction.product, Reaction.name)
+    for molid, rname, nr in qrnr:
+        if molid not in reactions:
+            reactions[molid] = {}
+        if 'reactants' not in reactions[molid]:
+            reactions[molid]['reactants'] = {}
+        reactions[molid]['reactants'][rname] = {'nr': nr}
 
-    The molecules query will become to complex when reactionsequence is queried from reactions table.
-    So we fill reaction sequence with a json serialized struct which can be used during rendering.
+    qrnrp = session.query(Reaction.product, Reaction.name, func.count('*'))
+    qrnrp = qrnrp.join(Molecule, Molecule.molid == Reaction.reactant)
+    qrnrp = qrnrp.filter(Molecule.nhits > 0)
+    qrnrp = qrnrp.group_by(Reaction.product, Reaction.name)
+    for molid, rname, nrp in qrnrp:
+        # dont need checks for keys because query above is always superset of
+        # this query
+        reactions[molid]['reactants'][rname]['nrp'] = nrp
+
+
+def fill_molecules_reactions_products(session, reactions):
+    qpnr = session.query(Reaction.reactant, Reaction.name, func.count('*'))
+    qpnr = qpnr.group_by(Reaction.reactant, Reaction.name)
+    for molid, rname, nr in qpnr:
+        if molid not in reactions:
+            reactions[molid] = {}
+        if 'products' not in reactions[molid]:
+            reactions[molid]['products'] = {}
+        reactions[molid]['products'][rname] = {'nr': nr}
+
+    qpnrp = session.query(Reaction.reactant, Reaction.name, func.count('*'))
+    qpnrp = qpnrp.join(Molecule, Molecule.molid == Reaction.product)
+    qpnrp = qpnrp.filter(Molecule.nhits > 0)
+    qpnrp = qpnrp.group_by(Reaction.reactant, Reaction.name)
+    for molid, rname, nrp in qpnrp:
+        # dont need checks for keys because query above is always superset of
+        # this query
+        reactions[molid]['products'][rname]['nrp'] = nrp
+
+
+def fill_molecules_reactions(session):
+    """Fills the reactionsequence column in the molecules table with
+    info from reactions table.
+
+    The molecules query will become to complex when
+    reactionsequence is queried from reactions table.
+    So we fill reaction sequence with a json serialized struct
+    which can be used during rendering.
 
     from magmaweb.job import JobFactory
     factory = JobFactory('data/jobs')
@@ -123,30 +168,10 @@ def fill_molecules_reactions(session):
     fill_molecules_reactionsequence(session)
 
     """
-    from sqlalchemy.sql import func
 
     reactions = {}
-    for molid, rname, nr in session.query(Reaction.product, Reaction.name, func.count('*')).group_by(Reaction.product, Reaction.name):
-        if molid not in reactions:
-            reactions[molid] = {}
-        if 'reactants' not in reactions[molid]:
-            reactions[molid]['reactants'] = {}
-        reactions[molid]['reactants'][rname] = {'nr': nr}
-
-    for molid, rname, nrp in session.query(Reaction.product, Reaction.name, func.count('*')).join(Molecule, Molecule.molid == Reaction.reactant).filter(Molecule.nhits > 0).group_by(Reaction.product, Reaction.name):
-        # dont need checks for keys because query above is always superset of this query
-        reactions[molid]['reactants'][rname]['nrp'] = nrp
-
-    for molid, rname, nr in session.query(Reaction.reactant, Reaction.name, func.count('*')).group_by(Reaction.reactant, Reaction.name):
-        if molid not in reactions:
-            reactions[molid] = {}
-        if 'products' not in reactions[molid]:
-            reactions[molid]['products'] = {}
-        reactions[molid]['products'][rname] = {'nr': nr}
-
-    for molid, rname, nrp in session.query(Reaction.reactant, Reaction.name, func.count('*')).join(Molecule, Molecule.molid == Reaction.product).filter(Molecule.nhits > 0).group_by(Reaction.reactant, Reaction.name):
-        # dont need checks for keys because query above is always superset of this query
-        reactions[molid]['products'][rname]['nrp'] = nrp
+    fill_molecules_reactions_reactants(session, reactions)
+    fill_molecules_reactions_products(session, reactions)
 
     for mol in session.query(Molecule):
         if mol.molid in reactions:
@@ -200,7 +225,7 @@ class Peak(Base):
     # Intensity of peak (y-coordinate)
     intensity = Column(Float)
     # which molecule is assigned to this peak
-    assigned_molid = Column(Integer, ForeignKey('molecules.molid'),index=True)
+    assigned_molid = Column(Integer, ForeignKey('molecules.molid'), index=True)
 
 
 class Fragment(Base):
@@ -209,9 +234,9 @@ class Fragment(Base):
     # Fragment identifier
     fragid = Column(Integer, primary_key=True, autoincrement=True)
     # Molecule identifier
-    molid = Column(Integer, ForeignKey('molecules.molid'),index=True)
+    molid = Column(Integer, ForeignKey('molecules.molid'), index=True)
     # Scan identifier
-    scanid = Column(Integer, ForeignKey('scans.scanid'),index=True)
+    scanid = Column(Integer, ForeignKey('scans.scanid'), index=True)
     # m/z of peak in scan
     mz = Column(Float)
     # Mass of fragment in Dalton, corrected with h delta

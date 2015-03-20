@@ -494,7 +494,7 @@ class JobViews(object):
                          "reference" : "<a href=\"http://www.genome.jp/dbg...",
                          "deltappm" : 1.6407913760822,
                          "predicted" : false,
-                         "mol" : "5282150\n  -OEChem-03241405422D\n\n 41 4...",
+                         "mol" : "5282150\\n  -OEChem-03241405422D\\n\\n 4...",
                          "inchikey14" : "RPMNUQRUHXIGHK",
                          "logp" : -0.2,
                          "formula" : "C27H30O14",
@@ -520,7 +520,7 @@ class JobViews(object):
                          "refscore" : null,
                          "name" : "Vitexin 2''-rhamnoside (5282151)",
                          "predicted" : false,
-                         "mol" : "5282151\n  -OEChem-03241405422D\n\n 41 4..."
+                         "mol" : "5282151\\n  -OEChem-03241405422D\\n\\n 41..."
                       }
                    ],
                    "scans" : [

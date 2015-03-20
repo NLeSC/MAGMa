@@ -12,7 +12,9 @@ from magmaweb.job import JobSubmissionError
 
 @view_defaults(permission='run', context=Job)
 class RpcViews(object):
+
     """Rpc endpoints"""
+
     def __init__(self, job, request):
         """View callable with job and request as arguments"""
         self.job = job
@@ -57,8 +59,9 @@ class RpcViews(object):
             jobquery = jobquery.add_structures(params, has_scans)
         except Invalid as exc:
             # no structures given
-            if (has_scans and 'structure_database' in params
-                    and params['structure_database']):
+            if (has_scans and
+                    'structure_database' in params and
+                    params['structure_database']):
                 # structures will be added by
                 # database lookup during extra annotate
                 pass
@@ -69,8 +72,9 @@ class RpcViews(object):
                 exc.add(Invalid(node, msg))
                 raise exc
 
-        if (has_scans and 'structure_database' in params
-                and params['structure_database']):
+        if (has_scans and
+                'structure_database' in params and
+                params['structure_database']):
             # add structure database location
             # when structure_database is selected
             key = 'structure_database.' + params['structure_database']

@@ -1,7 +1,8 @@
 import unittest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from magmaweb.models import ReactionSequence, fill_molecules_reactions, Molecule, Reaction
+from magmaweb.models import ReactionSequence, Molecule, Reaction
+from magmaweb.models import fill_molecules_reactions
 
 
 class TestReactionSequence(unittest.TestCase):
@@ -13,14 +14,15 @@ class TestReactionSequence(unittest.TestCase):
           'theogallin': {'nr': 678, 'nrp': 90}
        }]
     }
-    reactions_as_json = '{"reactants": [{"theogallin": {"nr": 678, "nrp": 90}}], "products": [{"esterase": {"nr": 123, "nrp": 45}}]}'
+    reactions_json = '{"reactants": [{"theogallin": {"nr": 678, "nrp": 90}}], '
+    reactions_json += '"products": [{"esterase": {"nr": 123, "nrp": 45}}]}'
 
     def setUp(self):
         self.rs = ReactionSequence()
 
     def test_set(self):
         r = self.rs.process_bind_param(self.reactions, 'sqlite')
-        self.assertEqual(r, self.reactions_as_json)
+        self.assertEqual(r, self.reactions_json)
 
     def test_set_none(self):
         reactions = None
@@ -28,7 +30,7 @@ class TestReactionSequence(unittest.TestCase):
         self.assertIsNone(r)
 
     def test_get(self):
-        r = self.rs.process_result_value(self.reactions_as_json, 'sqlite')
+        r = self.rs.process_result_value(self.reactions_json, 'sqlite')
         self.assertEqual(r, self.reactions)
 
     def test_get_empty(self):

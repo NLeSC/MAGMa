@@ -67,9 +67,11 @@ class TestConfigure(unittest.TestCase):
 
         def add_job_route(name, pattern):
             return call(name, pattern,
-                 traverse='/{jobid}',
-                 factory=JobIdFactory)
+                        traverse='/{jobid}',
+                        factory=JobIdFactory)
 
+        fragments = '/results/{jobid}/fragments/{scanid}/{molid}.json'
+        eic = '/results/{jobid}/extractedionchromatogram/{molid}.json'
         calls = [
                  add_job_route('status.json', '/status/{jobid}.json'),
                  add_job_route('status', '/status/{jobid}'),
@@ -80,14 +82,12 @@ class TestConfigure(unittest.TestCase):
                                '/results/{jobid}/molecules.csv'),
                  add_job_route('molecules.sdf',
                                '/results/{jobid}/molecules.sdf'),
-                 add_job_route('fragments.json',
-                               '/results/{jobid}/fragments/{scanid}/{molid}.json'),
+                 add_job_route('fragments.json', fragments),
                  add_job_route('chromatogram.json',
                                '/results/{jobid}/chromatogram.json'),
                  add_job_route('mspectra.json',
                                '/results/{jobid}/mspectra/{scanid}.json'),
-                 add_job_route('extractedionchromatogram.json',
-                               '/results/{jobid}/extractedionchromatogram/{molid}.json'),
+                 add_job_route('extractedionchromatogram.json', eic),
                  add_job_route('stderr.txt', '/results/{jobid}/stderr.txt'),
                  add_job_route('runinfo.json',
                                '/results/{jobid}/runinfo.json'),
