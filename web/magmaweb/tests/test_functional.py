@@ -55,8 +55,8 @@ class FunctionalPrivateTests(FunctionalTests):
 
     def fake_jobid(self):
         """ Create job in self.root_dir filled with test db"""
-        populateTestingDB(self.job.db.session)
-        self.job.db.session.commit()
+        with transaction.manager:
+            populateTestingDB(self.job.db.session)
         return self.jobid
 
     def test_home(self):
