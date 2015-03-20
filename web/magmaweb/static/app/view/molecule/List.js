@@ -106,7 +106,6 @@ Ext.define('Esc.magmaweb.view.molecule.List', {
             xtype: 'reactioncolumn'
         },
         {text: 'Refscore', width:80, dataIndex: 'refscore', filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
-        // {text: 'Level', dataIndex: 'level', filter: { type: 'list',  options: ['0','1','2','3'] }, hidden:true},
         {text: 'LogP', dataIndex: 'logp', filter: { type: 'numeric' }, hidden: true, xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Reference', dataIndex: 'reference', filter: { type: 'string' }, sortable: false },
         {text: 'Predicted', dataIndex: 'predicted', xtype:'booleancolumn', hidden: true, trueText:'Yes', falseText:'No', filter: { type: 'boolean' }},

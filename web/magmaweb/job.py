@@ -630,7 +630,6 @@ class JobDb(object):
             met = r.Molecule
             row = {'molid': met.molid,
                    'mol': met.mol,
-                   'level': met.level,
                    'refscore': met.refscore,
                    'reactionsequence': met.reactionsequence,
                    'smiles': met.smiles,

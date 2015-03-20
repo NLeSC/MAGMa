@@ -10,8 +10,6 @@ Ext.define('Esc.magmaweb.model.Molecule', {
   },{
     name: 'mol', type:'string'
   },{
-    name: 'level'
-  },{
     name: 'refscore'
   },{
     name: 'reactionsequence'

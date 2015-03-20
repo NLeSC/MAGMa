@@ -192,10 +192,10 @@ class JobDbEmptyDatasetTestCase(unittest.TestCase):
 class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
     def test_default(self):
         response = self.job.molecules()
-        url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
-        url1 += '?cid=289">CID: 289</a>'
-        url2 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
-        url2 += '?cid=152432">CID: 152432</a>'
+        url1 = u'<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url1 += u'?cid=289">CID: 289</a>'
+        url2 = u'<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url2 += u'?cid=152432">CID: 152432</a>'
         self.assertEquals(
             response,
             {
@@ -203,7 +203,6 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
                 'rows': [{
                     'molid': 72,
                     'predicted': False,
-                    'level': 0,
                     'mol': u'Molfile',
                     'formula': u'C6H6O2',
                     'nhits': 1,
@@ -217,17 +216,18 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
                                                  }
                                              }
                                          },
-                    'smiles': u'Oc1ccccc1O',
-                    'mim': 110.03677, 'logp':1.231,
+                    'smiles': u'C1=CC=C(C(=C1)O)O',
+                    'inchikey14': u'YCIMNLLNPGFGHC',
+                    'mim': 110.03677, 'logp': 1.231,
                     'assigned': False,
                     'reference': url1
                 }, {
-                    'predicted': False, 'level': 0, 'molid': 352,
+                    'predicted': False, 'molid': 352,
                     'mol': u"Molfile of dihydroxyphenyl-valerolactone",
                     'formula': u"C11H12O4",
                     'nhits': 1,
                     'name': u"dihydroxyphenyl-valerolactone",
-                    'refscore': 1,
+                    'refscore': 1.0,
                     'reactionsequence': {
                                              u'productof': {
                                                  u'theogallin': {
@@ -236,8 +236,9 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
                                                  }
                                              }
                                          },
-                    'smiles': u"O=C1OC(Cc2ccc(O)c(O)c2)CC1",
-                    'mim': 208.07355, 'logp':2.763,
+                    'smiles': u"O=C1CCC(Cc2ccc(O)c(O)c2)O1",
+                    'inchikey14': u'ZNXXWTPQHVLMQT',
+                    'mim': 208.07355, 'logp': 2.763,
                     'assigned': False,
                     'reference': url2
                 }]
@@ -276,24 +277,17 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
 
     def test_filteredon_predicted(self):
         response = self.job.molecules(filters=[{"type": "boolean",
-                                                  "value": False,
-                                                  "field": "predicted"}])
+                                                "value": False,
+                                                "field": "predicted"}])
 
         self.assertEqual(response['total'], 2)
 
     def test_filteredon_formula(self):
         response = self.job.molecules(filters=[{"type": "string",
-                                                  "value": u"C6",
-                                                  "field": "formula"}])
+                                                "value": u"C6",
+                                                "field": "formula"}])
 
         self.assertEqual(response['total'], 1)
-
-    def test_filteredon_level(self):
-        response = self.job.molecules(filters=[{"type": "list",
-                                                  "value": [0, 1, 2],
-                                                  "field": "level"}])
-
-        self.assertEqual(response['total'], 2)
 
     def test_filteredon_score(self):
         filters = [{"type": "numeric", "comparison": "eq",
@@ -307,9 +301,9 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
         from magmaweb.job import ScanRequiredError
         with self.assertRaises(ScanRequiredError):
             self.job.molecules(filters=[{"type": "numeric",
-                                           "comparison": "eq",
-                                           "value": 200,
-                                           "field": "score"}])
+                                         "comparison": "eq",
+                                         "value": 200,
+                                         "field": "score"}])
 
     def test_filteredon_deltappm(self):
         filters = [{"type": "numeric", "comparison": "eq",
@@ -323,21 +317,21 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
         from magmaweb.job import ScanRequiredError
         with self.assertRaises(ScanRequiredError):
             self.job.molecules(filters=[{"type": "numeric",
-                                           "comparison": "eq",
-                                           "value": -1.84815979523607e-08,
-                                           "field": "deltappm"}])
+                                         "comparison": "eq",
+                                         "value": -1.84815979523607e-08,
+                                         "field": "deltappm"}])
 
     def test_filteredon_not_assigned(self):
         response = self.job.molecules(filters=[{"type": "boolean",
-                                                  "value": False,
-                                                  "field": "assigned"}])
+                                                "value": False,
+                                                "field": "assigned"}])
 
         self.assertEqual(response['total'], 2)
 
     def test_filteredon_assigned(self):
         response = self.job.molecules(filters=[{"type": "boolean",
-                                                  "value": True,
-                                                  "field": "assigned"}])
+                                                "value": True,
+                                                "field": "assigned"}])
 
         self.assertEqual(response['total'], 0)
 
@@ -483,7 +477,7 @@ class JobDbMolecules2csvTestCase(JobDbTestCaseAbstract):
         url2 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
         url2 += '?cid=152432">CID: 152432</a>'
         csvwriter.writerow({'name': 'pyrocatechol',
-                            'smiles': 'Oc1ccccc1O',
+                            'smiles': 'C1=CC=C(C(=C1)O)O',
                             'refscore': 1.0,
                             'reactionsequence': '{"reactantof": {"esterase": {"nr": 2, "nrp": 1}}}',
                             'nhits': 1,
@@ -494,7 +488,7 @@ class JobDbMolecules2csvTestCase(JobDbTestCaseAbstract):
                             'reference': url1,
                             })
         csvwriter.writerow({'name': 'dihydroxyphenyl-valerolactone',
-                            'smiles': 'O=C1OC(Cc2ccc(O)c(O)c2)CC1',
+                            'smiles': 'O=C1CCC(Cc2ccc(O)c(O)c2)O1',
                             'refscore': 1.0,
                             'reactionsequence': '{"productof": {"theogallin": {"nr": 1, "nrp": 0}}}',
                             'nhits': 1,
@@ -520,7 +514,7 @@ class JobDbMolecules2csvTestCase(JobDbTestCaseAbstract):
         csvwriter.writeheader()
         url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
         url1 += '?cid=289">CID: 289</a>'
-        csvwriter.writerow({'name': 'pyrocatechol', 'smiles': 'Oc1ccccc1O',
+        csvwriter.writerow({'name': 'pyrocatechol', 'smiles': 'C1=CC=C(C(=C1)O)O',
                             'refscore': 1.0,
                             'reactionsequence': '{"reactantof": {"esterase": {"nr": 2, "nrp": 1}}}',
                             'nhits': 1, 'formula': 'C6H6O2',
@@ -556,7 +550,7 @@ class JobMolecules2sdfTestCase(JobDbTestCaseAbstract):
 pyrocatechol
 
 > <smiles>
-Oc1ccccc1O
+C1=CC=C(C(=C1)O)O
 
 > <refscore>
 1.0
@@ -584,7 +578,7 @@ Molfile of dihydroxyphenyl-valerolactone> <name>
 dihydroxyphenyl-valerolactone
 
 > <smiles>
-O=C1OC(Cc2ccc(O)c(O)c2)CC1
+O=C1CCC(Cc2ccc(O)c(O)c2)O1
 
 > <refscore>
 1.0
@@ -622,7 +616,7 @@ $$$$
 pyrocatechol
 
 > <smiles>
-Oc1ccccc1O
+C1=CC=C(C(=C1)O)O
 
 > <refscore>
 1.0
@@ -976,7 +970,6 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                 'rows': [{
                     'molid': 12,
                     'predicted': True,
-                    'level': 1,
                     'mol': u'Molfile',
                     'formula': u'C11H12O7S',
                     'nhits': 1,
@@ -984,9 +977,10 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                     'refscore': 0.119004,
                     'reactionsequence': [u'sulfation_(aromatic_hydroxyl)'],
                     'smiles': u'Oc1ccc(CC2OC(=O)CC2)cc1OS(O)(=O)=O',
+                    'inchikey14': u'YAXFVDUJDAQPTJ',
                     'mim': 288.0303734299, 'logp':1.9027,
                     'assigned': False,
-                    'reference': ''
+                    'reference': u''
                 }]
             }
         )

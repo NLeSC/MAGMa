@@ -334,7 +334,9 @@ class InCompleteJobViews(object):
             status = json.loads(self.request.body)
             if status[u'done']:
                 jobstate = 'STOPPED'
-                if status[u'exitCode'] is not None and status[u'exitCode'] != 0:
+                hasExitCode = status[u'exitCode'] is not None
+                exitCodeErr = status[u'exitCode'] != 0
+                if hasExitCode and exitCodeErr:
                     jobstate = 'ERROR'
                 if status[u'exception']:
                     jobstate = 'ERROR'
@@ -357,7 +359,7 @@ class InCompleteJobViews(object):
         except JobIncomplete:
             try:
                 self.job_factory.cancel(self.job)
-            except Exception as e:
+            except Exception:
                 body = {'success': False,
                         'msg': 'Failed to cancel job'
                         }
@@ -480,53 +482,60 @@ class JobViews(object):
 
         Example response:
 
-        .. code-block:: python
+        .. code-block:: javascript
 
-            {
-               "scans" : [
-                  {
-                     "id" : 1787,
-                     "rt" : 42.6626666666667
-                  },
-                  {
-                     "id" : 1789,
-                     "rt" : 42.7061666666667
-                  }
-               ],
-               "total" : 2,
-               "rows" : [
-                  {
-                     "mol" : "molblock ...",
-                     "nhits" : 2,
-                     "molid" : 23,
-                     "refscore" : 0.248155,
-                     "name" : "5-(3,4)-dihydroxyphenyl-g-valerolactone (F)",
-                     "score" : 3,
-                     "smiles" : "O=C(O)C1OC(Oc2c(O)cc(CC3OCCC3)...",
-                     "level" : 1,
-                     "predicted" : true,
-                     "formula" : "C17H22O9",
-                     "logp" : -0.615300000000001,
-                     "mim" : 370.1263823051,
-                     "reactionsequence" : "O-glucuronidation_..."
-                  },
-                  {
-                     "mol" : " molblock ...",
-                     "nhits" : 2,
-                     "molid" : 24,
-                     "refscore" : 0.248155,
-                     "name" : "5-(3,4)-dihydroxyphenyl-g-valerolactone (F)",
-                     "score" : 3,
-                     "smiles" : "O=C(O)C1OC(Oc2cc(CC3OCCC3)ccc2O)C(O)C(O)C1O",
-                     "level" : 1,
-                     "predicted" : true,
-                     "formula" : "C17H22O9",
-                     "logp" : -0.615300000000001,
-                     "mim" : 370.1263823051,
-                     "reactionsequence" : "O-glucuronidation_..."
-                  }
-               ]
-            }
+                {
+                   "rows" : [
+                      {
+                         "refscore" : null,
+                         "smiles" : null,
+                         "nhits" : 1,
+                         "name" : "Rhoifolin (5282150)",
+                         "reference" : "<a href=\"http://www.genome.jp/dbg...",
+                         "deltappm" : 1.6407913760822,
+                         "predicted" : false,
+                         "mol" : "5282150\n  -OEChem-03241405422D\n\n 41 4...",
+                         "inchikey14" : "RPMNUQRUHXIGHK",
+                         "logp" : -0.2,
+                         "formula" : "C27H30O14",
+                         "mim" : 578.163556,
+                         "reactionsequence" : {},
+                         "molid" : 25,
+                         "score" : 4.48670453934455,
+                         "assigned" : false
+                      },
+                      {
+                         "formula" : "C27H30O14",
+                         "reactionsequence" : {},
+                         "mim" : 578.163556,
+                         "inchikey14" : "LYGPBZVKGHHTIE",
+                         "logp" : -0.9,
+                         "assigned" : false,
+                         "score" : 4.61322323103229,
+                         "molid" : 3,
+                         "reference" : "<a href=\"http://www.genome.jp/dbg...",
+                         "deltappm" : 1.6407913760822,
+                         "nhits" : 1,
+                         "smiles" : null,
+                         "refscore" : null,
+                         "name" : "Vitexin 2''-rhamnoside (5282151)",
+                         "predicted" : false,
+                         "mol" : "5282151\n  -OEChem-03241405422D\n\n 41 4..."
+                      }
+                   ],
+                   "scans" : [
+                      {
+                         "rt" : 9.26993333333333,
+                         "id" : 349
+                      },
+                      {
+                         "id" : 354,
+                         "rt" : 9.39525
+                      },
+                   ],
+                   "totalUnfiltered" : 70,
+                   "total" : 2
+                }
 
         """
         request = self.request
