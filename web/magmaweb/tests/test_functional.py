@@ -43,7 +43,8 @@ class FunctionalPrivateTests(FunctionalTests):
         # Setup owner of job
         jf = make_job_factory(self.settings)
         with transaction.manager:
-            user = User(u'bob', u'Bob Example', u'bob@example.com', 'mypassword')
+            user = User(u'bob', u'Bob Example',
+                        u'bob@example.com', 'mypassword')
             DBSession().add(user)
             self.job = jf.fromScratch(u'bob')
             self.jobid = self.job.id

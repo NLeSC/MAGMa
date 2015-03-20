@@ -6,6 +6,7 @@ from magmaweb.tests.test_job import initTestingDB
 
 
 class JobDbTestCaseAbstract(unittest.TestCase):
+
     def setUp(self):
         # mock job session
         self.session = initTestingDB()
@@ -13,6 +14,7 @@ class JobDbTestCaseAbstract(unittest.TestCase):
 
 
 class JobDbTestCase(JobDbTestCaseAbstract):
+
     def test_construct(self):
         self.assertEqual(self.job.session, self.session)
 
@@ -168,6 +170,7 @@ class JobDbTestCase(JobDbTestCaseAbstract):
 
 
 class JobDbEmptyDatasetTestCase(unittest.TestCase):
+
     def setUp(self):
         # mock job session
         self.session = initTestingDB(dataset=None)
@@ -190,6 +193,7 @@ class JobDbEmptyDatasetTestCase(unittest.TestCase):
 
 
 class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
+
     def test_default(self):
         response = self.job.molecules()
         url1 = u'<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
@@ -209,13 +213,13 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
                     'name': u'pyrocatechol',
                     'refscore': 1.0,
                     'reactionsequence': {
-                                             u'reactantof': {
-                                                 u'esterase': {
-                                                     u'nr': 2,
-                                                     u'nrp': 1
-                                                 }
-                                             }
-                                         },
+                        u'reactantof': {
+                            u'esterase': {
+                                u'nr': 2,
+                                u'nrp': 1
+                            }
+                        }
+                    },
                     'smiles': u'C1=CC=C(C(=C1)O)O',
                     'inchikey14': u'YCIMNLLNPGFGHC',
                     'mim': 110.03677, 'logp': 1.231,
@@ -229,13 +233,13 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
                     'name': u"dihydroxyphenyl-valerolactone",
                     'refscore': 1.0,
                     'reactionsequence': {
-                                             u'productof': {
-                                                 u'theogallin': {
-                                                     u'nr': 1,
-                                                     u'nrp': 0
-                                                 }
-                                             }
-                                         },
+                        u'productof': {
+                            u'theogallin': {
+                                u'nr': 1,
+                                u'nrp': 0
+                            }
+                        }
+                    },
                     'smiles': u"O=C1CCC(Cc2ccc(O)c(O)c2)O1",
                     'inchikey14': u'ZNXXWTPQHVLMQT',
                     'mim': 208.07355, 'logp': 2.763,
@@ -253,25 +257,25 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
 
     def test_filteredon_nrscanseq(self):
         response = self.job.molecules(filters=[{"type": "numeric",
-                                                  "comparison": "eq",
-                                                  "value": 1,
-                                                  "field": "nhits"}])
+                                                "comparison": "eq",
+                                                "value": 1,
+                                                "field": "nhits"}])
 
         self.assertEqual(response['total'], 2)
 
     def test_filteredon_nrscansgt(self):
         response = self.job.molecules(filters=[{"type": "numeric",
-                                                  "comparison": "lt",
-                                                  "value": 2,
-                                                  "field": "nhits"}])
+                                                "comparison": "lt",
+                                                "value": 2,
+                                                "field": "nhits"}])
 
         self.assertEqual(response['total'], 2)
 
     def test_filteredon_nrscanslt(self):
         response = self.job.molecules(filters=[{"type": "numeric",
-                                                  "comparison": "gt",
-                                                  "value": 0,
-                                                  "field": "nhits"}])
+                                                "comparison": "gt",
+                                                "value": 0,
+                                                "field": "nhits"}])
 
         self.assertEqual(response['total'], 2)
 
@@ -347,21 +351,21 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
 
     def test_sort_probmet(self):
         response = self.job.molecules(sorts=[{"property": "refscore",
-                                                "direction": "DESC"},
-                                               {"property": "molid",
-                                                "direction": "ASC"}])
+                                              "direction": "DESC"},
+                                             {"property": "molid",
+                                              "direction": "ASC"}])
 
         self.assertEqual(response['total'], 2)
 
     def test_sort_nrscans(self):
         response = self.job.molecules(sorts=[{"property": "nhits",
-                                                "direction": "DESC"}])
+                                              "direction": "DESC"}])
 
         self.assertEqual(response['total'], 2)
 
     def test_sort_assigned(self):
         response = self.job.molecules(sorts=[{"property": "assigned",
-                                                "direction": "DESC"}])
+                                              "direction": "DESC"}])
 
         self.assertEqual(response['total'], 2)
 
@@ -376,7 +380,7 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
         from magmaweb.job import ScanRequiredError
         with self.assertRaises(ScanRequiredError):
             self.job.molecules(sorts=[{"property": "score",
-                                         "direction": "DESC"}])
+                                       "direction": "DESC"}])
 
     def test_sort_deltappm(self):
         sorts = [{"property": "deltappm", "direction": "DESC"}]
@@ -394,6 +398,7 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
 
 
 class JobDbMoleculesReactionFilterTestCase(JobDbTestCaseAbstract):
+
     def setUp(self):
         JobDbTestCaseAbstract.setUp(self)
         self.query = self.session.query(Molecule.molid)
@@ -405,7 +410,11 @@ class JobDbMoleculesReactionFilterTestCase(JobDbTestCaseAbstract):
 
         fq = self.job.reaction_filter(self.query, afilter)
 
-        self.assertEqual(str(fq), 'SELECT molecules.molid AS molecules_molid \nFROM molecules JOIN reactions ON molecules.molid = reactions.reactant \nWHERE reactions.product = :product_1')
+        expected = 'SELECT molecules.molid AS molecules_molid \n'
+        expected += 'FROM molecules '
+        expected += 'JOIN reactions ON molecules.molid = reactions.reactant \n'
+        expected += 'WHERE reactions.product = :product_1'
+        self.assertEqual(str(fq), expected)
 
     def test_reaction_products(self):
         afilter = {"type": "reaction",
@@ -414,7 +423,11 @@ class JobDbMoleculesReactionFilterTestCase(JobDbTestCaseAbstract):
 
         fq = self.job.reaction_filter(self.query, afilter)
 
-        self.assertEqual(str(fq), 'SELECT molecules.molid AS molecules_molid \nFROM molecules JOIN reactions ON molecules.molid = reactions.product \nWHERE reactions.reactant = :reactant_1')
+        expected = 'SELECT molecules.molid AS molecules_molid \n'
+        expected += 'FROM molecules '
+        expected += 'JOIN reactions ON molecules.molid = reactions.product \n'
+        expected += 'WHERE reactions.reactant = :reactant_1'
+        self.assertEqual(str(fq), expected)
 
     def test_reaction_productsofname(self):
         afilter = {"type": "reaction",
@@ -424,7 +437,12 @@ class JobDbMoleculesReactionFilterTestCase(JobDbTestCaseAbstract):
 
         fq = self.job.reaction_filter(self.query, afilter)
 
-        self.assertEqual(str(fq), 'SELECT molecules.molid AS molecules_molid \nFROM molecules JOIN reactions ON molecules.molid = reactions.product \nWHERE reactions.reactant = :reactant_1 AND reactions.name = :name_1')
+        expected = 'SELECT molecules.molid AS molecules_molid \n'
+        expected += 'FROM molecules '
+        expected += 'JOIN reactions ON molecules.molid = reactions.product \n'
+        expected += 'WHERE reactions.reactant = :reactant_1 '
+        expected += 'AND reactions.name = :name_1'
+        self.assertEqual(str(fq), expected)
 
     def test_reaction_reactantsofname(self):
         afilter = {"type": "reaction",
@@ -434,7 +452,12 @@ class JobDbMoleculesReactionFilterTestCase(JobDbTestCaseAbstract):
 
         fq = self.job.reaction_filter(self.query, afilter)
 
-        self.assertEqual(str(fq), 'SELECT molecules.molid AS molecules_molid \nFROM molecules JOIN reactions ON molecules.molid = reactions.reactant \nWHERE reactions.product = :product_1 AND reactions.name = :name_1')
+        expected = 'SELECT molecules.molid AS molecules_molid \n'
+        expected += 'FROM molecules '
+        expected += 'JOIN reactions ON molecules.molid = reactions.reactant \n'
+        expected += 'WHERE reactions.product = :product_1 '
+        expected += 'AND reactions.name = :name_1'
+        self.assertEqual(str(fq), expected)
 
     def test_reaction_reactantandproduct(self):
         afilter = {"type": "reaction",
@@ -463,6 +486,7 @@ class JobDbMoleculesReactionFilterTestCase(JobDbTestCaseAbstract):
 
 
 class JobDbMolecules2csvTestCase(JobDbTestCaseAbstract):
+
     def test_it(self):
         csvfile = self.job.molecules2csv(self.job.molecules()['rows'])
         import csv
@@ -476,10 +500,12 @@ class JobDbMolecules2csvTestCase(JobDbTestCaseAbstract):
         url1 += '?cid=289">CID: 289</a>'
         url2 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
         url2 += '?cid=152432">CID: 152432</a>'
+        rs1 = '{"reactantof": {"esterase": {"nr": 2, "nrp": 1}}}'
+        rs2 = '{"productof": {"theogallin": {"nr": 1, "nrp": 0}}}'
         csvwriter.writerow({'name': 'pyrocatechol',
                             'smiles': 'C1=CC=C(C(=C1)O)O',
                             'refscore': 1.0,
-                            'reactionsequence': '{"reactantof": {"esterase": {"nr": 2, "nrp": 1}}}',
+                            'reactionsequence': rs1,
                             'nhits': 1,
                             'formula': 'C6H6O2',
                             'predicted': False,
@@ -490,7 +516,7 @@ class JobDbMolecules2csvTestCase(JobDbTestCaseAbstract):
         csvwriter.writerow({'name': 'dihydroxyphenyl-valerolactone',
                             'smiles': 'O=C1CCC(Cc2ccc(O)c(O)c2)O1',
                             'refscore': 1.0,
-                            'reactionsequence': '{"productof": {"theogallin": {"nr": 1, "nrp": 0}}}',
+                            'reactionsequence': rs2,
                             'nhits': 1,
                             'formula': 'C11H12O4',
                             'predicted': False,
@@ -514,11 +540,16 @@ class JobDbMolecules2csvTestCase(JobDbTestCaseAbstract):
         csvwriter.writeheader()
         url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
         url1 += '?cid=289">CID: 289</a>'
-        csvwriter.writerow({'name': 'pyrocatechol', 'smiles': 'C1=CC=C(C(=C1)O)O',
+        rs1 = '{"reactantof": {"esterase": {"nr": 2, "nrp": 1}}}'
+        csvwriter.writerow({'name': 'pyrocatechol',
+                            'smiles': 'C1=CC=C(C(=C1)O)O',
                             'refscore': 1.0,
-                            'reactionsequence': '{"reactantof": {"esterase": {"nr": 2, "nrp": 1}}}',
-                            'nhits': 1, 'formula': 'C6H6O2',
-                            'predicted': False, 'score': 200.0, 'mim': 110.03677,
+                            'reactionsequence': rs1,
+                            'nhits': 1,
+                            'formula': 'C6H6O2',
+                            'predicted': False,
+                            'score': 200.0,
+                            'mim': 110.03677,
                             'logp': 1.231,
                             'reference': url1
                             })
@@ -539,6 +570,7 @@ class JobDbMolecules2csvTestCase(JobDbTestCaseAbstract):
 
 
 class JobMolecules2sdfTestCase(JobDbTestCaseAbstract):
+
     def test_it(self):
         sdffile = self.job.molecules2sdf(self.job.molecules()['rows'])
         url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
@@ -666,6 +698,7 @@ $$$$
 
 
 class JobScansWithMoleculesTestCase(JobDbTestCaseAbstract):
+
     def test_molid(self):
         response = self.job.scansWithMolecules(molid=72)
         self.assertEqual(response, [{
@@ -752,6 +785,7 @@ class JobScansWithMoleculesTestCase(JobDbTestCaseAbstract):
 
 
 class JobMSpectraTestCase(JobDbTestCaseAbstract):
+
     def test_scanonly(self):
         self.assertEqual(
             self.job.mspectra(641),
@@ -830,6 +864,7 @@ class JobMSpectraTestCase(JobDbTestCaseAbstract):
 
 
 class JobFragmentsTestCase(JobDbTestCaseAbstract):
+
     def test_moleculewithoutfragments(self):
         self.maxDiff = None
         response = self.job.fragments(molid=72, scanid=641, node='root')
@@ -958,6 +993,7 @@ class JobFragmentsTestCase(JobDbTestCaseAbstract):
 
 
 class JobWithAllPeaksTestCase(unittest.TestCase):
+
     def setUp(self):
         self.job = JobDb(initTestingDB(dataset='useallpeaks'))
 

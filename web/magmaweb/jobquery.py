@@ -6,12 +6,15 @@ import colander
 
 
 class JobQuery(object):
+
     """Perform actions on a :class:`Job` by parsing post params,
     staging files and building magma cli commands
     """
 
     class File(object):
+
         """ Colander schema type for file upload field"""
+
         def serialize(self, node, appstruct):
             return appstruct
 
@@ -107,13 +110,13 @@ class JobQuery(object):
     def _addMetabolizeSchema(self, schema):
         scenario = colander.SchemaNode(colander.Mapping())
         transformation_types = colander.OneOf([
-                                               'phase1',
-                                               'phase1_selected',
-                                               'phase2',
-                                               'phase2_selected',
-                                               'glycosidase',
-                                               'mass_filter',
-                                               'gut'])
+            'phase1',
+            'phase1_selected',
+            'phase2',
+            'phase2_selected',
+            'glycosidase',
+            'mass_filter',
+            'gut'])
 
         scenario.add(colander.SchemaNode(colander.String(),
                                          name='type',
@@ -310,7 +313,7 @@ class JobQuery(object):
             for transformation in params['scenario']:
                 f.write(",".join([transformation['type'],
                                   transformation['steps']
-                                  ])+"\n")
+                                  ]) + "\n")
 
     def _deserialize_scenario(self, params):
         if 'scenario' in params:
@@ -383,7 +386,8 @@ class JobQuery(object):
         is_mzxml = params['ms_data_format'] == 'mzxml'
         empty_scan = params['scan'] is colander.null
         if is_mzxml and self.restricted and empty_scan:
-            has_structure_database = 'structure_database' in orig_params and orig_params['structure_database']
+            has_structure_database = ('structure_database' in orig_params and
+                                      orig_params['structure_database'])
             # mzxml + molecules from upload/draw -> single scan not enforced
             if has_structure_database:
                 sd = schema['scan']
@@ -618,22 +622,22 @@ class JobQuery(object):
             return cls._example2()
 
         return dict(scenario=[
-                              {'type': 'phase1', 'steps': '2'},
-                              {'type': 'phase2', 'steps': '1'}
-                              ],
-                    ms_data_format='mzxml',
-                    ms_data_area='',
-                    ionisation_mode=1,
-                    ms_intensity_cutoff=0.0,
-                    msms_intensity_cutoff=5,
-                    mz_precision=5.0,
-                    mz_precision_abs=0.001,
-                    abs_peak_cutoff=5000,
-                    max_ms_level=10,
-                    precursor_mz_precision=0.005,
-                    max_broken_bonds=3,
-                    max_water_losses=1,
-                    )
+            {'type': 'phase1', 'steps': '2'},
+            {'type': 'phase2', 'steps': '1'}
+        ],
+            ms_data_format='mzxml',
+            ms_data_area='',
+            ionisation_mode=1,
+            ms_intensity_cutoff=0.0,
+            msms_intensity_cutoff=5,
+            mz_precision=5.0,
+            mz_precision_abs=0.001,
+            abs_peak_cutoff=5000,
+            max_ms_level=10,
+            precursor_mz_precision=0.005,
+            max_broken_bonds=3,
+            max_water_losses=1,
+        )
 
     @classmethod
     def _example(cls):

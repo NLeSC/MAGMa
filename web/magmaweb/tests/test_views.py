@@ -9,6 +9,7 @@ from magmaweb.user import User, JobMeta
 
 
 class AbstractViewsTestCase(unittest.TestCase):
+
     def setUp(self):
         self.settings = {'jobfactory.root_dir': '/somedir',
                          'access_token.expires_in': 360,
@@ -41,6 +42,7 @@ class AbstractViewsTestCase(unittest.TestCase):
 
 
 class ViewsTestCase(AbstractViewsTestCase):
+
     def test_home(self):
         request = testing.DummyRequest()
         views = Views(request)
@@ -483,7 +485,9 @@ class ViewsTestCase(AbstractViewsTestCase):
 
 
 class InCompleteJobViewsTestCase(AbstractViewsTestCase):
+
     """Test case for magmaweb.views.InCompleteJobViews"""
+
     def test_jobstatus_complete(self):
         request = testing.DummyRequest()
         job = self.fake_job()
@@ -821,6 +825,7 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
 
 
 class JobViewsTestCase(AbstractViewsTestCase):
+
     """ Test case for magmaweb.views.JobViews"""
 
     def setUp(self):
@@ -863,10 +868,10 @@ class JobViewsTestCase(AbstractViewsTestCase):
         views.moleculesjson()
 
         job.db.molecules.assert_called_with(start=0,
-                                              limit=10,
-                                              sorts=[],
-                                              scanid=None,
-                                              filters=[])
+                                            limit=10,
+                                            sorts=[],
+                                            scanid=None,
+                                            filters=[])
         job.db.scansWithMolecules.assert_called_with(filters=[])
 
     def test_moleculesjson_scanidfilter(self):
@@ -880,10 +885,10 @@ class JobViewsTestCase(AbstractViewsTestCase):
         views.moleculesjson()
 
         job.db.molecules.assert_called_with(start=0,
-                                              limit=10,
-                                              sorts=[],
-                                              scanid=641,
-                                              filters=[])
+                                            limit=10,
+                                            sorts=[],
+                                            scanid=641,
+                                            filters=[])
 
     def test_moleculesjson_nrscaneqfilter(self):
         filter_in = '[{"type":"numeric","comparison":"eq",'
@@ -900,10 +905,10 @@ class JobViewsTestCase(AbstractViewsTestCase):
         views.moleculesjson()
 
         job.db.molecules.assert_called_with(start=0,
-                                              limit=10,
-                                              sorts=[],
-                                              scanid=None,
-                                              filters=filter_expected)
+                                            limit=10,
+                                            sorts=[],
+                                            scanid=None,
+                                            filters=filter_expected)
         job.db.scansWithMolecules.assert_called_with(filters=filter_expected)
 
     def test_moleculesjson_notfilledreturn(self):
@@ -965,7 +970,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                })
         views = JobViews(job, request)
         views.moleculesjson = Mock(return_value={'rows': []
-                                                   })
+                                                 })
         response = views.moleculessdf()
 
         job.db.molecules2sdf.assert_called_with([], cols=[])
@@ -981,7 +986,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                })
         views = JobViews(job, request)
         views.moleculesjson = Mock(return_value={'rows': []
-                                                   })
+                                                 })
         views.moleculessdf()
 
         job.db.molecules2sdf.assert_called_with([], cols=['name', 'score'])
