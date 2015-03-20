@@ -246,7 +246,7 @@ To run only unit tests:
 
 .. code-block:: bash
 
-   nostests -a '!functional'
+   nosetests -a '!functional'
 
 To run only functional tests:
 

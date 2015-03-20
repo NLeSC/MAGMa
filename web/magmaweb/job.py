@@ -14,6 +14,7 @@ from sqlalchemy.sql.expression import desc, asc, null
 from sqlalchemy.orm.exc import NoResultFound
 import transaction
 import requests
+from zope.sqlalchemy import ZopeTransactionExtension
 from .models import Base, Molecule, Scan, Peak, Fragment, Run
 from .models import Reaction
 import magmaweb.user
@@ -150,7 +151,8 @@ class JobFactory(object):
             engine.connect()
         except OperationalError:
             raise JobNotFound("Data of job not found", jobid)
-        return scoped_session(sessionmaker(bind=engine))
+        sm = sessionmaker(bind=engine, extension=ZopeTransactionExtension())
+        return scoped_session(sm)
 
     def fromId(self, jobid):
         """Finds job db in job root dir.
