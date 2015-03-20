@@ -54,7 +54,7 @@ def populateTestingDB(session):
         max_water_losses=1,
     ))
     session.add(Molecule(
-        molid=72, mol=u'Molfile', level=0, refscore=1.0,
+        molid=72, mol=u'Molfile', refscore=1.0,
         reactionsequence={
                              u'reactantof': {
                                  u'esterase': {
@@ -63,7 +63,7 @@ def populateTestingDB(session):
                                  }
                              }
                          },
-        smiles=u'Oc1ccccc1O',
+        smiles=u'C1=CC=C(C(=C1)O)O', inchikey14=u'YCIMNLLNPGFGHC',
         formula=u'C6H6O2', predicted=False, nhits=1,
         name=u'pyrocatechol', mim=110.03677, logp=1.231,
         reference=url1
@@ -93,7 +93,7 @@ def populateTestingDB(session):
     ))
     # fragments of molid=352 + scanid=870
     session.add(Molecule(
-        predicted=False, level=0, molid=352,
+        predicted=False, molid=352,
         mol=u"Molfile of dihydroxyphenyl-valerolactone",
         formula=u"C11H12O4",
         name=u"dihydroxyphenyl-valerolactone",
@@ -105,7 +105,8 @@ def populateTestingDB(session):
                                                    }
                                                }
                                            },
-        smiles=u"O=C1OC(Cc2ccc(O)c(O)c2)CC1",
+        smiles=u"O=C1CCC(Cc2ccc(O)c(O)c2)O1",
+        inchikey14=u'ZNXXWTPQHVLMQT',
         reference=url2,
         mim=208.07355, logp=2.763, nhits=1
     ))
@@ -177,10 +178,10 @@ def populateWithUseAllPeaks(session):
     ))
     session.add(Molecule(
         molid=12,
-        level=1,
         refscore=0.119004,
         reactionsequence=['sulfation_(aromatic_hydroxyl)'],
         smiles=u'Oc1ccc(CC2OC(=O)CC2)cc1OS(O)(=O)=O',
+        inchikey14=u'YAXFVDUJDAQPTJ',
         formula=u'C11H12O7S',
         predicted=True,
         name=u'5-(3,4)-dihydroxyphenyl-g-valerolactone (F)',

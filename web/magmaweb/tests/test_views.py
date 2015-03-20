@@ -906,24 +906,6 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                               filters=filter_expected)
         job.db.scansWithMolecules.assert_called_with(filters=filter_expected)
 
-    def test_moleculesjson_sortonlevel(self):
-        sort_in = '[{"property":"level","direction":"DESC"}]'
-        sort_expected = [{"property": "level", "direction": "DESC"}]
-        request = testing.DummyRequest(params={'start': 0,
-                                               'limit': 10,
-                                               'sort': sort_in
-                                               })
-        job = self.fake_job()
-        views = JobViews(job, request)
-
-        views.moleculesjson()
-
-        job.db.molecules.assert_called_with(start=0,
-                                              limit=10,
-                                              sorts=sort_expected,
-                                              scanid=None,
-                                              filters=[])
-
     def test_moleculesjson_notfilledreturn(self):
         request = testing.DummyRequest(params={'start': 0,
                                                'limit': 10
