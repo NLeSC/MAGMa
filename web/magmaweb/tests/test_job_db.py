@@ -342,7 +342,7 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
     def test_filteredon_reaction(self):
         filters = [{"type": "reaction",
                     "product": 3,
-                    "name": "esterase",
+                    "name": u"esterase",
                     "field": "reactionsequence",
                     }]
         response = self.job.molecules(filters=filters)

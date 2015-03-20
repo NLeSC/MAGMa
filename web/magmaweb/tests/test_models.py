@@ -14,8 +14,8 @@ class TestReactionSequence(unittest.TestCase):
           'theogallin': {'nr': 678, 'nrp': 90}
        }]
     }
-    reactions_json = '{"reactants": [{"theogallin": {"nr": 678, "nrp": 90}}], '
-    reactions_json += '"products": [{"esterase": {"nr": 123, "nrp": 45}}]}'
+    reactions_json = u'{"reactants": [{"theogallin": {"nr": 678, "nrp": 90}}]'
+    reactions_json += u', "products": [{"esterase": {"nr": 123, "nrp": 45}}]}'
 
     def setUp(self):
         self.rs = ReactionSequence()
@@ -79,7 +79,7 @@ class TestFillMoleculeReactions(unittest.TestCase):
         session = self.Session()
         session.add(Molecule(molid=1, nhits=1))
         session.add(Molecule(molid=2, nhits=1))
-        session.add(Reaction(reactid=1, name='esterase',
+        session.add(Reaction(reactid=1, name=u'esterase',
                              reactant=1, product=2))
         session.flush()
 
@@ -111,9 +111,9 @@ class TestFillMoleculeReactions(unittest.TestCase):
         session = self.Session()
         session.add(Molecule(molid=1, nhits=1))
         session.add(Molecule(molid=2, nhits=1))
-        session.add(Reaction(reactid=1, name='esterase',
+        session.add(Reaction(reactid=1, name=u'esterase',
                              reactant=1, product=2))
-        session.add(Reaction(reactid=2, name='theogallin',
+        session.add(Reaction(reactid=2, name=u'theogallin',
                              reactant=2, product=1))
         session.flush()
 
@@ -160,13 +160,13 @@ class TestFillMoleculeReactions(unittest.TestCase):
         session.add(Molecule(molid=2, nhits=1))
         session.add(Molecule(molid=3, nhits=0))
         session.add(Molecule(molid=4, nhits=1))
-        session.add(Reaction(reactid=1, name='esterase',
+        session.add(Reaction(reactid=1, name=u'esterase',
                              reactant=1, product=2))
-        session.add(Reaction(reactid=2, name='theogallin',
+        session.add(Reaction(reactid=2, name=u'theogallin',
                              reactant=1, product=3))
-        session.add(Reaction(reactid=3, name='dehydrox',
+        session.add(Reaction(reactid=3, name=u'dehydrox',
                              reactant=2, product=4))
-        session.add(Reaction(reactid=4, name='reduc',
+        session.add(Reaction(reactid=4, name=u'reduc',
                              reactant=3, product=4))
         session.flush()
 
@@ -202,9 +202,9 @@ class TestFillMoleculeReactions(unittest.TestCase):
         session.add(Molecule(molid=1, nhits=1))
         session.add(Molecule(molid=2, nhits=1))
         session.add(Molecule(molid=3, nhits=1))
-        session.add(Reaction(reactid=1, name='esterase',
+        session.add(Reaction(reactid=1, name=u'esterase',
                              reactant=1, product=2))
-        session.add(Reaction(reactid=2, name='esterase',
+        session.add(Reaction(reactid=2, name=u'esterase',
                              reactant=1, product=3))
         session.flush()
 
@@ -232,9 +232,9 @@ class TestFillMoleculeReactions(unittest.TestCase):
         session.add(Molecule(molid=1, nhits=1))
         session.add(Molecule(molid=2, nhits=1))
         session.add(Molecule(molid=3, nhits=1))
-        session.add(Reaction(reactid=1, name='esterase',
+        session.add(Reaction(reactid=1, name=u'esterase',
                              reactant=1, product=2))
-        session.add(Reaction(reactid=2, name='esterase',
+        session.add(Reaction(reactid=2, name=u'esterase',
                              reactant=3, product=2))
         session.flush()
 
