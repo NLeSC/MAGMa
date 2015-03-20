@@ -326,7 +326,8 @@ Database migration
 When `magmaweb/models.py` is changed then all the databases have to migrated to this new state.
 Alembic (http://readthedocs.org/docs/alembic/) is used to perform database migrations.
 
-When `models.py` has changed use ``alembic revision --autogenerate -m "Added metabolize scenario"`` to make a migration script.
+When `models.py` has changed use ``alembic -x jobid=ff52323b-c49a-4387-b964-c6dafab5f0c4 revision --autogenerate -m "Added metabolize scenario"`` to make a migration script.
+You might need to force the database to the head revision using ``alembic -x jobid=e1e4951e-30e1-4ce7-b0e1-e8af6b998580 stamp 185259a481ee``.
 
 Upgrade all the job result databases with:
 
