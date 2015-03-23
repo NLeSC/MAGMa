@@ -55,8 +55,8 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
       }
     });
 
-    this.application.on('scanandmetaboliteselect', this.loadFragments, this);
-    this.application.on('scanandmetabolitenoselect', this.clearFragments, this);
+    this.application.on('mzandmetaboliteselect', this.loadFragments, this);
+    this.application.on('mzandmetabolitenoselect', this.clearFragments, this);
     this.application.on('mspectraload', this.initMolecules, this);
     this.application.on('peakdeselect', this.clearFragmentSelection, this);
     this.application.on('peakselect', this.selectFragmentByPeak, this);
@@ -189,6 +189,10 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
   },
   onSelect: function(rm, r) {
     Ext.log({}, 'Selected fragment '+r.id);
+    if (r.data.mslevel === 1) {
+      // don't allow lvl1 fragment to be unselected as it will clear the fragment panel
+	  return;
+	}
     // show child mspectra of selected node or mz
     if (!r.isLeaf()) {
       // onselect then expand
@@ -201,7 +205,11 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     this.application.fireEvent('fragmentselect', r);
   },
   onDeselect: function(rm, fragment) {
-      this.application.fireEvent('fragmentdeselect', fragment);
+	if (fragment.data.mslevel === 1) {
+      // don't allow lvl1 fragment to be unselected as it will clear the fragment panel
+	  return;
+	}
+    this.application.fireEvent('fragmentdeselect', fragment);
   },
   /**
    * Clears fragment selection.
@@ -240,6 +248,10 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
    * @param {Number} mslevel MS level of peak
    */
   selectFragmentByPeak: function(mz, mslevel) {
+	if (mslevel <= 1) {
+        // don't allow lvl1 fragment to be unselected as it will clear the fragment panel
+		return;
+	}
     // find fragment based on mz + mslevel
     var node = this.getFragmentsStore().getNodeByMzMslevel(mz, mslevel);
     if (node) {
