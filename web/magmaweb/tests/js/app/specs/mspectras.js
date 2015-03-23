@@ -6,6 +6,13 @@ describe('MSpectras controller', function() {
     }
   });
 
+  function captureEvents() {
+    var f = { callback: function() {} };
+    spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+    Ext.util.Observable.capture(ctrl.application, f.callback);
+    return f;
+  }
+
   it('config', function() {
     expect(ctrl.getMaxmslevel()).toEqual(3);
     expect(ctrl.getUrl()).toEqual('data/mspectra.{0}.json?mslevel={1}');
@@ -223,12 +230,10 @@ describe('MSpectras controller', function() {
       };
       var mspectra = Ext.create('Esc.d3.MSpectra');
       spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
-      spyOn(mspectra, 'selectPeak');
       spyOn(ctrl, 'loadMSpectra2');
 
       ctrl.loadMSpectrasFromFragment(frag, frag.childNodes);
 
-      expect(mspectra.selectPeak).toHaveBeenCalledWith(123);
       expect(ctrl.loadMSpectra2).not.toHaveBeenCalled();
       mspectra.destroy();
     });
@@ -248,12 +253,10 @@ describe('MSpectras controller', function() {
       };
       var mspectra = Ext.create('Esc.d3.MSpectra');
       spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
-      spyOn(mspectra, 'selectPeak');
       spyOn(ctrl, 'loadMSpectra2');
 
       ctrl.loadMSpectrasFromFragment(frag, frag.childNodes);
 
-      expect(mspectra.selectPeak).toHaveBeenCalledWith(123);
       expect(ctrl.loadMSpectra2).toHaveBeenCalledWith(
           1135,
           [{mz: 56}]
@@ -368,7 +371,7 @@ describe('MSpectras controller', function() {
       });
 
       expect(ctrl.mspectras[2].selectPeak).toHaveBeenCalledWith(123);
-      expect(ctrl.mspectras[1].selectPeak).toHaveBeenCalledWith(456);
+      expect(ctrl.mspectras[1].selectPeak).not.toHaveBeenCalled();
       expect(ctrl.mspectras[3].clearPeakSelection).toHaveBeenCalled();
     });
 
@@ -387,7 +390,7 @@ describe('MSpectras controller', function() {
 
       expect(ctrl.mspectras[3].selectPeak).toHaveBeenCalledWith(123);
       expect(ctrl.mspectras[2].selectPeak).toHaveBeenCalledWith(456);
-      expect(ctrl.mspectras[1].selectPeak).toHaveBeenCalledWith(789);
+      expect(ctrl.mspectras[1].selectPeak).not.toHaveBeenCalled();
     });
   });
 
@@ -425,5 +428,37 @@ describe('MSpectras controller', function() {
      ctrl.showHelp();
 
      expect(ctrl.application.showHelp).toHaveBeenCalledWith('scan');
+  });
+
+  describe('selectPeakOfMolecule', function() {
+	 it('should select peak with mz of molecule and fire event', function() {
+		 var mol = {id: 1234, data: { mz: 5678.90}};
+		 var mspectra = Ext.create('Esc.d3.MSpectra');
+	     spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
+	     spyOn(mspectra, 'selectPeak');
+	     mspectra.scanid = 2;
+	     var capturer = captureEvents();
+
+		 ctrl.selectPeakOfMolecule(mol.id, mol);
+
+		 expect(mspectra.selectPeak).toHaveBeenCalledWith(5678.90);
+		 expect(capturer.callback).toHaveBeenCalledWith('peakselect', 5678.90, 1, 2);
+		 Ext.util.Observable.releaseCapture(ctrl.application);
+	 });
+
+	 it('should do nothing if peak already selected', function() {
+		 var mol = {id: 1234, data: { mz: 5678.90}};
+		 var mspectra = Ext.create('Esc.d3.MSpectra');
+	     spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
+	     spyOn(mspectra, 'selectPeak');
+	     mspectra.selectedpeak = 5678.90;
+	     var capturer = captureEvents();
+
+		 ctrl.selectPeakOfMolecule(mol.id, mol);
+
+		 expect(mspectra.selectPeak).not.toHaveBeenCalled();
+		 expect(capturer.callback).not.toHaveBeenCalled();
+		 Ext.util.Observable.releaseCapture(ctrl.application);
+	 });
   });
 });

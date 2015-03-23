@@ -138,7 +138,7 @@ describe('Fragments', function() {
     describe('onSelect', function() {
       it('on leaf fragment', function() {
         fill(function() {
-          var frag = store.getById(2471);
+          var frag = store.getById(2470);
           var rm = Ext.create('Ext.selection.RowModel');
 
           var f = { callback: function() {} };
@@ -154,7 +154,7 @@ describe('Fragments', function() {
 
       it('on expanded fragment', function() {
         fill(function() {
-          var frag = store.getById(2469);
+          var frag = store.getById(2471);
           var rm = Ext.create('Ext.selection.RowModel');
 
           var f = { callback: function() {} };
@@ -171,7 +171,7 @@ describe('Fragments', function() {
 
       it('on collapsed fragment', function() {
         fill(function() {
-          var frag = store.getById(2469);
+          var frag = store.getById(2471);
           spyOn(frag, 'expand');
           var rm = Ext.create('Ext.selection.RowModel');
 
@@ -179,7 +179,6 @@ describe('Fragments', function() {
           spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
           Ext.util.Observable.capture(ctrl.application, f.callback);
 
-          frag.collapse();
           ctrl.onSelect(rm, frag);
 
           expect(frag.expand).toHaveBeenCalled();
@@ -187,20 +186,52 @@ describe('Fragments', function() {
           Ext.util.Observable.releaseCapture(ctrl.application);
         });
       });
+
+      it('should not select lvl1 fragment', function() {
+        fill(function() {
+          var frag = store.getById(2469);
+          var rm = Ext.create('Ext.selection.RowModel');
+
+          var f = { callback: function() {} };
+          spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+          Ext.util.Observable.capture(ctrl.application, f.callback);
+
+          ctrl.onSelect(rm, frag);
+
+          expect(f.callback).not.toHaveBeenCalled();
+          Ext.util.Observable.releaseCapture(ctrl.application);
+        });
+      });
     });
 
-    it('onDeselect', function() {
-      var f = { callback: function() {} };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
-      Ext.util.Observable.capture(ctrl.application, f.callback);
+    describe('onDeselect', function() {
+      it('should fire event', function() {
+	      var f = { callback: function() {} };
+	      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+	      Ext.util.Observable.capture(ctrl.application, f.callback);
 
-      var frag = store.getById(2469);
-      var rm = Ext.create('Ext.selection.RowModel');
+	      var frag = store.getById(2470);
+	      var rm = Ext.create('Ext.selection.RowModel');
 
-      ctrl.onDeselect(rm, frag);
+	      ctrl.onDeselect(rm, frag);
 
-      expect(f.callback).toHaveBeenCalledWith('fragmentdeselect', jasmine.any(Object));
-      Ext.util.Observable.releaseCapture(ctrl.application);
+	      expect(f.callback).toHaveBeenCalledWith('fragmentdeselect', jasmine.any(Object));
+	      Ext.util.Observable.releaseCapture(ctrl.application);
+      });
+
+      it('should not fire event when lvl1 fragment is unselected', function() {
+	      var f = { callback: function() {} };
+	      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+	      Ext.util.Observable.capture(ctrl.application, f.callback);
+
+	      var frag = store.getById(2469);
+	      var rm = Ext.create('Ext.selection.RowModel');
+
+	      ctrl.onDeselect(rm, frag);
+
+	      expect(f.callback).not.toHaveBeenCalled();
+	      Ext.util.Observable.releaseCapture(ctrl.application);
+      });
     });
 
     it('clearFragmentSelection', function() {
@@ -284,10 +315,10 @@ describe('Fragments', function() {
           spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
           Ext.util.Observable.capture(ctrl.application, f.callback);
 
-          var frag = store.getById(2471);
+          var frag = store.getById(2470);
           ctrl.selectFragment(frag);
 
-          expect(f.callback).not.toHaveBeenCalledWith('fragmentexpand', jasmine.any(Object));
+          expect(f.callback).not.toHaveBeenCalled();
           Ext.util.Observable.releaseCapture(ctrl.application);
         });
       });

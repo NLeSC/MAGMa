@@ -206,47 +206,46 @@ Ext.define('Esc.magmaweb.resultsApp', {
     // uncomment to see all application events fired in console
 //    Ext.util.Observable.capture(this, function() { console.log(arguments);return true;});
 
-    this.on('metaboliteselect', function(metid) {
-      this.selected.metid = metid;
-      if (this.selected.metid && this.selected.scanid) {
-        this.fireEvent('scanandmetaboliteselect', this.selected.scanid, metid);
-      }
-    }, this);
+
     this.on('selectscan', function(scanid) {
         this.selected.scanid = scanid;
-        if (this.selected.metid && this.selected.scanid) {
-            this.fireEvent('scanandmetaboliteselect', scanid, this.selected.metid);
-        }
     }, this);
     this.on('noselectscan', function() {
-        if (this.selected.metid && this.selected.scanid) {
-            this.fireEvent('scanandmetabolitenoselect');
-        }
         this.selected.scanid = false;
+    }, this);
+    this.on('metaboliteselect', function(metid) {
+      this.selected.metid = metid;
+      if (this.selected.metid && this.selected.scanid && this.selected.mz) {
+        this.fireEvent('mzandmetaboliteselect', this.selected.scanid, metid, this.selected.mz);
+      }
     }, this);
     this.on('metabolitedeselect', function() {
         if (this.selected.metid && this.selected.scanid) {
-            this.fireEvent('mzandmetaboliteselect');
+            this.fireEvent('mzandmetabolitenoselect');
         }
         this.selected.metid = false;
     }, this);
     this.on('metabolitenoselect', function() {
         if (this.selected.metid && this.selected.scanid) {
-            this.fireEvent('mzandmetaboliteselect');
+            this.fireEvent('mzandmetabolitenoselect');
         }
         this.selected.metid = false;
     }, this);
-    this.on('peakselect', function(mz) {
-        this.selected.mz = mz;
-        if (this.selected.metid && this.selected.mz) {
-            this.fireEvent('mzandmetaboliteselect', mz, this.selected.metid);
-        }
+    this.on('peakselect', function(mz, mslevel) {
+    	if (mslevel === 1) {
+            this.selected.mz = mz;
+            if (this.selected.metid && this.selected.scanid && this.selected.mz) {
+                this.fireEvent('mzandmetaboliteselect', this.selected.scanid, this.selected.metid, mz);
+            }
+    	}
     }, this);
-    this.on('peakdeselect', function() {
-        if (this.selected.metid && this.selected.mz) {
-            this.fireEvent('mzandmetabolitenoselect');
-        }
-        this.selected.mz = false;
+    this.on('peakdeselect', function(mz, mslevel) {
+    	if (mslevel === 1) {
+	        if (this.selected.metid && this.selected.mz) {
+	            this.fireEvent('mzandmetabolitenoselect');
+	        }
+	        this.selected.mz = false;
+    	}
     }, this);
 
     Ext.log({}, 'Launch app');
