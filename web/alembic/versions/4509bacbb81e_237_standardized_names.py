@@ -122,6 +122,7 @@ def upgrade():
         DROP TABLE fragments_old;
         DROP TABLE old_peaks;
         DROP TABLE metabolites;
+        VACUUM;
     """
     connection.executescript(sql)
 
