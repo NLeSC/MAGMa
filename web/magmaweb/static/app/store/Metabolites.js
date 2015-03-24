@@ -61,7 +61,7 @@ Ext.define('Esc.magmaweb.store.Metabolites', {
     this.loadPage(1);
   },
   isFilteredOnScan: function() {
-	  return 'scanid' in this.getProxy().extraParams;
+    return 'scanid' in this.getProxy().extraParams;
   },
   /**
    * Sets the pagesize of the store and reloads store to first page.
@@ -86,5 +86,11 @@ Ext.define('Esc.magmaweb.store.Metabolites', {
       } else {
           return 0;
       }
+  },
+  selectMolecule: function(molecule) {
+      this.getProxy().extraParams.molid = molecule.getId();
+  },
+  clearMoleculeSelection: function() {
+      delete(this.getProxy().extraParams.molid);
   }
 });
