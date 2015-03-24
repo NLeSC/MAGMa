@@ -58,7 +58,7 @@ def upgrade():
 
         ALTER TABLE peaks RENAME TO old_peaks;
 
-        DROP INDEX ix_peaks_assigned_metid;
+        DROP INDEX IF EXISTS ix_peaks_assigned_metid;
 
         CREATE TABLE peaks (
             scanid INTEGER NOT NULL,
@@ -90,8 +90,8 @@ def upgrade():
 
         ALTER TABLE fragments RENAME TO fragments_old;
 
-        DROP INDEX ix_fragments_metid;
-        DROP INDEX ix_fragments_scanid;
+        DROP INDEX IF EXISTS ix_fragments_metid;
+        DROP INDEX IF EXISTS ix_fragments_scanid;
 
         CREATE TABLE fragments (
             fragid INTEGER NOT NULL,
