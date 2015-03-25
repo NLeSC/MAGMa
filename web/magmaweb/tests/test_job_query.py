@@ -388,7 +388,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -i '1' -l '3' -a '1000.0'"
+        script += " -i '1' -m '3' -a '1000.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -413,7 +413,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -i '1' -l '3' -a '1000.0'"
+        script += " -i '1' -m '3' -a '1000.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -490,7 +490,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params, True)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml' "
-        script += "-i '1' -l '3' -a '1000.0'"
+        script += "-i '1' -m '3' -a '1000.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         script += "{magma} annotate -c '200000.0'"
@@ -517,7 +517,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mass_tree'"
-        script += " -i '1' -l '0' -a '0.0'"
+        script += " -i '1' -m '0' -a '0.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -539,7 +539,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'form_tree_pos'"
-        script += " -i '1' -l '0' -a '0.0'"
+        script += " -i '1' -m '0' -a '0.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -561,7 +561,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'form_tree_neg'"
-        script += " -i '-1' -l '0' -a '0.0'"
+        script += " -i '-1' -m '0' -a '0.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -597,7 +597,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -i '1' -l '3' -a '1000.0'"
+        script += " -i '1' -m '3' -a '1000.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --scan '5' --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -621,7 +621,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mass_tree'"
-        script += " -i '1' -l '0' -a '0.0'"
+        script += " -i '1' -m '0' -a '0.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -646,7 +646,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -i '1' -l '3' -a '1000.0'"
+        script += " -i '1' -m '3' -a '1000.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --time_limit 1 --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -691,7 +691,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -i '1' -l '3' -a '1000.0'"
+        script += " -i '1' -m '3' -a '1000.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --scan '5'"
         script += " --time_limit 1 --call_back_url '/' ms_data.dat {db}\n"
@@ -717,7 +717,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -i '1' -l '3' -a '1000.0'"
+        script += " -i '1' -m '3' -a '1000.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -1041,7 +1041,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         query = self.jobquery.allinone(params)
 
         expected_script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        expected_script += " -i '1' -l '3' -a '1000.0'"
+        expected_script += " -i '1' -m '3' -a '1000.0'"
         expected_script += " -p '5.0' -q '0.001'"
         expected_script += " --precursor_mz_precision '0.005'"
         expected_script += " --call_back_url '/'"
@@ -1107,7 +1107,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         query = self.jobquery.allinone(params)
 
         expected_script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        expected_script += " -i '1' -l '3' -a '1000.0'"
+        expected_script += " -i '1' -m '3' -a '1000.0'"
         expected_script += " -p '5.0' -q '0.001'"
         expected_script += " --precursor_mz_precision '0.005'"
         expected_script += " --call_back_url '/'"
@@ -1157,7 +1157,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         query = self.jobquery.allinone(params)
 
         expected_script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        expected_script += " -i '1' -l '3' -a '1000.0'"
+        expected_script += " -i '1' -m '3' -a '1000.0'"
         expected_script += " -p '5.0' -q '0.001'"
         expected_script += " --precursor_mz_precision '0.005'"
         expected_script += " --call_back_url '/'"
