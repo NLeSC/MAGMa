@@ -756,6 +756,7 @@ class JobDb(object):
     def startOfSelectedMolecule(self, limit, sorts, scanid, filters, molid):
         rowNr = self.rowNumberOfSelectedMolecule(sorts, scanid, filters, molid)
         start = rowNr / limit * limit
+        logger.info('Mol ' + str(molid) + ' found at row ' + str(rowNr) + 'start ' + str(start) + 'page ' + str(start / limit + 1))
         return start
 
     def metabolites(self,

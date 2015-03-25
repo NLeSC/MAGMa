@@ -204,7 +204,10 @@ Ext.define('Esc.magmaweb.resultsApp', {
     );
 
     // uncomment to see all application events fired in console
-   Ext.util.Observable.capture(this, function() { console.log(arguments);return true;});
+   Ext.util.Observable.capture(this, function() {
+	   console.error(arguments[0], arguments);
+	   return true;
+   });
 
 
     this.on('selectscan', function(scanid) {
