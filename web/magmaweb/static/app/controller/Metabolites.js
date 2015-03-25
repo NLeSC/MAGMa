@@ -29,7 +29,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     store.pageSize = this.application.getPageSize();
     store.setUrl(this.application.metabolitesUrl('json'));
     store.on('load', this.onLoad, this);
-    store.on('beforeload', this.onBeforeLoad, this);
+//    store.on('beforeload', this.onBeforeLoad, this);
 
     this.control({
       'metabolitelist': {
@@ -205,8 +205,10 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       if (sm && sm.hasSelection()) {
           var selected = sm.getSelection()[0].getId();
           store.selectMolecule(sm.getSelection()[0]);
+    	  console.error('Reselecting molecule ' + selected + ' on next store load');
 
           var reselectMolecule = function() {
+        	  // only remember selection once, otherwise paging will not work
               store.clearMoleculeSelection();
 
               // update page number
@@ -218,7 +220,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
               // select molecule again
               var record = store.getById(selected);
               if (record !== null) {
-                sm.select(record);
+                sm.select(record, false, true);
               } else {
                 this.application.fireEvent('metabolitedeselect', selected, 'not found');
               }
@@ -322,7 +324,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
               direction: 'ASC'
           })
       ]);
-    //   this.rememberSelectedMolecule();
+       this.rememberSelectedMolecule();
       store.setScanFilter(scanid);
       this.getMetaboliteList().showFragmentScoreColumn();
   },
@@ -343,7 +345,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
           store.sorters.removeAtKey('score');
           store.sorters.removeAtKey('deltappm');
       }
-    //   this.rememberSelectedMolecule();
+       this.rememberSelectedMolecule();
       store.removeScanFilter();
       this.getMetaboliteList().hideFragmentScoreColumn();
   },
@@ -354,7 +356,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       var store = this.getMetabolitesStore();
 	  var list = this.getMetaboliteList();
 	  if (store.isFilteredOnScan()) {
-        //    this.rememberSelectedMolecule();
+            this.rememberSelectedMolecule();
 		  list.setMzFilterToEqual(mz);
 	  }
   },
@@ -362,7 +364,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
 	  if (mslevel > 1) {
 		  return;
 	  }
-    //   this.rememberSelectedMolecule();
+       this.rememberSelectedMolecule();
 	  var list = this.getMetaboliteList();
 	  list.clearMzFilter();
   },

@@ -301,6 +301,10 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
    */
   clearMSpectra: function(mslevel) {
     var mspectra = this.getMSpectra(mslevel);
+    if (mspectra.scanid === -1) {
+    	// don't clear a already cleared mspectra
+    	return;
+    }
     mspectra.setData([]);
     mspectra.scanid = -1;
     this.application.fireEvent('mspectraclear', mslevel);
@@ -376,6 +380,10 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   selectPeakOfMolecule: function(molid, molecule) {
 	var mslevel = 1;
 	var mspectra = this.getMSpectra(mslevel);
+	if (!mspectra.scanid) {
+		// skip in no lvl1 scan is selected
+		return;
+	}
 	if (mspectra.selectedpeak === molecule.data.mz) {
 		// dont select same mz again
 		return;
