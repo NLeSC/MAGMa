@@ -378,7 +378,7 @@ class JobQuery(object):
             'mz_precision_abs': self.escape(params['mz_precision_abs']),
         }
         script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}'"
-        script += " -i '{ionisation_mode}' -l '{max_ms_level}'"
+        script += " -i '{ionisation_mode}' -m '{max_ms_level}'"
         script += " -a '{abs_peak_cutoff}'"
         script += " -p '{mz_precision}' -q '{mz_precision_abs}'"
         script += " --precursor_mz_precision '{precursor_mz_precision}'"
