@@ -6,12 +6,15 @@ import colander
 
 
 class JobQuery(object):
+
     """Perform actions on a :class:`Job` by parsing post params,
     staging files and building magma cli commands
     """
 
     class File(object):
+
         """ Colander schema type for file upload field"""
+
         def serialize(self, node, appstruct):
             return appstruct
 
@@ -107,13 +110,13 @@ class JobQuery(object):
     def _addMetabolizeSchema(self, schema):
         scenario = colander.SchemaNode(colander.Mapping())
         transformation_types = colander.OneOf([
-                                               'phase1',
-                                               'phase1_selected',
-                                               'phase2',
-                                               'phase2_selected',
-                                               'glycosidase',
-                                               'mass_filter',
-                                               'gut'])
+            'phase1',
+            'phase1_selected',
+            'phase2',
+            'phase2_selected',
+            'glycosidase',
+            'mass_filter',
+            'gut'])
 
         scenario.add(colander.SchemaNode(colander.String(),
                                          name='type',
@@ -310,7 +313,7 @@ class JobQuery(object):
             for transformation in params['scenario']:
                 f.write(",".join([transformation['type'],
                                   transformation['steps']
-                                  ])+"\n")
+                                  ]) + "\n")
 
     def _deserialize_scenario(self, params):
         if 'scenario' in params:
@@ -331,7 +334,7 @@ class JobQuery(object):
                 msg = 'Require ionisation_mode when ms_data_format=form_tree'
                 raise colander.Invalid(sd, msg)
 
-    def add_ms_data(self, params, has_metabolites=False):
+    def add_ms_data(self, params, has_molecules=False):
         """Configure job query to add ms data from params.
 
         ``params`` is a dict from which the following keys are used:
@@ -346,7 +349,7 @@ class JobQuery(object):
         * mz_precision
         * mz_precsion_abs
 
-        If ``has_metabolites`` is True then
+        If ``has_molecules`` is True then
             :meth:`~magmaweb.job.JobQuery.annotate` will be called.
 
         If both ``ms_data`` and ``ms_data_file`` is filled then
@@ -354,7 +357,7 @@ class JobQuery(object):
         """
         schema = self._getMsDataSchema()
 
-        if has_metabolites:
+        if has_molecules:
             self._addAnnotateSchema(schema)
         orig_params = params
         params = schema.deserialize(params)
@@ -375,7 +378,7 @@ class JobQuery(object):
             'mz_precision_abs': self.escape(params['mz_precision_abs']),
         }
         script = "{{magma}} read_ms_data --ms_data_format '{ms_data_format}'"
-        script += " -i '{ionisation_mode}' -l '{max_ms_level}'"
+        script += " -i '{ionisation_mode}' -m '{max_ms_level}'"
         script += " -a '{abs_peak_cutoff}'"
         script += " -p '{mz_precision}' -q '{mz_precision_abs}'"
         script += " --precursor_mz_precision '{precursor_mz_precision}'"
@@ -383,7 +386,8 @@ class JobQuery(object):
         is_mzxml = params['ms_data_format'] == 'mzxml'
         empty_scan = params['scan'] is colander.null
         if is_mzxml and self.restricted and empty_scan:
-            has_structure_database = 'structure_database' in orig_params and orig_params['structure_database']
+            has_structure_database = ('structure_database' in orig_params and
+                                      orig_params['structure_database'])
             # mzxml + molecules from upload/draw -> single scan not enforced
             if has_structure_database:
                 sd = schema['scan']
@@ -401,7 +405,7 @@ class JobQuery(object):
 
         self.prestaged.append('ms_data.dat')
 
-        if (has_metabolites):
+        if (has_molecules):
             self.annotate(params)
 
         return self
@@ -417,7 +421,7 @@ class JobQuery(object):
         If ``has_ms_data`` is True then
             :meth:`~magmaweb.job.JobQuery.annotate` will be called.
 
-        If ``from_subset`` is True then metids are read from stdin
+        If ``from_subset`` is True then molids are read from stdin
         """
         schema = colander.SchemaNode(colander.Mapping())
         self._addMetabolizeSchema(schema)
@@ -464,7 +468,7 @@ class JobQuery(object):
 
         ``params`` is a MultiDict from which the following keys are used:
 
-        * metid, metabolite identifier to metabolize
+        * molid, molecule identifier to metabolize
         * scenario, transformation scenario
 
         If ``has_ms_data`` is True then
@@ -473,7 +477,7 @@ class JobQuery(object):
         schema = colander.SchemaNode(colander.Mapping())
         schema.add(colander.SchemaNode(colander.Integer(),
                                        validator=colander.Range(min=0),
-                                       name='metid'))
+                                       name='molid'))
         self._addMetabolizeSchema(schema)
         if has_ms_data:
             self._addAnnotateSchema(schema)
@@ -486,11 +490,11 @@ class JobQuery(object):
         self._writeScenarioFile(params)
         self.prestaged.append('scenario.csv')
 
-        script = "echo '{metid}' | {{magma}} metabolize -j -"
+        script = "echo '{molid}' | {{magma}} metabolize -j -"
         script += " --scenario scenario.csv"
         script += " --call_back_url '{call_back_url}' {{db}}"
         script_substitutions = {
-            'metid': self.escape(params['metid']),
+            'molid': self.escape(params['molid']),
             'call_back_url': self.status_callback_url,
         }
         self.script += script.format(**script_substitutions)
@@ -520,7 +524,7 @@ class JobQuery(object):
         * min_refscore, only used when ``structure_database_location`` is given
         * max_mz, only used when ``structure_database_location`` is given
 
-        If ``from_subset`` is True then metids are read from stdin
+        If ``from_subset`` is True then molids are read from stdin
 
         Uses fast option by default.
         """
@@ -618,22 +622,22 @@ class JobQuery(object):
             return cls._example2()
 
         return dict(scenario=[
-                              {'type': 'phase1', 'steps': '2'},
-                              {'type': 'phase2', 'steps': '1'}
-                              ],
-                    ms_data_format='mzxml',
-                    ms_data_area='',
-                    ionisation_mode=1,
-                    ms_intensity_cutoff=0.0,
-                    msms_intensity_cutoff=5,
-                    mz_precision=5.0,
-                    mz_precision_abs=0.001,
-                    abs_peak_cutoff=5000,
-                    max_ms_level=10,
-                    precursor_mz_precision=0.005,
-                    max_broken_bonds=3,
-                    max_water_losses=1,
-                    )
+            {'type': 'phase1', 'steps': '2'},
+            {'type': 'phase2', 'steps': '1'}
+        ],
+            ms_data_format='mzxml',
+            ms_data_area='',
+            ionisation_mode=1,
+            ms_intensity_cutoff=0.0,
+            msms_intensity_cutoff=5,
+            mz_precision=5.0,
+            mz_precision_abs=0.001,
+            abs_peak_cutoff=5000,
+            max_ms_level=10,
+            precursor_mz_precision=0.005,
+            max_broken_bonds=3,
+            max_water_losses=1,
+        )
 
     @classmethod
     def _example(cls):

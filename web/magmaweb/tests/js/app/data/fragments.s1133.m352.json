@@ -14,7 +14,7 @@
       "children" : [
          {
             "mass" : 164.0837296294,
-            "metid" : 352,
+            "molid" : 352,
             "formula" : "C5H4",
             "leaf" : true,
             "score" : 3,
@@ -35,7 +35,7 @@
             "mslevel" : 2,
             "deltah" : -1,
             "fragid" : 2471,
-            "metid" : 352,
+            "molid" : 352,
             "formula" : "C5H4",
             "mass" : 123.0446044689,
             "atoms" : "6,7,8,9,10,11,12,13,14",
@@ -43,7 +43,7 @@
             "leaf" : false,
             "children": [{
 	            "mass" : 64.0837296294,
-	            "metid" : 352,
+	            "molid" : 352,
 	            "formula" : "C4H3",
 	            "leaf" : true,
 	            "score" : 3,
@@ -58,7 +58,7 @@
             }]
          }
       ],
-      "metid" : 352,
+      "molid" : 352,
       "mass" : 208.0735588736,
       "formula" : "C5H4"
    }

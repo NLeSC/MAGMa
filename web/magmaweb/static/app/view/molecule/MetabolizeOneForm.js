@@ -3,7 +3,7 @@
  *
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.magmaweb.view.metabolite.MetabolizeOneForm', {
+Ext.define('Esc.magmaweb.view.molecule.MetabolizeOneForm', {
     extend: 'Ext.window.Window',
     title : 'Metabolize structure',
     alias: 'widget.metabolizeoneform',
@@ -11,7 +11,7 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeOneForm', {
         'Ext.form.Panel',
         'Ext.form.field.Hidden',
         'Ext.form.field.Display',
-        'Esc.magmaweb.view.metabolite.MetabolizeFieldSet',
+        'Esc.magmaweb.view.molecule.MetabolizeFieldSet',
         'Esc.magmaweb.view.fragment.AnnotateFieldSet'
     ],
     modal : true,
@@ -34,7 +34,7 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeOneForm', {
             name: 'name'
         },{
             xtype: 'hiddenfield',
-            name: 'metid'
+            name: 'molid'
         },{
             margin: '0 0 10 0',
             xtype : 'metabolizefieldset'
@@ -54,15 +54,15 @@ Ext.define('Esc.magmaweb.view.metabolite.MetabolizeOneForm', {
         } ]
     },
     /**
-     * Set metabolite to metabolize.
+     * Set molecule to metabolize.
      *
-     * @param {Esc.magmaweb.model.Metabolite} rec Metabolite to metabolize.
+     * @param {Esc.magmaweb.model.Molecule} rec Molecule to metabolize.
      */
-    setMetabolite: function(rec) {
+    setMolecule: function(rec) {
         var form = this.down('form').getForm();
         form.setValues({
-            'name': rec.get('origin'),
-            'metid': rec.get('metid')
+            'name': rec.get('name'),
+            'molid': rec.get('molid')
         });
     },
     /**

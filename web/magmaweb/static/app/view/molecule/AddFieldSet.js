@@ -19,7 +19,7 @@
  *
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.magmaweb.view.metabolite.AddFieldSet', {
+Ext.define('Esc.magmaweb.view.molecule.AddFieldSet', {
     extend: 'Ext.form.Panel',
     alias : 'widget.addstructurefieldset',
     requires : ['Ext.form.field.File',

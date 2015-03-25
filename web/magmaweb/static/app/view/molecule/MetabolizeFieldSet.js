@@ -3,13 +3,13 @@
  *
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.magmaweb.view.metabolite.MetabolizeFieldSet', {
+Ext.define('Esc.magmaweb.view.molecule.MetabolizeFieldSet', {
     extend: 'Ext.form.FieldSet',
     alias: 'widget.metabolizefieldset',
     requires: [
          'Ext.form.field.Checkbox',
          'Ext.form.FieldContainer',
-         'Esc.magmaweb.view.metabolite.ScenarioField'
+         'Esc.magmaweb.view.molecule.ScenarioField'
     ],
     title: 'Metabolize',
     checkboxName: 'metabolize',

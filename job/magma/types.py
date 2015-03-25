@@ -41,27 +41,25 @@ class HitType(object):
         self.besthits=[]
         self.atomstring=''
         self.atomlist=[]
-        self.inchikey=""
+        self.smiles=""
         self.formula=""
         self.ion=ion
         #print "childscan",peak.childscan
 
 class MoleculeType(object):
-    def __init__(self,molblock,name,prob,level,isquery=1,mim=None,natoms=None,inchikey=None,molform=None,reference=None,logp=None):
-        if inchikey==None or mim==None or molform==None or logp==None or natoms==None:
+    def __init__(self,molblock,name,refscore,predicted=0,mim=None,natoms=None,inchikey14=None,molform=None,reference=None,logp=None):
+        if inchikey14==None or mim==None or molform==None or logp==None or natoms==None:
             mol=Chem.MolFromMolBlock(molblock)
-            inchikey=Chem.MolToInchiKey(mol)[:14]
-            # inchikey=Chem.MolToSmiles(mol)
+            inchikey14=Chem.MolToInchiKey(mol)[:14]
             mim,molform=Chem.GetFormulaProps(mol)
             natoms=mol.GetNumHeavyAtoms()
             logp = Chem.LogP(mol)
 
         self.molblock = molblock #: molfile as string
-        self.level = level
-        self.probability = prob
-        self.inchikey = inchikey #: Smile string
-        self.molformula = molform #: Molecular formula
-        self.isquery = isquery #: Whether metabolite was given as query or is a result a of reaction
+        self.refscore = refscore
+        self.inchikey14 = inchikey14 #: Smile string
+        self.formula = molform #: Molecular formula
+        self.predicted = predicted #: Whether metabolite was given as query or is a result a of reaction
         self.name = name #: Name of molecule
         # self.nhits = Column(Integer)
         self.mim = mim #: Monoisotopic mass

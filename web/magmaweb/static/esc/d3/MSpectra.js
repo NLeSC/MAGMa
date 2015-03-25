@@ -174,7 +174,7 @@ Ext.define('Esc.d3.MSpectra', {
 
     peaks.enter().append("svg:line")
         .attr("class", "mspeak")
-        .classed('assigned', function(d) { return d.assigned_metid !== null;})
+        .classed('assigned', function(d) { return d.assigned_molid !== null;})
         .attr("x1", function(d) { return me.scales.x(d.mz); })
         .attr("y1", function(d) { return me.scales.y(0); })
         .attr("x2", function(d) { return me.scales.x(d.mz); })

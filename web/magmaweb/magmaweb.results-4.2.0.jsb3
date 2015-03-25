@@ -764,7 +764,7 @@
             },
             {
                "name" : "AddFieldSet.js",
-               "path" : "static/app/view/metabolite/"
+               "path" : "static/app/view/molecule/"
             },
             {
                "name" : "AnnotateFieldSet.js",
@@ -832,11 +832,11 @@
             },
             {
                "name" : "ScenarioField.js",
-               "path" : "static/app/view/metabolite/"
+               "path" : "static/app/view/molecule/"
             },
             {
                "name" : "MetabolizeFieldSet.js",
-               "path" : "static/app/view/metabolite/"
+               "path" : "static/app/view/molecule/"
             },
             {
                "name" : "UploadForm.js",
@@ -1048,7 +1048,7 @@
             },
             {
                "name" : "ReactionFilter.js",
-               "path" : "static/app/view/metabolite/"
+               "path" : "static/app/view/molecule/"
             },
             {
                "name" : "TreeModel.js",
@@ -1096,30 +1096,30 @@
             },
             {
                "name" : "ReactionColumn.js",
-               "path" : "static/app/view/metabolite/"
+               "path" : "static/app/view/molecule/"
             },
             {
                "name" : "List.js",
-               "path" : "static/app/view/metabolite/"
+               "path" : "static/app/view/molecule/"
             },
             {
                "name" : "AddForm.js",
-               "path" : "static/app/view/metabolite/"
+               "path" : "static/app/view/molecule/"
             },
             {
                "name" : "Panel.js",
-               "path" : "static/app/view/metabolite/"
+               "path" : "static/app/view/molecule/"
             },
             {
                "name" : "Viewport.js",
                "path" : "static/app/view/"
             },
             {
-               "name" : "Metabolite.js",
+               "name" : "Molecule.js",
                "path" : "static/app/model/"
             },
             {
-               "name" : "Metabolites.js",
+               "name" : "Molecules.js",
                "path" : "static/app/store/"
             },
             {
@@ -1131,7 +1131,7 @@
                "path" : "static/extjs-4.2.0/src/util/"
             },
             {
-               "name" : "Metabolites.js",
+               "name" : "Molecules.js",
                "path" : "static/app/controller/"
             },
             {
@@ -1184,7 +1184,7 @@
             },
             {
                "name" : "MetabolizeForm.js",
-               "path" : "static/app/view/metabolite/"
+               "path" : "static/app/view/molecule/"
             },
             {
                "name" : "AnnotateForm.js",
@@ -1196,7 +1196,7 @@
             },
             {
                "name" : "MetabolizeOneForm.js",
-               "path" : "static/app/view/metabolite/"
+               "path" : "static/app/view/molecule/"
             },
             {
                "name" : "ListMenu.js",
