@@ -44,8 +44,8 @@ Ext.require([
   'Ext.layout.container.Border',
   'Esc.magmaweb.controller.Scans',
   'Esc.magmaweb.view.scan.UploadFieldSet',
-  'Esc.magmaweb.view.metabolite.AddFieldSet',
-  'Esc.magmaweb.view.metabolite.MetabolizeFieldSet',
+  'Esc.magmaweb.view.molecule.AddFieldSet',
+  'Esc.magmaweb.view.molecule.MetabolizeFieldSet',
   'Esc.magmaweb.view.fragment.AnnotateFieldSet'
 ]);
 

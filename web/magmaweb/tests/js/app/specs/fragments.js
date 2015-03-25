@@ -24,7 +24,7 @@ describe('Fragments', function() {
     it('getNodeByMzMslevel', function() {
       store.setProxy(
         Ext.create('Ext.data.proxy.Ajax', {
-          // url is build when scan and metabolite are selected
+          // url is build when scan and molecule are selected
           url: url,
           reader: {
               type: 'json',
@@ -249,7 +249,7 @@ describe('Fragments', function() {
     describe('onLoad', function() {
       it('root node', function() {
         var data = {
-          metid: 123,
+          molid: 123,
           scanid: 45,
           mz: 6789,
           isAssigned: true
@@ -271,7 +271,7 @@ describe('Fragments', function() {
         store.fireEvent('load', store, node, 'bar');
 
         expect(assignbut.setParams).toHaveBeenCalledWith({
-          metid: 123,
+          molid: 123,
           scanid: 45,
           mz: 6789});
         expect(assignbut.enable).toHaveBeenCalled();
@@ -555,7 +555,7 @@ describe('Fragments', function() {
         beforeEach(function() {
             var params = {
                 scanid: 1089,
-                metid: 92,
+                molid: 92,
                 mz: 463.08856201171875
             };
             button = { pressed: true, params: params};

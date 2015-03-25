@@ -9,6 +9,7 @@ from magmaweb.user import DBSession, User
 from magmaweb.job import make_job_factory
 from magmaweb.tests.test_job import populateTestingDB
 
+
 @attr('functional')
 class FunctionalTests(unittest.TestCase):
     settings = {}
@@ -42,7 +43,8 @@ class FunctionalPrivateTests(FunctionalTests):
         # Setup owner of job
         jf = make_job_factory(self.settings)
         with transaction.manager:
-            user = User(u'bob', u'Bob Example', u'bob@example.com', 'mypassword')
+            user = User(u'bob', u'Bob Example',
+                        u'bob@example.com', 'mypassword')
             DBSession().add(user)
             self.job = jf.fromScratch(u'bob')
             self.jobid = self.job.id
@@ -53,8 +55,8 @@ class FunctionalPrivateTests(FunctionalTests):
 
     def fake_jobid(self):
         """ Create job in self.root_dir filled with test db"""
-        populateTestingDB(self.job.db.session)
-        self.job.db.session.commit()
+        with transaction.manager:
+            populateTestingDB(self.job.db.session)
         return self.jobid
 
     def test_home(self):
@@ -62,37 +64,36 @@ class FunctionalPrivateTests(FunctionalTests):
         res = self.testapp.get('/', status=200)
         self.assertTrue('Submit' in res.body)
 
-    def test_metabolites(self):
+    def test_molecules(self):
         self.do_login()
         jobid = self.fake_jobid()
 
         res_url = '/results/' + str(jobid)
-        res_url += '/metabolites.json?limit=10&start=0'
+        res_url += '/molecules.json?limit=10&start=0'
         res = self.testapp.get(res_url, status=200)
-        url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
-        url1 += '?cid=289">CID: 289</a>'
-        url2 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
-        url2 += '?cid=152432">CID: 152432</a>'
+        url1 = u'<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url1 += u'?cid=289">CID: 289</a>'
+        url2 = u'<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url2 += u'?cid=152432">CID: 152432</a>'
         self.assertEqual(json.loads(res.body), {
-            'totalUnfiltered': 2,
-            'total': 2,
-            'scans': [{
-                'rt': 933.317,
-                'id': 641
+            u'totalUnfiltered': 2,
+            u'total': 2,
+            u'scans': [{
+                u'rt': 933.317,
+                u'id': 641
             }, {
-                'rt': 1254.15,
-                'id': 870
+                u'rt': 1254.15,
+                u'id': 870
             }],
-            'rows': [{
-                'metid': 72,
-                'isquery': True,
-                'level': 0,
-                'mol': u'Molfile',
-                'molformula': u'C6H6O2',
-                'nhits': 1,
-                'origin': u'pyrocatechol',
-                'probability': 1.0,
-                'reactionsequence': {
+            u'rows': [{
+                u'molid': 72,
+                u'predicted': False,
+                u'mol': u'Molfile',
+                u'formula': u'C6H6O2',
+                u'nhits': 1,
+                u'name': u'pyrocatechol',
+                u'refscore': 1.0,
+                u'reactionsequence': {
                                          u'reactantof': {
                                              u'esterase': {
                                                  u'nr': 2,
@@ -100,18 +101,19 @@ class FunctionalPrivateTests(FunctionalTests):
                                              }
                                          }
                                      },
-                'smiles': u'Oc1ccccc1O',
-                'mim': 110.03677, 'logp':1.231,
-                'assigned': False,
-                'reference': url1
+                u'smiles': u'C1=CC=C(C(=C1)O)O',
+                u'inchikey14': u'YCIMNLLNPGFGHC',
+                u'mim': 110.03677, u'logp': 1.231,
+                u'assigned': False,
+                u'reference': url1
             }, {
-                'isquery': True, 'level': 0, 'metid': 352,
-                'mol': "Molfile of dihydroxyphenyl-valerolactone",
-                'molformula': "C11H12O4",
-                'nhits': 1,
-                'origin': "dihydroxyphenyl-valerolactone",
-                'probability': 1,
-                'reactionsequence': {
+                u'predicted': False, 'molid': 352,
+                u'mol': u"Molfile of dihydroxyphenyl-valerolactone",
+                u'formula': u"C11H12O4",
+                u'nhits': 1,
+                u'name': u"dihydroxyphenyl-valerolactone",
+                u'refscore': 1.0,
+                u'reactionsequence': {
                                          u'productof': {
                                              u'theogallin': {
                                                  u'nr': 1,
@@ -119,10 +121,11 @@ class FunctionalPrivateTests(FunctionalTests):
                                              }
                                          }
                                      },
-                'smiles': "O=C1OC(Cc2ccc(O)c(O)c2)CC1",
-                'mim': 208.07355, 'logp':2.763,
-                'assigned': False,
-                'reference': url2
+                u'smiles': u"O=C1CCC(Cc2ccc(O)c(O)c2)O1",
+                u'inchikey14': u'ZNXXWTPQHVLMQT',
+                u'mim': 208.07355, u'logp': 2.763,
+                u'assigned': False,
+                u'reference': url2
             }]
         })
 

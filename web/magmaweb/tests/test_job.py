@@ -10,7 +10,7 @@ import transaction
 from magmaweb.job import JobFactory, Job, JobDb, make_job_factory, JobQuery
 from magmaweb.job import JobError, JobIncomplete, MissingDataError
 from magmaweb.job import JobNotFound
-from magmaweb.models import Metabolite, Scan, Peak, Fragment, Run
+from magmaweb.models import Molecule, Scan, Peak, Fragment, Run
 import magmaweb.user as mu
 
 
@@ -32,8 +32,8 @@ def initTestingDB(url='sqlite://', dataset='default'):
 def populateTestingDB(session):
     """Populates test db with data
 
-    Adds 1 metabolite with one fragment.
-    Adds 1 metabolite with one fragment which has 2 child fragments
+    Adds 1 molecule with one fragment.
+    Adds 1 molecule with one fragment which has 2 child fragments
         of which one has another child fragment.
     Run, Scan and Peak are filled to create a working run.
 
@@ -53,8 +53,8 @@ def populateTestingDB(session):
         max_broken_bonds=4, description=u'My first description',
         max_water_losses=1,
     ))
-    session.add(Metabolite(
-        metid=72, mol=u'Molfile', level=0, probability=1.0,
+    session.add(Molecule(
+        molid=72, mol=u'Molfile', refscore=1.0,
         reactionsequence={
                              u'reactantof': {
                                  u'esterase': {
@@ -63,9 +63,9 @@ def populateTestingDB(session):
                                  }
                              }
                          },
-        smiles=u'Oc1ccccc1O',
-        molformula=u'C6H6O2', isquery=True, nhits=1,
-        origin=u'pyrocatechol', mim=110.03677, logp=1.231,
+        smiles=u'C1=CC=C(C(=C1)O)O', inchikey14=u'YCIMNLLNPGFGHC',
+        formula=u'C6H6O2', predicted=False, nhits=1,
+        name=u'pyrocatechol', mim=110.03677, logp=1.231,
         reference=url1
     ))
     session.add(Scan(
@@ -75,12 +75,12 @@ def populateTestingDB(session):
     session.add_all([
         # basepeak
         Peak(scanid=641, mz=305.033508300781, intensity=807576.625),
-        # peak of metabolite
+        # peak of molecule
         Peak(scanid=641, mz=109.0295639038086, intensity=345608.65625)
     ])
     session.add(Fragment(
         fragid=948,
-        metid=72,
+        molid=72,
         scanid=641,
         mz=109.0295639038086,
         mass=110.0367794368,
@@ -91,13 +91,13 @@ def populateTestingDB(session):
         deltappm=-1.84815979523607e-08,
         formula=u"C5H4",
     ))
-    # fragments of metid=352 + scanid=870
-    session.add(Metabolite(
-        isquery=True, level=0, metid=352,
+    # fragments of molid=352 + scanid=870
+    session.add(Molecule(
+        predicted=False, molid=352,
         mol=u"Molfile of dihydroxyphenyl-valerolactone",
-        molformula=u"C11H12O4",
-        origin=u"dihydroxyphenyl-valerolactone",
-        probability=1.0, reactionsequence={
+        formula=u"C11H12O4",
+        name=u"dihydroxyphenyl-valerolactone",
+        refscore=1.0, reactionsequence={
                                                u'productof': {
                                                    u'theogallin': {
                                                        u'nr': 1,
@@ -105,7 +105,8 @@ def populateTestingDB(session):
                                                    }
                                                }
                                            },
-        smiles=u"O=C1OC(Cc2ccc(O)c(O)c2)CC1",
+        smiles=u"O=C1CCC(Cc2ccc(O)c(O)c2)O1",
+        inchikey14=u'ZNXXWTPQHVLMQT',
         reference=url2,
         mim=208.07355, logp=2.763, nhits=1
     ))
@@ -126,7 +127,7 @@ def populateTestingDB(session):
     session.add_all([
         # basepeak
         Peak(scanid=870, mz=287.022979736328, intensity=1972180.625),
-        # peak of metabolite
+        # peak of molecule
         Peak(scanid=870, mz=207.066284179688, intensity=293095.84375),
         # basepeak and peak of frag 1709
         Peak(scanid=871, mz=163.076232910156, intensity=279010.28125),
@@ -136,25 +137,25 @@ def populateTestingDB(session):
         Peak(scanid=872, mz=119.086540222168, intensity=17386.958984375),
     ])
     session.add_all([Fragment(
-        fragid=1707, metid=352, scanid=870, mass=208.0735588736,
+        fragid=1707, molid=352, scanid=870, mass=208.0735588736,
         mz=207.066284179688, score=100, parentfragid=0,
         atoms=u"0,1,2,3,4,5,6,7,8,9,10,11,12,13,14", deltah=-1,
         deltappm=-8.18675317722029e-09,
         formula=u"C3H5O3",
     ), Fragment(
-        fragid=1708, metid=352, scanid=871, mass=123.0446044689,
+        fragid=1708, molid=352, scanid=871, mass=123.0446044689,
         mz=123.04508972167969, score=201, parentfragid=1707,
         atoms=u"6,7,8,9,10,11,12,13,14", deltah=0,
         deltappm=3.943698856902144e-12,
         formula=u"C3H5O3",
     ), Fragment(
-        fragid=1709, metid=352, scanid=871, mass=164.08372962939995,
+        fragid=1709, molid=352, scanid=871, mass=164.08372962939995,
         mz=163.07623291015625, score=65, parentfragid=1707,
         atoms=u"3,4,5,6,7,8,9,10,11,12,13,14", deltah=-1,
         deltappm=-1.235815738001507e-08,
         formula=u"C3H5O3",
     ), Fragment(
-        fragid=1710, scanid=872, metid=352, mass=116.0626002568,
+        fragid=1710, scanid=872, molid=352, mass=116.0626002568,
         mz=119.08654022216797, score=4, parentfragid=1709,
         atoms=u"4,5,6,7,8,9,11,13,14", deltah=3,
         deltappm=5.0781684060061766e-08,
@@ -165,7 +166,7 @@ def populateTestingDB(session):
 
 
 def populateWithUseAllPeaks(session):
-    """ Dataset with multiple fragments of same metabolite on lvl1 scan """
+    """ Dataset with multiple fragments of same molecule on lvl1 scan """
     session.add(Run(
         ionisation_mode=-1, skip_fragmentation=True,
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=50,
@@ -175,15 +176,15 @@ def populateWithUseAllPeaks(session):
         max_broken_bonds=4, description=u'My second description',
         max_water_losses=1,
     ))
-    session.add(Metabolite(
-        metid=12,
-        level=1,
-        probability=0.119004,
+    session.add(Molecule(
+        molid=12,
+        refscore=0.119004,
         reactionsequence=['sulfation_(aromatic_hydroxyl)'],
         smiles=u'Oc1ccc(CC2OC(=O)CC2)cc1OS(O)(=O)=O',
-        molformula=u'C11H12O7S',
-        isquery=False,
-        origin=u'5-(3,4)-dihydroxyphenyl-g-valerolactone (F)',
+        inchikey14=u'YAXFVDUJDAQPTJ',
+        formula=u'C11H12O7S',
+        predicted=True,
+        name=u'5-(3,4)-dihydroxyphenyl-g-valerolactone (F)',
         mol=u'Molfile',
         reference=u'',
         mim=288.0303734299,
@@ -232,7 +233,7 @@ def populateWithUseAllPeaks(session):
     )])
     session.add_all([Fragment(
         fragid=17,
-        metid=12,
+        molid=12,
         scanid=1,
         mz=287.015686035156,
         mass=288.0303734299,
@@ -244,7 +245,7 @@ def populateWithUseAllPeaks(session):
         formula=u"C4H6O2",
     ), Fragment(
         fragid=18,
-        metid=12,
+        molid=12,
         scanid=1,
         mz=287.023132324219,
         mass=288.0303734299,
@@ -256,7 +257,7 @@ def populateWithUseAllPeaks(session):
         formula=u"C4H6O2",
     ), Fragment(
         fragid=19,
-        metid=12,
+        molid=12,
         scanid=2,
         mz=207.066223144531,
         mass=207.0657338415,
@@ -268,7 +269,7 @@ def populateWithUseAllPeaks(session):
         formula=u"C4H6O2",
     ), Fragment(
         fragid=20,
-        metid=12,
+        molid=12,
         scanid=2,
         mz=287.022827148438,
         mass=288.0303734299,

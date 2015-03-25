@@ -36,7 +36,7 @@ Duplicate structure: PARENT
 Duplicate structure: PARENT
  c1ccncc1 - kept old one
 
-Metabolite 10: comp2
+Molecule 10: comp2
 glycination_(aliphatic_carboxyl)
 
 Mim: 244.118497693N fragments: 808
@@ -44,7 +44,7 @@ N formulas: 192
 Scan: 1286 - Mz: 244.119155884 - Score: 5.5
 Scan: 1294 - Mz: 244.11907959 - Score: 5.5
 
-Metabolite 11: comp2
+Molecule 11: comp2
 glycination_(aliphatic_carboxyl)
 
 Mim: 244.118497693N fragments: 868

@@ -37,7 +37,7 @@ describe('Esc.ChemDoodleColumn', function() {
         grid.columns = [];
         grid.columns[2] = col;
         var f = col.renderer;
-        var rendered = f.call(grid, record.mol, {}, record, 1, 2, {}, { id: 'gridview-1234'});
+        var rendered = f.call(col, record.mol, {}, record, 1, 2, {}, { id: 'gridview-1234'});
         expect(rendered).toEqual('<canvas width=150 height=100 class="x-chemdoodle-cols" id="gridview-1234-5-2"></canvas>');
     });
 
