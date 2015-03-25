@@ -112,11 +112,6 @@ Ext.define('Esc.magmaweb.resultsApp', {
          * @cfg {String} urls.chromatogram
          */
         chromatogram: null,
-        /**
-         * Stderr endpoint.
-         * @cfg {String} urls.stderr
-         */
-        stderr: null
     }
   },
   /**
@@ -171,7 +166,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
    * @return {String}
    */
   getLogUrl: function() {
-      return this.urls.home+'results/'+this.jobid+'/stdout.txt';
+      return this.urls.home+'results/'+this.jobid+'/stderr.txt';
   },
   /**
    * Creates mspectraspanels and viewport and fires/listens for mspectra events
