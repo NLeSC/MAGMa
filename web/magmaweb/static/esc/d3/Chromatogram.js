@@ -54,7 +54,7 @@ Ext.define('Esc.d3.Chromatogram', {
         chartWidth: 0,
         chartHeight: 0,
         // array of {rt:,intensity:}
-        metabolitedata: []
+        moleculedata: []
     };
 
     Ext.applyIf(this, defConfig);
@@ -81,7 +81,7 @@ Ext.define('Esc.d3.Chromatogram', {
        * @param {Number} scan.id Scan identifier
        * @param {Number} scan.rt Retention time
        * @param {Number} scan.intensity Intensity of base peak.
-       * @param {Number} scan.metaboliteintensity If extracted ion chromatogram is set then returns intensity of metabolite in scan.
+       * @param {Number} scan.moleculeintensity If extracted ion chromatogram is set then returns intensity of molecule in scan.
        */
       'mouseoverscan'
     );
@@ -94,7 +94,7 @@ Ext.define('Esc.d3.Chromatogram', {
     var me = this;
 
     this.svg.select("path.line").attr('d', this.line(this.data));
-    this.svg.select("path.metaboliteline").attr('d', this.line(this.metabolitedata));
+    this.svg.select("path.moleculeline").attr('d', this.line(this.moleculedata));
     if (this.markers.length) {
       this.svg.selectAll("path.lowermarker")
         .attr("transform", function(d) { return "translate(" + me.scales.x(d.rt) + "," + (me.scales.y(0)+4) + ")"; });
@@ -200,9 +200,9 @@ Ext.define('Esc.d3.Chromatogram', {
     .attr("y1", function(d) { return me.scales.y(0); })
     .attr("x2", function(d) { return me.scales.x(d.rt); })
     .on('mouseover', function(scan) {
-        // fetch intensity of metabolite if available
-        if (me.metabolitedata.length) {
-            scan.metaboliteintensity = me.metabolitedata.filter(function(d) {
+        // fetch intensity of molecule if available
+        if (me.moleculedata.length) {
+            scan.moleculeintensity = me.moleculedata.filter(function(d) {
                return (scan.rt == d.rt);
             })[0].intensity;
         }
@@ -227,8 +227,8 @@ Ext.define('Esc.d3.Chromatogram', {
       this.svg.selectAll('.'+this.cutoffCls).remove();
       this.clearScanSelection();
       this.svg.selectAll('.marker').remove();
-      this.metabolitedata = [];
-      this.svg.selectAll('path.metaboliteline').remove();
+      this.moleculedata = [];
+      this.svg.selectAll('path.moleculeline').remove();
       this.callParent(arguments);
   },
   /**
@@ -347,15 +347,15 @@ Ext.define('Esc.d3.Chromatogram', {
     ;
   },
   /**
-   * Overlay the extracted ion chromatogram of a metabolite on the chromatogram.
-   * @param data Array of rt and max intensity of a metabolite
+   * Overlay the extracted ion chromatogram of a molecule on the chromatogram.
+   * @param data Array of rt and max intensity of a molecule
    */
   setExtractedIonChromatogram: function(data) {
-    this.metabolitedata = data;
-    this.svg.selectAll('path.metaboliteline').remove();
+    this.moleculedata = data;
+    this.svg.selectAll('path.moleculeline').remove();
     this.svg.append('svg:path')
-      .attr('class','metaboliteline')
-      .attr('d', this.line(this.metabolitedata) )
+      .attr('class','moleculeline')
+      .attr('d', this.line(this.moleculedata) )
     ;
   }
 });

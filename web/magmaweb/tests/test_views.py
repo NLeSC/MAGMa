@@ -9,6 +9,7 @@ from magmaweb.user import User, JobMeta
 
 
 class AbstractViewsTestCase(unittest.TestCase):
+
     def setUp(self):
         self.settings = {'jobfactory.root_dir': '/somedir',
                          'access_token.expires_in': 360,
@@ -31,9 +32,9 @@ class AbstractViewsTestCase(unittest.TestCase):
         job.db = Mock(JobDb)
         job.db.runInfo.return_value = 'bla'
         job.db.maxMSLevel.return_value = 3
-        job.db.metabolites.return_value = {'total': 3, 'rows': [1, 2, 3]}
-        job.db.metabolitesTotalCount.return_value = 3
-        job.db.scansWithMetabolites.return_value = [4, 5]
+        job.db.molecules.return_value = {'total': 3, 'rows': [1, 2, 3]}
+        job.db.moleculesTotalCount.return_value = 3
+        job.db.scansWithMolecules.return_value = [4, 5]
         job.db.chromatogram.return_value = [1, 2, 3]
         job.db.extractedIonChromatogram.return_value = [1, 2, 3]
         job.db.fragments.return_value = [1, 2, 3]
@@ -41,6 +42,7 @@ class AbstractViewsTestCase(unittest.TestCase):
 
 
 class ViewsTestCase(AbstractViewsTestCase):
+
     def test_home(self):
         request = testing.DummyRequest()
         views = Views(request)
@@ -483,7 +485,9 @@ class ViewsTestCase(AbstractViewsTestCase):
 
 
 class InCompleteJobViewsTestCase(AbstractViewsTestCase):
+
     """Test case for magmaweb.views.InCompleteJobViews"""
+
     def test_jobstatus_complete(self):
         request = testing.DummyRequest()
         job = self.fake_job()
@@ -821,6 +825,7 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
 
 
 class JobViewsTestCase(AbstractViewsTestCase):
+
     """ Test case for magmaweb.views.JobViews"""
 
     def setUp(self):
@@ -838,14 +843,14 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         job.is_complete.assert_called_with()
 
-    def test_metabolitesjson_return(self):
+    def test_moleculesjson_return(self):
         request = testing.DummyRequest(params={'start': 0,
                                                'limit': 10
                                                })
         job = self.fake_job()
         views = JobViews(job, request)
 
-        response = views.metabolitesjson()
+        response = views.moleculesjson()
 
         self.assertEqual(response, {'totalUnfiltered': 3,
                                     'total': 3,
@@ -853,23 +858,25 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                     'scans': [4, 5]
                                     })
 
-    def test_metabolitesjson_minimalparams(self):
+    def test_moleculesjson_minimalparams(self):
         request = testing.DummyRequest(params={'start': 0,
                                                'limit': 10
                                                })
         job = self.fake_job()
         views = JobViews(job, request)
 
-        views.metabolitesjson()
+        views.moleculesjson()
 
-        job.db.metabolites.assert_called_with(start=0,
-                                              limit=10,
-                                              sorts=[],
-                                              scanid=None,
-                                              filters=[])
-        job.db.scansWithMetabolites.assert_called_with(filters=[])
+        job.db.molecules.assert_called_with(start=0,
+                                            limit=10,
+                                            sorts=[],
+                                            scanid=None,
+                                            filters=[],
+                                            molid=None,
+                                            )
+        job.db.scansWithMolecules.assert_called_with(filters=[])
 
-    def test_metabolitesjson_scanidfilter(self):
+    def test_moleculesjson_scanidfilter(self):
         request = testing.DummyRequest(params={'start': 0,
                                                'limit': 10,
                                                'scanid': 641
@@ -877,15 +884,17 @@ class JobViewsTestCase(AbstractViewsTestCase):
         job = self.fake_job()
         views = JobViews(job, request)
 
-        views.metabolitesjson()
+        views.moleculesjson()
 
-        job.db.metabolites.assert_called_with(start=0,
-                                              limit=10,
-                                              sorts=[],
-                                              scanid=641,
-                                              filters=[])
+        job.db.molecules.assert_called_with(start=0,
+                                            limit=10,
+                                            sorts=[],
+                                            scanid=641,
+                                            filters=[],
+                                            molid=None,
+                                            )
 
-    def test_metabolitesjson_nrscaneqfilter(self):
+    def test_moleculesjson_nrscaneqfilter(self):
         filter_in = '[{"type":"numeric","comparison":"eq",'
         filter_in += '"value":1,"field":"nhits"}]'
         filter_expected = [{"type": "numeric", "comparison": "eq",
@@ -897,71 +906,55 @@ class JobViewsTestCase(AbstractViewsTestCase):
         job = self.fake_job()
         views = JobViews(job, request)
 
-        views.metabolitesjson()
+        views.moleculesjson()
 
-        job.db.metabolites.assert_called_with(start=0,
-                                              limit=10,
-                                              sorts=[],
-                                              scanid=None,
-                                              filters=filter_expected)
-        job.db.scansWithMetabolites.assert_called_with(filters=filter_expected)
+        job.db.molecules.assert_called_with(start=0,
+                                            limit=10,
+                                            sorts=[],
+                                            scanid=None,
+                                            filters=filter_expected,
+                                            molid=None,
+                                            )
+        job.db.scansWithMolecules.assert_called_with(filters=filter_expected)
 
-    def test_metabolitesjson_sortonlevel(self):
-        sort_in = '[{"property":"level","direction":"DESC"}]'
-        sort_expected = [{"property": "level", "direction": "DESC"}]
-        request = testing.DummyRequest(params={'start': 0,
-                                               'limit': 10,
-                                               'sort': sort_in
-                                               })
-        job = self.fake_job()
-        views = JobViews(job, request)
-
-        views.metabolitesjson()
-
-        job.db.metabolites.assert_called_with(start=0,
-                                              limit=10,
-                                              sorts=sort_expected,
-                                              scanid=None,
-                                              filters=[])
-
-    def test_metabolitesjson_notfilledreturn(self):
+    def test_moleculesjson_notfilledreturn(self):
         request = testing.DummyRequest(params={'start': 0,
                                                'limit': 10
                                                })
         job = self.fake_job()
-        job.db.metabolitesTotalCount.return_value = 0
+        job.db.moleculesTotalCount.return_value = 0
         views = JobViews(job, request)
 
-        response = views.metabolitesjson()
+        response = views.moleculesjson()
 
         self.assertEqual(response, {'totalUnfiltered': 0,
                                     'total': 3,
                                     'rows': [1, 2, 3],
                                     'scans': [4, 5]})
 
-    def test_metabolitescsv(self):
+    def test_moleculescsv(self):
         import StringIO
         csv = StringIO.StringIO()
         csv.write('bla')
         job = self.fake_job()
-        job.db.metabolites2csv.return_value = csv
+        job.db.molecules2csv.return_value = csv
         request = testing.DummyRequest(params={'start': 0,
                                                'limit': 10
                                                })
         views = JobViews(job, request)
-        views.metabolitesjson = Mock(return_value={'rows': []})
+        views.moleculesjson = Mock(return_value={'rows': []})
 
-        response = views.metabolitescsv()
+        response = views.moleculescsv()
 
         self.assertEqual(response.content_type, 'text/csv')
         self.assertEqual(response.body, 'bla')
 
-    def test_metabolitescsv_somecols(self):
+    def test_moleculescsv_somecols(self):
         import StringIO
         csv = StringIO.StringIO()
         csv.write('bla')
         job = self.fake_job()
-        job.db.metabolites2csv.return_value = csv
+        job.db.molecules2csv.return_value = csv
         request = testing.DummyRequest(params={'start': 0,
                                                'limit': 10,
                                                'cols': '["name","score"]'
@@ -969,40 +962,40 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         views = JobViews(job, request)
         rows = [{'name': 'foo', 'score': 'bar', 'id': 123}]
-        views.metabolitesjson = Mock(return_value={'rows': rows})
+        views.moleculesjson = Mock(return_value={'rows': rows})
 
-        views.metabolitescsv()
+        views.moleculescsv()
 
-        job.db.metabolites2csv.assert_called_with(rows, cols=['name', 'score'])
+        job.db.molecules2csv.assert_called_with(rows, cols=['name', 'score'])
 
-    def test_metabolitessdf(self):
+    def test_moleculessdf(self):
         job = self.fake_job()
-        job.db.metabolites2sdf.return_value = 'bla'
+        job.db.molecules2sdf.return_value = 'bla'
         request = testing.DummyRequest(params={'start': 0,
                                                'limit': 10
                                                })
         views = JobViews(job, request)
-        views.metabolitesjson = Mock(return_value={'rows': []
-                                                   })
-        response = views.metabolitessdf()
+        views.moleculesjson = Mock(return_value={'rows': []
+                                                 })
+        response = views.moleculessdf()
 
-        job.db.metabolites2sdf.assert_called_with([], cols=[])
+        job.db.molecules2sdf.assert_called_with([], cols=[])
         self.assertEqual(response.content_type, 'chemical/x-mdl-sdfile')
         self.assertEqual(response.body, 'bla')
 
-    def test_metabolitessdf_somecols(self):
+    def test_moleculessdf_somecols(self):
         job = self.fake_job()
-        job.db.metabolites2sdf.return_value = 'bla'
+        job.db.molecules2sdf.return_value = 'bla'
         request = testing.DummyRequest(params={'start': 0,
                                                'limit': 10,
                                                'cols': '["name","score"]'
                                                })
         views = JobViews(job, request)
-        views.metabolitesjson = Mock(return_value={'rows': []
-                                                   })
-        views.metabolitessdf()
+        views.moleculesjson = Mock(return_value={'rows': []
+                                                 })
+        views.moleculessdf()
 
-        job.db.metabolites2sdf.assert_called_with([], cols=['name', 'score'])
+        job.db.molecules2sdf.assert_called_with([], cols=['name', 'score'])
 
     def test_chromatogramjson(self):
         request = testing.DummyRequest()
@@ -1045,7 +1038,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
             views.mspectrajson()
 
     def test_extractedionchromatogram(self):
-        request = testing.DummyRequest(matchdict={'metid': 72})
+        request = testing.DummyRequest(matchdict={'molid': 72})
         job = self.fake_job()
         views = JobViews(job, request)
 
@@ -1055,10 +1048,10 @@ class JobViewsTestCase(AbstractViewsTestCase):
             'chromatogram': [1, 2, 3], 'scans': [4, 5]
         })
         job.db.extractedIonChromatogram.assert_called_with(72)
-        job.db.scansWithMetabolites.assert_called_with(metid=72)
+        job.db.scansWithMolecules.assert_called_with(molid=72)
 
-    def test_fragments_metabolitewithoutfragments(self):
-        request = testing.DummyRequest(matchdict={'metid': 72,
+    def test_fragments_moleculewithoutfragments(self):
+        request = testing.DummyRequest(matchdict={'molid': 72,
                                                   'scanid': 641
                                                   },
                                        params={'node': ''})
@@ -1067,10 +1060,10 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         views.fragments()
 
-        job.db.fragments.assert_called_with(metid=72, scanid=641, node='')
+        job.db.fragments.assert_called_with(molid=72, scanid=641, node='')
 
     def test_fragments_filteronmslevel(self):
-        request = testing.DummyRequest(matchdict={'metid': 72,
+        request = testing.DummyRequest(matchdict={'molid': 72,
                                                   'scanid': 641
                                                   },
                                        params={'node': 1709})
@@ -1079,11 +1072,11 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         views.fragments()
 
-        job.db.fragments.assert_called_with(metid=72, scanid=641, node=1709)
+        job.db.fragments.assert_called_with(molid=72, scanid=641, node=1709)
 
-    def test_fragments_badmetabolite_notfound(self):
+    def test_fragments_badmolecule_notfound(self):
         from magmaweb.job import FragmentNotFound
-        request = testing.DummyRequest(matchdict={'metid': 72,
+        request = testing.DummyRequest(matchdict={'molid': 72,
                                                   'scanid': 641
                                                   },
                                        params={'node': ''})

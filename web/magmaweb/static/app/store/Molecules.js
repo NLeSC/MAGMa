@@ -1,16 +1,16 @@
 /**
- * Metabolite store.
+ * Molecule store.
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.magmaweb.store.Metabolites', {
+Ext.define('Esc.magmaweb.store.Molecules', {
   extend: 'Ext.data.Store',
-  model: 'Esc.magmaweb.model.Metabolite',
+  model: 'Esc.magmaweb.model.Molecule',
   proxy: {
     type: 'ajax',
     listeners: {
       exception: function(proxy, response, operation) {
           Ext.Error.raise({
-              msg: 'Failed to load metabolites from server',
+              msg: 'Failed to load molecules from server',
               response: response,
               operation: operation
           });
@@ -19,14 +19,14 @@ Ext.define('Esc.magmaweb.store.Metabolites', {
     reader: {
       type: 'json',
       root: 'rows',
-      idProperty: 'metid'
+      idProperty: 'molid'
     }
   },
   sorters: [{
-    property: 'probability',
+    property: 'refscore',
     direction: 'DESC'
   },{
-    property: 'metid',
+    property: 'molid',
     direction: 'ASC'
   }],
   remoteSort: true,
@@ -40,7 +40,7 @@ Ext.define('Esc.magmaweb.store.Metabolites', {
     this.getProxy().url = url;
   },
   /**
-   * Removes scan filter from metabolite store.
+   * Removes scan filter from molecule store.
    * And reloads store to first page.
    */
   removeScanFilter: function() {
@@ -51,7 +51,7 @@ Ext.define('Esc.magmaweb.store.Metabolites', {
     }
   },
   /**
-   * Filter metabolites having hits in a specific scan.
+   * Filter molecules having hits in a specific scan.
    * Sets filter and reloads store to first page.
    *
    * @param {Number} scanid Scan identifier.
@@ -66,18 +66,18 @@ Ext.define('Esc.magmaweb.store.Metabolites', {
   /**
    * Sets the pagesize of the store and reloads store to first page.
    *
-   * @param {Number} pageSize Nr of metabolites to show on one page.
+   * @param {Number} pageSize Nr of molecules to show on one page.
    */
   setPageSize: function(pageSize) {
     this.pageSize = pageSize;
     this.loadPage(1);
   },
   /**
-   * Returns the total number of metabolites on server without filtering or paging applied.
+   * Returns the total number of molecules on server without filtering or paging applied.
    *
    * The `totalUnfiltered` property of the json response.
    *
-   * @return {Number} The total number of unfiltered metabolites
+   * @return {Number} The total number of unfiltered molecules
    */
   getTotalUnfilteredCount: function() {
       var reader = this.getProxy().getReader();

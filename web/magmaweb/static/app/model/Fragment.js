@@ -8,7 +8,7 @@ Ext.define('Esc.magmaweb.model.Fragment', {
   fields: [{
     name: 'fragid'
   },{
-    name: 'metid'
+    name: 'molid'
   },{
     name: 'scanid'
   },{

@@ -4,7 +4,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from rdkit import Chem
 import magma
-from magma.models import Base, Metabolite, Scan, Peak, Fragment, Run
+from magma.errors import FileFormatError,DataProcessingError
+from magma.models import Base, Molecule, Scan, Peak, Fragment, Run
 
 class TestMagmaSession(unittest.TestCase):
     def test_construct_with_new_db(self):
@@ -39,25 +40,19 @@ class TestMagmaSession(unittest.TestCase):
 
         self.assertIsInstance(se, magma.StructureEngine)
 
-        rundata = ms.db_session.query(Run).one()
-        self.assertDictContainsSubset({
-                                       'metabolism_types': u'phase1,phase2',
-                                       'n_reaction_steps': 2
-                                       },rundata.__dict__)
+        self.assertFalse(hasattr(se,'pubchem_engine'))
 
 
     def test_get_structure_engine_custom(self):
         ms = magma.MagmaSession(':memory:', u'My description')
         args = {
-                'metabolism_types': u'phase2',
-                'n_reaction_steps': 3
+                'pubchem_names': True,
                 }
         se = ms.get_structure_engine(**args)
 
         self.assertIsInstance(se, magma.StructureEngine)
 
-        rundata = ms.db_session.query(Run).one()
-        self.assertDictContainsSubset(args, rundata.__dict__)
+        self.assertIsInstance(se.pubchem_engine, magma.PubChemEngine)
 
     def test_get_ms_data_engine_default(self):
         ms = magma.MagmaSession(':memory:', u'My description')
@@ -67,15 +62,21 @@ class TestMagmaSession(unittest.TestCase):
 
         rundata = ms.db_session.query(Run).one()
         self.assertDictContainsSubset({
+                                      'ionisation_mode': 1,
                                       'abs_peak_cutoff': 1000,
-                                      'max_ms_level': 10
+                                      'max_ms_level': 10,
+                                      'mz_precision':5.0,
+                                      'precursor_mz_precision':0.005
                                        }, rundata.__dict__)
 
     def test_get_ms_data_engine_custom(self):
         ms = magma.MagmaSession(':memory:', u'My description')
         args = {
+                'ionisation_mode': -1,
                 'abs_peak_cutoff': 10001,
-                'max_ms_level': 101
+                'max_ms_level': 101,
+                'mz_precision': 0.01,
+                'precursor_mz_precision': 0.05
                 }
         se = ms.get_ms_data_engine(**args)
 
@@ -86,32 +87,28 @@ class TestMagmaSession(unittest.TestCase):
 
     def test_get_annotate_engine_default(self):
         ms = magma.MagmaSession(':memory:', u'My description')
+        ms.get_ms_data_engine()
         se = ms.get_annotate_engine()
 
         self.assertIsInstance(se, magma.AnnotateEngine)
 
         rundata = ms.db_session.query(Run).one()
         self.assertDictContainsSubset({
-                 'ionisation_mode': 1,
                  'skip_fragmentation':False,
-                 'max_broken_bonds':4,
+                 'max_broken_bonds':3,
                  'ms_intensity_cutoff':1e6,
-                 'msms_intensity_cutoff':0.1,
-                 'mz_precision':0.001,
-                 'precursor_mz_precision':0.005,
+                 'msms_intensity_cutoff':5,
                  'use_all_peaks':False
                                        }, rundata.__dict__)
 
     def test_get_annotate_engine_custom(self):
         ms = magma.MagmaSession(':memory:', u'My description')
+        ms.get_ms_data_engine()
         args = {
-                'ionisation_mode': -1,
                 'skip_fragmentation': True,
                 'max_broken_bonds': 5,
                 'ms_intensity_cutoff': 1e6,
                 'msms_intensity_cutoff': 0.2,
-                'mz_precision': 0.01,
-                'precursor_mz_precision': 0.05,
                 'use_all_peaks': True
                 }
         se = ms.get_annotate_engine(**args)
@@ -126,57 +123,34 @@ class TestStructureEngine(unittest.TestCase):
         engine = create_engine('sqlite://')
         Base.metadata.create_all(engine)
         self.db_session = sessionmaker(bind=engine)()
+        
 
     def test_construct_new_db(self):
-        se = magma.StructureEngine(self.db_session, u'phase1,phase2', 2)
+        se = magma.StructureEngine(self.db_session)
 
-        self.assertEquals(se.metabolism_types, [ 'phase1', 'phase2'])
-        self.assertEquals(se.n_reaction_steps, 2)
-        rundata = self.db_session.query(Run).one()
-        self.assertDictContainsSubset({
-                                       'metabolism_types': u'phase1,phase2',
-                                       'n_reaction_steps': 2
-                                       }, rundata.__dict__)
-
-    def test_construct_with_existing_db(self):
-        self.db_session.add(Run(
-                               metabolism_types=u'phase1,phase2',
-                               n_reaction_steps=2
-                                ))
-        self.db_session.commit()
-
-        se = magma.StructureEngine(self.db_session, u'phase2', 3)
-
-        self.assertEquals(se.metabolism_types, [ 'phase1', 'phase2'])
-        self.assertEquals(se.n_reaction_steps, 2)
-        rundata = self.db_session.query(Run).one()
-        self.assertDictContainsSubset({
-                                       'metabolism_types': u'phase1,phase2',
-                                       'n_reaction_steps': 2
-                                       }, rundata.__dict__)
+        self.assertIsNone(se.call_back_engine)
 
     def test_add_structure(self):
         se = magma.StructureEngine(self.db_session, u'phase1,phase2', 2)
 
         molblock = Chem.MolToMolBlock(Chem.MolFromSmiles('CCO'))
 
-        metid = se.add_structure(molblock, 'ethanol', 1.0, 0, 'PARENT', 1)
+        molid = se.add_structure(molblock, 'ethanol', 1.0, False)
 
-        met = self.db_session.query(Metabolite).filter(Metabolite.metid==metid).one()
+        mol = self.db_session.query(Molecule).filter(Molecule.molid==molid).one()
         self.assertDictContainsSubset(
                              {
                               'mol': molblock,
-                              'level': 0,
-                              'probability': 1.0,
-                              'reactionsequence': u'PARENT',
-                              'smiles': u'CCO',
-                              'molformula': u'C2H6O',
-                              'isquery': True,
-                              'origin': u'ethanol',
+                              'refscore': 1.0,
+                              'reactionsequence': {},
+                              'inchikey14': u'LFQSCWFLJHTTHZ',
+                              'formula': u'C2H6O',
+                              'predicted': False,
+                              'name': u'ethanol',
                               'mim': 46.0418648147,
                               'logp': -0.0014000000000000123
                              },
-                             met.__dict__
+                             mol.__dict__
                              )
 
     def test_add_structure_2nd_replace(self):
@@ -185,14 +159,14 @@ class TestStructureEngine(unittest.TestCase):
         molblock = Chem.MolToMolBlock(Chem.MolFromSmiles('CCO'))
 
         se.add_structure(molblock, 'ethanol', 1.0, 0, 'PARENT', 1)
-        metid = se.add_structure(molblock, 'ethanol', 2.0, 0, 'PARENT', 1)
+        molid = se.add_structure(molblock, 'ethanol', 2.0, 0, 'PARENT', 1)
 
-        met = self.db_session.query(Metabolite).one()
+        met = self.db_session.query(Molecule).one()
 
         self.assertDictContainsSubset(
                              {
-                              'metid': metid,
-                              'probability': 2.0
+                              'molid': molid,
+                              'refscore': 2.0
                              },
                              met.__dict__
                              )
@@ -203,14 +177,14 @@ class TestStructureEngine(unittest.TestCase):
 
         molblock = Chem.MolToMolBlock(Chem.MolFromSmiles('CCO'))
 
-        metid = se.add_structure(molblock, 'ethanol', 2.0, 0, 'PARENT', 1)
+        molid = se.add_structure(molblock, 'ethanol', 2.0, 0, 'PARENT', 1)
         se.add_structure(molblock, 'ethanol', 1.0, 0, 'PARENT', 1)
 
-        met = self.db_session.query(Metabolite).one()
+        met = self.db_session.query(Molecule).one()
         self.assertDictContainsSubset(
                              {
-                              'metid': metid,
-                              'probability': 2.0
+                              'molid': molid,
+                              'refscore': 2.0
                              },
                              met.__dict__
                              )
@@ -219,50 +193,45 @@ class TestStructureEngine(unittest.TestCase):
         """ Treat it as blackbox, do not want to know how reactor is called
         just that metabolisation happened
         """
-        se = magma.StructureEngine(self.db_session, u'phase1', 1)
-        molblock = Chem.MolToMolBlock(Chem.MolFromSmiles('Oc1cc(CC2OCCC2)cc(O)c1O'))
-        parent_metid = se.add_structure(
-                                        molblock, '5-(3,4,5)-trihydroxyphenyl-g-valerolactone (F,U)',
-                                        1.0, 0, 'PARENT', 1
-                                        )
-
-        se.metabolize(parent_metid, u'phase1', 1)
-
-        self.assertGreater(self.db_session.query(Metabolite).filter(Metabolite.level==1).count(), 0)
+        se = magma.StructureEngine(self.db_session)
+        #molblock = Chem.MolToMolBlock(Chem.MolFromSmiles('Oc1cc(CC2OCCC2)cc(O)c1O'))
+        parent_molid = se.read_smiles('Oc1cc(CC2OCCC2)cc(O)c1O')
+        se.metabolize(1, 'phase1',endpoints=False)
+        self.assertGreater(self.db_session.query(Molecule).filter(Molecule.predicted==True).count(), 0)
 
     def test_metabolize_unknown_metabolite_type(self):
         se = magma.StructureEngine(self.db_session, u'phase1234', 1)
         molblock = Chem.MolToMolBlock(Chem.MolFromSmiles('Oc1cc(CC2OCCC2)cc(O)c1O'))
-        parent_metid = se.add_structure(
+        parent_molid = se.add_structure(
                                         molblock, '5-(3,4,5)-trihydroxyphenyl-g-valerolactone (F,U)',
                                         1.0, 0, 'PARENT', 1
                                         )
-        se.metabolize(parent_metid, u'phase1234', 1)
+        print se.metabolize(parent_molid, u'phase1234')
 
         # TODO reactor requires at least one SMIRKS query
         # if none given then raise exception
 
-        self.assertEqual(self.db_session.query(Metabolite).count(), 1)
+        self.assertEqual(self.db_session.query(Molecule).count(), 1)
 
-    def test_metabolize_bad_metid(self):
+    def test_metabolize_bad_molid(self):
         se = magma.StructureEngine(self.db_session, u'phase1', 1)
-        parent_metid = 1
-        se.metabolize(parent_metid, u'phase1', 1)
+        parent_molid = 1
+        se.metabolize(parent_molid, u'phase1', 1)
 
-        self.assertEqual(self.db_session.query(Metabolite).count(), 0)
+        self.assertEqual(self.db_session.query(Molecule).count(), 0)
 
     def test_metabolize_all(self):
-        se = magma.StructureEngine(self.db_session, u'phase1', 1)
+        se = magma.StructureEngine(self.db_session)
         molblock = Chem.MolToMolBlock(Chem.MolFromSmiles('Oc1cc(CC2OCCC2)cc(O)c1O'))
-        parent_metid = se.add_structure(
+        parent_molid = se.add_structure(
                                         molblock, '5-(3,4,5)-trihydroxyphenyl-g-valerolactone (F,U)',
-                                        1.0, 0, 'PARENT', 1
+                                        1.0, 1
                                         )
-        se.metabolize = mock.Mock()
+        se.metabolize = mock.Mock(return_value=set([1]))
 
-        se.metabolize_all(u'phase1', 1)
+        se.metabolize_all(u'phase1')
 
-        se.metabolize.assert_called_with(parent_metid, u'phase1', 1)
+        se.metabolize.assert_called_with(parent_molid, u'phase1',False)
 
 class TestMsDataEngine(unittest.TestCase):
     def setUp(self):
@@ -271,7 +240,7 @@ class TestMsDataEngine(unittest.TestCase):
         self.db_session = sessionmaker(bind=engine)()
 
     def test_store_manual_subtree_corrupt_endlessloop(self):
-        mde = magma.MsDataEngine(self.db_session, 1000, 1, 3)
+        mde = magma.MsDataEngine(self.db_session, 1, 1000, 5, 0.001, 0.005, 3)
         # create corrupt manual tree file
         import tempfile, os
         treefile = tempfile.NamedTemporaryFile(delete=False)
@@ -346,16 +315,46 @@ class TestMsDataEngine(unittest.TestCase):
         """)
         treefile.close()
 
-        with self.assertRaises(SystemExit) as cm:
-            mde.store_manual_tree(treefile.name)
+        with self.assertRaises(FileFormatError) as cm:
+            mde.store_manual_tree(treefile.name,0)
 
-        self.assertEqual(cm.exception.code, 'Corrupt Tree format ...')
+        self.assertEqual(str(cm.exception), 'Corrupt Tree format ...')
+
+        os.remove(treefile.name)
+
+    def test_store_manual_tree_unallowed_element(self):
+        mde = magma.MsDataEngine(self.db_session, 1, 1000, 5, 0.001, 0.005, 3)
+        # create corrupt manual tree file
+        import tempfile, os
+        treefile = tempfile.NamedTemporaryFile(delete=False)
+        treefile.write('C6H5At: 999 (C6H5: 1000, At: 100)')
+        treefile.close()
+
+        with self.assertRaises(FileFormatError) as cm:
+            mde.store_manual_tree(treefile.name,-1)
+
+        self.assertEqual(str(cm.exception), 'Element not allowed in formula tree: At')
 
         os.remove(treefile.name)
 
 
 class TestAnnotateEngine(unittest.TestCase):
-    pass
+    def setUp(self):
+        engine = create_engine('sqlite://')
+        Base.metadata.create_all(engine)
+        self.db_session = sessionmaker(bind=engine)()
+
+    def test_construct_annotate_engine(self):
+        with self.assertRaises(DataProcessingError) as cm:
+            ae=magma.AnnotateEngine(self.db_session,False,3,1,0,5,True,adducts='Na,K')
+
+        self.assertEqual(str(cm.exception), 'No MS data parameters read.')
+
+    def test_generate_ions(self):
+        mde = magma.MsDataEngine(self.db_session, 1, 1000, 5, 0.001, 0.005, 3)
+        ae=magma.AnnotateEngine(self.db_session,False,3,1,0,5,True,adducts='Na,K')
+        self.assertIsInstance(ae, magma.AnnotateEngine)
+        self.assertEqual(ae.ions,[{0: '[M]+'}, {1.0078250321: '[M+H]+', 22.9897692809: '[M+Na]+', 38.96370668: '[M+K]+'}])
 
 
 

@@ -230,32 +230,32 @@ describe('Scans controller', function() {
 	});
   });
 
-  describe('setScansOfMetabolites', function() {
+  describe('setScansOfMolecules', function() {
 
     it('filled', function() {
-        // mock metabolite store
+        // mock molecule store
         var data = { rawData: { scans: [1,2] }};
         var proxy = { getReader: function() { return data; }};
         var store = { getProxy: function() { return proxy; }, getTotalCount: function() { return 1;}};
         spyOn(ctrl, 'setScans');
 
-        ctrl.setScansOfMetabolites(store);
+        ctrl.setScansOfMolecules(store);
 
-        expect(ctrl.scans_of_metabolites).toEqual([1, 2]);
+        expect(ctrl.scans_of_molecules).toEqual([1, 2]);
         expect(ctrl.setScans).toHaveBeenCalledWith([1, 2]);
         expect(ctrl.hasStructures).toBeTruthy();
     });
 
     it('empty', function() {
-        // mock metabolite store
+        // mock molecule store
         var data = { rawData: { scans: [] }};
         var proxy = { getReader: function() { return data; }};
         var store = { getProxy: function() { return proxy; }, getTotalCount: function() { return 0;}};
         spyOn(ctrl, 'setScans');
 
-        ctrl.setScansOfMetabolites(store);
+        ctrl.setScansOfMolecules(store);
 
-        expect(ctrl.scans_of_metabolites).toEqual([]);
+        expect(ctrl.scans_of_molecules).toEqual([]);
         expect(ctrl.setScans).toHaveBeenCalledWith([]);
         expect(ctrl.hasStructures).toBeFalsy();
     });
@@ -263,7 +263,7 @@ describe('Scans controller', function() {
 
   it('resetScans', function() {
     spyOn(ctrl, 'setScans');
-    ctrl.scans_of_metabolites = [1, 2];
+    ctrl.scans_of_molecules = [1, 2];
     ctrl.resetScans();
     expect(ctrl.setScans).toHaveBeenCalledWith([1, 2]);
   });
