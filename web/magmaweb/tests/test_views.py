@@ -709,6 +709,19 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
 
         views.job_factory.cancel.assert_called_with(job)
 
+    def test_delete_erroredjob(self):
+        request = testing.DummyRequest()
+        job = self.fake_job()
+        # make job incomplete
+        job.is_complete.side_effect = JobError(job)
+        views = InCompleteJobViews(job, request)
+        # see if cancel is called on job_factory
+        views.job_factory = Mock(JobFactory)
+
+        views.delete()
+
+        job.delete.assert_called_with()
+
     def test_delete_unable2cancel(self):
         request = testing.DummyRequest()
         job = self.fake_job()

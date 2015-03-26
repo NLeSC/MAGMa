@@ -364,6 +364,9 @@ class InCompleteJobViews(object):
                         'msg': 'Failed to cancel job'
                         }
                 raise HTTPInternalServerError(body=json.dumps(body))
+        except JobError:
+            # Also delete jobs which are in error
+            pass
 
         self.job.delete()
         del self.job
