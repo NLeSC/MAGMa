@@ -204,7 +204,10 @@ describe('Molecules', function() {
      it('apply scan filter', function() {
        // mock list
        var list = {
-         showFragmentScoreColumn: function() {}
+         showFragmentScoreColumn: function() {},
+         getSelectionModel: function() {return {
+        	 hasSelection: function() { return false; }
+         }; }
        };
        spyOn(ctrl, 'getMoleculeList').andReturn(list);
        spyOn(list, 'showFragmentScoreColumn');
@@ -239,7 +242,9 @@ describe('Molecules', function() {
            list = {
                getFragmentScoreColumn: function() { return scorecol; },
                hideFragmentScoreColumn: function() { },
-               showFragmentScoreColumn: function() { }
+               showFragmentScoreColumn: function() { },
+               getSelectionModel: function() { return sm; },
+               clearMzFilter: function() {}
            };
 
            spyOn(list, 'hideFragmentScoreColumn');
@@ -305,14 +310,20 @@ describe('Molecules', function() {
      });
 
      describe('applyMzFilter', function() {
-    	var store = null,list = null;
+    	var store = null, list = null, sm = null;
     	beforeEach(function() {
+    		sm = {
+    			hasSelection: function() {return false;}
+    		};
     		store = {
     			isFilteredOnScan: function() { return true;}
     		};
-    		spyOn(ctrl, 'getMetabolitesStore').andReturn(store);
+    		spyOn(ctrl, 'getMoleculesStore').andReturn(store);
     		list = jasmine.createSpyObj('list', ['setMzFilterToEqual']);
-    		spyOn(ctrl, 'getMetaboliteList').andReturn(list);
+    		list.getSelectionModel = function() {
+    			return sm;
+    		};
+    		spyOn(ctrl, 'getMoleculeList').andReturn(list);
     	});
 
     	it('should not filter on mz of level > 1 scan', function() {
@@ -337,10 +348,16 @@ describe('Molecules', function() {
 	  });
 
 	  describe('clearMzFilter', function() {
-	    	var list = null;
+	    	var list = null, sm = null;
 	    	beforeEach(function() {
+	    		sm = {
+        			hasSelection: function() {return false;}
+        		};
 	    		list = jasmine.createSpyObj('list', ['clearMzFilter']);
-	    		spyOn(ctrl, 'getMetaboliteList').andReturn(list);
+	    		list.getSelectionModel = function() {
+	    			return sm;
+	    		};
+	    		spyOn(ctrl, 'getMoleculeList').andReturn(list);
 	    	});
 
 		  it('should not filter on mz of level > 1 scan', function() {
@@ -680,7 +697,7 @@ describe('Molecules', function() {
         expect(list.getSelectionModel).toHaveBeenCalled();
     });
 
-    describe('reselect', function() {
+    describe('rememberSelectedMolecule', function() {
         var sm = null;
         var f = null;
 
@@ -699,7 +716,7 @@ describe('Molecules', function() {
             spyOn(sm, 'hasSelection').andReturn(false);
             spyOn(store, 'on');
 
-            ctrl.onBeforeLoad(store);
+            ctrl.rememberSelectedMolecule();
 
             expect(store.on).not.toHaveBeenCalled();
         });
@@ -708,7 +725,7 @@ describe('Molecules', function() {
             spyOn(sm, 'hasSelection').andReturn(true);
             spyOn(store, 'on');
 
-            ctrl.onBeforeLoad(store);
+            ctrl.rememberSelectedMolecule();
 
             expect(store.on).toHaveBeenCalled();
         });
