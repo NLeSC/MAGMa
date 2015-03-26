@@ -871,7 +871,9 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                             limit=10,
                                             sorts=[],
                                             scanid=None,
-                                            filters=[])
+                                            filters=[],
+                                            molid=None,
+                                            )
         job.db.scansWithMolecules.assert_called_with(filters=[])
 
     def test_moleculesjson_scanidfilter(self):
@@ -888,7 +890,9 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                             limit=10,
                                             sorts=[],
                                             scanid=641,
-                                            filters=[])
+                                            filters=[],
+                                            molid=None,
+                                            )
 
     def test_moleculesjson_nrscaneqfilter(self):
         filter_in = '[{"type":"numeric","comparison":"eq",'
@@ -908,7 +912,9 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                             limit=10,
                                             sorts=[],
                                             scanid=None,
-                                            filters=filter_expected)
+                                            filters=filter_expected,
+                                            molid=None,
+                                            )
         job.db.scansWithMolecules.assert_called_with(filters=filter_expected)
 
     def test_moleculesjson_notfilledreturn(self):

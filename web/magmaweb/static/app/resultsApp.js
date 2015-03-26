@@ -112,11 +112,6 @@ Ext.define('Esc.magmaweb.resultsApp', {
          * @cfg {String} urls.chromatogram
          */
         chromatogram: null,
-        /**
-         * Stderr endpoint.
-         * @cfg {String} urls.stderr
-         */
-        stderr: null
     }
   },
   /**
@@ -171,7 +166,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
    * @return {String}
    */
   getLogUrl: function() {
-      return this.urls.home+'results/'+this.jobid+'/stdout.txt';
+      return this.urls.home+'results/'+this.jobid+'/stderr.txt';
   },
   /**
    * Creates mspectraspanels and viewport and fires/listens for mspectra events
@@ -204,12 +199,19 @@ Ext.define('Esc.magmaweb.resultsApp', {
     );
 
     // uncomment to see all application events fired in console
-//    Ext.util.Observable.capture(this, function() { console.log(arguments);return true;});
+   Ext.util.Observable.capture(this, function() {
+	   console.error(arguments[0], arguments);
+	   return true;
+   });
 
     this.on('selectscan', function(scanid) {
         this.selected.scanid = scanid;
     }, this);
     this.on('noselectscan', function() {
+    	if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+            this.fireEvent('mzandmoleculenoselect');
+        }
+    	this.selected.mz = false;
         this.selected.scanid = false;
     }, this);
     this.on('moleculeselect', function(molid) {
@@ -219,14 +221,14 @@ Ext.define('Esc.magmaweb.resultsApp', {
       }
     }, this);
     this.on('moleculedeselect', function() {
-        if (this.selected.molid && this.selected.scanid) {
+        if (this.selected.molid && this.selected.scanid && this.selected.mz) {
             this.fireEvent('mzandmoleculenoselect');
         }
         this.selected.molid = false;
     }, this);
-    this.on('moleculennoselect', function() {
-        if (this.selected.molid && this.selected.scanid) {
-            this.fireEvent('mzandmmoleculennoselect');
+    this.on('moleculenoselect', function() {
+        if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+            this.fireEvent('mzandmoleculenoselect');
         }
         this.selected.molid = false;
     }, this);
@@ -240,7 +242,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
     }, this);
     this.on('peakdeselect', function(mz, mslevel) {
     	if (mslevel === 1) {
-	        if (this.selected.molid && this.selected.mz) {
+	        if (this.selected.molid && this.selected.scanid && this.selected.mz) {
 	            this.fireEvent('mzandmoleculenoselect');
 	        }
 	        this.selected.mz = false;

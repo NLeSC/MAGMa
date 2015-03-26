@@ -94,8 +94,7 @@ Ext.onReady(function() {
         fragments: '${request.route_path('results',jobid=jobid)}/fragments/{0}/{1}.json',
         mspectra: '${request.route_path('results',jobid=jobid)}/mspectra/{0}.json?mslevel={1}',
         extractedionchromatogram: '${request.route_path('results',jobid=jobid)}/extractedionchromatogram/{0}.json',
-        chromatogram: '${request.route_path('results',jobid=jobid)}/chromatogram.json',
-        stderr: '${request.route_path('results',jobid=jobid)}/stderr.txt'
+        chromatogram: '${request.route_path('results',jobid=jobid)}/chromatogram.json'
       }
     });
 });

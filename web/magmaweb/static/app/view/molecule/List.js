@@ -87,7 +87,7 @@ Ext.define('Esc.magmaweb.view.molecule.List', {
     ]);
 
     var numberFilter = {
-        	type: 'numeric', fieldCfg: {lt: {decimalPrecision: 18}, gt: {decimalPrecision: 18}, eq: {decimalPrecision: 18}}
+        type: 'numeric', fieldCfg: {lt: {decimalPrecision: 18}, gt: {decimalPrecision: 18}, eq: {decimalPrecision: 18}}
     };
     Ext.apply(this, {
       columns: [
@@ -103,6 +103,7 @@ Ext.define('Esc.magmaweb.view.molecule.List', {
         {text: 'Formula', width:100, dataIndex: 'formula', filter: { type: 'string' }},
         {text: 'Mass', width:80, dataIndex: 'mim', filter: { type: 'numeric' }, hidden: false, xtype: 'numbercolumn', format: '0.00000'},
         {text: '&Delta;Mass (ppm)', width:80, dataIndex: 'deltappm', hidden: true, filter: { type: 'numeric' }, xtype: 'numbercolumn', format: '0.00000'},
+        {text: 'M/z', width:80, dataIndex: 'mz', hidden: true, filter: numberFilter , xtype: 'numbercolumn', format: '0.00000'},
         {text: 'Name', dataIndex: 'name', flex:1, filter: { type: 'string' }},
         {
             text: 'Reactions', dataIndex: 'reactionsequence', flex:1, filter: { type: 'reaction' },
@@ -215,17 +216,17 @@ Ext.define('Esc.magmaweb.view.molecule.List', {
       Ext.ComponentQuery.query('component[action=pagesizeCombo]')[0].select(size);
   },
   getMzFilter: function() {
-	 var filter = this.getFilter();
-	 return filter.filters.get('mz');
+    var filter = this.getFilter();
+    return filter.filters.get('mz');
   },
   setMzFilterToEqual: function(mz) {
-	  var mzfilter = this.getMzFilter();
-	  mzfilter.setActive(true);
-	  mzfilter.setValue({'eq': mz});
+    var mzfilter = this.getMzFilter();
+    mzfilter.setActive(true);
+    mzfilter.setValue({'eq': mz});
   },
   clearMzFilter: function() {
-	  var mzfilter = this.getMzFilter();
-	  mzfilter.setValue({});
-	  mzfilter.setActive(false);
+    var mzfilter = this.getMzFilter();
+    mzfilter.setValue({});
+    mzfilter.setActive(false);
   }
 });

@@ -221,7 +221,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     	mspectra.setMarkers(data.fragments);
     	// select peak if there is only one with fragments
     	if (data.fragments.length === 1) {
-    		console.log('peakselect one peak with fragments', data.fragments[0].mz, mslevel, scanid);
+    		Ext.log({}, 'peakselect one peak with fragments', data.fragments[0].mz, mslevel, scanid);
     		mspectra.selectPeak(data.fragments[0].mz);
     		this.application.fireEvent('peakselect', data.fragments[0].mz, mslevel, scanid);
     	}
@@ -282,7 +282,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
       var molecule_fragment = parent.firstChild;
       if (molecule_fragment.hasChildNodes()) {
         this.loadMSpectra2(
-        		molecule_fragment.firstChild.data.scanid,
+       		molecule_fragment.firstChild.data.scanid,
             molecule_fragment.childNodes.map(
                 function(d) { return {mz: d.data.mz}; }
             )
@@ -301,6 +301,10 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
    */
   clearMSpectra: function(mslevel) {
     var mspectra = this.getMSpectra(mslevel);
+    if (mspectra.scanid === -1) {
+    	// don't clear a already cleared mspectra
+    	return;
+    }
     mspectra.setData([]);
     mspectra.scanid = -1;
     this.application.fireEvent('mspectraclear', mslevel);
@@ -376,6 +380,10 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   selectPeakOfMolecule: function(molid, molecule) {
 	var mslevel = 1;
 	var mspectra = this.getMSpectra(mslevel);
+	if (!mspectra.scanid) {
+		// skip in no lvl1 scan is selected
+		return;
+	}
 	if (mspectra.selectedpeak === molecule.data.mz) {
 		// dont select same mz again
 		return;
