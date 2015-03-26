@@ -209,7 +209,7 @@ class JobQuery(object):
             metsfile.write(params['structures'])
         metsfile.close()
 
-        script = "{{magma}} add_structures -t '{structure_format}'"
+        script = "{{magma}} add_structures -p -t '{structure_format}'"
         script += " structures.dat {{db}}"
         sf = self.escape(params['structure_format'])
         self.script += script.format(structure_format=sf)
@@ -441,7 +441,7 @@ class JobQuery(object):
         self._writeScenarioFile(params)
         self.prestaged.append('scenario.csv')
 
-        script = "{{magma}} metabolize"
+        script = "{{magma}} metabolize -p"
         script += " --scenario scenario.csv"
         script += " --call_back_url '{call_back_url}'"
         script_substitutions = {
@@ -490,7 +490,7 @@ class JobQuery(object):
         self._writeScenarioFile(params)
         self.prestaged.append('scenario.csv')
 
-        script = "echo '{molid}' | {{magma}} metabolize -j -"
+        script = "echo '{molid}' | {{magma}} metabolize -p -j -"
         script += " --scenario scenario.csv"
         script += " --call_back_url '{call_back_url}' {{db}}"
         script_substitutions = {
