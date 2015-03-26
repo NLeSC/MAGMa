@@ -29,7 +29,6 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
     store.pageSize = this.application.getPageSize();
     store.setUrl(this.application.moleculesUrl('json'));
     store.on('load', this.onLoad, this);
-//    store.on('beforeload', this.onBeforeLoad, this);
 
     this.control({
       'moleculelist': {
@@ -205,7 +204,7 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
       if (sm && sm.hasSelection()) {
           var selected = sm.getSelection()[0].getId();
           store.selectMolecule(sm.getSelection()[0]);
-    	  console.error('Reselecting molecule ' + selected + ' on next store load');
+          Ext.log({}, 'Reselecting molecule ' + selected + ' on next store load');
 
           var reselectMolecule = function() {
         	  // only remember selection once, otherwise paging will not work
@@ -220,46 +219,12 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
               // select molecule again
               var record = store.getById(selected);
               if (record !== null) {
-                sm.select(record, false, true);
+                sm.select(record);
               } else {
                 this.application.fireEvent('moleculedeselect', selected, 'not found');
               }
           };
           store.on('load', reselectMolecule, this, {single: true});
-      }
-  },
-  /**
-   * If molecule is selected then try to reselect it after load
-   * If it fails to reselect it fires a moleculedeselect event.
-   */
-  onBeforeLoad: function(store) {
-      var me = this;
-      var sm = me.getSelectionModel();
-      if (sm && sm.hasSelection()) {
-          var selected = sm.getSelection()[0].getId();
-
-          var reselect = function() {
-              // update page number
-              var page = store.getProxy().getReader().rawData.page;
-              store.currentPage = page;
-              var pagingtoolbar = me.getMoleculePanel().getPagingToolbar();
-              pagingtoolbar.onLoad();
-
-              // select molecule again
-              var record = store.getById(selected);
-              if (record !== null) {
-                sm.select(record);
-              } else {
-                this.application.fireEvent('moleculedeselect', selected, 'not found');
-              }
-
-              store.removeListener('load', reselect, me);
-          };
-          store.selectMolecule(sm.getSelection()[0]);
-
-          store.on('load', reselect , me);
-      } else {
-          store.clearMoleculeSelection();
       }
   },
   /**
@@ -324,7 +289,7 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
               direction: 'ASC'
           })
       ]);
-       this.rememberSelectedMolecule();
+      this.rememberSelectedMolecule();
       store.setScanFilter(scanid);
       this.getMoleculeList().showFragmentScoreColumn();
   },
@@ -345,7 +310,7 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
           store.sorters.removeAtKey('score');
           store.sorters.removeAtKey('deltappm');
       }
-       this.rememberSelectedMolecule();
+      this.rememberSelectedMolecule();
       store.removeScanFilter();
       this.getMoleculeList().hideFragmentScoreColumn();
   },
@@ -356,7 +321,7 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
       var store = this.getMoleculesStore();
 	  var list = this.getMoleculeList();
 	  if (store.isFilteredOnScan()) {
-            this.rememberSelectedMolecule();
+          this.rememberSelectedMolecule();
 		  list.setMzFilterToEqual(mz);
 	  }
   },
@@ -364,7 +329,7 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
 	  if (mslevel > 1) {
 		  return;
 	  }
-       this.rememberSelectedMolecule();
+      this.rememberSelectedMolecule();
 	  var list = this.getMoleculeList();
 	  list.clearMzFilter();
   },

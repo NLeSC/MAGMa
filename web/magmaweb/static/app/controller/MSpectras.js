@@ -221,7 +221,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     	mspectra.setMarkers(data.fragments);
     	// select peak if there is only one with fragments
     	if (data.fragments.length === 1) {
-    		console.log('peakselect one peak with fragments', data.fragments[0].mz, mslevel, scanid);
+    		Ext.log({}, 'peakselect one peak with fragments', data.fragments[0].mz, mslevel, scanid);
     		mspectra.selectPeak(data.fragments[0].mz);
     		this.application.fireEvent('peakselect', data.fragments[0].mz, mslevel, scanid);
     	}
