@@ -13,7 +13,7 @@
  *         fragments: '/fragments/{0}/{1}.json',
  *         mspectra: '/mspectra/{0}.json?mslevel={1}',
  *         extractedionchromatogram: '/extractedionchromatogram/{0}.json',
- *         metabolites: '/metabolites.json',
+ *         molecules: '/molecules.json',
  *         chromatogram: '/chromatogram.json'
  *       }
  *     });
@@ -31,10 +31,10 @@ Ext.define('Esc.magmaweb.resultsApp', {
     return this;
   },
   autoCreateViewport: true,
-  controllers: [ 'Metabolites', 'Fragments', 'Scans', 'MSpectras' ],
+  controllers: [ 'Molecules', 'Fragments', 'Scans', 'MSpectras' ],
   config: {
     /**
-     * Metabolite grid page size.
+     * Molecule grid page size.
      * @cfg {Number}
      */
     pageSize: 10,
@@ -91,7 +91,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
         home: null,
         /**
          * Fragments endpoint.
-         * Tokenized string with scanid and metid tokens.
+         * Tokenized string with scanid and molid tokens.
          * @cfg {String} urls.fragments
          */
         fragments: null,
@@ -103,7 +103,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
         mspectra: null,
         /**
          * Extracted ion chromatogram endpoint.
-         * Tokenized string with metid token.
+         * Tokenized string with molid token.
          * @cfg {String} urls.extractedionchromatogram
          */
         extractedionchromatogram: null,
@@ -112,20 +112,15 @@ Ext.define('Esc.magmaweb.resultsApp', {
          * @cfg {String} urls.chromatogram
          */
         chromatogram: null,
-        /**
-         * Stderr endpoint.
-         * @cfg {String} urls.stderr
-         */
-        stderr: null
     }
   },
   /**
-   * when a metabolite and scan are selected then load fragments
+   * when a molecule and scan are selected then load fragments
    * @property {Object} selected
    * @property {Boolean} selected.scanid Scan identifier
-   * @property {Boolean} selected.metid Metabolite identifier
+   * @property {Boolean} selected.molid Molecule identifier
    */
-  selected: { scanid: false, metid: false },
+  selected: { scanid: false, molid: false },
   /**
    * Logs error in console and shows a error message box to user
    *
@@ -157,13 +152,13 @@ Ext.define('Esc.magmaweb.resultsApp', {
     return this.urls.home+'results/'+this.jobid+'/runinfo.json';
   },
   /**
-   * Get metabolites url based on format.
+   * Get molecules url based on format.
    *
    * @param {String} format Can be json, csv or sdf.
    * @return {String}
    */
-  metabolitesUrl: function(format) {
-    return this.urls.home+'results/'+this.jobid+'/metabolites.'+format;
+  moleculesUrl: function(format) {
+    return this.urls.home+'results/'+this.jobid+'/molecules.'+format;
   },
   /**
    * Get url of log file of job
@@ -171,7 +166,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
    * @return {String}
    */
   getLogUrl: function() {
-      return this.urls.home+'results/'+this.jobid+'/stdout.txt';
+      return this.urls.home+'results/'+this.jobid+'/stderr.txt';
   },
   /**
    * Creates mspectraspanels and viewport and fires/listens for mspectra events
@@ -183,18 +178,18 @@ Ext.define('Esc.magmaweb.resultsApp', {
     this.addEvents(
       /**
        * @event
-       * Triggered when a metabolite and scan are selected together.
+       * Triggered when a molecule and scan are selected together.
        * @param {Number} scanid Scan identifier.
-       * @param {Number} metid Metabolite identifier.
+       * @param {Number} molid Molecule identifier.
        */
-      'scanandmetaboliteselect',
+      'scanandmoleculeselect',
       /**
        * @event
-       * Triggered when a metabolite and scan are no longer selected together.
+       * Triggered when a molecule and scan are no longer selected together.
        * @param {Number} scanid Scan identifier.
-       * @param {Number} metid Metabolite identifier.
+       * @param {Number} molid Molecule identifier.
        */
-      'scanandmetabolitenoselect',
+      'scanandmoleculenoselect',
       /**
        * @event
        * Triggered when a rpc method has been submitted successfully.
@@ -214,38 +209,42 @@ Ext.define('Esc.magmaweb.resultsApp', {
         this.selected.scanid = scanid;
     }, this);
     this.on('noselectscan', function() {
+    	if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+            this.fireEvent('mzandmoleculenoselect');
+        }
+    	this.selected.mz = false;
         this.selected.scanid = false;
     }, this);
-    this.on('metaboliteselect', function(metid) {
-      this.selected.metid = metid;
-      if (this.selected.metid && this.selected.scanid && this.selected.mz) {
-        this.fireEvent('mzandmetaboliteselect', this.selected.scanid, metid, this.selected.mz);
+    this.on('moleculeselect', function(molid) {
+      this.selected.molid = molid;
+      if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+        this.fireEvent('mzandmoleculeselect', this.selected.scanid, molid, this.selected.mz);
       }
     }, this);
-    this.on('metabolitedeselect', function() {
-        if (this.selected.metid && this.selected.scanid) {
-            this.fireEvent('mzandmetabolitenoselect');
+    this.on('moleculedeselect', function() {
+        if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+            this.fireEvent('mzandmoleculenoselect');
         }
-        this.selected.metid = false;
+        this.selected.molid = false;
     }, this);
-    this.on('metabolitenoselect', function() {
-        if (this.selected.metid && this.selected.scanid) {
-            this.fireEvent('mzandmetabolitenoselect');
+    this.on('moleculenoselect', function() {
+        if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+            this.fireEvent('mzandmoleculenoselect');
         }
-        this.selected.metid = false;
+        this.selected.molid = false;
     }, this);
     this.on('peakselect', function(mz, mslevel) {
     	if (mslevel === 1) {
             this.selected.mz = mz;
-            if (this.selected.metid && this.selected.scanid && this.selected.mz) {
-                this.fireEvent('mzandmetaboliteselect', this.selected.scanid, this.selected.metid, mz);
+            if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+                this.fireEvent('mzandmoleculeselect', this.selected.scanid, this.selected.molid, mz);
             }
     	}
     }, this);
     this.on('peakdeselect', function(mz, mslevel) {
     	if (mslevel === 1) {
-	        if (this.selected.metid && this.selected.mz) {
-	            this.fireEvent('mzandmetabolitenoselect');
+	        if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+	            this.fireEvent('mzandmoleculenoselect');
 	        }
 	        this.selected.mz = false;
     	}

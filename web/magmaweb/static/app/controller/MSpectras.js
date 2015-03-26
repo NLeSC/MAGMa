@@ -42,7 +42,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     this.application.on('fragmentselect', this.selectPeakFromFragment, this);
     this.application.on('fragmentdeselect', this.deselectPeakFromFragment, this);
     this.application.on('noselectscan', this.clearMSpectra1, this);
-    this.application.on('mzandmetabolitenoselect', this.clearMSpectraFrom2, this);
+    this.application.on('mzandmmoleculenoselect', this.clearMSpectraFrom2, this);
     this.application.on('fragmentcollapse', this.clearMSpectraFromFragment, this);
     this.application.on('mspectraload', function(scanid, mslevel) {
         Ext.getCmp('mspectra'+mslevel+'panel').header.setTitle('Level '+mslevel+' scan '+scanid);
@@ -279,13 +279,13 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
       // lvl1 fragment
       Ext.log({}, 'loading lvl2 mspectra');
       // load optional child lvl2 scans
-      var metabolite_fragment = parent.firstChild;
-      if (metabolite_fragment.hasChildNodes()) {
+      var molecule_fragment = parent.firstChild;
+      if (molecule_fragment.hasChildNodes()) {
         this.loadMSpectra2(
-            metabolite_fragment.firstChild.data.scanid,
-            metabolite_fragment.childNodes.map(
-                function(d) { return {mz: d.data.mz}; }
-            )
+        	molecule_fragment.firstChild.data.scanid,
+        	molecule_fragment.childNodes.map(function(d) {
+        		return {mz: d.data.mz};
+    		})
         );
       }
     } else {

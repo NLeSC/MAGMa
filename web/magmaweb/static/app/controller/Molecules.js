@@ -1,59 +1,59 @@
 /**
- * Metabolite controller.
+ * Molecule controller.
  *
- * Handles actions performed in metabolites views.
+ * Handles actions performed in molecules views.
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.magmaweb.controller.Metabolites', {
+Ext.define('Esc.magmaweb.controller.Molecules', {
   extend: 'Ext.app.Controller',
-  views: [ 'metabolite.Panel' ],
-  stores: [ 'Metabolites' ],
-  models: [ 'Metabolite' ],
+  views: [ 'molecule.Panel' ],
+  stores: [ 'Molecules' ],
+  models: [ 'Molecule' ],
   uses: [
-    'Esc.magmaweb.view.metabolite.MetabolizeForm',
-    'Esc.magmaweb.view.metabolite.MetabolizeOneForm'
+    'Esc.magmaweb.view.molecule.MetabolizeForm',
+    'Esc.magmaweb.view.molecule.MetabolizeOneForm'
   ],
   refs: [{
-    ref: 'metaboliteList', selector: 'metabolitelist'
+    ref: 'moleculeList', selector: 'moleculelist'
   }, {
-    ref: 'metaboliteAddForm', selector: 'metaboliteaddform'
+    ref: 'moleculeAddForm', selector: 'moleculeaddform'
   }, {
-    ref: 'metabolitePanel', selector: 'metabolitepanel'
+    ref: 'moleculePanel', selector: 'moleculepanel'
   }],
   init: function() {
-    Ext.log({}, 'Metabolites controller init');
+    Ext.log({}, 'Molecules controller init');
     var me = this;
 
     // configure store
-    var store = this.getMetabolitesStore();
+    var store = this.getMoleculesStore();
     store.pageSize = this.application.getPageSize();
-    store.setUrl(this.application.metabolitesUrl('json'));
+    store.setUrl(this.application.moleculesUrl('json'));
     store.on('load', this.onLoad, this);
 //    store.on('beforeload', this.onBeforeLoad, this);
 
     this.control({
-      'metabolitelist': {
+      'moleculelist': {
         select: this.onSelect,
         deselect: this.onDeselect,
         beforeselect: this.beforeSelect,
         metabolize: this.showMetabolizeStructureForm
       },
-      'metabolitelist component[action=pagesizeCombo]': {
+      'moleculelist component[action=pagesizeCombo]': {
         select: this.onPageSizeChange
       },
-      'metabolitepanel component[action=download]': {
+      'moleculepanel component[action=download]': {
         click: this.showDownloadMenu
       },
-      'metabolitepanel component[action=actions]': {
+      'moleculepanel component[action=actions]': {
         click: this.showActionsMenu
       },
-      'metabolitepanel component[action=help]': {
+      'moleculepanel component[action=help]': {
           click: this.showHelp
       },
-      'metaboliteaddform component[action=addstructures]': {
+      'moleculeaddform component[action=addstructures]': {
         click: this.addStructuresHandler
       },
-      'metaboliteaddform component[action=addstructurescancel]': {
+      'moleculeaddform component[action=addstructurescancel]': {
         click: this.showGrid
       },
       'metabolizeform component[action=metabolize]': {
@@ -79,35 +79,35 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     this.application.on('rpcsubmitsuccess', function() {
       Ext.getCmp('addstructuresaction').disable();
       Ext.getCmp('metabolizeaction').disable();
-      me.getMetaboliteList().getCommandsColumn().disableAction();
+      me.getMoleculeList().getCommandsColumn().disableAction();
     });
 
     this.application.addEvents(
         /**
          * @event
-         * Triggered when metabolite store is loaded.
+         * Triggered when molecule store is loaded.
          * @param {Ext.data.Store} store
          */
-        'metaboliteload',
+        'moleculeload',
         /**
          * @event
-         * Triggered when metabolite is selected.
-         * @param {Number} metid Metabolite identifier
-         * @param {Esc.magmaweb.model.Metabolite} metabolite
+         * Triggered when molecule is selected.
+         * @param {Number} molid Molecule identifier
+         * @param {Esc.magmaweb.model.Molecule} molecule
          */
-        'metaboliteselect',
+        'moleculeselect',
         /**
          * @event
-         * Triggered when metabolite is deselected.
-         * @param {Number} metid Metabolite identifier
-         * @param {Esc.magmaweb.model.Metabolite} metabolite
+         * Triggered when molecule is deselected.
+         * @param {Number} molid Molecule identifier
+         * @param {Esc.magmaweb.model.Molecule} molecule
          */
-        'metabolitedeselect',
+        'moleculedeselect',
         /**
          * @event
-         * Triggered when metabolite selection is cleared
+         * Triggered when molecule selection is cleared
          */
-        'metabolitenoselect'
+        'moleculenoselect'
     );
 
     this.actionsMenu = Ext.create('Ext.menu.Menu', {
@@ -146,7 +146,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     this.downloadMenu = Ext.create('Ext.menu.Menu', {
         items: [{
             text: 'CSV',
-            tooltip: 'Save metabolites as comma seperated file',
+            tooltip: 'Save molecules as comma seperated file',
             listeners: {
                 click: {
                     fn: this.download_csv,
@@ -155,7 +155,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
             }
         }, {
             text: 'SDF',
-            tooltip: 'Save metabolites as sdf',
+            tooltip: 'Save molecules as sdf',
             listeners: {
                 click: {
                     fn: this.download_sdf,
@@ -166,32 +166,32 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     });
 
     this.application.on('assignmentchanged', function(isAssigned, params) {
-        me.getMetabolitesStore().load();
+        me.getMoleculesStore().load();
     });
   },
   /**
-   * Loads metabolite store
+   * Loads molecule store
    */
   onLaunch: function() {
-      // store not loaded in init because metaboliteload event is fired before listeners of views are registerd
+      // store not loaded in init because moleculeload event is fired before listeners of views are registerd
       // the nhits column has an active filter
       // so do not use list.store.load() , but trigger a filter update to load
-      this.getMetaboliteList().filters.createFilters();
-      this.getMetabolitesStore().load();
-      this.getMetaboliteList().setPageSize(this.getMetabolitesStore().pageSize);
+      this.getMoleculeList().filters.createFilters();
+      this.getMoleculesStore().load();
+      this.getMoleculeList().setPageSize(this.getMoleculesStore().pageSize);
       this.applyRole();
   },
   /**
-   * Listens for metabolite store load event.
-   * Selects metabolite if store only contains 1 metabolite.
+   * Listens for molecule store load event.
+   * Selects molecule if store only contains 1 molecule.
    *
    * @param {Ext.data.Store} store
    */
   onLoad: function(store) {
-    this.application.fireEvent('metaboliteload', store);
+    this.application.fireEvent('moleculeload', store);
     this.metabolizable(store.getTotalUnfilteredCount() > 0);
     if (store.getCount() == 1 && !this.getSelectionModel().hasSelection()) {
-        Ext.log({}, 'Only one metabolite loaded and its not selected, selecting it');
+        Ext.log({}, 'Only one molecule loaded and its not selected, selecting it');
         this.getSelectionModel().select(0);
     }
     if (store.getTotalUnfilteredCount() === 0) {
@@ -200,7 +200,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
   },
   rememberSelectedMolecule: function() {
       var me = this;
-      var store = this.getMetabolitesStore();
+      var store = this.getMoleculesStore();
       var sm = me.getSelectionModel();
       if (sm && sm.hasSelection()) {
           var selected = sm.getSelection()[0].getId();
@@ -214,7 +214,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
               // update page number
               var page = store.getProxy().getReader().rawData.page;
               store.currentPage = page;
-              var pagingtoolbar = me.getMetabolitePanel().getPagingToolbar();
+              var pagingtoolbar = me.getMoleculePanel().getPagingToolbar();
               pagingtoolbar.onLoad();
 
               // select molecule again
@@ -222,15 +222,15 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
               if (record !== null) {
                 sm.select(record, false, true);
               } else {
-                this.application.fireEvent('metabolitedeselect', selected, 'not found');
+                this.application.fireEvent('moleculedeselect', selected, 'not found');
               }
           };
           store.on('load', reselectMolecule, this, {single: true});
       }
   },
   /**
-   * If metabolite is selected then try to reselect it after load
-   * If it fails to reselect it fires a metabolitedeselect event.
+   * If molecule is selected then try to reselect it after load
+   * If it fails to reselect it fires a moleculedeselect event.
    */
   onBeforeLoad: function(store) {
       var me = this;
@@ -242,7 +242,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
               // update page number
               var page = store.getProxy().getReader().rawData.page;
               store.currentPage = page;
-              var pagingtoolbar = me.getMetabolitePanel().getPagingToolbar();
+              var pagingtoolbar = me.getMoleculePanel().getPagingToolbar();
               pagingtoolbar.onLoad();
 
               // select molecule again
@@ -250,7 +250,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
               if (record !== null) {
                 sm.select(record);
               } else {
-                this.application.fireEvent('metabolitedeselect', selected, 'not found');
+                this.application.fireEvent('moleculedeselect', selected, 'not found');
               }
 
               store.removeListener('load', reselect, me);
@@ -263,11 +263,11 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       }
   },
   /**
-   * Fetch selection model of metabolite list.
+   * Fetch selection model of molecule list.
    * @return {Ext.selection.Model}
    */
   getSelectionModel: function() {
-    return this.getMetaboliteList().getSelectionModel();
+    return this.getMoleculeList().getSelectionModel();
   },
   /**
    * Listens for chromatogram load event.
@@ -276,39 +276,39 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
    */
   onChromatrogramLoad: function(chromatogram) {
     this.hasMSData = chromatogram.data.length > 0;
-    this.getMetaboliteAddForm().setDisabledAnnotateFieldset(!this.hasMSData);
+    this.getMoleculeAddForm().setDisabledAnnotateFieldset(!this.hasMSData);
   },
   /**
-   * Only allow metabolite with a scans to be selected.
-   * The extracted ion chromatogram of a metabolite without scans can not be shown because it can not be selected.
+   * Only allow molecule with a scans to be selected.
+   * The extracted ion chromatogram of a molecule without scans can not be shown because it can not be selected.
    */
-  beforeSelect: function(rm, metabolite) {
-    return (metabolite.data.nhits > 0);
+  beforeSelect: function(rm, molecule) {
+    return (molecule.data.nhits > 0);
   },
-  onSelect: function(rm, metabolite) {
-    var metid = metabolite.data.metid;
-    this.application.fireEvent('metaboliteselect', metid, metabolite);
+  onSelect: function(rm, molecule) {
+    var molid = molecule.data.molid;
+    this.application.fireEvent('moleculeselect', molid, molecule);
   },
-  onDeselect: function(rm, metabolite) {
-    var metid = metabolite.data.metid;
-    this.application.fireEvent('metabolitedeselect', metid, metabolite);
+  onDeselect: function(rm, molecule) {
+    var molid = molecule.data.molid;
+    this.application.fireEvent('moleculedeselect', molid, molecule);
   },
   /**
    * Remove filters and clears selection
    */
   clearFilters: function() {
-    Ext.log({}, 'Clear metabolite filters');
-    this.getMetaboliteList().clearFilters();
-    this.application.fireEvent('metabolitenoselect');
+    Ext.log({}, 'Clear molecule filters');
+    this.getMoleculeList().clearFilters();
+    this.application.fireEvent('moleculenoselect');
   },
   /**
-   * Apply scan filter to metabolite store.
+   * Apply scan filter to molecule store.
    * And shows fragment score column.
    *
    * @param {Number} scanid Scan identifier to filter on.
    */
   applyScanFilter: function(scanid) {
-      var store = this.getMetabolitesStore();
+      var store = this.getMoleculesStore();
       store.sorters.clear();
       store.sorters.addAll([
           new Ext.util.Sorter({
@@ -316,27 +316,27 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
               direction: 'ASC'
           }),
           new Ext.util.Sorter({
-              property: 'probability',
+              property: 'refscore',
               direction: 'DESC'
           }),
           new Ext.util.Sorter({
-              property: 'metid',
+              property: 'molid',
               direction: 'ASC'
           })
       ]);
        this.rememberSelectedMolecule();
       store.setScanFilter(scanid);
-      this.getMetaboliteList().showFragmentScoreColumn();
+      this.getMoleculeList().showFragmentScoreColumn();
   },
   /**
-   * Removes scan filter from metabolite store.
+   * Removes scan filter from molecule store.
    * And hides fragment score/deltappm column.
    * And deactivates filters on fragment score/deltappm column if any
    * And resets sort if store is sorted on fragment score/deltappm.
    */
   clearScanFilter: function() {
       this.clearMzFilter();
-      var store = this.getMetabolitesStore();
+      var store = this.getMoleculesStore();
       if ('filters' in store) {
           store.filters.removeAtKey('score');
           store.filters.removeAtKey('deltappm');
@@ -347,14 +347,14 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       }
        this.rememberSelectedMolecule();
       store.removeScanFilter();
-      this.getMetaboliteList().hideFragmentScoreColumn();
+      this.getMoleculeList().hideFragmentScoreColumn();
   },
   applyMzFilter: function(mz, mslevel) {
 	  if (mslevel > 1) {
 		  return;
 	  }
-      var store = this.getMetabolitesStore();
-	  var list = this.getMetaboliteList();
+      var store = this.getMoleculesStore();
+	  var list = this.getMoleculeList();
 	  if (store.isFilteredOnScan()) {
             this.rememberSelectedMolecule();
 		  list.setMzFilterToEqual(mz);
@@ -365,14 +365,14 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
 		  return;
 	  }
        this.rememberSelectedMolecule();
-	  var list = this.getMetaboliteList();
+	  var list = this.getMoleculeList();
 	  list.clearMzFilter();
   },
   onPageSizeChange: function(combo) {
-      this.getMetabolitesStore().setPageSize(combo.getValue());
+      this.getMoleculesStore().setPageSize(combo.getValue());
   },
   /**
-   * Open a new window with metabolites as comma seperated file or sdf.
+   * Open a new window with molecules as comma seperated file or sdf.
    * Uses store/proxy/gridfilter state to construct queryString so what you see in grid is what in csv file.
    *
    * @params {String} format Can be csv or sdf.
@@ -380,7 +380,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
   download: function(format) {
     // download needs to make an url with has the same query parameters as the store.load()
     // for load() the store builds an operation object, we need to build this aswell
-    var store = this.getMetabolitesStore();
+    var store = this.getMoleculesStore();
     var proxy = store.getProxy();
     var config = {
         action: 'read',
@@ -395,16 +395,16 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     var params = request.params;
     // Ext.ux.grid.FiltersFeature adds filters to request.params in store.beforeLoad event handler
     // so we do the same to get the filter query string
-    Ext.apply(params, this.getMetaboliteList().getFilterQuery());
+    Ext.apply(params, this.getMoleculeList().getFilterQuery());
 
     // visible ordered columns
-    params['cols'] = Ext.JSON.encode(this.getMetaboliteList().getVisiblColumnIndices());
+    params['cols'] = Ext.JSON.encode(this.getMoleculeList().getVisiblColumnIndices());
 
     var url = Ext.urlAppend(
-        this.application.metabolitesUrl(format),
+        this.application.moleculesUrl(format),
         Ext.Object.toQueryString(params)
     );
-    window.open(url, 'metabolites'+format);
+    window.open(url, 'molecules'+format);
   },
   /**
    * Shortcut do download csv file
@@ -420,17 +420,17 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
   },
   /**
    * Loads defaults of add structures form and
-   * Shows add structures form in metabolites panel.
+   * Shows add structures form in molecules panel.
    */
   showAddStructuresForm: function() {
-      this.getMetaboliteAddForm().loadDefaults(this.application.runInfoUrl());
-      this.getMetabolitePanel().setActiveItem(1);
+      this.getMoleculeAddForm().loadDefaults(this.application.runInfoUrl());
+      this.getMoleculePanel().setActiveItem(1);
   },
   /**
-   * Shows list or grid in metabolite panel.
+   * Shows list or grid in molecule panel.
    */
   showGrid: function() {
-      this.getMetabolitePanel().setActiveItem(0);
+      this.getMoleculePanel().setActiveItem(0);
   },
   /**
    * Handler for submit button in Add structures form.
@@ -438,7 +438,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
    */
   addStructuresHandler: function() {
     var me = this;
-    var form = this.getMetaboliteAddForm().getForm();
+    var form = this.getMoleculeAddForm().getForm();
     if (form.isValid()) {
       form.submit({
         url: me.application.rpcUrl('add_structures'),
@@ -466,7 +466,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
   showMetabolizeForm: function() {
     var me = this;
     if (!this.metabolizeForm) {
-        this.metabolizeForm = Ext.create('Esc.magmaweb.view.metabolite.MetabolizeForm');
+        this.metabolizeForm = Ext.create('Esc.magmaweb.view.molecule.MetabolizeForm');
         this.metabolizeForm.loadDefaults(me.application.runInfoUrl());
     }
     this.metabolizeForm.setDisabledAnnotateFieldset(!this.hasMSData);
@@ -498,16 +498,16 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
     }
   },
   /**
-   * Shows metabolize form in modal window for one metabolite/structure
+   * Shows metabolize form in modal window for one molecule/structure
    * @param {Ext.data.Model} rec Record to metabolize
    */
   showMetabolizeStructureForm: function(rec) {
     var me = this;
     if (!this.metabolizeStructureForm) {
-        this.metabolizeStructureForm = Ext.create('Esc.magmaweb.view.metabolite.MetabolizeOneForm');
+        this.metabolizeStructureForm = Ext.create('Esc.magmaweb.view.molecule.MetabolizeOneForm');
         this.metabolizeStructureForm.loadDefaults(me.application.runInfoUrl());
     }
-    this.metabolizeStructureForm.setMetabolite(rec);
+    this.metabolizeStructureForm.setMolecule(rec);
     this.metabolizeStructureForm.setDisabledAnnotateFieldset(!this.hasMSData);
     this.metabolizeStructureForm.show();
   },
@@ -571,7 +571,7 @@ Ext.define('Esc.magmaweb.controller.Metabolites', {
       if (!this.application.features.run) {
           this.actionsMenu.getComponent('addstructuresaction').hide();
           this.actionsMenu.getComponent('metabolizeaction').hide();
-          this.getMetaboliteList().hideCommandsColumn();
+          this.getMoleculeList().hideCommandsColumn();
       }
   },
   showHelp: function() {

@@ -3,13 +3,13 @@
  *
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
-Ext.define('Esc.magmaweb.view.metabolite.MetabolizeForm', {
+Ext.define('Esc.magmaweb.view.molecule.MetabolizeForm', {
     extend: 'Ext.window.Window',
     title : 'Metabolize all structures',
     alias: 'widget.metabolizeform',
     requires: [
         'Ext.form.Panel',
-        'Esc.magmaweb.view.metabolite.MetabolizeFieldSet',
+        'Esc.magmaweb.view.molecule.MetabolizeFieldSet',
         'Esc.magmaweb.view.fragment.AnnotateFieldSet'
     ],
     modal : true,

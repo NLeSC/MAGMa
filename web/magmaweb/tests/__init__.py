@@ -11,7 +11,7 @@ class TestMain(TestCase):
 
         with patch('magmaweb.Configurator', spec=True) as Configurator:
 
-            app = main({}, **settings)
+            main({}, **settings)
 
             Configurator.assert_called_with(settings=settings)
             config = Configurator.return_value
