@@ -53,7 +53,7 @@ Ext.onReady(function() {
           type: 'save',
           tooltip: 'Save log file',
           handler: function() {
-              window.open('${request.route_url('stdout.txt', jobid=exception.job.id)}', 'Log');
+              window.open('${request.route_url('stderr.txt', jobid=exception.job.id)}', 'Log');
           }
       }]
   });

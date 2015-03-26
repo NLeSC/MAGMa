@@ -38,5 +38,8 @@ Ext.define('Esc.magmaweb.view.molecule.Panel', {
    */
   setActiveItem: function(newCard) {
       this.getLayout().setActiveItem(newCard);
+  },
+  getPagingToolbar: function() {
+      return this.items.getAt(0).dockedItems.getAt(1);
   }
 });

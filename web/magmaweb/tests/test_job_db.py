@@ -204,6 +204,7 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
             response,
             {
                 'total': 2,
+                'page': 1,
                 'rows': [{
                     'molid': 72,
                     'predicted': False,
@@ -407,7 +408,6 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
 
         with self.assertRaises(ScanRequiredError):
             self.job.molecules(sorts=sorts)
-
 
     def test_sort_mz(self):
         sorts = [{"property": "mz", "direction": "DESC"}]
@@ -815,7 +815,7 @@ class JobScansWithMoleculesTestCase(JobDbTestCaseAbstract):
                    {"type": "numeric", "value": "200",
                     "comparison": "gt", "field": "mz"}]
 
-        response = self.job.scansWithmolecules(filters=filters)
+        response = self.job.scansWithMolecules(filters=filters)
 
         self.assertEqual(response, [
             {'id': 870, 'rt': 1254.15},
@@ -1044,6 +1044,7 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
             response,
             {
                 'total': 1,
+                'page': 1,
                 'rows': [{
                     'molid': 12,
                     'predicted': True,

@@ -543,6 +543,10 @@ class JobViews(object):
             scanid = request.params['scanid']
         else:
             scanid = None
+        if ('molid' in request.params):
+            molid = int(request.params['molid'])
+        else:
+            molid = None
 
         def jd(param):
             return json.loads(request.params[param])
@@ -553,14 +557,18 @@ class JobViews(object):
         molecules = job.molecules(
             start=int(request.params['start']),
             limit=int(request.params['limit']),
-            scanid=scanid, filters=filters, sorts=sorts
+            scanid=scanid, filters=filters, sorts=sorts,
+            molid=molid,
         )
         scans = job.scansWithMolecules(filters=filters)
         totalUnfiltered = job.moleculesTotalCount()
-        return {'totalUnfiltered': totalUnfiltered,
+        response = {'totalUnfiltered': totalUnfiltered,
                 'total': molecules['total'],
                 'rows': molecules['rows'],
                 'scans': scans}
+        if molid:
+            response['page'] = molecules['page']
+        return response
 
     @view_config(route_name='molecules.csv')
     def moleculescsv(self):

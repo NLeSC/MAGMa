@@ -133,6 +133,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
    * @param {Number} molid Molecule idenfitier.
    */
   loadFragments: function (scanid, molid) {
+	this.getFragmentTree().setLoading(true);
     this.clearFragments();
     Ext.log({}, 'Show fragments of scan '+scanid+' molecule '+molid);
     var store = this.getFragmentsStore();
@@ -230,6 +231,8 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
         abut.enable();
     }
     this.application.fireEvent('fragmentload', parent, parent.childNodes);
+    this.getFragmentTree().setLoading(false);
+    this.initMolecules();
   },
   selectFragment: function(fragment) {
     this.getFragmentTree().getSelectionModel().select([fragment]);

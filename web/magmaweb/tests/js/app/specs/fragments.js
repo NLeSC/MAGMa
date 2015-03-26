@@ -304,7 +304,10 @@ describe('Fragments', function() {
       beforeEach(function() {
         // mock tree
         var sm = { select: function() {} };
-        var tree = { getSelectionModel: function() { return sm; } };
+        var tree = {
+        	getSelectionModel: function() { return sm; },
+        	setLoading: function() {}
+        };
         spyOn(ctrl, 'getFragmentTree').andReturn(tree);
         spyOn(sm, 'select');
       })

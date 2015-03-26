@@ -27,7 +27,7 @@ Ext.define('Esc.magmaweb.view.fragment.Tree', {
     animate: false,
     blockRefresh: false,
     deferEmptyText: false,
-    emptyText: 'Select a molecule and scan, to show its fragments',
+    emptyText: 'Select a molecule, scan and level 1 scan peak, to show its fragments',
     getRowClass: function(record) {
       // Make transition between mslevel visible by giving even/odd mslevel different bg color
       return record.get("mslevel") % 2 === 0 ? this.altRowCls : "";
