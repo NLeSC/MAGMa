@@ -57,7 +57,7 @@ setup(name='MAGMaWeb',
               'main = magmaweb:main',
           ],
           'console_scripts': [
-            'magma_user = magmaweb.userscript:main',
+            'magma-web = magmaweb.script:main',
           ],
       },
       paster_plugins=['pyramid'],
