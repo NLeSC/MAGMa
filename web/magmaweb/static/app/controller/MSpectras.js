@@ -57,7 +57,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
         // reload mspectra to show (un)assigned peak update
         me.loadMSpectra(1, params.scanid, me.getMSpectra(1).markers);
     });
-    this.application.on('metaboliteselect', this.selectPeakOfMolecule, this);
+    this.application.on('moleculeselect', this.selectPeakOfMolecule, this);
 
     this.addEvents(
       /**
