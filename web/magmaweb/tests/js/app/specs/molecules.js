@@ -204,20 +204,15 @@ describe('Molecules', function() {
      it('apply scan filter', function() {
        // mock list
        var list = {
-         showFragmentScoreColumn: function() {},
          getSelectionModel: function() {return {
         	 hasSelection: function() { return false; }
          }; }
        };
        spyOn(ctrl, 'getMoleculeList').andReturn(list);
-       spyOn(list, 'showFragmentScoreColumn');
 
        // mock store
        var mockedstore = {
-           setScanFilter: function() {},
-           sorters: new Ext.util.AbstractMixedCollection(false, function(item) {
-               return item.id || item.property;
-           })
+           setScanFilter: function() {}
        };
        spyOn(ctrl, 'getMoleculesStore').andReturn(mockedstore);
        spyOn(mockedstore, 'setScanFilter');
@@ -225,14 +220,7 @@ describe('Molecules', function() {
        var scanid = 1133;
        ctrl.applyScanFilter(scanid);
 
-       expect(list.showFragmentScoreColumn).toHaveBeenCalled();
        expect(mockedstore.setScanFilter).toHaveBeenCalledWith(scanid);
-       expect(mockedstore.sorters.indexOfKey('score')).toEqual(0);
-       expect(mockedstore.sorters.getByKey('score').direction).toEqual('ASC');
-       expect(mockedstore.sorters.indexOfKey('refscore')).toEqual(1);
-       expect(mockedstore.sorters.getByKey('refscore').direction).toEqual('DESC');
-       expect(mockedstore.sorters.indexOfKey('molid')).toEqual(2);
-       expect(mockedstore.sorters.getByKey('molid').direction).toEqual('ASC');
      });
 
      describe('clear scan filter', function() {
@@ -241,20 +229,18 @@ describe('Molecules', function() {
            // mock list
            list = {
                getFragmentScoreColumn: function() { return scorecol; },
-               hideFragmentScoreColumn: function() { },
-               showFragmentScoreColumn: function() { },
                getSelectionModel: function() { return sm; },
-               clearMzFilter: function() {}
+               clearMzFilter: function() {},
+               hideFragmentScoreColumn: function() {}
            };
 
-           spyOn(list, 'hideFragmentScoreColumn');
            spyOn(ctrl, 'getMoleculeList').andReturn(list);
+           spyOn(list, 'clearMzFilter');
 
            // mock store
            mockedstore = {
                setScanFilter: function() {},
                removeScanFilter: function() {},
-               removeMzFilter: function() {},
                sorters: new Ext.util.AbstractMixedCollection(false, function(item) {
                    return item.id || item.property;
                })
@@ -262,32 +248,24 @@ describe('Molecules', function() {
            spyOn(ctrl, 'getMoleculesStore').andReturn(mockedstore);
            spyOn(mockedstore, 'setScanFilter');
            spyOn(mockedstore, 'removeScanFilter');
-           spyOn(mockedstore, 'removeMzFilter');
        });
 
-       it('without score filter and sort', function() {
-
+       it('should remove scan filter from store', function() {
            var scanid = 1133;
            ctrl.applyScanFilter(scanid);
 
            ctrl.clearScanFilter();
 
            expect(mockedstore.removeScanFilter).toHaveBeenCalled();
-           expect(list.hideFragmentScoreColumn).toHaveBeenCalled();
        });
 
-       it('with score filter and sort', function() {
-           mockedstore.sorters.add('score', [1, 2, 3]);
-           mockedstore.filters = new Ext.util.MixedCollection();
-           mockedstore.filters.add('score', [4, 5, 6]);
-
-           var scanid = 1133;
+       it('should remove mz filter', function() {
+    	   var scanid = 1133;
            ctrl.applyScanFilter(scanid);
 
            ctrl.clearScanFilter();
 
-           expect(mockedstore.filters.containsKey('score')).toBeFalsy();
-           expect(mockedstore.sorters.containsKey('score')).toBeFalsy();
+           expect(list.clearMzFilter).toHaveBeenCalled();
        });
      });
 
@@ -316,10 +294,13 @@ describe('Molecules', function() {
     			hasSelection: function() {return false;}
     		};
     		store = {
-    			isFilteredOnScan: function() { return true;}
+    		    isFilteredOnScan: function() { return true;},
+	            sorters: new Ext.util.AbstractMixedCollection(false, function(item) {
+	                return item.id || item.property;
+	            })
     		};
     		spyOn(ctrl, 'getMoleculesStore').andReturn(store);
-    		list = jasmine.createSpyObj('list', ['setMzFilterToEqual']);
+    		list = jasmine.createSpyObj('list', ['setMzFilterToEqual', 'showFragmentScoreColumn']);
     		list.getSelectionModel = function() {
     			return sm;
     		};
@@ -345,6 +326,23 @@ describe('Molecules', function() {
 
 		  expect(list.setMzFilterToEqual).toHaveBeenCalledWith(122.0373001);
 		});
+
+	    it('should show score column', function() {
+	      ctrl.applyMzFilter(122.0373001, 1);
+
+	      expect(list.showFragmentScoreColumn).toHaveBeenCalled();
+	    });
+
+	    it('should sort molecules on score, refscore and molid', function() {
+	    	ctrl.applyMzFilter(122.0373001, 1);
+
+	        expect(store.sorters.indexOfKey('score')).toEqual(0);
+	        expect(store.sorters.getByKey('score').direction).toEqual('ASC');
+	        expect(store.sorters.indexOfKey('refscore')).toEqual(1);
+	        expect(store.sorters.getByKey('refscore').direction).toEqual('DESC');
+	        expect(store.sorters.indexOfKey('molid')).toEqual(2);
+	        expect(store.sorters.getByKey('molid').direction).toEqual('ASC');
+	    });
 	  });
 
 	  describe('clearMzFilter', function() {
@@ -353,11 +351,25 @@ describe('Molecules', function() {
 	    		sm = {
         			hasSelection: function() {return false;}
         		};
-	    		list = jasmine.createSpyObj('list', ['clearMzFilter']);
+	    		list = jasmine.createSpyObj('list', ['clearMzFilter', 'hideFragmentScoreColumn']);
 	    		list.getSelectionModel = function() {
 	    			return sm;
 	    		};
 	    		spyOn(ctrl, 'getMoleculeList').andReturn(list);
+
+	    		// mock store
+	            mockedstore = {
+	                setScanFilter: function() {},
+	                removeScanFilter: function() {},
+	                removeMzFilter: function() {},
+	                sorters: new Ext.util.AbstractMixedCollection(false, function(item) {
+	                    return item.id || item.property;
+	                })
+	            };
+	            spyOn(ctrl, 'getMoleculesStore').andReturn(mockedstore);
+	            spyOn(mockedstore, 'setScanFilter');
+	            spyOn(mockedstore, 'removeScanFilter');
+	            spyOn(mockedstore, 'removeMzFilter');
 	    	});
 
 		  it('should not filter on mz of level > 1 scan', function() {
@@ -371,7 +383,34 @@ describe('Molecules', function() {
 
 		  expect(list.clearMzFilter).toHaveBeenCalledWith();
 		});
-	  });
+
+	    it('should hide score column', function() {
+	    	ctrl.clearMzFilter(122.0373001, 1);
+
+            expect(list.hideFragmentScoreColumn).toHaveBeenCalled();
+	    });
+
+	    it('should not  score filter and sort', function() {
+
+           var scanid = 1133;
+           ctrl.applyScanFilter(scanid);
+
+           ctrl.clearScanFilter();
+
+           expect(mockedstore.removeScanFilter).toHaveBeenCalled();
+       });
+
+       it('should clear score filter and sort', function() {
+           mockedstore.sorters.add('score', [1, 2, 3]);
+           mockedstore.filters = new Ext.util.MixedCollection();
+           mockedstore.filters.add('score', [4, 5, 6]);
+
+           ctrl.clearMzFilter(122.0373001, 1);
+
+           expect(mockedstore.filters.containsKey('score')).toBeFalsy();
+           expect(mockedstore.sorters.containsKey('score')).toBeFalsy();
+       });
+	 });
 
      describe('onChromatrogramLoad', function() {
         var form;

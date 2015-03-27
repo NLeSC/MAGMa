@@ -268,11 +268,31 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
   },
   /**
    * Apply scan filter to molecule store.
-   * And shows fragment score column.
    *
    * @param {Number} scanid Scan identifier to filter on.
    */
   applyScanFilter: function(scanid) {
+      this.rememberSelectedMolecule();
+      var store = this.getMoleculesStore();
+      store.setScanFilter(scanid);
+  },
+  /**
+   * Removes scan filter from molecule store.
+   */
+  clearScanFilter: function() {
+      this.clearMzFilter(null, 1);
+      this.rememberSelectedMolecule();
+      var store = this.getMoleculesStore();
+      store.removeScanFilter();
+  },
+  /**
+   * Apply mz filter to molecules
+   * And shows fragment score column.
+   */
+  applyMzFilter: function(mz, mslevel) {
+	  if (mslevel > 1) {
+		  return;
+	  }
       var store = this.getMoleculesStore();
       store.sorters.clear();
       store.sorters.addAll([
@@ -289,18 +309,22 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
               direction: 'ASC'
           })
       ]);
-      this.rememberSelectedMolecule();
-      store.setScanFilter(scanid);
-      this.getMoleculeList().showFragmentScoreColumn();
+	  var list = this.getMoleculeList();
+	  if (store.isFilteredOnScan()) {
+		  this.rememberSelectedMolecule();
+		  list.setMzFilterToEqual(mz);
+		  list.showFragmentScoreColumn();
+	  }
   },
   /**
-   * Removes scan filter from molecule store.
    * And hides fragment score/deltappm column.
    * And deactivates filters on fragment score/deltappm column if any
    * And resets sort if store is sorted on fragment score/deltappm.
    */
-  clearScanFilter: function() {
-      this.clearMzFilter();
+  clearMzFilter: function(mz, mslevel) {
+	  if (mslevel > 1) {
+		  return;
+	  }
       var store = this.getMoleculesStore();
       if ('filters' in store) {
           store.filters.removeAtKey('score');
@@ -311,26 +335,8 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
           store.sorters.removeAtKey('deltappm');
       }
       this.rememberSelectedMolecule();
-      store.removeScanFilter();
-      this.getMoleculeList().hideFragmentScoreColumn();
-  },
-  applyMzFilter: function(mz, mslevel) {
-	  if (mslevel > 1) {
-		  return;
-	  }
-      var store = this.getMoleculesStore();
 	  var list = this.getMoleculeList();
-	  if (store.isFilteredOnScan()) {
-          this.rememberSelectedMolecule();
-		  list.setMzFilterToEqual(mz);
-	  }
-  },
-  clearMzFilter: function(mz, mslevel) {
-	  if (mslevel > 1) {
-		  return;
-	  }
-      this.rememberSelectedMolecule();
-	  var list = this.getMoleculeList();
+      list.hideFragmentScoreColumn();
 	  list.clearMzFilter();
   },
   onPageSizeChange: function(combo) {
