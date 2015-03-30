@@ -197,6 +197,23 @@ describe('Esc.d3.MSpectra', function() {
     expect(chart.selectedpeak).toEqual(3);
   });
 
+  it('selectPeak when peak already selected', function() {
+	    var chart = Ext.create('Esc.d3.MSpectra', {
+	      width: 500, height: 400, data: data,
+	      cutoff: 3, markers: [{mz: 3}, {mz: 4}]
+	    });
+	    // mock initSvg
+	    chart.chartWidth = 500;
+	    chart.chartHeight = 400;
+	    chart.svg = mockSvg();
+	    spyOn(chart, 'markerSelect');
+
+	    chart.selectPeak(3);
+
+	    expect(chart.selectedpeak).toEqual(3);
+	  });
+
+
   it('clearPeakSelection', function() {
     var chart = Ext.create('Esc.d3.MSpectra', {
       width: 500, height: 400, data: data,

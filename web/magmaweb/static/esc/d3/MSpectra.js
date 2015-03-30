@@ -205,6 +205,9 @@ Ext.define('Esc.d3.MSpectra', {
       return (mz == e.mz && me.selectedpeak != e.mz);
     });
     if (mz != me.selectedpeak) {
+      if (me.selectedpeak !== -1) {
+    	me.fireEvent('unselectpeak', me.selectedpeak);
+      }
       me.fireEvent('selectpeak', mz);
       me.selectedpeak = mz;
     } else {
