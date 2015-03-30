@@ -79,10 +79,15 @@ describe('MSpectras controller', function() {
     });
 
     describe('lvl 1 spectra', function() {
-      it('should render spectra', function() {
-          var mslevel = 1, scanid = 1133;
-          var markers = [];
-          var data = {
+      var mslevel = null, scanid = null;
+      var markers = null, data = null;
+      var mspectra = null, callback = null;
+
+      beforeEach(function() {
+    	  mslevel = 1;
+    	  scanid = 1133;
+          markers = [];
+          data = {
             cutoff: 200000,
             peaks: [{
               "mz" : 92.0256195068359,
@@ -91,9 +96,9 @@ describe('MSpectras controller', function() {
               "mz" : 93.1171875,
               "intensity" : 582.663879394531
             }],
-            "fragments": [{"mz": 92.0256195068359}]
+            "fragments": [{"mz": 92.0256195068359}, {"mz" : 93.1171875}]
           };
-          var mspectra = Ext.create('Esc.d3.MSpectra');
+          mspectra = Ext.create('Esc.d3.MSpectra');
           spyOn(mspectra, 'setLoading');
           spyOn(mspectra, 'setData');
           spyOn(mspectra, 'setMarkers');
@@ -106,24 +111,46 @@ describe('MSpectras controller', function() {
           spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
 
           spyOn(Ext.MessageBox, 'show');
-          var f = { callback: function() {} };
-          spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
-          Ext.util.Observable.capture(ctrl.application, f.callback);
+          callback = jasmine.createSpy('callback').andReturn(false); // listeners dont hear any events
+          Ext.util.Observable.capture(ctrl.application, callback);
+      });
 
+      afterEach(function() {
+          Ext.util.Observable.releaseCapture(ctrl.application);
+          mspectra.destroy();
+      });
+
+      it('should render spectra', function() {
           ctrl.onLoadMSpectra(mslevel, scanid, markers, data);
 
           expect(mspectra.setLoading).toHaveBeenCalledWith(false);
           expect(mspectra.setData).toHaveBeenCalledWith(data.peaks);
-          var expected_markers = [{"mz": 92.0256195068359}];
+          var expected_markers = [{"mz": 92.0256195068359}, {"mz" : 93.1171875}];
           expect(mspectra.setMarkers).toHaveBeenCalledWith(expected_markers);
-          expect(mspectra.selectPeak).toHaveBeenCalledWith(92.0256195068359);
+          expect(mspectra.selectPeak).not.toHaveBeenCalled();
           expect(mspectra.scanid).toEqual(scanid);
           expect(mspectra.cutoff).toEqual(data.cutoff);
           expect(mspectra.up).toHaveBeenCalled();
           expect(Ext.MessageBox.show).not.toHaveBeenCalled();
-          expect(f.callback).toHaveBeenCalledWith('mspectraload', scanid, mslevel);
-          Ext.util.Observable.releaseCapture(ctrl.application);
-          mspectra.destroy();
+          expect(callback).toHaveBeenCalledWith('mspectraload', scanid, mslevel);
+      });
+
+      it('should select peak when scan has only one peak', function() {
+    	  data.fragments = [{"mz": 92.0256195068359}];
+
+    	  ctrl.onLoadMSpectra(mslevel, scanid, markers, data);
+
+          expect(mspectra.selectPeak).toHaveBeenCalledWith(92.0256195068359);
+          expect(callback).toHaveBeenCalledWith('peakselect', 92.0256195068359, mslevel, scanid);
+      });
+
+      it('should select peak when peak was previously selected', function() {
+    	  ctrl.selectedlvl1peak = 92.0256195068359;
+
+    	  ctrl.onLoadMSpectra(mslevel, scanid, markers, data);
+
+          expect(mspectra.selectPeak).toHaveBeenCalledWith(92.0256195068359);
+          expect(callback).toHaveBeenCalledWith('peakselect', 92.0256195068359, mslevel, scanid);
       });
     });
 
@@ -444,6 +471,7 @@ describe('MSpectras controller', function() {
 		 expect(mspectra.selectPeak).toHaveBeenCalledWith(5678.90);
 		 expect(capturer.callback).toHaveBeenCalledWith('peakselect', 5678.90, 1, 2);
 		 Ext.util.Observable.releaseCapture(ctrl.application);
+		 expect(ctrl.selectedlvl1peak).toEqual(5678.90);
 	 });
 
 	 it('should do nothing if peak already selected', function() {
@@ -460,5 +488,15 @@ describe('MSpectras controller', function() {
 		 expect(capturer.callback).not.toHaveBeenCalled();
 		 Ext.util.Observable.releaseCapture(ctrl.application);
 	 });
+  });
+
+  describe('deselectPeakOfMolecule', function() {
+	 it('should unselect lvl1 peak', function() {
+		 ctrl.selectedlvl1peak = 5678.90;
+
+		 ctrl.deselectPeakOfMolecule();
+
+		 expect(ctrl.selectedlvl1peak).toBeFalsy();
+	 }) ;
   });
 });
