@@ -1,7 +1,8 @@
 import unittest
-import mock
 import argparse
 import magma.script
+import tempfile, os
+from magma.models import Base, Molecule, Scan, Peak, Fragment, Run
 
 class TestMagmaCommand(unittest.TestCase):
 
@@ -12,58 +13,106 @@ class TestMagmaCommand(unittest.TestCase):
 
         self.assertEqual(self.mc.version(), '1.0')
 
-    def test_all_in_one(self):
-        # mock MagmaSession
-        ms = mock.Mock(magma.MagmaSession)
-        self.mc.get_magma_session = mock.Mock(return_value=ms)
-        se = mock.Mock(magma.StructureEngine)
-        ms.get_structure_engine.return_value = se
-        me = mock.Mock(magma.MsDataEngine)
-        ms.get_ms_data_engine.return_value = me
-        ae = mock.Mock(magma.AnnotateEngine)
-        ms.get_annotate_engine.return_value = ae
+    def test_chlorogenic_acid_example(self):
+        treefile = tempfile.NamedTemporaryFile(delete=False)
+        dbfile = tempfile.NamedTemporaryFile(delete=False)
 
         args = argparse.Namespace()
-        args.db = ':memory:'
-        args.description = 'my desc'
-        args.metabolism_types = 'phase1'
-        args.n_reaction_steps = 2
-        args.structure_format = 'smiles'
-        args.structures = [ 'CCO|ethanol', '' ]
-        args.abs_peak_cutoff = 100000
-        args.rel_peak_cutoff = 0.05
+        args.db = dbfile.name
+        args.ms_data = treefile
+        args.description = 'Example'
+        args.ionisation_mode = -1
+        args.abs_peak_cutoff = 0
+        args.mz_precision = 5
+        args.mz_precision_abs = 0.001
+        args.precursor_mz_precision = 0.005
         args.max_ms_level = 5
-        args.ms_data_format = 'mzxml'
-        args.ms_data = argparse.Namespace(name='bogus.mzxml')
-        args.ionisation_mode = 1
+        args.ms_data_format = 'mass_tree'
+        #args.ms_data = argparse.Namespace(name='bogus.mzxml')
+        args.log = 'debug'
+        args.call_back_url = None
+
+        treefile.write("""353.087494: 69989984 (
+    191.055756: 54674544 (
+        85.029587: 2596121,
+        93.034615: 1720164,
+        109.029442: 917026,
+        111.045067: 1104891 (
+            81.034691: 28070,
+            83.014069: 7618,
+            83.050339: 25471,
+            93.034599: 36300,
+            96.021790: 8453
+            ),
+        127.039917: 2890439 (
+            57.034718: 16911,
+            81.034706: 41459,
+            83.050301: 35131,
+            85.029533: 236887,
+            99.045074: 73742,
+            109.029404: 78094
+            ),
+        171.029587: 905226,
+        173.045212: 2285841 (
+            71.013992: 27805,
+            93.034569: 393710,
+            111.008629: 26219,
+            111.045029: 339595,
+            137.024292: 27668,
+            155.034653: 145773
+            ),
+        191.055725: 17000514
+        ),
+    353.087097: 4146696
+    )
+""")
+        treefile.close()
+
+        self.mc.read_ms_data(args)
+        os.remove(treefile.name)
+
+        args = argparse.Namespace()        
+        args.db = dbfile.name
+        args.description = None
         args.skip_fragmentation = False
-        args.max_broken_bonds = 4
-        args.ms_intensity_cutoff = 20000
-        args.msms_intensity_cutoff = 0.001
-        args.mz_precision = 0.01
-        args.precursor_mz_precision = 0.123
+        args.max_broken_bonds = 3
+        args.max_water_losses = 1
+        args.ms_intensity_cutoff = 0
+        args.msms_intensity_cutoff = 0
         args.use_all_peaks = True
+        args.adducts = None
+        args.max_charge = 1
+        args.log = 'debug'
+        args.call_back_url = None
+        args.scans= 'all'
+        args.structure_database = 'hmdb'
+        args.db_options=''
+        args.molids = None
+        args.ncpus = 1
+        args.fast = True
+        args.time_limit = None
 
-        self.mc.all_in_one(args)
+        self.mc.annotate(args)
 
-        self.mc.get_magma_session.assert_called_with(args.db, args.description)
-        ms.get_structure_engine.assert_called_with(args.metabolism_types, args.n_reaction_steps)
-        self.assertTrue(se.add_structure.called)
-        se.metabolize_all.assert_called_with(args.metabolism_types, args.n_reaction_steps)
-        ms.get_ms_data_engine.assert_called_with(abs_peak_cutoff=args.abs_peak_cutoff,
-            rel_peak_cutoff=args.rel_peak_cutoff, max_ms_level=args.max_ms_level)
-        me.store_mzxml_file.assert_called_with(args.ms_data.name)
-        ms.get_annotate_engine.assert_called_with(
-            ionisation_mode=args.ionisation_mode,
-            skip_fragmentation=args.skip_fragmentation,
-            max_broken_bonds=args.max_broken_bonds,
-            ms_intensity_cutoff=args.ms_intensity_cutoff,
-            msms_intensity_cutoff=args.msms_intensity_cutoff,
-            mz_precision=args.mz_precision,
-            precursor_mz_precision=args.precursor_mz_precision,
-            use_all_peaks=args.use_all_peaks
-        )
-        ae.build_spectra.assert_called_with()
-        ae.search_all_structures.assert_called_with()
+        ms = magma.MagmaSession(dbfile.name)
+        rundata = ms.db_session.query(Run).one()
+        self.assertDictContainsSubset(
+                          {
+                          'ionisation_mode': -1,
+                          'abs_peak_cutoff': 0,
+                          'max_ms_level': 5,
+                          'mz_precision': 5.0,
+                          'precursor_mz_precision': 0.005,
+                          'max_broken_bonds': 3,
+                          'ms_intensity_cutoff': 0
+                           }, rundata.__dict__)
+        scandata = ms.db_session.query(Scan).count()
+        self.assertEqual(scandata,6)
+        peakdata = ms.db_session.query(Peak).count()
+        self.assertEqual(peakdata,28)
+        moleculedata = ms.db_session.query(Molecule).count()
+        self.assertGreater(moleculedata,4)
+        fragmentdata = ms.db_session.query(Fragment).count()
+        self.assertGreater(fragmentdata,86)
 
-
+        os.remove(dbfile.name)
