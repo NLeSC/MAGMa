@@ -2,15 +2,8 @@
 import numpy
 cimport numpy
 import pars
-import ConfigParser, os
-config = ConfigParser.ConfigParser()
-config.read(['magma_job.ini', os.path.expanduser('~/magma_job.ini')])
-
-if config.get('magma job','chemical_engine')=="rdkit":
-    import rdkit_engine as Chem     # Use rdkit_engine
-elif config.get('magma job','chemical_engine')=="cdk":
-    import cdk_engine               # Use cdk_engine
-    Chem=cdk_engine.engine()
+import os
+from rdkit import Chem
 
 ctypedef struct bonded_atom:
     int nbonds
@@ -38,7 +31,7 @@ cdef class FragmentEngine(object):
     
     
     def __init__(self,mol,max_broken_bonds,max_water_losses,ionisation_mode,skip_fragmentation,molcharge):
-        cdef unsigned long long bond
+        cdef unsigned long long bondbits
         cdef float bondscore
         cdef int x,a1,a2
         
@@ -46,7 +39,7 @@ cdef class FragmentEngine(object):
         try:
             mol=Chem.MolFromMolBlock(str(self.mol))
             self.accept=1
-            self.natoms=Chem.natoms(mol)  # number of atoms in the molecule
+            self.natoms=mol.GetNumAtoms()  # number of atoms in the molecule
         except:
             self.accept=0
             return
@@ -58,7 +51,7 @@ cdef class FragmentEngine(object):
         self.ionisation_mode=ionisation_mode
         self.skip_fragmentation=skip_fragmentation
         self.molcharge=molcharge
-        self.nbonds=Chem.nbonds(mol)
+        self.nbonds=mol.GetNumBonds()
         self.neutral_loss_atoms=[]
         self.atom_elements={}
         # self.atom_masses=[]
@@ -73,22 +66,24 @@ cdef class FragmentEngine(object):
         
         for x in range(self.natoms):
             self.bonded_atoms[x].nbonds=0
-            self.atom_masses[x]=Chem.GetExtendedAtomMass(mol,x)
-            self.atomHs[x]=Chem.GetAtomHs(mol,x)
-            self.atom_elements[x]=Chem.GetAtomSymbol(mol,x)
-            if Chem.GetAtomSymbol(mol,x) == 'O' and Chem.GetAtomHs(mol,x) == 1 and Chem.GetNBonds(mol,x)==1:
+            atom = mol.GetAtomWithIdx(x)
+            self.atomHs[x]=atom.GetNumImplicitHs()+atom.GetNumExplicitHs()
+            self.atom_masses[x]=pars.mims[atom.GetSymbol()]+pars.Hmass*self.atomHs[x]
+            self.atom_elements[x]=atom.GetSymbol()
+            if self.atom_elements[x] == 'O' and self.atomHs[x] == 1 and len(atom.GetBonds())==1:
                 self.neutral_loss_atoms.append(x)
-            if Chem.GetAtomSymbol(mol,x) == 'N' and Chem.GetAtomHs(mol,x) == 2 and Chem.GetNBonds(mol,x)==1:
+            if self.atom_elements[x] == 'N' and self.atomHs[x] == 2 and len(atom.GetBonds())==1:
                 self.neutral_loss_atoms.append(x)
         for x in range(self.nbonds):
-            a1,a2 = Chem.GetBondAtoms(mol,x)
+            bond=mol.GetBondWithIdx(x) 
+            a1,a2 = bond.GetBeginAtomIdx(),bond.GetEndAtomIdx()
             self.bonded_atoms[a1].atoms[self.bonded_atoms[a1].nbonds]=a2
             self.bonded_atoms[a1].nbonds+=1
             self.bonded_atoms[a2].atoms[self.bonded_atoms[a2].nbonds]=a1
             self.bonded_atoms[a2].nbonds+=1
-            bond = (1ULL<<a1) | (1ULL<<a2)
-            bondscore = pars.typew[Chem.GetBondType(mol,x)]*pars.heterow[Chem.GetAtomSymbol(mol,a1) != 'C' or Chem.GetAtomSymbol(mol,a2) != 'C']
-            self.bonds[x]=bond
+            bondbits = (1ULL<<a1) | (1ULL<<a2)
+            bondscore = pars.typew[bond.GetBondType()]*pars.heterow[bond.GetBeginAtom().GetSymbol() != 'C' or bond.GetEndAtom().GetSymbol() != 'C']
+            self.bonds[x]=bondbits
             self.bondscore[x]=bondscore
                 
     cdef void extend(self,int atom):
@@ -245,8 +240,8 @@ cdef class FragmentEngine(object):
             if ((1ULL<<atom) & fragment):
                 atomstring+=','+str(atom)
                 atomlist.append(atom)
-                elements[Chem.GetAtomSymbol(mol,atom)]+=1
-                elements['H']+=Chem.GetAtomHs(mol,atom)
+                elements[self.atom_elements[atom]]+=1
+                elements['H']+=self.atomHs[atom]
         formula=''
         for el in ('C','H','N','O','F','P','S','Cl','Br','I'):
             nel=elements[el]
@@ -254,10 +249,19 @@ cdef class FragmentEngine(object):
                 formula+=el
             if nel>1:
                 formula+=str(nel)
-        return atomstring,atomlist,formula,Chem.FragmentToInchiKey(mol,atomlist)
+        return atomstring,atomlist,formula,fragment2inchikey(mol,atomlist)
     
     def get_natoms(self):
         return self.natoms
     
     def accepted(self):
         return (self.accept==1)
+
+def fragment2inchikey(mol,atomlist):
+    emol = Chem.EditableMol(mol)
+    for atom in reversed(range(mol.GetNumAtoms())):
+        if atom not in atomlist:
+            emol.RemoveAtom(atom)
+    frag = emol.GetMol()
+    return Chem.MolToSmiles(frag)
+

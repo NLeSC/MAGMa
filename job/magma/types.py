@@ -1,5 +1,7 @@
 import os
-import rdkit_engine as Chem
+from rdkit import Chem
+from rdkit.Chem import AllChem, Descriptors
+import pars
 
 missingfragmentpenalty=10
 
@@ -46,14 +48,22 @@ class HitType(object):
         self.ion=ion
         #print "childscan",peak.childscan
 
+def CalcMIM(mol):
+    mim=0.0
+    for a in range(mol.GetNumAtoms()):
+        atom = mol.GetAtomWithIdx(a)
+        mim+=pars.mims[atom.GetSymbol()]+pars.Hmass*(atom.GetNumImplicitHs()+atom.GetNumExplicitHs())
+    return mim
+
 class MoleculeType(object):
     def __init__(self,molblock,name,refscore,predicted=0,mim=None,natoms=None,inchikey14=None,molform=None,reference=None,logp=None):
         if inchikey14==None or mim==None or molform==None or logp==None or natoms==None:
             mol=Chem.MolFromMolBlock(molblock)
-            inchikey14=Chem.MolToInchiKey(mol)[:14]
-            mim,molform=Chem.GetFormulaProps(mol)
+            inchikey14=Chem.AllChem.InchiToInchiKey(AllChem.MolToInchi(mol))[:14]
+            mim=CalcMIM(mol)
+            molform=Chem.rdMolDescriptors.CalcMolFormula(mol)
             natoms=mol.GetNumHeavyAtoms()
-            logp = Chem.LogP(mol)
+            logp = Chem.Crippen.MolLogP(mol)
 
         self.molblock = molblock #: molfile as string
         self.refscore = refscore
