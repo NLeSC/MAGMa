@@ -206,7 +206,7 @@ class TestStructureEngine(unittest.TestCase):
                                         molblock, '5-(3,4,5)-trihydroxyphenyl-g-valerolactone (F,U)',
                                         1.0, 0, 'PARENT', 1
                                         )
-        print se.metabolize(parent_molid, u'phase1234')
+        se.metabolize(parent_molid, u'phase1234')
 
         # TODO reactor requires at least one SMIRKS query
         # if none given then raise exception

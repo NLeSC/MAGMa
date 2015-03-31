@@ -109,9 +109,6 @@ Exampe config file ::
    macs.id = <MAC key identifier>
    macs.key = <MAC key>
 
-   # choose cdk or rdkit as chemical engine
-   chemical_engine = rdkit
-
    # choose cactvs or reactor as metabolism engine
    metabolism_engine = cactvs
 

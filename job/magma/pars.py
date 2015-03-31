@@ -1,7 +1,9 @@
-typew={"AROMATIC":3.0,\
-       "DOUBLE":2.0,\
-       "TRIPLE":3.0,\
-       "SINGLE":1.0}
+from rdkit import Chem
+
+typew={Chem.rdchem.BondType.names["AROMATIC"]:3.0,\
+       Chem.rdchem.BondType.names["DOUBLE"]:2.0,\
+       Chem.rdchem.BondType.names["TRIPLE"]:3.0,\
+       Chem.rdchem.BondType.names["SINGLE"]:1.0}
 global missingfragmentpenalty
 heterow={False:2,True:1}
 missingfragmentpenalty=10

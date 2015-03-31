@@ -1,21 +1,14 @@
 import numpy
 import pars
-import ConfigParser, os
-config = ConfigParser.ConfigParser()
-config.read(['magma_job.ini', os.path.expanduser('~/magma_job.ini')])
-
-if config.get('magma job','chemical_engine')=="rdkit":
-    import rdkit_engine as Chem     # Use rdkit_engine
-elif config.get('magma job','chemical_engine')=="cdk":
-    import cdk_engine               # Use cdk_engine
-    Chem=cdk_engine.engine()
+import os
+from rdkit import Chem
 
 class FragmentEngine(object):
     def __init__(self,mol,max_broken_bonds,max_water_losses,ionisation_mode,skip_fragmentation,molcharge):
         try:
             self.mol=Chem.MolFromMolBlock(str(mol))
             self.accept=True
-            self.natoms=Chem.natoms(self.mol)  # number of atoms in the molecule
+            self.natoms=self.mol.GetNumAtoms()  # number of atoms in the molecule
         except:
             self.accept=False
             return
@@ -25,6 +18,7 @@ class FragmentEngine(object):
         self.skip_fragmentation=skip_fragmentation
         self.molcharge=molcharge
         self.atom_masses=[]
+        self.atomHs=[]
         self.neutral_loss_atoms=[]
         self.bonded_atoms=[]           # [[list of atom numbers]]
         self.bonds=set([])
@@ -37,20 +31,22 @@ class FragmentEngine(object):
 
         for x in range(self.natoms):
             self.bonded_atoms.append([])
-            self.atom_masses.append(Chem.GetExtendedAtomMass(self.mol,x))
-            if Chem.GetAtomSymbol(self.mol,x) == 'O' and Chem.GetAtomHs(self.mol,x) == 1 and Chem.GetNBonds(self.mol,x)==1:
+            atom = self.mol.GetAtomWithIdx(x)
+            self.atomHs.append(atom.GetNumImplicitHs()+atom.GetNumExplicitHs())
+            self.atom_masses.append(pars.mims[atom.GetSymbol()]+pars.Hmass*(self.atomHs[x]))
+            if atom.GetSymbol() == 'O' and self.atomHs[x] == 1 and len(atom.GetBonds())==1:
                 self.neutral_loss_atoms.append(x)
-            if Chem.GetAtomSymbol(self.mol,x) == 'N' and Chem.GetAtomHs(self.mol,x) == 2 and Chem.GetNBonds(self.mol,x)==1:
+            if atom.GetSymbol() == 'N' and self.atomHs[x] == 2 and len(atom.GetBonds())==1:
                 self.neutral_loss_atoms.append(x)
-        for x in range(Chem.nbonds(self.mol)):
-            a1,a2 = Chem.GetBondAtoms(self.mol,x)
+        for bond in self.mol.GetBonds():
+            a1,a2 = bond.GetBeginAtomIdx(),bond.GetEndAtomIdx()
             self.bonded_atoms[a1].append(a2)
             self.bonded_atoms[a2].append(a1)
-            bond = 1<<a1 | 1<<a2
-            bondscore = pars.typew[Chem.GetBondType(self.mol,x)]*pars.heterow[Chem.GetAtomSymbol(self.mol,a1) != 'C' or Chem.GetAtomSymbol(self.mol,a2) != 'C']
-            self.bonds.add(bond)
-            self.bondscore[bond]=bondscore
-    
+            bondbits = 1<<a1 | 1<<a2
+            bondscore = pars.typew[bond.GetBondType()]*pars.heterow[bond.GetBeginAtom().GetSymbol() != 'C' or bond.GetEndAtom().GetSymbol() != 'C']
+            self.bonds.add(bondbits)
+            self.bondscore[bondbits]=bondscore
+
     def extend(self,atom):
         for a in self.bonded_atoms[atom]:
             atombit=1<<a
@@ -181,8 +177,8 @@ class FragmentEngine(object):
             if ((1<<atom) & fragment):
                 atomstring+=','+str(atom)
                 atomlist.append(atom)
-                elements[Chem.GetAtomSymbol(self.mol,atom)]+=1
-                elements['H']+=Chem.GetAtomHs(self.mol,atom)
+                elements[self.mol.GetAtomWithIdx(atom).GetSymbol()]+=1
+                elements['H']+=self.atomHs[atom]
         formula=''
         for el in ('C','H','N','O','F','P','S','Cl','Br','I'):
             nel=elements[el]
@@ -190,10 +186,18 @@ class FragmentEngine(object):
                 formula+=el
             if nel>1:
                 formula+=str(nel)
-        return atomstring,atomlist,formula,Chem.FragmentToInchiKey(self.mol,atomlist)
+        return atomstring,atomlist,formula,fragment2inchikey(self.mol,atomlist)
 
     def get_natoms(self):
         return self.natoms
 
     def accepted(self):
         return self.accept
+
+def fragment2inchikey(mol,atomlist):
+    emol = Chem.EditableMol(mol)
+    for atom in reversed(range(mol.GetNumAtoms())):
+        if atom not in atomlist:
+            emol.RemoveAtom(atom)
+    frag = emol.GetMol()
+    return Chem.MolToSmiles(frag)

@@ -22,31 +22,16 @@ from operator import itemgetter
 
 import ConfigParser
 config = ConfigParser.ConfigParser()
-# default to using rdkit if no config can be found
-config.add_section('magma job')
-config.set('magma job', 'chemical_engine', 'rdkit')
 # read config file from current working directory or users home dir
 config.read(['magma_job.ini', os.path.expanduser('~/magma_job.ini')])
 
-if config.get('magma job','chemical_engine')=="rdkit":
-    import rdkit_engine as Chem     # Use rdkit_engine
-    from rdkit.rdBase import DisableLog
-    DisableLog('rdApp.warning')
-elif config.get('magma job','chemical_engine')=="cdk":
-    import cdk_engine               # Use cdk_engine
-    Chem=cdk_engine.engine()
+from rdkit import Chem
+from rdkit.Chem import AllChem
+from rdkit.rdBase import DisableLog
+DisableLog('rdApp.warning')
 
 logging.basicConfig(format='%(levelname)s: %(message)s')
 logger=logging.getLogger('MagmaLogger')
-
-
-"""
-RDkit dependencies:
-calculate molecular formula
-read smiles
-generate 2D conformation for those
-generate smiles
-"""
 
 
 class MagmaSession(object):
@@ -173,7 +158,9 @@ class StructureEngine(object):
                 nonames+=1
                 name="Noname"+str(nonames)
             try:
-                mol = Chem.SmilesToMol(smiles,name)
+                mol = Chem.MolFromSmiles(smiles)
+                mol.SetProp('_Name', name)
+                AllChem.Compute2DCoords(mol)
                 molids.add(self.add_structure(Chem.MolToMolBlock(mol), name, 1.0, 1, mass_filter=mass_filter))
             except:
                 logger.warn('Failed to read smiles: '+smiles+' ('+name+')')
@@ -1029,7 +1016,6 @@ class AnnotateEngine(object):
                               self.ionisation_mode,
                               self.skip_fragmentation,
                               (fast and structure.natoms<=64),
-                              config.get('magma job','chemical_engine'),
                               self.ions
                               ),(),(
                               "magma.types",
@@ -1474,7 +1460,7 @@ class DataAnalysisEngine(object):
             else:
                 f.write(str(molid)+" "+str(start_compound[molid]+0)+'\n')
 
-def search_structure(mol,mim,molcharge,peaks,max_broken_bonds,max_water_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,skip_fragmentation,fast,chem_engine,ions):
+def search_structure(mol,mim,molcharge,peaks,max_broken_bonds,max_water_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,skip_fragmentation,fast,ions):
     pars=magma.pars
     if fast:
         Fragmentation=magma.fragmentation_cy
