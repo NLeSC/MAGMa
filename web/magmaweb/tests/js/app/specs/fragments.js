@@ -234,16 +234,31 @@ describe('Fragments', function() {
       });
     });
 
-    it('clearFragmentSelection', function() {
-      // mock tree
-      var sm = { deselectAll: function() {} };
-      var tree = { getSelectionModel: function() { return sm; } };
-      spyOn(ctrl, 'getFragmentTree').andReturn(tree);
-      spyOn(sm, 'deselectAll');
+    describe('clearFragmentSelection', function() {
+      var sm = null;
 
-      ctrl.clearFragmentSelection();
+      beforeEach(function() {
+	      // mock tree
+	      sm = { deselectAll: function() {} };
+	      var tree = { getSelectionModel: function() { return sm; } };
+	      spyOn(ctrl, 'getFragmentTree').andReturn(tree);
+	      spyOn(sm, 'deselectAll');
 
-      expect(sm.deselectAll).toHaveBeenCalled();
+      });
+
+      it('should deselect all fragments', function() {
+	      ctrl.clearFragmentSelection();
+
+	      expect(sm.deselectAll).toHaveBeenCalled();
+      });
+
+      it('should clear fragment when a lvl 1 peak is unselected', function() {
+    	  spyOn(ctrl, 'clearFragments');
+
+    	  ctrl.clearFragmentSelection(311.2121, 1);
+
+    	  expect(ctrl.clearFragments).toHaveBeenCalled();
+      });
     });
 
     describe('onLoad', function() {

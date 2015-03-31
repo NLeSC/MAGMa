@@ -215,8 +215,11 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
   /**
    * Clears fragment selection.
    */
-  clearFragmentSelection: function() {
+  clearFragmentSelection: function(mz, mslevel) {
       this.getFragmentTree().getSelectionModel().deselectAll();
+	  if (mslevel === 1) {
+		  this.clearFragments();
+	  }
   },
   onLoad: function(t, parent, children) {
     // when parent is root node then expand it
