@@ -13,7 +13,7 @@ class TestMagmaCommand(unittest.TestCase):
 
         self.assertEqual(self.mc.version(), '1.0')
 
-    def test_chlorogenic_acid_example(self):
+    def test_chlorogenic_acid_example_without_fast_option(self):
         treefile = tempfile.NamedTemporaryFile(delete=False)
         dbfile = tempfile.NamedTemporaryFile(delete=False)
 
@@ -89,7 +89,7 @@ class TestMagmaCommand(unittest.TestCase):
         args.db_options=''
         args.molids = None
         args.ncpus = 1
-        args.fast = True
+        args.fast = False
         args.time_limit = None
 
         self.mc.annotate(args)
@@ -117,7 +117,7 @@ class TestMagmaCommand(unittest.TestCase):
 
         os.remove(dbfile.name)
 
-    def test_JWH015_example(self):
+    def test_JWH015_example_with_fast_option(self):
         dbfile = tempfile.NamedTemporaryFile(delete=False)
 
         treefile = tempfile.NamedTemporaryFile(delete=False)
@@ -229,9 +229,9 @@ class TestMagmaCommand(unittest.TestCase):
         peakdata = ms.db_session.query(Peak).count()
         self.assertEqual(peakdata,19)
         moleculedata = ms.db_session.query(Molecule).count()
-        self.assertGreater(moleculedata,60)
+        self.assertEqual(moleculedata,68)
         fragmentdata = ms.db_session.query(Fragment).count()
-        self.assertGreater(fragmentdata,100)
+        self.assertEqual(fragmentdata,122)
         hits = ms.db_session.query(Molecule).filter(Molecule.nhits>0).count()
         self.assertEqual(hits,30)
 
