@@ -25,8 +25,8 @@ config = ConfigParser.ConfigParser()
 # read config file from current working directory or users home dir
 config.read(['magma_job.ini', os.path.expanduser('~/magma_job.ini')])
 
-from rdkit import Chem
-from rdkit.Chem import AllChem
+from rdkit import Chem,Geometry
+from rdkit.Chem import AllChem,rdMolTransforms
 from rdkit.rdBase import DisableLog
 DisableLog('rdApp.warning')
 
@@ -119,13 +119,96 @@ class CallBackEngine(object):
             self.update_time = self.update_time + update_last//self.update_interval*self.update_interval
             r = requests.put(self.url, status, auth=HTTPMacAuth(self.access_token, self.mac_key))
 
+class MetabolizeEngine(object):
+    def __init__(self):
+        metabolism_files={
+            "phase1": pkg_resources.resource_filename( #@UndefinedVariable
+                                                       'magma', "data/phase1.smirks"),
+            "phase2": pkg_resources.resource_filename( #@UndefinedVariable
+                                                       'magma', "data/phase2.smirks"),
+#            "phase1_selected": pkg_resources.resource_filename( #@UndefinedVariable
+#                                                       'magma', "data/phase1_selected.smirks"),
+#            "phase2_selected": pkg_resources.resource_filename( #@UndefinedVariable
+#                                                       'magma', "data/phase2_selected.smirks"),
+            "gut": pkg_resources.resource_filename( #@UndefinedVariable
+                                                       'magma', "data/gut.smirks"),
+            "glycosidase": pkg_resources.resource_filename( #@UndefinedVariable
+                                                       'magma', "data/glycosidase.smirks"),
+            }
+        self.reactions={}
+        for m in metabolism_files:
+            self.reactions[m]=[]
+            f=open(metabolism_files[m])
+            for line in f:
+                if line[0] != "#" and len(line) > 1:
+                    splitline = line[:-1].split()
+                    self.reactions[m].append((splitline[1],AllChem.ReactionFromSmarts(splitline[0])))
+
+    def react(self,reactant,reaction):
+        ps=reaction.RunReactants([reactant])
+        products=[]
+        for product in ps:
+            frags=(Chem.GetMolFrags(product[0],asMols=True))
+            for p in frags:
+                q=copy.copy(p)
+                Chem.SanitizeMol(q)
+                self.gen_coords(q)
+                products.append(q)
+        return products
+
+    def gen_coords(self,mol):
+        conf = mol.GetConformer(0)
+        coordDict = {}
+        # Put known coordinates in coordDict
+        for i in range(mol.GetNumAtoms()):
+            pos = conf.GetAtomPosition(i)
+            if pos.x!=0.0 or pos.y!=0.0:
+                coordDict[i]=Geometry.Point2D(pos.x,pos.y)
+        if len(coordDict) > 0:
+            # calculate average length of all bonds with coordinates
+            sum=0
+            n=0
+            for bond in mol.GetBonds():
+                b=bond.GetBeginAtomIdx()
+                e=bond.GetEndAtomIdx()
+                if b in coordDict and e in coordDict:
+                    n+=1
+                    sum+=rdMolTransforms.GetBondLength(conf,b,e)
+            av=sum/n
+            # compute coordinates for new atoms, keeping known coordinates
+            AllChem.Compute2DCoords(mol,coordMap=coordDict,bondLength=av)
+
+    def metabolize(self,mol,metabolism,endpoints=False):
+        metabolites={} # {ikey:[rulename,product mol]}
+        if metabolism not in self.reactions:
+            return metabolites
+        # if endpoints, name refers to the metabolism type
+        name=metabolism
+        for reaction in self.reactions[metabolism]:
+            if not endpoints:
+                # name refers to the rule generating a product
+                name=reaction[0] 
+            products=self.react(mol,reaction[1])
+            for p in products:
+                ikey = AllChem.InchiToInchiKey(AllChem.MolToInchi(p))[:14]
+                if ikey not in metabolites:
+                    if endpoints: # Try further reactions, otherwise store end product
+                        endproducts=self.metabolize(p,metabolism,True)
+                        if len(endproducts)>0:
+                            metabolites.update(endproducts)
+                        else:
+                            metabolites[ikey]=[name,p]
+                    else:
+                        metabolites[ikey]=[name,p]
+        return metabolites
+
 class StructureEngine(object):
     def __init__(self,db_session,pubchem_names=False,call_back_url=None):
         self.db_session = db_session
         self.pubchem_names=pubchem_names
         if pubchem_names:
             self.pubchem_engine=PubChemEngine()
-
+        self.metabolize_engine=None
         if call_back_url != None:
             self.call_back_engine=CallBackEngine(call_back_url)
         else:
@@ -135,7 +218,7 @@ class StructureEngine(object):
         logger.info('READING SDF (Structure Data File)')
         molids=set([])
         for mol in Chem.SDMolSupplier(file_name):
-            molids.add(self.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), None, 1, mass_filter=mass_filter))
+            molids.add(self.add_structure(Chem.MolToMolBlock(mol), mol.GetProp('_Name'), None, predicted=0, mass_filter=mass_filter))
         logger.info(str(len(molids))+' molecules added to library\n')
 
     def read_smiles(self,smiles,mass_filter=9999):
@@ -161,7 +244,7 @@ class StructureEngine(object):
                 mol = Chem.MolFromSmiles(smiles)
                 mol.SetProp('_Name', name)
                 AllChem.Compute2DCoords(mol)
-                molids.add(self.add_structure(Chem.MolToMolBlock(mol), name, 1.0, 1, mass_filter=mass_filter))
+                molids.add(self.add_structure(Chem.MolToMolBlock(mol), name, None, predicted=0, mass_filter=mass_filter))
             except:
                 logger.warn('Failed to read smiles: '+smiles+' ('+name+')')
         logger.info(str(len(molids))+' molecules added to library\n')
@@ -227,145 +310,30 @@ class StructureEngine(object):
         return metab.molid
 
     def metabolize(self,molid,metabolism,endpoints=False):
-        # Define if reactions are performed with reactor or with cactvs toolbox
-        metabolism_engine=config.get('magma job','metabolism_engine')
-        if metabolism_engine=="reactor":
-            exec_reactor=pkg_resources.resource_filename( #@UndefinedVariable
-                                                      'magma', 'script/reactor')
-            exec_reactor+=" -s" # -f 0.15
-            if endpoints:
-                exec_reactor+=" -m 10"
-            else:
-                exec_reactor+=" -a -m 1"
-            metabolism_files={
-                "phase1": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/sygma_rules_GE_0.1.phase1.smirks"),
-                "phase2": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/sygma_rules.phase2.smirks"),
-                "gut": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/gut.smirks"),
-                "glycosidase": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/glycosidase.smirks"),
-                }
-        elif metabolism_engine=="cactvs":
-            cactvs_root=config.get('magma job','cactvs_root')
-            exec_reactor=pkg_resources.resource_filename( #@UndefinedVariable
-                                                      'magma', 'script/csreact')
-            exec_reactor+=" "+cactvs_root
-            if endpoints:
-                exec_reactor+=" "+"endpoints"
-            else:
-                exec_reactor+=" "+"parallel"
-            metabolism_files={
-                "phase1": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/sygma_rules.phase1.cactvs.smirks"),
-                "phase2": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/sygma_rules.phase2.cactvs.smirks"),
-                "phase1_selected": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/sygma_rules.phase1_GE0.05.cactvs.smirks"),
-                "phase2_selected": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/sygma_rules.phase2_GE0.05.cactvs.smirks"),
-                "gut": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/gut.cactvs.smirks"),
-                "glycosidase": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/glycosidase.cactvs.smirks"),
-                "peptide": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/peptide.cactvs.smirks"),
-                "ptm": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/ptm.cactvs.smirks"),
-                "plant": pkg_resources.resource_filename( #@UndefinedVariable
-                                                           'magma', "data/plant.cactvs.smirks")
-                }
-            prob_dict={}
         try:
-            parent = self.db_session.query(Molecule).filter_by(molid=molid).one()
+            p = self.db_session.query(Molecule).filter_by(molid=molid).one()
         except:
             logger.warn('Molecule record ',molid,' does not exist.')
             return
-        if parent.refscore == None or parent.refscore > 1:
-            parentscore = 1.0
-        else:
-            parentscore = parent.refscore
-        for m in metabolism.split(','):
-            if m in metabolism_files:
-                if metabolism_engine=="reactor":
-                    exec_reactor+=" -q"
-                exec_reactor+=" "+metabolism_files[m]
-                if metabolism_engine=="cactvs":
-                    for line in open(metabolism_files[m]):
-                        if line[0] != "#" and line[0] != "\n":
-                            splitline=line.split()
-                            prob_dict[splitline[2]]=float(splitline[1])
-        logger.debug('Execute reactions: '+exec_reactor)
-
-        reactor=subprocess.Popen(exec_reactor, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
-        reactor.stdin.write(parent.mol+'$$$$\n')
-        reactor.stdin.close()
-
+        parent = Chem.MolFromMolBlock(p.mol)
+        if self.metabolize_engine==None:
+            self.metabolize_engine=MetabolizeEngine()
         molids=set()
-        line=reactor.stdout.readline()
-        while line != "":
-            # line is first line in a new record
-            splitline=line[:-1].split(" {>")
-            if len(splitline) == 1:
-                sequence=['PARENT']
-                prob=1.0
-                name=line[:-1]
-            elif len(splitline) > 1:
-                sequence=[]
-                prob=1
-                for x in range(1,len(splitline)):
-                    reaction=splitline[1][:-1]
-                    sequence.append(reaction)
-                    prob*=prob_dict[reaction]
-                name=splitline[0]
-            else:
-                sequence=metabolism
-                name=splitline[0]
-            mol=name+'\n'
-            while line != 'M  END\n':
-                # read all lines until end of connection table and store in mol
-                line=reactor.stdout.readline()
-                mol+=line
-            line=reactor.stdout.readline()
-            while line != '$$$$\n' and line != "":
-                if line=='> <Probability>\n':
-                    prob=float(reactor.stdout.readline())
-                elif line=='> <Level>\n':
-                    level=int(reactor.stdout.readline())
-                if line=='> <ReactionSequence>\n':
-                    line=reactor.stdout.readline()
-                    sequence=[line[:-1]]
-                    line=reactor.stdout.readline()
-                    while line != '\n':
-                        sequence.append(line[:-1])
-                        line=reactor.stdout.readline()
-                line=reactor.stdout.readline()
-            if sequence!=['PARENT']:
-                try:
-                    molecule=types.MoleculeType(mol,"",prob*parentscore,0)
-                except:
-                    logger.warn('Predicted metabolite ignored')
-                    line=reactor.stdout.readline()
-                    continue
-                new_molid=self.add_molecule(molecule,merge=True)
-                molids.add(new_molid)
-                reactid=self.db_session.query(Reaction.reactid).filter(Reaction.reactant==molid,Reaction.product==new_molid,Reaction.name==unicode(" + ".join(sequence))).all()
-                if len(reactid)==0:
-                    react=Reaction(
-                        reactant=molid,
-                        product=new_molid,
-                        name=unicode(" + ".join(sequence))
-                        )
-                    self.db_session.add(react)
-                    self.db_session.flush()
-            elif endpoints:
-                molids.add(molid)
-            line=reactor.stdout.readline()
-        self.db_session.add(parent)
-        reactor.stdout.close()
-        self.db_session.commit()
-        if len(molids)==0: # this might be the case with cactvs engine
+        products=self.metabolize_engine.metabolize(parent,metabolism,endpoints)
+        for product in products.values():
+            molecule=types.MoleculeType(Chem.MolToMolBlock(product[1]),"",None,1)
+            new_molid=self.add_molecule(molecule,merge=True)
+            molids.add(new_molid)
+            reactid=self.db_session.query(Reaction.reactid).filter(Reaction.reactant==molid,Reaction.product==new_molid,Reaction.name==unicode(product[0])).all()
+            if len(reactid)==0:
+                react=Reaction(
+                    reactant=molid,
+                    product=new_molid,
+                    name=unicode(product[0])
+                    )
+                self.db_session.add(react)
+                self.db_session.flush()
+        if endpoints and len(molids)==0: # molid itself is endpoint
             molids.add(molid)
         return molids
 
