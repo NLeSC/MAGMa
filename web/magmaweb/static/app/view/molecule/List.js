@@ -221,12 +221,15 @@ Ext.define('Esc.magmaweb.view.molecule.List', {
   },
   setMzFilterToEqual: function(mz) {
     var mzfilter = this.getMzFilter();
-    mzfilter.setActive(true);
+    if (!mzfilter.active) {
+    	mzfilter.setActive(true);
+    }
     mzfilter.setValue({'eq': mz});
   },
   clearMzFilter: function() {
     var mzfilter = this.getMzFilter();
-    mzfilter.setValue({});
-    mzfilter.setActive(false);
+    if (mzfilter.active) {
+    	mzfilter.setActive(false);
+    }
   }
 });
