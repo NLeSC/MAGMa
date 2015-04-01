@@ -35,7 +35,7 @@ describe('Esc.d3.MSpectra', function() {
     });
     expect(chart.cutoffCls).toEqual('cutoffline');
     expect(chart.selectedPeakCls).toEqual('selected');
-    expect(chart.selectedPeak).toEqual(-1);
+    expect(chart.selectedPeak).toBeFalsy();
     expect(chart.cutoff).toEqual(0);
   });
 
@@ -177,7 +177,7 @@ describe('Esc.d3.MSpectra', function() {
       chart.selectedpeak = 3;
       chart.onToggleMarker(3);
       expect(chart.markerSelect).toHaveBeenCalled();
-      expect(chart.selectedpeak).toEqual(-1);
+      expect(chart.selectedpeak).toBeFalsy();
     });
   });
 
@@ -227,7 +227,7 @@ describe('Esc.d3.MSpectra', function() {
 
     chart.clearPeakSelection();
 
-    expect(chart.selectedpeak).toEqual(-1);
+    expect(chart.selectedpeak).toBeFalsy();
     expect(chart.markerSelect).toHaveBeenCalledWith(false);
   });
 

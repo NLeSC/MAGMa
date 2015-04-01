@@ -25,14 +25,23 @@ describe('MSpectras controller', function() {
   });
 
   describe('loadMSpectra', function() {
-    it('clearHigherSpectra==true', function() {
-      var mslevel = 1, scanid = 1133, markers = [];
-      var mspectra = Ext.create('Esc.d3.MSpectra');
-      spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
-      spyOn(mspectra, 'setLoading');
-      spyOn(ctrl, 'clearMSpectraFrom');
-      spyOn(d3, 'json');
+	var mslevel = null, scanid = null, markers = null;
+    var mspectra;
 
+	beforeEach(function() {
+	      mslevel = 1, scanid = 1133, markers = [];
+	      mspectra = Ext.create('Esc.d3.MSpectra');
+	      spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
+	      spyOn(mspectra, 'setLoading');
+	      spyOn(ctrl, 'clearMSpectraFrom');
+	      spyOn(d3, 'json');
+	});
+
+	afterEach(function() {
+		mspectra.destroy();
+	});
+
+    it('clearHigherSpectra==true', function() {
       ctrl.loadMSpectra(mslevel, scanid, markers, true);
 
       expect(mspectra.setLoading).toHaveBeenCalledWith(true);
@@ -41,17 +50,9 @@ describe('MSpectras controller', function() {
         jasmine.any(Function)
       );
       expect(ctrl.clearMSpectraFrom).toHaveBeenCalledWith(2);
-      mspectra.destroy();
     });
 
     it('clearHigherSpectra==false', function() {
-      var mslevel = 1, scanid = 1133, markers = [];
-      var mspectra = Ext.create('Esc.d3.MSpectra');
-      spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
-      spyOn(mspectra, 'setLoading');
-      spyOn(ctrl, 'clearMSpectraFrom');
-      spyOn(d3, 'json');
-
       ctrl.loadMSpectra(mslevel, scanid, markers);
 
       expect(mspectra.setLoading).toHaveBeenCalledWith(true);
@@ -60,7 +61,14 @@ describe('MSpectras controller', function() {
         jasmine.any(Function)
       );
       expect(ctrl.clearMSpectraFrom).not.toHaveBeenCalledWith(2);
-      mspectra.destroy();
+    });
+
+    it('should not load spectra when it is already loaded', function() {
+    	mspectra.scanid = scanid;
+
+    	ctrl.loadMSpectra(mslevel, scanid, markers);
+
+    	expect(d3.json).not.toHaveBeenCalled();
     });
   });
 
@@ -208,11 +216,33 @@ describe('MSpectras controller', function() {
     expect(ctrl.loadMSpectra).toHaveBeenCalledWith(2, scanid, markers, true);
   });
 
-  it('loadMSpectra1', function() {
-    var scanid = 1134;
-    spyOn(ctrl, 'loadMSpectra');
-    ctrl.loadMSpectra1(scanid);
-    expect(ctrl.loadMSpectra).toHaveBeenCalledWith(1, scanid, [], true);
+  describe('loadMSpectra1', function() {
+	  beforeEach(function() {
+		  spyOn(ctrl, 'loadMSpectra');
+	  });
+
+	  it('loadMSpectra1', function() {
+	    var scanid = 1134;
+	    ctrl.loadMSpectra1(scanid);
+
+	    expect(ctrl.loadMSpectra).toHaveBeenCalledWith(1, scanid, [], true);
+	  });
+
+	  it('should clear selected peak', function() {
+		ctrl.selectedlvl1peak = 311.2313;
+		var mspectra = jasmine.createSpyObj('mspectra', ['clearPeakSelection']);
+		mspectra.scanid = 1234;
+		spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
+		var callback = jasmine.createSpy('callback');
+		Ext.util.Observable.capture(ctrl.application, callback);
+
+		var scanid = 1134;
+	    ctrl.loadMSpectra1(scanid);
+
+	    expect(mspectra.clearPeakSelection).toHaveBeenCalledWith();
+	    expect(callback).toHaveBeenCalledWith('peakdeselect', 311.2313, 1, 1134);
+	    Ext.util.Observable.releaseCapture(ctrl.application);
+	  });
   });
 
   describe('loadMSpectraFromFragment', function() {
@@ -306,28 +336,46 @@ describe('MSpectras controller', function() {
     });
   });
 
-  it('clearMSpectra', function() {
-    var mslevel = 2;
-    var mspectra = Ext.create('Esc.d3.MSpectra');
-    spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
-    spyOn(mspectra, 'setData');
-    spyOn(mspectra, 'up').andCallFake(function() {
-        return { down: function() {
-            return { disable: function() { return true} };
-        }};
-    });
-    var f = { callback: function() {} };
-    spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
-    Ext.util.Observable.capture(ctrl.application, f.callback);
+  describe('clearMSpectra', function() {
+	var mslevel = null;
+	var mspectra = null;
+	var callback = null;
+	beforeEach(function() {
+	    mslevel = 2;
+	    mspectra = Ext.create('Esc.d3.MSpectra');
+	    mspectra.scanid = 1234;
+	    spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
+	    spyOn(mspectra, 'setData');
+	    spyOn(mspectra, 'up').andCallFake(function() {
+	        return { down: function() {
+	            return { disable: function() { return true} };
+	        }};
+	    });
+	    callback = jasmine.createSpy('callback');
+	    Ext.util.Observable.capture(ctrl.application, callback);
+	});
 
-    ctrl.clearMSpectra(mslevel);
+	afterEach(function() {
+	    Ext.util.Observable.releaseCapture(ctrl.application);
+	    mspectra.destroy();
+	});
 
-    expect(mspectra.setData).toHaveBeenCalledWith([]);
-    expect(mspectra.scanid).toEqual(-1);
-    expect(f.callback).toHaveBeenCalledWith('mspectraclear', mslevel);
-    expect(mspectra.up).toHaveBeenCalled();
-    Ext.util.Observable.releaseCapture(ctrl.application);
-    mspectra.destroy();
+	it('should clear mspectra', function() {
+	    ctrl.clearMSpectra(mslevel);
+
+	    expect(mspectra.setData).toHaveBeenCalledWith([]);
+	    expect(mspectra.scanid).toEqual(false);
+	    expect(callback).toHaveBeenCalledWith('mspectraclear', mslevel);
+	    expect(mspectra.up).toHaveBeenCalled();
+	});
+
+	it('should not clear already clear mspectra', function() {
+		mspectra.scanid = false;
+
+		ctrl.clearMSpectra(mslevel);
+
+		expect(mspectra.setData).not.toHaveBeenCalled();
+	});
   });
 
   it('clearMSpectra1', function() {

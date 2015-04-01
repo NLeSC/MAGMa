@@ -189,7 +189,12 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   loadMSpectra: function(mslevel, scanid, markers, clearHigherSpectra) {
     var me = this;
     Ext.log({}, 'Loading msspectra level '+mslevel+' with id '+scanid);
-    this.getMSpectra(mslevel).setLoading(true);
+    var mspectra = this.getMSpectra(mslevel)
+    if (mspectra.scanid === scanid) {
+    	// dont load mspectra if it already loaded
+    	return;
+    }
+    mspectra.setLoading(true);
     if (clearHigherSpectra) {
         this.clearMSpectraFrom(mslevel+1); // TODO stop this when (un)assinging a structure to a peak
     }
@@ -249,6 +254,16 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
    * @param {Number} scanid Scan identifier.
    */
   loadMSpectra1: function(scanid) {
+	if (this.selectedlvl1peak) {
+		var mspectra = this.getMSpectra(1);
+		if (mspectra.scanid && scanid !== mspectra.scanid) {
+            // unselect peak when loading another scan
+			var mz = this.selectedlvl1peak;
+			this.selectedlvl1peak = null;
+			mspectra.clearPeakSelection();
+			this.application.fireEvent('peakdeselect', mz, 1, scanid);
+		}
+	}
     this.loadMSpectra(1, scanid, [], true);
   },
   /**
@@ -312,12 +327,12 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
    */
   clearMSpectra: function(mslevel) {
     var mspectra = this.getMSpectra(mslevel);
-    if (mspectra.scanid === -1) {
+    if (!mspectra.scanid) {
     	// don't clear a already cleared mspectra
     	return;
     }
     mspectra.setData([]);
-    mspectra.scanid = -1;
+    mspectra.scanid = false;
     this.application.fireEvent('mspectraclear', mslevel);
     mspectra.up('panel').down('tool[action=center]').disable();
   },

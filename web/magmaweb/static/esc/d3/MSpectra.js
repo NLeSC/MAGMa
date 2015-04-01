@@ -31,10 +31,10 @@ Ext.define('Esc.d3.MSpectra', {
          */
         /**
          * @property {Number} selectedPeak mz of selectedPeak.
-         * When no peaks are selected then it is set to -1.
+         * When no peaks are selected then it is set to false.
          * @readonly
          */
-        selectedPeak: -1,
+        selectedpeak: false,
         /**
          * @cfg {Number} cutoff intensity under which peaks where disregarded
          */
@@ -205,14 +205,14 @@ Ext.define('Esc.d3.MSpectra', {
       return (mz == e.mz && me.selectedpeak != e.mz);
     });
     if (mz != me.selectedpeak) {
-      if (me.selectedpeak !== -1) {
+      if (me.selectedpeak) {
     	me.fireEvent('unselectpeak', me.selectedpeak);
       }
       me.fireEvent('selectpeak', mz);
       me.selectedpeak = mz;
     } else {
       me.fireEvent('unselectpeak', mz);
-      me.selectedpeak = -1;
+      me.selectedpeak = false;
     }
   },
   /**
@@ -239,8 +239,11 @@ Ext.define('Esc.d3.MSpectra', {
    * Clears any selected peaks
    */
   clearPeakSelection: function() {
+    if (this.selectedpeak) {
+	  this.fireEvent('unselectpeak', this.selectedpeak);
+	}
     this.markerSelect(false);
-    this.selectedpeak = -1;
+    this.selectedpeak = false;
   },
   /**
    * Set markers on mz's which can be selected

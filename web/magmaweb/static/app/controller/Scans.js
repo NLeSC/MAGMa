@@ -102,6 +102,12 @@ Ext.define('Esc.magmaweb.controller.Scans', {
             chromatogram.selectScan(selectedScan);
         });
     });
+    this.application.on('mspectraload', function(scanid, mslevel) {
+    	var chromatogram = this.getChromatogram();
+    	if (mslevel === 1 && chromatogram.selectedScan !== scanid) {
+    		chromatogram.selectScan(scanid, true);
+    	}
+    }, this);
 
     this.actionsMenu = Ext.create('Ext.menu.Menu', {
         items: [{
@@ -317,7 +323,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
          chromatogram.selectScan(selectedScan);
        } else {
          // if a scan was selected, but can not be reselected then clear selection.
-         if (selectedScan >=0) {
+         if (selectedScan) {
              this.clearScanSelection();
          }
          chromatogram.setMarkers(scans);
