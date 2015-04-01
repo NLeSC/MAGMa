@@ -40,11 +40,11 @@ Ext.define('Esc.d3.Chromatogram', {
         cutoffCls: 'cutoffline',
         /**
          * Scan identifier of selected scan.
-         * When no scans are selected then it is set to -1.
+         * When no scans are selected then it is set to false.
          * @property {Number}
          * @readonly
          */
-        selectedScan: -1,
+        selectedScan: false,
         /**
          * @cfg {String} selectedScanCls The CSS class applied to markers of a selected scan.
          */
@@ -240,11 +240,14 @@ Ext.define('Esc.d3.Chromatogram', {
       return (scanid == e.id && me.selectedScan != e.id);
     });
     if (scanid != me.selectedScan) {
+      if (me.selectedScan) {
+    	me.fireEvent('unselectscan', me.selectedScan);
+      }
       me.fireEvent('selectscan', scanid);
       me.selectedScan = scanid;
     } else {
       me.fireEvent('unselectscan', scanid);
-      me.selectedScan = -1;
+      me.selectedScan = false;
     }
   },
   /**
@@ -267,7 +270,7 @@ Ext.define('Esc.d3.Chromatogram', {
    * @param {Boolean} [silent=false] Passing true will supress the 'unselectscan' event from being fired.
    */
   selectScan: function(scanid, silent) {
-    if (this.selectedScan != -1 && this.selectedScan != scanid && silent !== true) {
+    if (this.selectedScan && this.selectedScan != scanid && silent !== true) {
        this.fireEvent('unselectscan', this.selectedScan);
     }
     this.markerSelect(function(d) {
@@ -276,7 +279,7 @@ Ext.define('Esc.d3.Chromatogram', {
     if (scanid) {
       this.selectedScan = scanid;
     } else {
-      this.selectedScan = -1;
+      this.selectedScan = false;
     }
   },
   /**
@@ -284,7 +287,7 @@ Ext.define('Esc.d3.Chromatogram', {
    */
   clearScanSelection: function() {
     this.markerSelect(false);
-    this.selectedScan = -1;
+    this.selectedScan = false;
   },
   /**
    * Set markers on rt's which can be selected.
@@ -294,7 +297,7 @@ Ext.define('Esc.d3.Chromatogram', {
    */
   setMarkers: function(data) {
       var selectedScan;
-      if (this.selectedScan != -1) {
+      if (this.selectedScan) {
           selectedScan = this.selectedScan;
       }
     this.clearScanSelection();
