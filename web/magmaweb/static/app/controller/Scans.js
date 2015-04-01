@@ -102,6 +102,12 @@ Ext.define('Esc.magmaweb.controller.Scans', {
             chromatogram.selectScan(selectedScan);
         });
     });
+    this.application.on('mspectraload', function(scanid, mslevel) {
+    	var chromatogram = this.getChromatogram();
+    	if (mslevel === 1 && chromatogram.selectedScan !== scanid) {
+    		chromatogram.selectScan(scanid, true);
+    	}
+    }, this);
 
     this.actionsMenu = Ext.create('Ext.menu.Menu', {
         items: [{
