@@ -34,7 +34,7 @@ describe('Esc.d3.Chromatogram', function() {
     });
     expect(chart.cutoffCls).toEqual('cutoffline');
     expect(chart.selectedScanCls).toEqual('selected');
-    expect(chart.selectedScan).toEqual(-1);
+    expect(chart.selectedScan).toBeFalsy();
     expect(chart.cutoff).toEqual(2000000);
   });
 
@@ -216,7 +216,7 @@ describe('Esc.d3.Chromatogram', function() {
       chart.selectScan(null);
 
       expect(chart.markerSelect).toHaveBeenCalled();
-      expect(chart.selectedScan).toEqual(-1);
+      expect(chart.selectedScan).toBeFalsy();
     });
 
     it('another scan already selected -> deselect', function() {
@@ -269,7 +269,7 @@ describe('Esc.d3.Chromatogram', function() {
 
     chart.clearScanSelection();
 
-    expect(chart.selectedScan).toEqual(-1);
+    expect(chart.selectedScan).toBeFalsy();
     expect(chart.markerSelect).toHaveBeenCalledWith(false);
   });
 
