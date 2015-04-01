@@ -232,9 +232,10 @@ Ext.define('Esc.magmaweb.resultsApp', {
         }
         this.selected.molid = false;
     }, this);
-    this.on('peakselect', function(mz, mslevel) {
+    this.on('peakselect', function(mz, mslevel, scanid) {
     	if (mslevel === 1) {
             this.selected.mz = mz;
+            this.selected.scanid = scanid;
             if (this.selected.molid && this.selected.scanid && this.selected.mz) {
                 this.fireEvent('mzandmoleculeselect', this.selected.scanid, this.selected.molid, mz);
             }
