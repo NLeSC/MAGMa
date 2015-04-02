@@ -180,6 +180,31 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
       this.getMoleculeList().setPageSize(this.getMoleculesStore().pageSize);
       this.applyRole();
   },
+  reselectMolecule: function() {
+    var store = this.getMoleculesStore();
+    var sm = this.getSelectionModel();
+	if ('molid' in store.getProxy().getReader().rawData) {
+		var selected = store.getProxy().getReader().rawData.molid;
+		Ext.log({}, 'Reselecting molecule ' + selected);
+
+		// only remember selection once, otherwise paging will not work
+		store.clearMoleculeSelection();
+
+        // update page number
+        var page = store.getProxy().getReader().rawData.page;
+        store.currentPage = page;
+        var pagingtoolbar = this.getMoleculePanel().getPagingToolbar();
+        pagingtoolbar.onLoad();
+
+        // select molecule again
+        var record = store.getById(selected);
+        if (record !== null) {
+          sm.select(record);
+        } else {
+          this.application.fireEvent('moleculedeselect', selected, 'not found');
+        }
+	}
+  },
   /**
    * Listens for molecule store load event.
    * Selects molecule if store only contains 1 molecule.
@@ -187,6 +212,7 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
    * @param {Ext.data.Store} store
    */
   onLoad: function(store) {
+	this.reselectMolecule();
     this.application.fireEvent('moleculeload', store);
     this.metabolizable(store.getTotalUnfilteredCount() > 0);
     if (store.getCount() == 1 && !this.getSelectionModel().hasSelection()) {
@@ -198,33 +224,12 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
     }
   },
   rememberSelectedMolecule: function() {
-      var me = this;
       var store = this.getMoleculesStore();
-      var sm = me.getSelectionModel();
+      var sm = this.getSelectionModel();
       if (sm && sm.hasSelection()) {
           var selected = sm.getSelection()[0].getId();
           store.selectMolecule(sm.getSelection()[0]);
           Ext.log({}, 'Reselecting molecule ' + selected + ' on next store load');
-
-          var reselectMolecule = function() {
-        	  // only remember selection once, otherwise paging will not work
-              store.clearMoleculeSelection();
-
-              // update page number
-              var page = store.getProxy().getReader().rawData.page;
-              store.currentPage = page;
-              var pagingtoolbar = me.getMoleculePanel().getPagingToolbar();
-              pagingtoolbar.onLoad();
-
-              // select molecule again
-              var record = store.getById(selected);
-              if (record !== null) {
-                sm.select(record);
-              } else {
-                this.application.fireEvent('moleculedeselect', selected, 'not found');
-              }
-          };
-          store.on('load', reselectMolecule, this, {single: true});
       }
   },
   /**
