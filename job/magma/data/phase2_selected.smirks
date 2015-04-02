@@ -1,0 +1,32 @@
+# *** PHASE 2 ***
+
+# -- O-glucuronidation --
+[C;!$(C1CCOCC1);!$(C1COCCC1);!$(C(O)=O):1][OH1:2]>>[C:1][O:2]C1OC(C(O)=O)C(O)C(O)C1O O-glucuronidation_(aliphatic_hydroxyl)
+[c:1][OH1:2]>>[c:1][O:2]C1OC(C(O)=O)C(O)C(O)C1O O-glucuronidation_(aromatic_hydroxyl)
+[#7:1][OH1:2]>>[*:1][O:2]C1OC(C(O)=O)C(O)C(O)C1O O-glucuronidation_(N-hydroxyl)
+[C:1][C;!$(C(O)(=O)C1OCCCC1):2](=O)[OH1]>>[C:1][C:2](=O)OC1OC(C(O)=O)C(O)C(O)C1O O-glucuronidation_(aliphatic_carboxyl)
+[c:1][C:2](=O)[OH1]>>[c:1][C:2](=O)OC1OC(C(O)=O)C(O)C(O)C1O O-glucuronidation_(aromatic_carboxyl)
+
+# -- N-glucuronidation --
+[N;X3;$(N([CH3])([CH3])[CH2]C):1]>>[N+:1]C1OC(C(O)=O)C(O)C(O)C1O N-glucuronidation_(N(CH3)2)
+
+# -- sulfation --
+[c:1][OH1:2]>>[c:1][O:2]S(=O)(=O)O sulfation_(aromatic_hydroxyl)
+
+# -- N-acetylation --
+[c:1][NH2:2]>>[c:1][N:2]C(=O)C N-acetylation_(aniline)
+[C;!$(C=[*;!#6]):1][NH2:2]>>[C:1][N:2]C(=O)C N-acetylation_(aliphatic_NH2)
+[*;!#6:1][NH2:2]>>[*:1][N:2]C(=O)C N-acetylation_(heteroatom_bonded_NH2)
+
+# -- O-acetylation --
+
+# -- methylation --
+[c:1][OH1:2]>>[c:1][O:2]C methylation_(aromatic_OH)
+[#6:1][SH1:2]>>[#6:1][S:2]C methylation_(thiol)
+
+# -- glycination --
+[c:1][C:2](=O)[OH1]>>[c:1][C:2](=O)NCC(=O)O glycination_(aromatic_carboxyl)
+
+# -- phosphorylation --
+[OH1;$(O[CH2]C1AACO1),$(OP([OH1])(=O)OCC1AACO1),$(OP([OH1])(=O)OP(O)(=O)OCC1AACO1):1]>>[O:1]P(O)(O)=O phosphorylation
+[#6,P:1][O:2][P:3]([O:4])([O:5])=[O:6]>>([*;#6,P:1][O:2].O[P:3]([O:4])([O:5])=[O:6]) dephosphorylation
