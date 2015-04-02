@@ -424,7 +424,9 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
 		this.application.on('moleculeload', function(store) {
 			// Molecules with mz has been loaded trying to find the mz to select
 			molecule = store.getById(molid);
-			this._selectPeakOfMolecule(molid, molecule);
+			if (molecule) {
+			  this._selectPeakOfMolecule(molid, molecule);
+			}
 		}, this, {single:true});
 		return;
 	}
