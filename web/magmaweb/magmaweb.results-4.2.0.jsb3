@@ -1119,6 +1119,10 @@
                "path" : "static/app/model/"
             },
             {
+               "name" : "AjaxSingle.js",
+               "path" : "static/app/store/proxy"
+            },
+            {
                "name" : "Molecules.js",
                "path" : "static/app/store/"
             },
