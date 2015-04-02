@@ -63,7 +63,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     });
     this.application.on('moleculeselect', this.selectPeakOfMolecule, this);
     this.application.on('moleculedeselect', this.deselectPeakOfMolecule, this);
-    this.application.on('moleculenoselect', this.deselectPeakOfMolecule, this);
+    this.application.on('moleculereselect', this.selectPeakOfMolecule, this);
 
     this.addEvents(
       /**
@@ -400,37 +400,28 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   showHelp: function() {
       this.application.showHelp('scan');
   },
-  _selectPeakOfMolecule: function(molid, molecule) {
-	var mslevel = 1;
-	var mspectra = this.getMSpectra(mslevel);
-	this.selectedlvl1peak = molecule.data.mz;
-	if (!mspectra.scanid) {
-		// skip in no lvl1 scan is selected
-		return;
-	}
-	if (mspectra.selectedpeak === molecule.data.mz) {
-		// dont select same mz again
-		return;
-	}
-	mspectra.selectPeak(molecule.data.mz);
-	this.application.fireEvent('peakselect', molecule.data.mz, mslevel, mspectra.scanid);
-  },
   /**
    * Select the peak in the lvl 1 scan where the selected molecule has a fragment
    */
   selectPeakOfMolecule: function(molid, molecule) {
-	if (molecule.data.mz === 0) {
-		// Molecules with mz has not been loaded yet, delaying peak selection until molecules are reloaded
-		this.application.on('moleculeload', function(store) {
-			// Molecules with mz has been loaded trying to find the mz to select
-			molecule = store.getById(molid);
-			if (molecule) {
-			  this._selectPeakOfMolecule(molid, molecule);
-			}
-		}, this, {single:true});
-		return;
-	}
-	this._selectPeakOfMolecule(molid, molecule);
+  	if (molecule.data.mz === 0) {
+  		// Molecules with mz has not been loaded yet,
+  		// delaying peak selection until molecule is reselected
+  		return;
+  	}
+    var mslevel = 1;
+  	var mspectra = this.getMSpectra(mslevel);
+  	this.selectedlvl1peak = molecule.data.mz;
+  	if (!mspectra.scanid) {
+  		// skip in no lvl1 scan is selected
+  		return;
+  	}
+  	if (mspectra.selectedpeak === molecule.data.mz) {
+  		// dont select same mz again
+  		return;
+  	}
+  	mspectra.selectPeak(molecule.data.mz);
+  	this.application.fireEvent('peakselect', molecule.data.mz, mslevel, mspectra.scanid);
   },
   deselectPeakOfMolecule: function() {
 	this.selectedlvl1peak = null;
