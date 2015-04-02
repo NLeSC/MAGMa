@@ -5,10 +5,15 @@
 Ext.define('Esc.magmaweb.store.Molecules', {
   extend: 'Ext.data.Store',
   model: 'Esc.magmaweb.model.Molecule',
+  requires: ['Esc.magmaweb.store.proxy.AjaxSingle'],
   proxy: {
-    type: 'ajax',
+    type: 'ajaxsingle',
     listeners: {
       exception: function(proxy, response, operation) {
+    	  if (response.statusText === 'transaction aborted') {
+    		  // a newer request was made so this one was canceled.
+    		  return;
+    	  }
           Ext.Error.raise({
               msg: 'Failed to load molecules from server',
               response: response,
