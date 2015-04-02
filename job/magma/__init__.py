@@ -126,10 +126,10 @@ class MetabolizeEngine(object):
                                                        'magma', "data/phase1.smirks"),
             "phase2": pkg_resources.resource_filename( #@UndefinedVariable
                                                        'magma', "data/phase2.smirks"),
-#            "phase1_selected": pkg_resources.resource_filename( #@UndefinedVariable
-#                                                       'magma', "data/phase1_selected.smirks"),
-#            "phase2_selected": pkg_resources.resource_filename( #@UndefinedVariable
-#                                                       'magma', "data/phase2_selected.smirks"),
+            "phase1_selected": pkg_resources.resource_filename( #@UndefinedVariable
+                                                       'magma', "data/phase1_selected.smirks"),
+            "phase2_selected": pkg_resources.resource_filename( #@UndefinedVariable
+                                                       'magma', "data/phase2_selected.smirks"),
             "gut": pkg_resources.resource_filename( #@UndefinedVariable
                                                        'magma', "data/gut.smirks"),
             "glycosidase": pkg_resources.resource_filename( #@UndefinedVariable
