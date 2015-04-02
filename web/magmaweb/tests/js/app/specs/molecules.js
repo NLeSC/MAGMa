@@ -744,7 +744,7 @@ describe('Molecules', function() {
             sm = {
                 hasSelection: function() {},
                 getSelection: function() {
-                    return [{getId: function() {}}];
+                    return [{getId: function() { return 1234; }}];
                 },
                 select: function() {}
             };
@@ -753,20 +753,18 @@ describe('Molecules', function() {
 
         it('has no selection and reselects nothing', function() {
             spyOn(sm, 'hasSelection').andReturn(false);
-            spyOn(store, 'on');
 
             ctrl.rememberSelectedMolecule();
 
-            expect(store.on).not.toHaveBeenCalled();
+            expect('molid' in store.getProxy().extraParams).toBeFalsy();
         });
 
         it('has selection and reselects', function() {
             spyOn(sm, 'hasSelection').andReturn(true);
-            spyOn(store, 'on');
 
             ctrl.rememberSelectedMolecule();
 
-            expect(store.on).toHaveBeenCalled();
+            expect(store.getProxy().extraParams.molid).toEqual(1234);
         });
     });
 

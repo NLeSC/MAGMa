@@ -945,6 +945,24 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                     'rows': [1, 2, 3],
                                     'scans': [4, 5]})
 
+    def test_moleculesjson_molpage(self):
+        request = testing.DummyRequest(params={'start': 0,
+                                               'limit': 10,
+                                               'molid': 1,
+                                               })
+        job = self.fake_job()
+        views = JobViews(job, request)
+        job.db.molecules.return_value = {'total': 3, 'rows': [1, 2, 3], 'page': 1}
+
+        response = views.moleculesjson()
+
+        self.assertEqual(response, {'totalUnfiltered': 3,
+                                    'total': 3,
+                                    'rows': [1, 2, 3],
+                                    'molid': 1,
+                                    'page': 1,
+                                    'scans': [4, 5]})
+
     def test_moleculescsv(self):
         import StringIO
         csv = StringIO.StringIO()
