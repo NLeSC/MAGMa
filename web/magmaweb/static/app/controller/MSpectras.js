@@ -400,10 +400,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   showHelp: function() {
       this.application.showHelp('scan');
   },
-  /**
-   * Select the peak in the lvl 1 scan where the selected molecule has a fragment
-   */
-  selectPeakOfMolecule: function(molid, molecule) {
+  _selectPeakOfMolecule: function(molid, molecule) {
 	var mslevel = 1;
 	var mspectra = this.getMSpectra(mslevel);
 	this.selectedlvl1peak = molecule.data.mz;
@@ -417,6 +414,21 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
 	}
 	mspectra.selectPeak(molecule.data.mz);
 	this.application.fireEvent('peakselect', molecule.data.mz, mslevel, mspectra.scanid);
+  },
+  /**
+   * Select the peak in the lvl 1 scan where the selected molecule has a fragment
+   */
+  selectPeakOfMolecule: function(molid, molecule) {
+	if (molecule.data.mz === 0) {
+		// Molecules with mz has not been loaded yet, delaying peak selection until molecules are reloaded
+		this.application.on('moleculeload', function(store) {
+			// Molecules with mz has been loaded trying to find the mz to select
+			molecule = store.getById(molid);
+			this._selectPeakOfMolecule(molid, molecule);
+		}, this, {single:true});
+		return;
+	}
+	this._selectPeakOfMolecule(molid, molecule);
   },
   deselectPeakOfMolecule: function() {
 	this.selectedlvl1peak = null;
