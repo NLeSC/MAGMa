@@ -199,7 +199,8 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
         // select molecule again
         var record = store.getById(selected);
         if (record !== null) {
-          sm.select(record);
+          // select molecule again without firing an event, because it was never unselected
+          sm.select(record, false, true);
         } else {
           this.application.fireEvent('moleculedeselect', selected, 'not found');
         }

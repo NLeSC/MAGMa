@@ -100,8 +100,6 @@ describe('Molecules', function() {
 
         if (!store) {
             store = ctrl.getStore('Molecules');
-            // disable reselecting selected row, tested in describe('reselect'
-            store.removeListener('beforeLoad', ctrl.onBeforeLoad, ctrl);
             // mock onLaunch of controller
             store.load();
         }
