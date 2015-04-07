@@ -546,7 +546,7 @@ class JobViews(object):
         """
         request = self.request
         if ('scanid' in request.params):
-            scanid = request.params['scanid']
+            scanid = int(request.params['scanid'])
         else:
             scanid = None
         if ('molid' in request.params):

@@ -919,7 +919,17 @@ class JobDb(object):
             elif (afilter['field'] == 'deltappm'):
                 fq = self.extjsgridfilter(fq, Fragment.deltappm, afilter)
             elif (afilter['field'] == 'mz'):
-                fq = self.extjsgridfilter(fq, Fragment.mz, afilter)
+                pass
+#                 if afilter['comparison'] == 'eq':
+#                     precision = 1 + self.session.query(Run.mz_precision).scalar() / 1e6
+#                     minmz = afilter['value'] / precision
+#                     maxmz = afilter['value'] * precision
+#                     minfilter = {'type': 'numeric', 'comparison': 'gt', 'value': minmz}
+#                     maxfilter = {'type': 'numeric', 'comparison': 'lt', 'value': maxmz}
+#                     fq = self.extjsgridfilter(fq, Fragment.mz, minfilter)
+#                     fq = self.extjsgridfilter(fq, Fragment.mz, maxfilter)
+#                 else:
+#                 fq = self.extjsgridfilter(fq, Fragment.mz, afilter)
             elif (afilter['field'] == 'assigned'):
                 afilter['type'] = 'null'
                 fq = fq.join(Peak, and_(Fragment.scanid == Peak.scanid,
