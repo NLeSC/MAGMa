@@ -28,6 +28,18 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
     var store = this.getMoleculesStore();
     store.pageSize = this.application.getPageSize();
     store.setUrl(this.application.moleculesUrl('json'));
+
+    me.pendingLoads = 0;
+    store.on('beforeload', function() {
+    	me.pendingLoads = me.pendingLoads + 1;
+    });
+    store.on('abort', function() {
+    	me.pendingLoads = me.pendingLoads - 1;
+    });
+    store.on('load', function() {
+    	me.pendingLoads = me.pendingLoads - 1;
+    });
+
     store.on('load', this.onLoad, this);
 
     this.control({
@@ -187,8 +199,10 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
 		var selected = store.getProxy().getReader().rawData.molid;
 		Ext.log({}, 'Reselecting molecule ' + selected);
 
-		// only remember selection once, otherwise paging will not work
-		store.clearMoleculeSelection();
+		// only remember selection when there are no pending loads, otherwise paging will not work
+		if (this.pendingLoads === 0) {
+			store.clearMoleculeSelection();
+		}
 
         // update page number
         var page = store.getProxy().getReader().rawData.page;

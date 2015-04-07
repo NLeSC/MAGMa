@@ -12,6 +12,7 @@ Ext.define('Esc.magmaweb.store.Molecules', {
       exception: function(proxy, response, operation) {
     	  if (response.statusText === 'transaction aborted') {
     		  // a newer request was made so this one was canceled.
+    		  this.fireEvent('abort', proxy, response, operation);
     		  return;
     	  }
           Ext.Error.raise({
@@ -36,6 +37,9 @@ Ext.define('Esc.magmaweb.store.Molecules', {
   }],
   remoteSort: true,
   remoteFilter: true,
+  initComponent: function() {
+	this.addEvents('abort');
+  },
   /**
    * Shortcut for this.getProxy().url
    *
