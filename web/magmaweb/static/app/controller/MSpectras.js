@@ -29,7 +29,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   /**
    * @property {Float} Mz of selected lvl1 peak
    */
-  selectedlvl1peak: null,
+  selectedMolecule: null,
   constructor: function(config) {
     this.initConfig(config);
     this.callParent(arguments);
@@ -194,6 +194,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     	// dont load mspectra if it already loaded
     	return;
     }
+    mspectra.scanid = scanid;
     mspectra.setLoading(true);
     if (clearHigherSpectra) {
         this.clearMSpectraFrom(mslevel+1); // TODO stop this when (un)assinging a structure to a peak
@@ -224,7 +225,6 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
       return;
     }
     mspectra.setLoading(false);
-    mspectra.scanid = scanid;
     mspectra.cutoff = data.cutoff;
     mspectra.setData(data.peaks);
     if (mslevel === 1) {
@@ -236,10 +236,13 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     		mspectra.selectPeak(data.fragments[0].mz);
     		this.application.fireEvent('peakselect', data.fragments[0].mz, mslevel, scanid);
     	}
-    	if (this.selectedlvl1peak) {
+    	if (this.selectedMolecule && this.selectedMolecule.data.mz !== mspectra.selectedpeak) {
     		// if molecule was selected then select the peak with the molecule mz
-    		mspectra.selectPeak(this.selectedlvl1peak);
-    		this.application.fireEvent('peakselect', this.selectedlvl1peak, mslevel, scanid);
+    		if (mspectra.selectPeak(this.selectedMolecule.data.mz)) {
+    			this.application.fireEvent('peakselect', this.selectedMolecule.data.mz, mslevel, scanid);
+    		} else {
+    			Ext.log({}, 'Unable to select peak from selected molecule');
+    		}
     	}
     } else {
     	// level >1 gets markers from selected fragment
@@ -254,16 +257,6 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
    * @param {Number} scanid Scan identifier.
    */
   loadMSpectra1: function(scanid) {
-	if (this.selectedlvl1peak) {
-		var mspectra = this.getMSpectra(1);
-		if (mspectra.scanid && scanid !== mspectra.scanid) {
-            // unselect peak when loading another scan
-			var mz = this.selectedlvl1peak;
-			this.selectedlvl1peak = null;
-			mspectra.clearPeakSelection();
-			this.application.fireEvent('peakdeselect', mz, 1, scanid);
-		}
-	}
     this.loadMSpectra(1, scanid, [], true);
   },
   /**
@@ -340,6 +333,11 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
    * Clear MSpectra lvl 1
    */
   clearMSpectra1: function() {
+	var mspectra = this.getMSpectra(1);
+    if (mspectra.selectedpeak) {
+        // unselect peak when loading another scan
+		mspectra.clearPeakSelection();
+	}
     this.clearMSpectra(1);
   },
   /**
@@ -411,7 +409,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   	}
     var mslevel = 1;
   	var mspectra = this.getMSpectra(mslevel);
-  	this.selectedlvl1peak = molecule.data.mz;
+  	this.selectedMolecule = molecule;
   	if (!mspectra.scanid) {
   		// skip in no lvl1 scan is selected
   		return;
@@ -420,11 +418,12 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
   		// dont select same mz again
   		return;
   	}
-  	mspectra.selectPeak(molecule.data.mz);
-  	this.application.fireEvent('peakselect', molecule.data.mz, mslevel, mspectra.scanid);
+  	if (mspectra.selectPeak(molecule.data.mz)) {
+  		this.application.fireEvent('peakselect', molecule.data.mz, mslevel, mspectra.scanid);
+  	}
   },
   deselectPeakOfMolecule: function() {
-	this.selectedlvl1peak = null;
+	this.selectedMolecule = null;
 	// dont deselect peak in spectra as user might want to select another molecule with the same mz
   }
 });

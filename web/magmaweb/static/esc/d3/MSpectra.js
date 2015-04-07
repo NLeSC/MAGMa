@@ -230,20 +230,28 @@ Ext.define('Esc.d3.MSpectra', {
    * @param mz float An mz of a peak
    */
   selectPeak: function(mz) {
-    this.markerSelect(function(d) {
+	var sameMz = function(d) {
       return (d.mz == mz);
-    });
-    this.selectedpeak = mz;
+    };
+    if (this.data.some(sameMz)) {
+    	// only select peak when mspectra has peak with that mz
+        this.markerSelect(sameMz);
+    	this.selectedpeak = mz;
+    	return true;
+    } else {
+    	return false;
+    }
   },
   /**
    * Clears any selected peaks
    */
   clearPeakSelection: function() {
-    if (this.selectedpeak) {
-	  this.fireEvent('unselectpeak', this.selectedpeak);
-	}
+	var selectedPeak = this.selectedpeak;
     this.markerSelect(false);
     this.selectedpeak = false;
+    if (selectedPeak) {
+  	  this.fireEvent('unselectpeak', selectedPeak);
+  	}
   },
   /**
    * Set markers on mz's which can be selected
