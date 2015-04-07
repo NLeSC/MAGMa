@@ -566,7 +566,7 @@ class JobViews(object):
             scanid=scanid, filters=filters, sorts=sorts,
             molid=molid,
         )
-        scans = job.scansWithMolecules(filters=filters)
+        scans = job.scansWithMolecules(filters=filters, molid=molid)
         totalUnfiltered = job.moleculesTotalCount()
         response = {'totalUnfiltered': totalUnfiltered,
                 'total': molecules['total'],
