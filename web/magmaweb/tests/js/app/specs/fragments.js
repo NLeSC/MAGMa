@@ -81,18 +81,33 @@ describe('Fragments', function() {
         expect(store.getRootNode().hasChildNodes()).toBeTruthy();
         expect(store.getById(2469)).toBeDefined();
         expect(store.getById(2471)).toBeDefined();
+        expect(store.lastRequest).toBeDefined();
       });
     });
 
-    it('clearFragments', function() {
-      // first fill then clear
-      fill(function() {
-        expect(store.getRootNode().hasChildNodes()).toBeTruthy();
-        ctrl.clearFragments();
-        expect(store.getRootNode().hasChildNodes()).toBeFalsy();
-        expect(assignbut.disable).toHaveBeenCalled();
-        expect(assignbut.toggle).toHaveBeenCalledWith(false);
-      });
+    describe('clearFragment', function() {
+	    it('remove all nodes', function() {
+	      // first fill then clear
+	      fill(function() {
+	        expect(store.getRootNode().hasChildNodes()).toBeTruthy();
+
+	        ctrl.clearFragments();
+
+	        expect(store.getRootNode().hasChildNodes()).toBeFalsy();
+	        expect(assignbut.disable).toHaveBeenCalled();
+	        expect(assignbut.toggle).toHaveBeenCalledWith(false);
+	      });
+	    });
+
+	    it('should cancel request when loading', function() {fill(function() {
+	    	store.loading = true;
+	    	store.lastRequest = 'bla';
+	    	spyOn(Ext.Ajax, 'abort');
+
+	    	ctrl.clearFragments();
+
+	    	expect(Ext.Ajax.abort).toHaveBeenCalledWith(store.lastRequest);
+	    })});
     });
 
     it('onFragmentExpand', function() {
