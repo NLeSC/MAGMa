@@ -573,13 +573,16 @@ class JobViews(object):
             scanid=scanid, filters=filters, sorts=sorts,
             molid=molid, mz=mz,
         )
-        scans = job.scansWithMolecules(filters=filters, molid=molid)
+        # use molecules['molid'] because when molid cant be found it will be set to None
+        # and then the scans wont be filtered on the original molid
+        scans = job.scansWithMolecules(filters=filters, molid=molecules.get('molid', None), mz=mz)
         totalUnfiltered = job.moleculesTotalCount()
+
         response = {'totalUnfiltered': totalUnfiltered,
-                'total': molecules['total'],
-                'rows': molecules['rows'],
-                'scans': scans}
-        if molid:
+                    'total': molecules['total'],
+                    'rows': molecules['rows'],
+                    'scans': scans}
+        if molid is not None:
             response['page'] = molecules['page']
             response['molid'] = molid
         return response

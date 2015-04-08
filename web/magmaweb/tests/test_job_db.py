@@ -204,6 +204,7 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
             response,
             {
                 'total': 2,
+                'molid': None,
                 'page': 1,
                 'rows': [{
                     'molid': 72,
@@ -256,6 +257,18 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
         self.assertIn('deltappm', response['rows'][0])
         self.assertIn('mz', response['rows'][0])
         self.assertEqual(response['total'], 1)
+
+    def test_molid(self):
+        response = self.job.molecules(molid=352)
+
+        self.assertEqual(response['molid'], 352)
+        self.assertEqual(response['total'], 2)
+
+    def test_molid_notfound(self):
+        response = self.job.molecules(molid=1234)
+
+        self.assertIsNone(response['molid'])
+        self.assertEqual(response['total'], 2)
 
     def test_filteredon_nrscanseq(self):
         response = self.job.molecules(filters=[{"type": "numeric",
@@ -803,6 +816,13 @@ class JobScansWithMoleculesTestCase(JobDbTestCaseAbstract):
             {'id': 870, 'rt': 1254.15}
         ])
 
+    def test_mz(self):
+        response = self.job.scansWithMolecules(mz=109.0295639038086)
+
+        self.assertEqual(response, [
+            {'id': 641, 'rt': 933.317}
+        ])
+
 
 class JobMSpectraTestCase(JobDbTestCaseAbstract):
 
@@ -1027,6 +1047,7 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
             {
                 'total': 1,
                 'page': 1,
+                'molid': None,
                 'rows': [{
                     'molid': 12,
                     'predicted': True,

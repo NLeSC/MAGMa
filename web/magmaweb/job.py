@@ -34,6 +34,10 @@ class ScanNotFound(Exception):
     """Raised when a scan identifier is not found"""
     pass
 
+class MoleculeNotFound(Exception):
+
+    """Raised when a molecule identifier is not found"""
+    pass
 
 class FragmentNotFound(Exception):
 
@@ -768,7 +772,7 @@ class JobDb(object):
                 return rowNr
             rowNr += 1
         else:
-            return 0
+            raise MoleculeNotFound()
 
     def startOfSelectedMolecule(self, limit, sorts, scanid, filters, molid, mz):
         rowNr = self.rowNumberOfSelectedMolecule(sorts, scanid, filters, molid, mz)
@@ -812,19 +816,23 @@ class JobDb(object):
         sorts = sorts or [{"property": "refscore", "direction": "DESC"},
                           {"property": "molid", "direction": "ASC"}]
 
+        if molid:
+            try:
+                start = self.startOfSelectedMolecule(limit, sorts, scanid,
+                                                     filters, molid, mz)
+            except MoleculeNotFound:
+                molid = None
+
         q = self.session.query(Molecule)
         q = self._addFilter2MoleculesQuery(q, sorts, scanid, filters, mz)
 
         total = q.count()
 
-        if molid:
-            start = self.startOfSelectedMolecule(limit, sorts, scanid,
-                                                 filters, molid, mz)
         page = start / limit + 1
 
         mets = self._moleculesQuery2Rows(start, limit, q)
 
-        return {'total': total, 'rows': mets, 'page': page}
+        return {'total': total, 'rows': mets, 'page': page, 'molid': molid}
 
     def molecules2csv(self, molecules, cols=None):
         """Converts array of molecules to csv file handler
@@ -895,7 +903,7 @@ class JobDb(object):
 
         return s
 
-    def scansWithMolecules(self, filters=None, molid=None):
+    def scansWithMolecules(self, filters=None, molid=None, mz=None):
         """Returns id and rt of lvl1 scans which have a fragment in it
         and for which the filters in params pass
 
@@ -906,12 +914,20 @@ class JobDb(object):
         ``filters``
             List of filters which is generated
             by ExtJS component Ext.ux.grid.FiltersFeature
+        ``mz``
+            Filter on mz with +- precision
         """
         filters = filters or []
         fq = self.session.query(Fragment.scanid).\
             filter(Fragment.parentfragid == 0)
         if molid is not None:
             fq = fq.filter(Fragment.molid == molid)
+
+        if mz is not None:
+            precision = 1 + self.session.query(Run.mz_precision).scalar() / 1e6
+            minmz = mz / precision
+            maxmz = mz * precision
+            fq = fq.filter(Fragment.mz.between(minmz, maxmz))
 
         for afilter in filters:
             has_no_hit_filter = (afilter['field'] == 'nhits' and
