@@ -139,6 +139,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     var store = this.getFragmentsStore();
     store.setProxy(this.fragmentProxyFactory(scanid, molid));
     store.load();
+    store.lastRequest = Ext.Ajax.getLatest();
   },
   /**
    * Need to change url of fragment proxy so use a factory to create a new proxy foreach scan/molecule combo
@@ -153,6 +154,11 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
       url: Ext.String.format(this.application.getUrls().fragments, scanid, molid),
       listeners: {
         exception: function(proxy, response, operation) {
+    	  if (response.statusText === 'transaction aborted') {
+      		  // a newer request was made so this one was canceled.
+      		  this.fireEvent('abort', proxy, response, operation);
+      		  return;
+      	  }
           Ext.Error.raise({
             msg: 'Failed to load fragments from server',
             response: response,
@@ -172,7 +178,12 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
    */
   clearFragments: function() {
     Ext.log({}, 'Clearing fragments and mspectra >lvl1');
-    this.getFragmentsStore().getRootNode().removeAll();
+    var store = this.getFragmentsStore();
+    store.getRootNode().removeAll();
+    // cancel any loading requests
+    if (store.isLoading()) {
+    	Ext.Ajax.abort(store.lastRequest);
+    }
 
     // (un)assignment not possible when no fragment is selected
     var abut = this.getAssignStruct2PeakButton();
@@ -222,19 +233,23 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
 	  }
   },
   onLoad: function(t, parent, children) {
+	this.getFragmentTree().setLoading(false);
     // when parent is root node then expand it
     if (parent.isRoot()) {
         parent.expand();
 
         // remember which molecule to which peak to assign
         var abut = this.getAssignStruct2PeakButton();
+        if (!children) {
+        	// aborted load will have no children, so dont load
+        	return;
+        }
         var data = parent.childNodes[0].data;
         abut.setParams({ scanid: data.scanid, molid: data.molid, mz: data.mz});
         abut.toggle(data.isAssigned);
         abut.enable();
     }
     this.application.fireEvent('fragmentload', parent, parent.childNodes);
-    this.getFragmentTree().setLoading(false);
     this.initMolecules();
   },
   selectFragment: function(fragment) {
