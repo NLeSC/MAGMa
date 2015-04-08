@@ -111,5 +111,8 @@ Ext.define('Esc.magmaweb.store.Molecules', {
   },
   clearMoleculeSelection: function() {
       delete(this.getProxy().extraParams.molid);
+  },
+  hasSelectedMolecule: function() {
+	  return 'molid' in this.getProxy().getReader().rawData;
   }
 });
