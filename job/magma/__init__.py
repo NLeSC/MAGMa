@@ -26,7 +26,7 @@ config = ConfigParser.ConfigParser()
 config.read(['magma_job.ini', os.path.expanduser('~/magma_job.ini')])
 
 from rdkit import Chem,Geometry
-from rdkit.Chem import AllChem,rdMolTransforms
+from rdkit.Chem import AllChem,rdMolTransforms,Descriptors
 from rdkit.rdBase import DisableLog
 DisableLog('rdApp.warning')
 
@@ -202,6 +202,38 @@ class MetabolizeEngine(object):
                         metabolites[ikey]=[name,p]
         return metabolites
 
+def get_molecule(molblock,name,refscore,predicted,mim=None,smiles=None,natoms=None,inchikey14=None,molform=None,reference=None,logp=None,mass_filter=9999):
+    if inchikey14==None or mim==None or molform==None or logp==None or natoms==None:
+        mol=Chem.MolFromMolBlock(molblock)
+        if mol==None:
+            return
+        inchikey14=Chem.AllChem.InchiToInchiKey(AllChem.MolToInchi(mol))[:14]
+        smiles=Chem.MolToSmiles(mol)
+        # Calc mim
+        mim=0.0
+        for atom in mol.GetAtoms():
+            mim+=pars.mims[atom.GetSymbol()]+pars.Hmass*(atom.GetNumImplicitHs()+atom.GetNumExplicitHs())
+        molform=Chem.rdMolDescriptors.CalcMolFormula(mol)
+        natoms=mol.GetNumHeavyAtoms()
+        logp = Chem.Crippen.MolLogP(mol)
+    if mim > mass_filter:
+        return
+    return Molecule(
+        mol=unicode(molblock, 'utf-8', 'xmlcharrefreplace'),
+        refscore=refscore,
+        inchikey14=unicode(inchikey14),
+        smiles=unicode(smiles),
+        formula=unicode(molform),
+        predicted=predicted,
+        name=unicode(name, 'utf-8', 'xmlcharrefreplace'),
+        nhits=0,
+        mim=mim,
+        natoms=natoms,
+        reference=unicode(reference),
+        logp=logp,
+        reactionsequence={}
+        )
+
 class StructureEngine(object):
     def __init__(self,db_session,pubchem_names=False,call_back_url=None):
         self.db_session = db_session
@@ -249,65 +281,46 @@ class StructureEngine(object):
                 logger.warn('Failed to read smiles: '+smiles+' ('+name+')')
         logger.info(str(len(molids))+' molecules added to library\n')
 
-    def add_structure(self,molblock,name,refscore,predicted,mim=None,natoms=None,inchi=None,molform=None,reference=None,logp=None,mass_filter=9999):
-        molecule=types.MoleculeType(molblock,name,refscore,predicted,mim,natoms,inchi,molform,reference,logp)
+    def add_structure(self,molblock,name,refscore,predicted,mim=None,smiles=None,natoms=None,inchi=None,molform=None,reference=None,logp=None,mass_filter=9999):
+        molecule=get_molecule(molblock,name,refscore,predicted,mim,natoms,inchi,molform,reference,logp)
         return self.add_molecule(molecule,mass_filter)
 
-    def add_molecule(self,molecule,mass_filter=9999,check_duplicates=True,merge=False):
-        if molecule.mim > mass_filter:
-            return
-        mol=Chem.MolFromMolBlock(molecule.molblock)
-        if mol==None:
-            return
-        metab=Molecule(
-            mol=unicode(molecule.molblock, 'utf-8', 'xmlcharrefreplace'),
-            refscore=molecule.refscore,
-            inchikey14=unicode(molecule.inchikey14),
-            formula=unicode(molecule.formula),
-            predicted=molecule.predicted,
-            name=unicode(molecule.name, 'utf-8', 'xmlcharrefreplace'),
-            nhits=0,
-            mim=molecule.mim,
-            natoms=molecule.natoms,
-            reference=unicode(molecule.reference),
-            logp=molecule.logp,
-            reactionsequence={}
-            )
+    def add_molecule(self,newmol,mass_filter=9999,check_duplicates=True,merge=False):
         if check_duplicates:
-            dups=self.db_session.query(Molecule).filter_by(inchikey14=unicode(molecule.inchikey14)).all()
-            if len(dups)>0:
+            dup=self.db_session.query(Molecule).filter_by(inchikey14=newmol.inchikey14).first()
+            if dup != None:
                 if merge:
-                    metab=dups[0]
-                    if metab.name == "" and molecule.name != "":
-                        metab.name=unicode(str(metab.name)+'</br>'+molecule.name, 'utf-8', 'xmlcharrefreplace')
-                    if metab.reference == "None" and molecule.reference != "":
-                        metab.reference=unicode(molecule.reference)
-                    if molecule.refscore > 0 and molecule.refscore>metab.refscore:
-                        metab.refscore=molecule.refscore
+                    if dup.name == "" and newmol.name != "":
+                        dup.name=newmol.name
+                    if dup.reference == "None" and newmol.reference != "":
+                        dup.reference=newmol.reference
+                    if newmol.refscore > 0 and newmol.refscore>dup.refscore:
+                        dup.refscore=newmol.refscore
+                    newmol=dup
                 else:
-                    if dups[0].refscore < molecule.refscore:
-                        metab.molid=dups[0].molid
-                        self.db_session.delete(dups[0])
+                    if dup.refscore < newmol.refscore:
+                        newmol.molid=dup.molid
+                        self.db_session.delete(dup)
                         #self.db_session.add(metab)
-                        logger.info('Duplicate structure, first one removed: '+molecule.name)
+                        logger.info('Duplicate structure, first one removed: '+newmol.name)
                     # TODO remove any fragments related to this structure as well
                     else:
-                        logger.info('Duplicate structure, kept first one: '+metab.name)
+                        logger.info('Duplicate structure, kept new one: '+newmol.name)
                         return
         if self.pubchem_names:
-            in_pubchem=self.pubchem_engine.check_inchi(metab.mim, metab.inchikey14)
+            in_pubchem=self.pubchem_engine.check_inchi(newmol.mim, newmol.inchikey14)
             if in_pubchem!=False:
                 name,reference,refscore=in_pubchem
-                if metab.name == '':
-                    metab.name = unicode(name, 'utf-8', 'xmlcharrefreplace')
-                if metab.reference == "None":
-                    metab.reference = unicode(reference)
-                if metab.refscore == None:
-                    metab.refscore = refscore
-        self.db_session.add(metab)
-        logger.debug('Added molecule: '+Chem.MolToSmiles(mol))
+                if newmol.name == '':
+                    newmol.name = unicode(name, 'utf-8', 'xmlcharrefreplace')
+                if newmol.reference == "None":
+                    newmol.reference = unicode(reference)
+                if newmol.refscore == None:
+                    newmol.refscore = refscore
+        self.db_session.add(newmol)
+        logger.debug('Added molecule: '+newmol.name)
         self.db_session.flush()
-        return metab.molid
+        return newmol.molid
 
     def metabolize(self,molid,metabolism,endpoints=False):
         try:
@@ -321,7 +334,7 @@ class StructureEngine(object):
         molids=set()
         products=self.metabolize_engine.metabolize(parent,metabolism,endpoints)
         for product in products.values():
-            molecule=types.MoleculeType(Chem.MolToMolBlock(product[1]),"",None,1)
+            molecule=get_molecule(Chem.MolToMolBlock(product[1]),"",None,1)
             new_molid=self.add_molecule(molecule,merge=True)
             molids.add(new_molid)
             reactid=self.db_session.query(Reaction.reactid).filter(Reaction.reactant==molid,Reaction.product==new_molid,Reaction.name==unicode(product[0])).all()
@@ -406,13 +419,13 @@ class StructureEngine(object):
                 self.call_back_engine.update_callback_url('Transformations completed',force=True)
         logger.info(str(self.db_session.query(Molecule).count())+' molecules in library\n')      
  
-    def retrieve_structures(self,mass):
-        dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
-        conn = sqlite3.connect(dbfilename)
-        c = conn.cursor()
-        result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass-0.01,mass+0.01))
-        for (id,mim,molblock,smiles,chebi_name) in result:
-            self.add_molecule(zlib.decompress(molblock),str(chebi_name),1.0,1,"",1)
+#    def retrieve_structures(self,mass):
+#        dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
+#        conn = sqlite3.connect(dbfilename)
+#        c = conn.cursor()
+#        result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass-0.01,mass+0.01))
+#        for (id,mim,molblock,smiles,chebi_name) in result:
+#            self.add_molecule(zlib.decompress(molblock),str(chebi_name),1.0,1,"",1)
 
     def get_molids_with_mass_less_then(self,mass,molids=None):
         if molids==None:
@@ -1093,15 +1106,15 @@ class PubChemEngine(object):
         return molecules
     def add_result2molecules(self,result,molecules):
         for (cid,mim,charge,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
-            molecules.append(types.MoleculeType(
-                           molblock=zlib.decompress(molblock),
-                           name=name+' ('+str(cid)+')',
+            molecules.append(get_molecule(
+                           zlib.decompress(molblock),
+                           name+' ('+str(cid)+')',
+                           refscore,
+                           0,
                            mim=float(mim/1e6),
                            natoms=natoms,
                            molform=molform,
                            inchikey14=inchikey,
-                           refscore=refscore,
-                           predicted=0,
                            reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
                                      str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>',
                            logp=float(logp)/10.0,
@@ -1153,15 +1166,15 @@ class KeggEngine(object):
             keggrefs='<a href="http://www.genome.jp/dbget-bin/www_bget?cpd:'+keggids[0]+'" target="_blank">'+keggids[0]+' (Kegg)</a>'
             for keggid in keggids[1:]:
                 keggrefs+='<br><a href="http://www.genome.jp/dbget-bin/www_bget?cpd:'+keggid+'" target="_blank">'+keggid+' (Kegg)</a>'
-            molecules.append(types.MoleculeType(
-                           molblock=zlib.decompress(molblock),
-                           name=name+' ('+str(cid)+')',
+            molecules.append(get_molecule(
+                           zlib.decompress(molblock),
+                           name+' ('+str(cid)+')',
+                           None,
+                           0,
                            mim=float(mim/1e6),
                            natoms=natoms,
                            molform=molform,
                            inchikey14=inchikey,
-                           refscore=None,
-                           predicted=0,
                            reference=keggrefs,
                            logp=float(logp)/10.0,
                            ))
@@ -1185,15 +1198,15 @@ class HmdbEngine(object):
             hmdb_refs='<a href="http://www.hmdb.ca/metabolites/'+hmdb_ids[0]+'" target="_blank">'+hmdb_ids[0]+' (HMDB)</a>'
             for hmdb_id in hmdb_ids[1:]:
                 hmdb_refs+='<br><a href="http://www.hmdb.ca/metabolites/'+hmdb_id+'" target="_blank">'+hmdb_id+' (HMDB)</a>'
-            molecules.append(types.MoleculeType(
-                           molblock=zlib.decompress(molblock),
-                           name=name+' ('+str(cid)+')',
+            molecules.append(get_molecule(
+                           zlib.decompress(molblock),
+                           name+' ('+str(cid)+')',
+                           None,
+                           0,
                            mim=float(mim/1e6),
                            natoms=natoms,
                            molform=molform,
                            inchikey14=inchikey,
-                           refscore=None,
-                           predicted=0,
                            reference=hmdb_refs,
                            logp=float(logp)/10.0,
                            ))
