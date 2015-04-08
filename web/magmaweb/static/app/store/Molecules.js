@@ -72,6 +72,16 @@ Ext.define('Esc.magmaweb.store.Molecules', {
   isFilteredOnScan: function() {
     return 'scanid' in this.getProxy().extraParams;
   },
+  setMzFilter: function(mz) {
+	  this.getProxy().extraParams.mz = mz;
+	  this.loadPage(1);
+  },
+  clearMzFilter: function() {
+	  if ('mz' in this.getProxy().extraParams) {
+	      delete(this.getProxy().extraParams.mz);
+	      this.loadPage(1);
+	  }
+  },
   /**
    * Sets the pagesize of the store and reloads store to first page.
    *

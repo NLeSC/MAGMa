@@ -886,6 +886,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                             scanid=None,
                                             filters=[],
                                             molid=None,
+                                            mz=None,
                                             )
         job.db.scansWithMolecules.assert_called_with(filters=[], molid=None)
 
@@ -905,6 +906,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                             scanid=641,
                                             filters=[],
                                             molid=None,
+                                            mz=None,
                                             )
 
     def test_moleculesjson_nrscaneqfilter(self):
@@ -927,6 +929,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                             scanid=None,
                                             filters=filter_expected,
                                             molid=None,
+                                            mz=None,
                                             )
         job.db.scansWithMolecules.assert_called_with(filters=filter_expected,
                                                      molid=None)

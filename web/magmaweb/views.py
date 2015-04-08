@@ -545,14 +545,21 @@ class JobViews(object):
 
         """
         request = self.request
-        if ('scanid' in request.params):
+
+        if 'scanid' in request.params:
             scanid = int(request.params['scanid'])
         else:
             scanid = None
-        if ('molid' in request.params):
+
+        if 'molid' in request.params:
             molid = int(request.params['molid'])
         else:
             molid = None
+
+        if 'mz' in request.params:
+            mz = float(request.params['mz'])
+        else:
+            mz = None
 
         def jd(param):
             return json.loads(request.params[param])
@@ -564,7 +571,7 @@ class JobViews(object):
             start=int(request.params['start']),
             limit=int(request.params['limit']),
             scanid=scanid, filters=filters, sorts=sorts,
-            molid=molid,
+            molid=molid, mz=mz,
         )
         scans = job.scansWithMolecules(filters=filters, molid=molid)
         totalUnfiltered = job.moleculesTotalCount()

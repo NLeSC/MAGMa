@@ -45,6 +45,7 @@ describe('MSpectras controller', function() {
       ctrl.loadMSpectra(mslevel, scanid, markers, true);
 
       expect(mspectra.setLoading).toHaveBeenCalledWith(true);
+      expect(mspectra.scanid).toEqual(scanid);
       expect(d3.json).toHaveBeenCalledWith(
         'data/mspectra.'+scanid+'.json?mslevel='+mslevel,
         jasmine.any(Function)
@@ -110,7 +111,7 @@ describe('MSpectras controller', function() {
           spyOn(mspectra, 'setLoading');
           spyOn(mspectra, 'setData');
           spyOn(mspectra, 'setMarkers');
-          spyOn(mspectra, 'selectPeak');
+          spyOn(mspectra, 'selectPeak').andReturn(true);
           spyOn(mspectra, 'up').andCallFake(function() {
               return { down: function() {
                   return { enable: function() { return true} };
@@ -136,7 +137,6 @@ describe('MSpectras controller', function() {
           var expected_markers = [{"mz": 92.0256195068359}, {"mz" : 93.1171875}];
           expect(mspectra.setMarkers).toHaveBeenCalledWith(expected_markers);
           expect(mspectra.selectPeak).not.toHaveBeenCalled();
-          expect(mspectra.scanid).toEqual(scanid);
           expect(mspectra.cutoff).toEqual(data.cutoff);
           expect(mspectra.up).toHaveBeenCalled();
           expect(Ext.MessageBox.show).not.toHaveBeenCalled();
@@ -153,7 +153,8 @@ describe('MSpectras controller', function() {
       });
 
       it('should select peak when peak was previously selected', function() {
-    	  ctrl.selectedlvl1peak = 92.0256195068359;
+    	  ctrl.selectedMolecule = {data: {mz: 92.0256195068359}};
+    	  mspectra.selectedpeak = 93.1171875
 
     	  ctrl.onLoadMSpectra(mslevel, scanid, markers, data);
 
@@ -198,7 +199,6 @@ describe('MSpectras controller', function() {
           expect(mspectra.setData).toHaveBeenCalledWith(data.peaks);
           var expected_markers = [{"mz": 92.0256195068359}];
           expect(mspectra.setMarkers).toHaveBeenCalledWith(expected_markers);
-          expect(mspectra.scanid).toEqual(scanid);
           expect(mspectra.cutoff).toEqual(data.cutoff);
           expect(mspectra.up).toHaveBeenCalled();
           expect(Ext.MessageBox.show).not.toHaveBeenCalled();
@@ -226,22 +226,6 @@ describe('MSpectras controller', function() {
 	    ctrl.loadMSpectra1(scanid);
 
 	    expect(ctrl.loadMSpectra).toHaveBeenCalledWith(1, scanid, [], true);
-	  });
-
-	  it('should clear selected peak', function() {
-		ctrl.selectedlvl1peak = 311.2313;
-		var mspectra = jasmine.createSpyObj('mspectra', ['clearPeakSelection']);
-		mspectra.scanid = 1234;
-		spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
-		var callback = jasmine.createSpy('callback');
-		Ext.util.Observable.capture(ctrl.application, callback);
-
-		var scanid = 1134;
-	    ctrl.loadMSpectra1(scanid);
-
-	    expect(mspectra.clearPeakSelection).toHaveBeenCalledWith();
-	    expect(callback).toHaveBeenCalledWith('peakdeselect', 311.2313, 1, 1134);
-	    Ext.util.Observable.releaseCapture(ctrl.application);
 	  });
   });
 
@@ -510,7 +494,7 @@ describe('MSpectras controller', function() {
 		 var mol = {id: 1234, data: { mz: 5678.90}};
 		 var mspectra = Ext.create('Esc.d3.MSpectra');
 	     spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
-	     spyOn(mspectra, 'selectPeak');
+	     spyOn(mspectra, 'selectPeak').andReturn(true);
 	     mspectra.scanid = 2;
 	     var capturer = captureEvents();
 
@@ -519,7 +503,7 @@ describe('MSpectras controller', function() {
 		 expect(mspectra.selectPeak).toHaveBeenCalledWith(5678.90);
 		 expect(capturer.callback).toHaveBeenCalledWith('peakselect', 5678.90, 1, 2);
 		 Ext.util.Observable.releaseCapture(ctrl.application);
-		 expect(ctrl.selectedlvl1peak).toEqual(5678.90);
+		 expect(ctrl.selectedMolecule).toEqual(mol);
 	 });
 
 	 it('should do nothing if peak already selected', function() {
@@ -540,11 +524,11 @@ describe('MSpectras controller', function() {
 
   describe('deselectPeakOfMolecule', function() {
 	 it('should unselect lvl1 peak', function() {
-		 ctrl.selectedlvl1peak = 5678.90;
+		 ctrl.selectedMolecule = {id: 1234, data: { mz: 5678.90}};
 
 		 ctrl.deselectPeakOfMolecule();
 
-		 expect(ctrl.selectedlvl1peak).toBeFalsy();
+		 expect(ctrl.selectedMolecule).toBeFalsy();
 	 }) ;
   });
 });
