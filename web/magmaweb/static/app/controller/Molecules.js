@@ -277,6 +277,10 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
   },
   onDeselect: function(rm, molecule) {
     var molid = molecule.data.molid;
+    var store = this.getMoleculesStore();
+    if (store.hasSelectedMolecule()) {
+    	store.loadPage(1);
+    }
     this.application.fireEvent('moleculedeselect', molid, molecule);
   },
   /**
