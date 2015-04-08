@@ -50,21 +50,21 @@ describe('Molecules', function() {
       expect(store.getProxy().extraParams.scanid).toEqual(scanid);
     });
 
-    it('removeMzFilter, unfiltered', function() {
+    it('clearMzFilter, unfiltered', function() {
         spyOn(store, 'loadPage');
 
-        store.removeMzFilter();
+        store.clearMzFilter();
 
         expect(store.loadPage).not.toHaveBeenCalledWith(1);
         expect(store.getProxy().extraParams.mz).toBeUndefined();
       });
 
-	  it('removeMzFilter', function() {
+	  it('clearMzFilter', function() {
 	    var mz = 1133;
 	    store.getProxy().extraParams.mz = mz;
 	    spyOn(store, 'loadPage');
 
-	    store.removeMzFilter();
+	    store.clearMzFilter();
 
 	    expect(store.loadPage).toHaveBeenCalledWith(1);
 	    expect(store.getProxy().extraParams.mz).toBeUndefined();
@@ -271,7 +271,8 @@ describe('Molecules', function() {
                removeScanFilter: function() {},
                sorters: new Ext.util.AbstractMixedCollection(false, function(item) {
                    return item.id || item.property;
-               })
+               }),
+               clearMzFilter: jasmine.createSpy('clearMzFilter')
            };
            spyOn(ctrl, 'getMoleculesStore').andReturn(mockedstore);
            spyOn(mockedstore, 'setScanFilter');
@@ -293,7 +294,7 @@ describe('Molecules', function() {
 
            ctrl.clearScanFilter();
 
-           expect(list.clearMzFilter).toHaveBeenCalled();
+           expect(mockedstore.clearMzFilter).toHaveBeenCalled();
        });
      });
 
@@ -353,7 +354,7 @@ describe('Molecules', function() {
 	    it('should tell list to filter on mz', function() {
 		  ctrl.applyMzFilter(122.0373001, 1);
 
-		  expect(store.setMzFilterl).toHaveBeenCalledWith(122.0373001);
+		  expect(store.setMzFilter).toHaveBeenCalledWith(122.0373001);
 		});
 
 	    it('should show score column', function() {
@@ -390,7 +391,7 @@ describe('Molecules', function() {
 	            store = {
 	                setScanFilter: function() {},
 	                removeScanFilter: function() {},
-	                clearMzFilter: jasmine.createSpy('clearMzFilter')
+	                clearMzFilter: jasmine.createSpy('clearMzFilter'),
 	                sorters: new Ext.util.AbstractMixedCollection(false, function(item) {
 	                    return item.id || item.property;
 	                })
