@@ -635,7 +635,13 @@ class MsDataEngine(object):
 
     def store_manual_tree(self,manual_tree,tree_type):
         # tree_type: 0 for mass tree, -1 and 1 for formula trees with negative or positive ionisation mode respectively
-        tree_string=''.join(open(manual_tree).read().split()) # remove whitespaces (' ','\t','\n',etc) from tree_string
+        tree_string=open(manual_tree).read()
+        tree_string=tree_string.replace(' ','').\
+                                replace('\t','').\
+                                replace('(\n','(').\
+                                replace(',\n',',').\
+                                replace('\n)',')').\
+                                replace('\n',',')
         tree_list=re.split('([\,\(\)])',tree_string)
         self.global_scanid = 1
         self.store_manual_subtree(tree_list,0,0,0,1,tree_type)
@@ -650,7 +656,10 @@ class MsDataEngine(object):
         while len(tree_list)>0 and tree_list[0]!=')':
             tree_item=tree_list.pop(0)
             if tree_item.find(':')>=0:
-                mz,intensity=tree_item.split(':')
+                try:
+                    mz,intensity=tree_item.split(':')
+                except:
+                    raise FileFormatError('Corrupt Tree format ...')
                 if tree_type != 0:
                     mz=self.mass_from_formula(mz)-tree_type*pars.elmass
                 self.db_session.add(Peak(scanid=scanid,mz=mz,intensity=intensity))
