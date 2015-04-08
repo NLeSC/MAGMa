@@ -888,7 +888,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                             molid=None,
                                             mz=None,
                                             )
-        job.db.scansWithMolecules.assert_called_with(filters=[], molid=None)
+        job.db.scansWithMolecules.assert_called_with(filters=[], molid=None, mz=None)
 
     def test_moleculesjson_scanidfilter(self):
         request = testing.DummyRequest(params={'start': 0,
@@ -932,7 +932,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                             mz=None,
                                             )
         job.db.scansWithMolecules.assert_called_with(filters=filter_expected,
-                                                     molid=None)
+                                                     molid=None, mz=None)
 
     def test_moleculesjson_notfilledreturn(self):
         request = testing.DummyRequest(params={'start': 0,
@@ -974,11 +974,11 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                                })
         job = self.fake_job()
         views = JobViews(job, request)
-        job.db.molecules.return_value = {'total': 3, 'rows': [1, 2, 3], 'page': 1}
+        job.db.molecules.return_value = {'total': 3, 'rows': [1, 2, 3], 'page': 1, 'molid': 1}
 
         views.moleculesjson()
 
-        job.db.scansWithMolecules.assert_called_once_with(filters=[], molid=1)
+        job.db.scansWithMolecules.assert_called_once_with(filters=[], molid=1, mz=None)
 
     def test_moleculescsv(self):
         import StringIO
