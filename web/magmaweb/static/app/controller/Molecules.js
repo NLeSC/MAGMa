@@ -333,7 +333,7 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
 	  var list = this.getMoleculeList();
 	  if (store.isFilteredOnScan()) {
 		  this.rememberSelectedMolecule();
-		  list.setMzFilterToEqual(mz);
+	      store.setMzFilter(mz);
 		  list.showFragmentScoreColumn();
 	  }
   },
@@ -358,7 +358,7 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
       this.rememberSelectedMolecule();
 	  var list = this.getMoleculeList();
       list.hideFragmentScoreColumn();
-	  list.clearMzFilter();
+	  store.clearMzFilter();
   },
   onPageSizeChange: function(combo) {
       this.getMoleculesStore().setPageSize(combo.getValue());

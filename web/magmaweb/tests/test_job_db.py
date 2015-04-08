@@ -326,19 +326,13 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
                                          "field": "deltappm"}])
 
     def test_filteredon_mz(self):
-        filters = [{"type": "numeric", "comparison": "eq",
-                    "value": 109.0295639038086, "field": "mz"}]
-
-        response = self.job.molecules(scanid=641, filters=filters)
+        response = self.job.molecules(scanid=641, mz=109.0295639038086)
 
         self.assertEqual(response['total'], 1)
 
     def test_filteredon_mz_without_scan(self):
         with self.assertRaises(ScanRequiredError):
-            self.job.molecules(filters=[{"type": "numeric",
-                                           "comparison": "eq",
-                                           "value": 109.0295639038086,
-                                           "field": "mz"}])
+            self.job.molecules(mz=109.0295639038086)
 
     def test_filteredon_not_assigned(self):
         response = self.job.molecules(filters=[{"type": "boolean",
@@ -809,29 +803,6 @@ class JobScansWithMoleculesTestCase(JobDbTestCaseAbstract):
             {'id': 870, 'rt': 1254.15}
         ])
 
-    def test_filteron_mz(self):
-        filters = [{"type": "numeric", "comparison": "gt",
-                    "value": 0, "field": "nhits"},
-                   {"type": "numeric", "value": "200",
-                    "comparison": "gt", "field": "mz"}]
-
-        response = self.job.scansWithMolecules(filters=filters)
-
-        self.assertEqual(response, [
-            {'id': 870, 'rt': 1254.15},
-        ])
-
-    def test_filteron_mz_and_molid(self):
-        filters = [{"type": "numeric", "comparison": "gt",
-                    "value": 0, "field": "nhits"},
-                   {"type": "numeric", "value": "200",
-                    "comparison": "gt", "field": "mz"}]
-
-        response = self.job.scansWithMolecules(filters=filters, molid=352)
-
-        self.assertEqual(response, [
-            {'id': 870, 'rt': 1254.15},
-        ])
 
 class JobMSpectraTestCase(JobDbTestCaseAbstract):
 
