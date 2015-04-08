@@ -821,6 +821,17 @@ class JobScansWithMoleculesTestCase(JobDbTestCaseAbstract):
             {'id': 870, 'rt': 1254.15},
         ])
 
+    def test_filteron_mz_and_molid(self):
+        filters = [{"type": "numeric", "comparison": "gt",
+                    "value": 0, "field": "nhits"},
+                   {"type": "numeric", "value": "200",
+                    "comparison": "gt", "field": "mz"}]
+
+        response = self.job.scansWithMolecules(filters=filters, molid=352)
+
+        self.assertEqual(response, [
+            {'id': 870, 'rt': 1254.15},
+        ])
 
 class JobMSpectraTestCase(JobDbTestCaseAbstract):
 

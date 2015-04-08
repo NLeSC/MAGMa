@@ -905,7 +905,7 @@ class JobDb(object):
         filters = filters or []
         fq = self.session.query(Fragment.scanid).\
             filter(Fragment.parentfragid == 0)
-        if (molid is not None):
+        if molid is not None:
             fq = fq.filter(Fragment.molid == molid)
 
         for afilter in filters:
@@ -919,17 +919,10 @@ class JobDb(object):
             elif (afilter['field'] == 'deltappm'):
                 fq = self.extjsgridfilter(fq, Fragment.deltappm, afilter)
             elif (afilter['field'] == 'mz'):
-                pass
-#                 if afilter['comparison'] == 'eq':
-#                     precision = 1 + self.session.query(Run.mz_precision).scalar() / 1e6
-#                     minmz = afilter['value'] / precision
-#                     maxmz = afilter['value'] * precision
-#                     minfilter = {'type': 'numeric', 'comparison': 'gt', 'value': minmz}
-#                     maxfilter = {'type': 'numeric', 'comparison': 'lt', 'value': maxmz}
-#                     fq = self.extjsgridfilter(fq, Fragment.mz, minfilter)
-#                     fq = self.extjsgridfilter(fq, Fragment.mz, maxfilter)
-#                 else:
-#                 fq = self.extjsgridfilter(fq, Fragment.mz, afilter)
+                if molid is None:
+                    fq = self.extjsgridfilter(fq, Fragment.mz, afilter)
+                # dont need to filter on mz
+                # mol will already filter the scans
             elif (afilter['field'] == 'assigned'):
                 afilter['type'] = 'null'
                 fq = fq.join(Peak, and_(Fragment.scanid == Peak.scanid,
