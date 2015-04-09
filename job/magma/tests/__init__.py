@@ -132,7 +132,7 @@ class TestStructureEngine(unittest.TestCase):
         self.assertIsNone(se.call_back_engine)
 
     def test_add_structure(self):
-        se = magma.StructureEngine(self.db_session, u'phase1,phase2', 2)
+        se = magma.StructureEngine(self.db_session, u'test')
 
         molblock = Chem.MolToMolBlock(Chem.MolFromSmiles('CCO'))
 
@@ -155,7 +155,7 @@ class TestStructureEngine(unittest.TestCase):
                              )
 
     def test_add_structure_2nd_replace(self):
-        se = magma.StructureEngine(self.db_session, u'phase1,phase2', 2)
+        se = magma.StructureEngine(self.db_session, u'test')
 
         molblock = Chem.MolToMolBlock(Chem.MolFromSmiles('CCO'))
 
@@ -174,7 +174,7 @@ class TestStructureEngine(unittest.TestCase):
 
 
     def test_add_structure_2nd_ignore(self):
-        se = magma.StructureEngine(self.db_session, u'phase1,phase2', 2)
+        se = magma.StructureEngine(self.db_session, u'test')
 
         molblock = Chem.MolToMolBlock(Chem.MolFromSmiles('CCO'))
 
@@ -201,7 +201,7 @@ class TestStructureEngine(unittest.TestCase):
         self.assertGreater(self.db_session.query(Molecule).filter(Molecule.predicted==True).count(), 0)
 
     def test_metabolize_unknown_metabolite_type(self):
-        se = magma.StructureEngine(self.db_session, u'phase1234', 1)
+        se = magma.StructureEngine(self.db_session, u'test')
         molblock = Chem.MolToMolBlock(Chem.MolFromSmiles('Oc1cc(CC2OCCC2)cc(O)c1O'))
         parent_molid = se.add_structure(
                                         molblock, '5-(3,4,5)-trihydroxyphenyl-g-valerolactone (F,U)',
@@ -209,15 +209,15 @@ class TestStructureEngine(unittest.TestCase):
                                         )
         se.metabolize(parent_molid, u'phase1234')
 
-        # TODO reactor requires at least one SMIRKS query
+        # TODO metabolize requires at least one SMIRKS query
         # if none given then raise exception
 
         self.assertEqual(self.db_session.query(Molecule).count(), 1)
 
     def test_metabolize_bad_molid(self):
-        se = magma.StructureEngine(self.db_session, u'phase1', 1)
+        se = magma.StructureEngine(self.db_session, u'test')
         parent_molid = 1
-        se.metabolize(parent_molid, u'phase1', 1)
+        se.metabolize(parent_molid, u'phase1')
 
         self.assertEqual(self.db_session.query(Molecule).count(), 0)
 
