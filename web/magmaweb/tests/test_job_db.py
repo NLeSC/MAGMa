@@ -816,8 +816,8 @@ class JobScansWithMoleculesTestCase(JobDbTestCaseAbstract):
             {'id': 870, 'rt': 1254.15}
         ])
 
-    def test_mz(self):
-        response = self.job.scansWithMolecules(mz=109.0295639038086)
+    def test_scanandmz(self):
+        response = self.job.scansWithMolecules(mz=109.0295639038086, scanid=641)
 
         self.assertEqual(response, [
             {'id': 641, 'rt': 933.317}
