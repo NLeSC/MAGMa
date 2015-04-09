@@ -575,7 +575,10 @@ class JobViews(object):
         )
         # use molecules['molid'] because when molid cant be found it will be set to None
         # and then the scans wont be filtered on the original molid
-        scans = job.scansWithMolecules(filters=filters, molid=molecules.get('molid', None), mz=mz)
+        scans = job.scansWithMolecules(filters=filters,
+                                       molid=molecules.get('molid', None),
+                                       mz=mz,
+                                       scanid=scanid)
         totalUnfiltered = job.moleculesTotalCount()
 
         response = {'totalUnfiltered': totalUnfiltered,

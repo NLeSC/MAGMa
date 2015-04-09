@@ -903,7 +903,7 @@ class JobDb(object):
 
         return s
 
-    def scansWithMolecules(self, filters=None, molid=None, mz=None):
+    def scansWithMolecules(self, filters=None, molid=None, mz=None, scanid=None):
         """Returns id and rt of lvl1 scans which have a fragment in it
         and for which the filters in params pass
 
@@ -923,11 +923,12 @@ class JobDb(object):
         if molid is not None:
             fq = fq.filter(Fragment.molid == molid)
 
-        if mz is not None:
-            precision = 1 + self.session.query(Run.mz_precision).scalar() / 1e6
-            minmz = mz / precision
-            maxmz = mz * precision
-            fq = fq.filter(Fragment.mz.between(minmz, maxmz))
+        if scanid is not None and mz is not None:
+            # molid IN (SELECT molid FROM fragments WHERE scanid=? and mz=?)
+            mq = self.session.query(Fragment.molid)
+            mq = mq.filter(Fragment.scanid == scanid)
+            mq = mq.filter(Fragment.mz == mz)
+            fq = fq.filter(Fragment.molid.in_(mq))
 
         for afilter in filters:
             has_no_hit_filter = (afilter['field'] == 'nhits' and
