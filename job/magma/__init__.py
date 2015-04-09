@@ -797,7 +797,7 @@ class AnnotateEngine(object):
         for dbpeak in dbpeaks:
             scan.peaks.append(types.PeakType(dbpeak.mz,dbpeak.intensity,scan.scanid,pars.missingfragmentpenalty*(dbpeak.intensity**0.5)))
         dbchildscans=self.db_session.query(Scan).filter(Scan.precursorscanid==scan.scanid).all()
-        max_depth=0
+        max_depth=[] # list of tree depths of all children
         for dbchildscan in dbchildscans:
             # find the highest peak that qualifies as precursor peak for the child spectrum
             prec_intensity=0.0
@@ -805,18 +805,20 @@ class AnnotateEngine(object):
                 if peak.intensity>prec_intensity and -self.precursor_mz_precision < dbchildscan.precursormz-peak.mz < self.precursor_mz_precision:
                     prec_peak=peak
                     prec_intensity=peak.intensity
-            # if present, process the childscan as its child spectrum
+            # or add the precursor peak as a new peak in the current spectrum
             if prec_intensity==0.0:
                 if dbchildscan.precursorintensity >= cutoff:
                     scan.peaks.append(types.PeakType(dbchildscan.precursormz,dbchildscan.precursorintensity,scan.scanid,pars.missingfragmentpenalty*(dbchildscan.precursorintensity**0.5)))
                     prec_peak=scan.peaks[-1]
                 else:
                     continue
-            prec_peak.childscan,depth=self.build_spectrum(dbchildscan)
+            max_depth.append(1)
+            # process the child spectrum
+            prec_peak.childscan,child_depths=self.build_spectrum(dbchildscan)
             for childpeak in prec_peak.childscan.peaks:
                 prec_peak.missing_fragment_score+=childpeak.missing_fragment_score
-            max_depth=max(depth,max_depth)
-        max_depth+=1
+            if len(child_depths)>0:
+                max_depth[-1]+=max(child_depths)
         return scan,max_depth
 
     def build_spectra(self,scans='all'):
@@ -827,12 +829,14 @@ class AnnotateEngine(object):
         else:
             queryscans=self.db_session.query(Scan).filter(Scan.mslevel==1).filter(Scan.scanid.in_(scans)).all()
         for dbscan in queryscans:
-            spectrum,depth=self.build_spectrum(dbscan)
-            if depth > 1:
-                if depth in ndepths:
-                    ndepths[depth]+=1
-                else:
-                    ndepths[depth]=1
+            spectrum,max_depth=self.build_spectrum(dbscan)
+            for depth in max_depth:
+                depth+=1
+                if depth > 1:
+                    if depth in ndepths:
+                        ndepths[depth]+=1
+                    else:
+                        ndepths[depth]=1
             self.scans.append(spectrum)
         logger.info(str(len(self.scans))+' MS1 spectra')
         for depth in ndepths:
@@ -846,7 +850,6 @@ class AnnotateEngine(object):
                     if int_mass not in self.indexed_peaks:
                         self.indexed_peaks[int_mass]=set([])
                     self.indexed_peaks[int_mass].add(peak)
-                    # print self.write_peak(peak)
 
     def write_tree(self,scanid):
         for scan in self.scans:
@@ -1047,7 +1050,7 @@ class AnnotateEngine(object):
             self.call_back_engine.update_callback_url('Annotation completed',force=True)
         logger.info(str(total_frags)+' fragments generated in total.')
         nmols=(self.db_session.query(Fragment.molid).filter(Fragment.parentfragid==0).distinct().count())
-        nprecursors=(self.db_session.query(Fragment.scanid).filter(Fragment.parentfragid==0).distinct().count())
+        nprecursors=(self.db_session.query(Fragment.scanid,Fragment.mz).filter(Fragment.parentfragid==0).distinct().count())
         logger.info(str(nmols)+' Molecules matched with '+str(nprecursors)+' precursor ions, in total\n')
         job_server.destroy()
 
