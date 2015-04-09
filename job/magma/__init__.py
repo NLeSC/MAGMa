@@ -1205,7 +1205,7 @@ class HmdbEngine(object):
     def query_on_mim(self,low,high,charge):
         result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         molecules=[]
-        for (cid,mim,charge,natoms,molblock,inchikey,molform,name,reference,logp) in result:
+        for (cid,mim,charge,natoms,molblock,inchikey,smiles,molform,name,reference,logp) in result:
             hmdb_ids=reference.split(',')
             hmdb_refs='<a href="http://www.hmdb.ca/metabolites/'+hmdb_ids[0]+'" target="_blank">'+hmdb_ids[0]+' (HMDB)</a>'
             for hmdb_id in hmdb_ids[1:]:
@@ -1219,6 +1219,7 @@ class HmdbEngine(object):
                            natoms=natoms,
                            molform=molform,
                            inchikey14=inchikey,
+                           smiles=smiles,
                            reference=hmdb_refs,
                            logp=float(logp)/10.0,
                            ))
