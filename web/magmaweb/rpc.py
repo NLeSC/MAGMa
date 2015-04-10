@@ -12,7 +12,9 @@ from magmaweb.job import JobSubmissionError
 
 @view_defaults(permission='run', context=Job)
 class RpcViews(object):
+
     """Rpc endpoints"""
+
     def __init__(self, job, request):
         """View callable with job and request as arguments"""
         self.job = job
@@ -57,8 +59,9 @@ class RpcViews(object):
             jobquery = jobquery.add_structures(params, has_scans)
         except Invalid as exc:
             # no structures given
-            if (has_scans and 'structure_database' in params
-                    and params['structure_database']):
+            if (has_scans and
+                    'structure_database' in params and
+                    params['structure_database']):
                 # structures will be added by
                 # database lookup during extra annotate
                 pass
@@ -69,8 +72,9 @@ class RpcViews(object):
                 exc.add(Invalid(node, msg))
                 raise exc
 
-        if (has_scans and 'structure_database' in params
-                and params['structure_database']):
+        if (has_scans and
+                'structure_database' in params and
+                params['structure_database']):
             # add structure database location
             # when structure_database is selected
             key = 'structure_database.' + params['structure_database']
@@ -93,9 +97,9 @@ class RpcViews(object):
             job.ms_filename = self.request.POST['ms_data_file'].filename
         except AttributeError:
             job.ms_filename = 'Uploaded as text'
-        has_metabolites = job.db.metabolitesTotalCount() > 0
+        has_molecules = job.db.moleculesTotalCount() > 0
         jobquery = job.jobquery(self._status_url(job), self.restricted)
-        jobquery = jobquery.add_ms_data(self.request.POST, has_metabolites)
+        jobquery = jobquery.add_ms_data(self.request.POST, has_molecules)
         self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}
 
@@ -139,22 +143,22 @@ class RpcViews(object):
         return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.assign', renderer='json')
-    def assign_metabolite2peak(self):
-        """Assigns molecule with `metid` to peak `mz` in scan `scanid`.
+    def assign_molecule2peak(self):
+        """Assigns molecule with `molid` to peak `mz` in scan `scanid`.
         """
         job = self.job
         scanid = self.request.POST['scanid']
         mz = self.request.POST['mz']
-        metid = self.request.POST['metid']
-        job.db.assign_metabolite2peak(scanid, mz, metid)
+        molid = self.request.POST['molid']
+        job.db.assign_molecule2peak(scanid, mz, molid)
         return {'success': True, 'jobid': str(job.id)}
 
     @view_config(route_name='rpc.unassign', renderer='json')
-    def unassign_metabolite2peak(self):
+    def unassign_molecule2peak(self):
         """Unassigns any molecule from peak `mz` in scan `scanid`.
         """
         job = self.job
         scanid = self.request.POST['scanid']
         mz = self.request.POST['mz']
-        job.db.unassign_metabolite2peak(scanid, mz)
+        job.db.unassign_molecule2peak(scanid, mz)
         return {'success': True, 'jobid': str(job.id)}

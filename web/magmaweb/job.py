@@ -1,5 +1,4 @@
-"""Module for job submission and job data alteration/retrieval
-"""
+"""Module for job submission and job data alteration/retrieval."""
 import uuid
 import os
 import csv
@@ -11,11 +10,12 @@ from sqlalchemy import create_engine, and_
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, aliased, scoped_session
 from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import desc, asc, null
+from sqlalchemy.sql.expression import desc, asc, null, distinct
 from sqlalchemy.orm.exc import NoResultFound
 import transaction
 import requests
-from .models import Base, Metabolite, Scan, Peak, Fragment, Run
+from zope.sqlalchemy import ZopeTransactionExtension
+from .models import Base, Molecule, Scan, Peak, Fragment, Run
 from .models import Reaction
 import magmaweb.user
 from .jobquery import JobQuery
@@ -24,27 +24,36 @@ logger = logging.getLogger('magmaweb')
 
 
 class ScanRequiredError(Exception):
+
     """Raised when a scan identifier is required, but non is supplied"""
     pass
 
 
 class ScanNotFound(Exception):
+
     """Raised when a scan identifier is not found"""
     pass
 
+class MoleculeNotFound(Exception):
+
+    """Raised when a molecule identifier is not found"""
+    pass
 
 class FragmentNotFound(Exception):
+
     """Raised when a fragment is not found"""
     pass
 
 
 class JobIdException(Exception):
+
     def __init__(self, message, jobid):
         Exception.__init__(self, message)
         self.jobid = jobid
 
 
 class JobException(Exception):
+
     def __init__(self,
                  job,
                  message='Calculation failed for an unknown reason',
@@ -59,22 +68,27 @@ class JobException(Exception):
 
 
 class JobNotFound(JobIdException):
+
     """Raised when a job with a identifier is not found"""
 
 
 class JobSubmissionError(IOError):
+
     """Raised when a job fails to be submitted"""
 
 
 class JobIncomplete(JobException):
+
     """Raised when a complete job is required but job isnt"""
 
 
 class JobError(JobException):
+
     """Job which failed during run"""
 
 
 class MissingDataError(JobError):
+
     """Raised when job is missing data like molecules, peaks, or fragments"""
 
 
@@ -94,7 +108,9 @@ def make_job_factory(params):
 
 
 class JobFactory(object):
+
     """Factory which can create jobs """
+
     def __init__(self,
                  root_dir,
                  init_script='',
@@ -139,7 +155,8 @@ class JobFactory(object):
             engine.connect()
         except OperationalError:
             raise JobNotFound("Data of job not found", jobid)
-        return scoped_session(sessionmaker(bind=engine))
+        sm = sessionmaker(bind=engine, extension=ZopeTransactionExtension())
+        return scoped_session(sm)
 
     def fromId(self, jobid):
         """Finds job db in job root dir.
@@ -196,7 +213,7 @@ class JobFactory(object):
         # create job dir
         jdir = self._makeJobDir(jobid)
 
-        #copy dbfile into jobdir
+        # copy dbfile into jobdir
         self._copyFile(dbfile, jobid)
 
         # session for job db
@@ -204,7 +221,7 @@ class JobFactory(object):
         db = JobDb(session)
         run = db.runInfo()
 
-        #register job in user db
+        # register job in user db
         jobmeta = magmaweb.user.JobMeta(jobid, owner,
                                         description=run.description,
                                         ms_filename=run.ms_filename)
@@ -230,7 +247,7 @@ class JobFactory(object):
         Base.metadata.create_all(session.connection())  # @UndefinedVariable
         db = JobDb(session)
 
-        #register job in user db
+        # register job in user db
         jobmeta = magmaweb.user.JobMeta(jobid, owner)
         self._addJobMeta(jobmeta)
 
@@ -261,7 +278,7 @@ class JobFactory(object):
         # create job dir
         jdir = self._makeJobDir(jobid)
 
-        #copy db of old job into new jobdir
+        # copy db of old job into new jobdir
         src = open(self.id2db(job.id))
         self._copyFile(src, jobid)
         src.close()
@@ -270,7 +287,7 @@ class JobFactory(object):
         session = self._makeJobSession(jobid)
         db = JobDb(session)
 
-        #register job in user db
+        # register job in user db
         jobmeta = magmaweb.user.JobMeta(jobid, owner,
                                         description=job.description,
                                         ms_filename=job.ms_filename,
@@ -378,6 +395,7 @@ class JobFactory(object):
 
 
 class Job(object):
+
     """Job contains results database of Magma calculation run"""
 
     def __init__(self, meta, directory, db=None):
@@ -555,7 +573,9 @@ class Job(object):
 
 
 class JobDb(object):
+
     """Database of a job"""
+
     def __init__(self, session):
         """SQLAlchemy session which is connected to database of job"""
         self.session = session
@@ -572,22 +592,22 @@ class JobDb(object):
             self._runInfo = q.first()
         return self._runInfo
 
-    def metabolitesTotalCount(self):
-        """Returns unfiltered and not paged count of metabolites"""
-        return self.session.query(Metabolite).count()
+    def moleculesTotalCount(self):
+        """Returns unfiltered and not paged count of molecules"""
+        return self.session.query(Molecule).count()
 
     def reaction_filter(self, q, afilter):
-        """Filters metabolites on being reactant/product
+        """Filters molecules on being reactant/product
         of a reaction with given product/reactant and optional reaction name.
         """
         if 'product' in afilter and 'reactant' in afilter:
             raise TypeError('Reactant and product can not be used together')
 
         if 'product' in afilter:
-            q = q.join(Reaction, Metabolite.metid == Reaction.reactant)
+            q = q.join(Reaction, Molecule.molid == Reaction.reactant)
             q = q.filter(Reaction.product == afilter['product'])
         elif 'reactant' in afilter:
-            q = q.join(Reaction, Metabolite.metid == Reaction.product)
+            q = q.join(Reaction, Molecule.molid == Reaction.product)
             q = q.filter(Reaction.reactant == afilter['reactant'])
         else:
             raise TypeError('Reactant or product is missing')
@@ -624,19 +644,19 @@ class JobDb(object):
                 q = q.filter(column != null())  # IS NOT NULL
         return q
 
-    def _metabolitesQuery2Rows(self, start, limit, q):
+    def _moleculesQuery2Rows(self, start, limit, q):
         mets = []
         for r in q[start: limit + start]:
-            met = r.Metabolite
-            row = {'metid': met.metid,
+            met = r.Molecule
+            row = {'molid': met.molid,
                    'mol': met.mol,
-                   'level': met.level,
-                   'probability': met.probability,
+                   'refscore': met.refscore,
                    'reactionsequence': met.reactionsequence,
                    'smiles': met.smiles,
-                   'molformula': met.molformula,
-                   'isquery': met.isquery,
-                   'origin': met.origin,
+                   'inchikey14': met.inchikey14,
+                   'formula': met.formula,
+                   'predicted': met.predicted,
+                   'name': met.name,
                    'nhits': met.nhits,
                    'mim': met.mim,
                    'logp': met.logp,
@@ -646,16 +666,17 @@ class JobDb(object):
             if ('score' in r.keys()):
                 row['score'] = r.score
                 row['deltappm'] = r.deltappm
+                row['mz'] = r.mz
             mets.append(row)
 
         return mets
 
-    def _addSortingToMetabolitesQuery(self,
-                                      sorts,
-                                      scanid,
-                                      q,
-                                      fragal,
-                                      assign_q):
+    def _addSortingToMoleculesQuery(self,
+                                    sorts,
+                                    scanid,
+                                    q,
+                                    fragal,
+                                    assign_q):
         for col3 in sorts:
             if col3['property'] == 'assigned':
                 col2 = assign_q.c.assigned
@@ -669,9 +690,14 @@ class JobDb(object):
                     col2 = fragal.deltappm
                 else:
                     raise ScanRequiredError()
+            elif (col3['property'] == 'mz'):
+                if (scanid is not None):
+                    col2 = fragal.mz
+                else:
+                    raise ScanRequiredError()
             else:
                 cprop = col3['property']
-                col2 = Metabolite.__dict__[cprop]  # @UndefinedVariable
+                col2 = Molecule.__dict__[cprop]  # @UndefinedVariable
             if (col3['direction'] == 'DESC'):
                 q = q.order_by(desc(col2))
             elif (col3['direction'] == 'ASC'):
@@ -679,52 +705,35 @@ class JobDb(object):
 
         return q
 
-    def metabolites(self,
-                    start=0, limit=10,
-                    sorts=None, scanid=None,
-                    filters=None):
-        """Returns dict with total and rows attribute
-
-        start
-            Offset
-        limit
-            Maximum nr of metabolites to return
-        scanid
-            Only return metabolites that have hits in scan with this identifier
-            Adds score and deltappm columns
-        filters
-            List of dicts which is generated by
-            ExtJS component Ext.ux.grid.FiltersFeature
-        sorts
-            How to sort metabolites. List of dicts. Eg.
-
-        .. code-block:: python
-
-                [{"property":"probability","direction":"DESC"},
-                 {"property":"metid","direction":"ASC"}]
-
-        """
-        sorts = sorts or [{"property": "probability", "direction": "DESC"},
-                          {"property": "metid", "direction": "ASC"}]
+    def _addFilter2MoleculesQuery(self, query,
+                                  sorts=None,
+                                  scanid=None,
+                                  filters=None,
+                                  mz=None):
         filters = filters or []
-        q = self.session.query(Metabolite)
+        q = query
 
         # custom filters
         fragal = aliased(Fragment)
         if (scanid is not None):
             # TODO: add score column + order by score
-            q = q.add_columns(fragal.score, fragal.deltappm)
-            q = q.join(fragal.metabolite)
+            q = q.add_columns(fragal.score, fragal.deltappm, fragal.mz)
+            q = q.join(fragal.molecule)
             q = q.filter(fragal.parentfragid == 0)
             q = q.filter(fragal.scanid == scanid)
+            if mz is not None:
+                q = q.filter(fragal.mz == mz)
+
+        if scanid is None and mz is not None:
+            raise ScanRequiredError()
 
         # add assigned column
         assigned = func.count('*').label('assigned')
-        assign_q = self.session.query(Peak.assigned_metid, assigned)
-        assign_q = assign_q.filter(Peak.assigned_metid != null())
-        assign_q = assign_q.group_by(Peak.assigned_metid).subquery()
+        assign_q = self.session.query(Peak.assigned_molid, assigned)
+        assign_q = assign_q.filter(Peak.assigned_molid != null())
+        assign_q = assign_q.group_by(Peak.assigned_molid).subquery()
         q = q.add_columns(assign_q.c.assigned).\
-            outerjoin(assign_q, Metabolite.metid == assign_q.c.assigned_metid)
+            outerjoin(assign_q, Molecule.molid == assign_q.c.assigned_molid)
 
         for afilter in filters:
             if afilter['field'] == 'assigned':
@@ -743,26 +752,96 @@ class JobDb(object):
             else:
                 # generic filters
                 ffield = afilter['field']
-                col = Metabolite.__dict__[ffield]  # @UndefinedVariable
+                col = Molecule.__dict__[ffield]  # @UndefinedVariable
             q = self.extjsgridfilter(q, col, afilter)
+
+        q = self._addSortingToMoleculesQuery(sorts, scanid,
+                                               q, fragal, assign_q)
+
+        return q
+
+    def rowNumberOfSelectedMolecule(self,
+                                    sorts, scanid,
+                                    filters, molid, mz):
+        q = self.session.query(Molecule.molid)
+        q = self._addFilter2MoleculesQuery(q, sorts, scanid, filters, mz)
+
+        rowNr = 0
+        for r in q:
+            if r[0] == molid:
+                return rowNr
+            rowNr += 1
+        else:
+            raise MoleculeNotFound()
+
+    def startOfSelectedMolecule(self, limit, sorts, scanid, filters, molid, mz):
+        rowNr = self.rowNumberOfSelectedMolecule(sorts, scanid, filters, molid, mz)
+        start = rowNr / limit * limit
+        logger.info('Mol ' + str(molid) + ' found at row ' + str(rowNr) + 'start ' + str(start) + 'page ' + str(start / limit + 1))
+        return start
+
+    def molecules(self,
+                    start=0, limit=10,
+                    sorts=None, filters=None,
+                    scanid=None, mz=None,
+                    molid=None):
+        """Returns dict with total and rows attribute
+
+        start
+            Offset
+        limit
+            Maximum nr of molecules to return
+        filters
+            List of dicts which is generated by
+            ExtJS component Ext.ux.grid.FiltersFeature
+        sorts
+            How to sort molecules. List of dicts. Eg.
+        scanid
+            Only return molecules that have hits in scan with this identifier
+            Adds score and deltappm columns
+        mz
+            Only returns molecules which have a fragment in selected scan
+            with exact selected mz.
+        molid
+            Return page with molecule with molid on it.
+            When molecule was selected and a filter/sort was applied
+            the selected molecule should be on the page again.
+
+        .. code-block:: python
+
+                [{"property":"refscore","direction":"DESC"},
+                 {"property":"molid","direction":"ASC"}]
+
+        """
+        sorts = sorts or [{"property": "refscore", "direction": "DESC"},
+                          {"property": "molid", "direction": "ASC"}]
+
+        if molid:
+            try:
+                start = self.startOfSelectedMolecule(limit, sorts, scanid,
+                                                     filters, molid, mz)
+            except MoleculeNotFound:
+                molid = None
+
+        q = self.session.query(Molecule)
+        q = self._addFilter2MoleculesQuery(q, sorts, scanid, filters, mz)
 
         total = q.count()
 
-        q = self._addSortingToMetabolitesQuery(sorts, scanid,
-                                               q, fragal, assign_q)
+        page = start / limit + 1
 
-        mets = self._metabolitesQuery2Rows(start, limit, q)
+        mets = self._moleculesQuery2Rows(start, limit, q)
 
-        return {'total': total, 'rows': mets}
+        return {'total': total, 'rows': mets, 'page': page, 'molid': molid}
 
-    def metabolites2csv(self, metabolites, cols=None):
-        """Converts array of metabolites to csv file handler
+    def molecules2csv(self, molecules, cols=None):
+        """Converts array of molecules to csv file handler
 
         Params:
-          `metabolites`
-            array like metabolites()['rows']
+          `molecules`
+            array like molecules()['rows']
           `cols`
-            Which metabolite columns should be returned.
+            Which molecule columns should be returned.
             A empty list selects all columns.
 
         Return
@@ -771,11 +850,11 @@ class JobDb(object):
         cols = cols or []
         csvstr = StringIO.StringIO()
         headers = [
-            'origin', 'smiles', 'probability', 'reactionsequence',
-            'nhits', 'molformula', 'mim', 'isquery', 'logp',
+            'name', 'smiles', 'refscore', 'reactionsequence',
+            'nhits', 'formula', 'mim', 'predicted', 'logp',
             'reference'
         ]
-        if ('score' in metabolites[0].keys()):
+        if ('score' in molecules[0].keys()):
             headers.append('score')
 
         if (len(cols) > 0):
@@ -784,20 +863,20 @@ class JobDb(object):
 
         csvwriter = csv.DictWriter(csvstr, headers, extrasaction='ignore')
         csvwriter.writeheader()
-        for m in metabolites:
+        for m in molecules:
             m['reactionsequence'] = json.dumps(m['reactionsequence'])
             csvwriter.writerow(m)
 
         return csvstr
 
-    def metabolites2sdf(self, metabolites, cols=None):
-        """Converts array of metabolites to a sdf string
+    def molecules2sdf(self, molecules, cols=None):
+        """Converts array of molecules to a sdf string
 
         Params:
-          `metabolites`
-            array like metabolites()['rows']
+          `molecules`
+            array like molecules()['rows']
           `cols`
-            Which metabolite columns should be returned.
+            Which molecule columns should be returned.
             A empty list selects all columns.
 
         Return
@@ -805,17 +884,17 @@ class JobDb(object):
         """
         s = ''
         cols = cols or []
-        props = ['origin', 'smiles', 'probability', 'reactionsequence',
-                 'nhits', 'molformula', 'mim', 'logp',
+        props = ['name', 'smiles', 'refscore', 'reactionsequence',
+                 'nhits', 'formula', 'mim', 'logp',
                  'reference']
-        if ('score' in metabolites[0].keys()):
+        if ('score' in molecules[0].keys()):
             props.append('score')
 
         if (len(cols) > 0):
             crow = [key for key in cols if key in props]
             props = crow
 
-        for m in metabolites:
+        for m in molecules:
             s += m['mol']
             m['reactionsequence'] = json.dumps(m['reactionsequence'])
             for p in props:
@@ -824,28 +903,37 @@ class JobDb(object):
 
         return s
 
-    def scansWithMetabolites(self, filters=None, metid=None):
+    def scansWithMolecules(self, filters=None, molid=None, mz=None, scanid=None):
         """Returns id and rt of lvl1 scans which have a fragment in it
         and for which the filters in params pass
 
         params:
 
-        ``metid``
-            Only return scans that have hits with metabolite with this id
+        ``molid``
+            Only return scans that have hits with molecule with this id
         ``filters``
             List of filters which is generated
             by ExtJS component Ext.ux.grid.FiltersFeature
+        ``mz``
+            Filter on mz with +- precision
         """
         filters = filters or []
         fq = self.session.query(Fragment.scanid).\
             filter(Fragment.parentfragid == 0)
-        if (metid is not None):
-            fq = fq.filter(Fragment.metid == metid)
+        if molid is not None:
+            fq = fq.filter(Fragment.molid == molid)
+
+        if scanid is not None and mz is not None:
+            # molid IN (SELECT molid FROM fragments WHERE scanid=? and mz=?)
+            mq = self.session.query(Fragment.molid)
+            mq = mq.filter(Fragment.scanid == scanid)
+            mq = mq.filter(Fragment.mz == mz)
+            fq = fq.filter(Fragment.molid.in_(mq))
 
         for afilter in filters:
-            has_no_hit_filter = (afilter['field'] == 'nhits'
-                                 and afilter['comparison'] == 'gt'
-                                 and afilter['value'] == 0)
+            has_no_hit_filter = (afilter['field'] == 'nhits' and
+                                 afilter['comparison'] == 'gt' and
+                                 afilter['value'] == 0)
             if has_no_hit_filter:
                 continue
             if (afilter['field'] == 'score'):
@@ -856,12 +944,12 @@ class JobDb(object):
                 afilter['type'] = 'null'
                 fq = fq.join(Peak, and_(Fragment.scanid == Peak.scanid,
                                         Fragment.mz == Peak.mz))
-                fq = self.extjsgridfilter(fq, Peak.assigned_metid, afilter)
+                fq = self.extjsgridfilter(fq, Peak.assigned_molid, afilter)
             else:
-                fq = fq.join(Metabolite,
-                             Fragment.metabolite)  # @UndefinedVariable
+                fq = fq.join(Molecule,
+                             Fragment.molecule)  # @UndefinedVariable
                 ffield = afilter['field']
-                fcol = Metabolite.__dict__[ffield]  # @UndefinedVariable
+                fcol = Molecule.__dict__[ffield]  # @UndefinedVariable
                 fq = self.extjsgridfilter(fq,
                                           fcol,
                                           afilter
@@ -877,11 +965,11 @@ class JobDb(object):
 
         return hits
 
-    def extractedIonChromatogram(self, metid):
-        """Returns extracted ion chromatogram of metabolite with id metid """
+    def extractedIonChromatogram(self, molid):
+        """Returns extracted ion chromatogram of molecule with id molid """
         chromatogram = []
         mzqq = self.session.query(func.avg(Fragment.mz))
-        mzqq = mzqq.filter(Fragment.metid == metid)
+        mzqq = mzqq.filter(Fragment.molid == molid)
         mzqq = mzqq.filter(Fragment.parentfragid == 0)
         mzq = mzqq.scalar()
         precision = 1 + self.session.query(Run.mz_precision).scalar() / 1e6
@@ -911,7 +999,7 @@ class JobDb(object):
 
         assigned_peaks = func.count('*').label('assigned_peaks')
         ap = self.session.query(Peak.scanid, assigned_peaks)
-        ap = ap.filter(Peak.assigned_metid != null())
+        ap = ap.filter(Peak.assigned_molid != null())
         ap = ap.group_by(Peak.scanid).subquery()
 
         q = self.session.query(Scan, ap.c.assigned_peaks)
@@ -967,27 +1055,33 @@ class JobDb(object):
             peaks.append({
                 'mz': peak.mz,
                 'intensity': peak.intensity,
-                'assigned_metid': peak.assigned_metid,
+                'assigned_molid': peak.assigned_molid,
             })
 
         precursor = {'id': scan.precursorscanid, 'mz': scan.precursormz}
-        return {'peaks': peaks,
-                'cutoff': cutoff,
-                'mslevel': scan.mslevel,
-                'precursor': precursor,
-                }
+        response = {'peaks': peaks,
+                    'cutoff': cutoff,
+                    'mslevel': scan.mslevel,
+                    'precursor': precursor,
+                    }
+        if (scan.mslevel == 1):
+            fragments = []
+            for fragment in self.session.query(distinct(Fragment.mz).label('mz')).filter_by(scanid=scanid):
+                fragments.append({'mz': fragment.mz})
+            response['fragments'] = fragments
+        return response
 
     def _fragmentsQuery(self):
         return self.session.query(Fragment,
-                                  Metabolite.mol,
-                                  Scan.mslevel).join(Metabolite).join(Scan)
+                                  Molecule.mol,
+                                  Scan.mslevel).join(Molecule).join(Scan)
 
     def _fragment2json(self, row):
         (frag, mol, mslevel) = row
         f = {
             'fragid': frag.fragid,
             'scanid': frag.scanid,
-            'metid': frag.metid,
+            'molid': frag.molid,
             'score': frag.score,
             'mol': mol,
             'atoms': frag.atoms,
@@ -1006,10 +1100,10 @@ class JobDb(object):
             f['leaf'] = True
         return f
 
-    def fragments(self, scanid, metid, node):
-        """Returns fragments of a metabolite on a scan.
+    def fragments(self, scanid, molid, node):
+        """Returns fragments of a molecule on a scan.
 
-        When node is not set then returns metabolites and its lvl2 fragments.
+        When node is not set then returns molecules and its lvl2 fragments.
 
         When node is set then returns children fragments as list
         which have ``node`` as parent fragment.
@@ -1019,26 +1113,26 @@ class JobDb(object):
         Parameters:
 
         * ``scanid``, Fragments on scan with this identifier
-        * ``metid``, Fragments of metabolite with this identifier
+        * ``molid``, Fragments of molecule with this identifier
         * ``node``, The fragment identifier to fetch children fragments for.
             Use 'root' for root node.
 
         Raises FragmentNotFound when no fragment is found
-        with the given scanid/metid combination
+        with the given scanid/molid combination
         """
 
-        # parent metabolite
+        # parent molecule
         if (node == 'root'):
             structures = []
             pms = self._fragmentsQuery().filter(Fragment.scanid == scanid)
-            pms = pms.filter(Fragment.metid == metid)
+            pms = pms.filter(Fragment.molid == molid)
             pms = pms.filter(Fragment.parentfragid == 0)
             for row in pms:
                 structure = self._fragment2json(row)
 
                 qa = self.session.query(func.count('*')).\
                     filter(Peak.scanid == scanid).\
-                    filter(Peak.assigned_metid == metid)
+                    filter(Peak.assigned_molid == molid)
                 structure['isAssigned'] = qa.scalar() > 0
 
                 # load children
@@ -1069,23 +1163,23 @@ class JobDb(object):
                                      float(mz) + mzoffset))
         return q.one()
 
-    def assign_metabolite2peak(self, scanid, mz, metid):
-        """Assign metabolites to peak"""
+    def assign_molecule2peak(self, scanid, mz, molid):
+        """Assign molecules to peak"""
         peak = self._peak(scanid, mz)
-        peak.assigned_metid = metid
+        peak.assigned_molid = molid
         self.session.add(peak)
         self.session.commit()
 
-    def unassign_metabolite2peak(self, scanid, mz):
-        """Unassign any metabolite from peak"""
+    def unassign_molecule2peak(self, scanid, mz):
+        """Unassign any molecule from peak"""
         peak = self._peak(scanid, mz)
-        peak.assigned_metid = None
+        peak.assigned_molid = None
         self.session.add(peak)
         self.session.commit()
 
     def hasMolecules(self):
         """Does job database contain molecules"""
-        return self.session.query(Metabolite).count() > 0
+        return self.session.query(Molecule).count() > 0
 
     def hasMspectras(self):
         """Does job database contain mass spectra peaks"""

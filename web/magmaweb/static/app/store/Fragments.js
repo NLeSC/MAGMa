@@ -1,7 +1,7 @@
 /**
  * Store for fragments.
  *
- * Fragments are loaded when a scan and metabolite are selected.
+ * Fragments are loaded when a scan and molecule are selected.
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.magmaweb.store.Fragments', {
@@ -9,7 +9,10 @@ Ext.define('Esc.magmaweb.store.Fragments', {
   model: 'Esc.magmaweb.model.Fragment',
   autoLoad: false,
   clearOnLoad: false,
-  root: { expanded: false, children : [] }, // prevent tree from autoloading
+  root: {
+    expanded: false,
+    children: []
+  }, // prevent tree from autoloading
   /**
    * TreeStore and Store have different function to fetch record by id, add getById to TreeStore
    *

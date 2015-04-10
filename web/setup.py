@@ -52,9 +52,13 @@ setup(name='MAGMaWeb',
       zip_safe=False,
       test_suite='magmaweb.tests',
       install_requires=requires,
-      entry_points="""\
-      [paste.app_factory]
-      main = magmaweb:main
-      """,
+      entry_points={
+          'paste.app_factory': [
+              'main = magmaweb:main',
+          ],
+          'console_scripts': [
+            'magma-web = magmaweb.script:main',
+          ],
+      },
       paster_plugins=['pyramid'],
       )
