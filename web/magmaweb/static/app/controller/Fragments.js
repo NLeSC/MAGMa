@@ -6,28 +6,29 @@
  */
 Ext.define('Esc.magmaweb.controller.Fragments', {
   extend: 'Ext.app.Controller',
-  stores: [ 'Fragments' ],
-  models: [ 'Fragment' ],
-  views: [ 'fragment.Tree' ],
+  stores: ['Fragments'],
+  models: ['Fragment'],
+  views: ['fragment.Tree'],
   refs: [{
-    ref: 'fragmentTree', selector: 'fragmenttree'
+    ref: 'fragmentTree',
+    selector: 'fragmenttree'
   }],
-  uses: [ 'Esc.magmaweb.view.fragment.AnnotateForm' ],
+  uses: ['Esc.magmaweb.view.fragment.AnnotateForm'],
   /**
    * Can only annotate when there are structures and ms data.
    * @property {Object} annotabable
    */
   annotatable: {
-      /**
-       * Whether there are structures.
-       * @property {Boolean} annotabable.structures
-       */
-      structures: false,
-      /**
-       * Whether there is ms data.
-       * @property {Boolean} annotabable.msdata
-       */
-      msdata: false
+    /**
+     * Whether there are structures.
+     * @property {Boolean} annotabable.structures
+     */
+    structures: false,
+    /**
+     * Whether there is ms data.
+     * @property {Boolean} annotabable.msdata
+     */
+    msdata: false
   },
   init: function() {
     Ext.log({}, 'Fragments controller init');
@@ -42,16 +43,16 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
         itemexpand: this.onFragmentExpand
       },
       'fragmenttree component[action=help]': {
-          click: this.showHelp
+        click: this.showHelp
       },
       'annotateform component[action=annotate]': {
-          click: this.annotateHandler
+        click: this.annotateHandler
       },
       '#annotateaction': {
-          click: this.annotateAction
+        click: this.annotateAction
       },
       'component[action=assign_struct2peak]': {
-          click: this.assign_struct2peakAction
+        click: this.assign_struct2peakAction
       }
     });
 
@@ -62,20 +63,20 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     this.application.on('peakselect', this.selectFragmentByPeak, this);
 
     this.application.on('moleculeload', function(store) {
-        this.annotatable.structures = store.getTotalUnfilteredCount() > 0;
-        if (this.annotatable.structures && this.annotatable.msdata) {
-            this.getAnnotateActionButton().enable();
-        } else {
-            this.getAnnotateActionButton().disable();
-        }
+      this.annotatable.structures = store.getTotalUnfilteredCount() > 0;
+      if (this.annotatable.structures && this.annotatable.msdata) {
+        this.getAnnotateActionButton().enable();
+      } else {
+        this.getAnnotateActionButton().disable();
+      }
     }, this);
     this.application.on('chromatogramload', function(chromatogram) {
-        this.annotatable.msdata = chromatogram.data.length > 0;
-        if (this.annotatable.structures && this.annotatable.msdata) {
-            this.getAnnotateActionButton().enable();
-        } else {
-            this.getAnnotateActionButton().disable();
-        }
+      this.annotatable.msdata = chromatogram.data.length > 0;
+      if (this.annotatable.structures && this.annotatable.msdata) {
+        this.getAnnotateActionButton().enable();
+      } else {
+        this.getAnnotateActionButton().disable();
+      }
     }, this);
     this.application.on('rpcsubmitsuccess', this.rpcSubmitted, this);
 
@@ -132,10 +133,10 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
    * @param {Number} scanid Scan identifier.
    * @param {Number} molid Molecule idenfitier.
    */
-  loadFragments: function (scanid, molid) {
-	this.getFragmentTree().setLoading(true);
+  loadFragments: function(scanid, molid) {
+    this.getFragmentTree().setLoading(true);
     this.clearFragments();
-    Ext.log({}, 'Show fragments of scan '+scanid+' molecule '+molid);
+    Ext.log({}, 'Show fragments of scan ' + scanid + ' molecule ' + molid);
     var store = this.getFragmentsStore();
     store.setProxy(this.fragmentProxyFactory(scanid, molid));
     store.load();
@@ -148,17 +149,17 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
    * @param {Number} molid Molecule idenfitier.
    * @private
    */
-  fragmentProxyFactory: function (scanid, molid) {
+  fragmentProxyFactory: function(scanid, molid) {
     return Ext.create('Ext.data.proxy.Ajax', {
       // url is build when scan and molecule are selected
       url: Ext.String.format(this.application.getUrls().fragments, scanid, molid),
       listeners: {
         exception: function(proxy, response, operation) {
-    	  if (response.statusText === 'transaction aborted') {
-      		  // a newer request was made so this one was canceled.
-      		  this.fireEvent('abort', proxy, response, operation);
-      		  return;
-      	  }
+          if (response.statusText === 'transaction aborted') {
+            // a newer request was made so this one was canceled.
+            this.fireEvent('abort', proxy, response, operation);
+            return;
+          }
           Ext.Error.raise({
             msg: 'Failed to load fragments from server',
             response: response,
@@ -167,9 +168,9 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
         }
       },
       reader: {
-          type: 'json',
-          root: 'children',
-          idProperty: 'fragid'
+        type: 'json',
+        root: 'children',
+        idProperty: 'fragid'
       }
     });
   },
@@ -182,7 +183,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     store.getRootNode().removeAll();
     // cancel any loading requests
     if (store.isLoading()) {
-    	Ext.Ajax.abort(store.lastRequest);
+      Ext.Ajax.abort(store.lastRequest);
     }
 
     // (un)assignment not possible when no fragment is selected
@@ -200,11 +201,11 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     this.application.fireEvent('fragmentexpand', fragment);
   },
   onSelect: function(rm, r) {
-    Ext.log({}, 'Selected fragment '+r.id);
+    Ext.log({}, 'Selected fragment ' + r.id);
     if (r.data.mslevel === 1) {
       // don't allow lvl1 fragment to be unselected as it will clear the fragment panel
-	  return;
-	}
+      return;
+    }
     // show child mspectra of selected node or mz
     if (!r.isLeaf()) {
       // onselect then expand
@@ -217,37 +218,41 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     this.application.fireEvent('fragmentselect', r);
   },
   onDeselect: function(rm, fragment) {
-	if (fragment.data.mslevel === 1) {
+    if (fragment.data.mslevel === 1) {
       // don't allow lvl1 fragment to be unselected as it will clear the fragment panel
-	  return;
-	}
+      return;
+    }
     this.application.fireEvent('fragmentdeselect', fragment);
   },
   /**
    * Clears fragment selection.
    */
   clearFragmentSelection: function(mz, mslevel) {
-      this.getFragmentTree().getSelectionModel().deselectAll();
-	  if (mslevel === 1) {
-		  this.clearFragments();
-	  }
+    this.getFragmentTree().getSelectionModel().deselectAll();
+    if (mslevel === 1) {
+      this.clearFragments();
+    }
   },
   onLoad: function(t, parent, children) {
-	this.getFragmentTree().setLoading(false);
+    this.getFragmentTree().setLoading(false);
     // when parent is root node then expand it
     if (parent.isRoot()) {
-        parent.expand();
+      parent.expand();
 
-        // remember which molecule to which peak to assign
-        var abut = this.getAssignStruct2PeakButton();
-        if (!children) {
-        	// aborted load will have no children, so dont load
-        	return;
-        }
-        var data = parent.childNodes[0].data;
-        abut.setParams({ scanid: data.scanid, molid: data.molid, mz: data.mz});
-        abut.toggle(data.isAssigned);
-        abut.enable();
+      // remember which molecule to which peak to assign
+      var abut = this.getAssignStruct2PeakButton();
+      if (!children) {
+        // aborted load will have no children, so dont load
+        return;
+      }
+      var data = parent.childNodes[0].data;
+      abut.setParams({
+        scanid: data.scanid,
+        molid: data.molid,
+        mz: data.mz
+      });
+      abut.toggle(data.isAssigned);
+      abut.enable();
     }
     this.application.fireEvent('fragmentload', parent, parent.childNodes);
     this.initMolecules();
@@ -269,14 +274,14 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
    * @param {Number} mslevel MS level of peak
    */
   selectFragmentByPeak: function(mz, mslevel) {
-	if (mslevel <= 1) {
-        // don't allow lvl1 fragment to be unselected as it will clear the fragment panel
-		return;
-	}
+    if (mslevel <= 1) {
+      // don't allow lvl1 fragment to be unselected as it will clear the fragment panel
+      return;
+    }
     // find fragment based on mz + mslevel
     var node = this.getFragmentsStore().getNodeByMzMslevel(mz, mslevel);
     if (node) {
-    	this.selectFragment(node);
+      this.selectFragment(node);
     }
   },
   /**
@@ -291,8 +296,8 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
   showAnnotateForm: function() {
     var me = this;
     if (!this.annotateForm) {
-        this.annotateForm = Ext.create('Esc.magmaweb.view.fragment.AnnotateForm');
-        this.annotateForm.loadDefaults(me.application.runInfoUrl());
+      this.annotateForm = Ext.create('Esc.magmaweb.view.fragment.AnnotateForm');
+      this.annotateForm.loadDefaults(me.application.runInfoUrl());
     }
     this.annotateForm.show();
   },
@@ -314,54 +319,54 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
           wf.hide();
         },
         failure: function(form, action) {
-            wf.hide();
-            if (action.failureType === "server") {
-              Ext.Error.raise(Ext.JSON.decode(action.response.responseText));
-            } else {
-              Ext.Error.raise(action.response.responseText);
-            }
+          wf.hide();
+          if (action.failureType === "server") {
+            Ext.Error.raise(Ext.JSON.decode(action.response.responseText));
+          } else {
+            Ext.Error.raise(action.response.responseText);
+          }
         }
       });
     }
   },
   getAnnotateActionButton: function() {
-      return Ext.getCmp('annotateaction');
+    return Ext.getCmp('annotateaction');
   },
   /**
    * Pols status of jobid and when completed redirects to results of new job.
    * @param {String} jobid Identifier of new job
    */
   rpcSubmitted: function(jobid) {
-      var me = this;
-      var app = this.application;
-      /**
-       * @property {String} newjobid
-       * Keep track of id of submitted job
-       */
-      me.newjobid = jobid;
-      // Overwrite annotate button to waiting/cancel button
-      var annot_button = this.getAnnotateActionButton();
-      annot_button.setIconCls('icon-loading');
-      annot_button.setText('Waiting');
-      annot_button.setTooltip('Job submitted, waiting for completion');
-      annot_button.setHandler(function() {
-          Ext.MessageBox.confirm('Cancel job', 'Job is still running. Do you want to cancel it?', function(but) {
-              if (but == 'yes') {
-                  // TODO cancel job
-                  Ext.log({}, 'Cancelling job');
-              }
-          });
+    var me = this;
+    var app = this.application;
+    /**
+     * @property {String} newjobid
+     * Keep track of id of submitted job
+     */
+    me.newjobid = jobid;
+    // Overwrite annotate button to waiting/cancel button
+    var annot_button = this.getAnnotateActionButton();
+    annot_button.setIconCls('icon-loading');
+    annot_button.setText('Waiting');
+    annot_button.setTooltip('Job submitted, waiting for completion');
+    annot_button.setHandler(function() {
+      Ext.MessageBox.confirm('Cancel job', 'Job is still running. Do you want to cancel it?', function(but) {
+        if (but == 'yes') {
+          // TODO cancel job
+          Ext.log({}, 'Cancelling job');
+        }
       });
-      annot_button.enable();
-      /**
-       * @property {Ext.util.TaskRunner.Task} pollTask
-       * Polls status of submitted job
-       */
-      me.pollTask = Ext.TaskManager.start({
-        run: this.pollJobStatus,
-        interval: 5000,
-        scope: this
-      });
+    });
+    annot_button.enable();
+    /**
+     * @property {Ext.util.TaskRunner.Task} pollTask
+     * Polls status of submitted job
+     */
+    me.pollTask = Ext.TaskManager.start({
+      run: this.pollJobStatus,
+      interval: 5000,
+      scope: this
+    });
   },
   /**
    * Polls status of job with id this.newjobid on server.
@@ -372,7 +377,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     var me = this;
     var app = this.application;
     Ext.Ajax.request({
-      url: app.urls.home+'status/'+me.newjobid+'.json',
+      url: app.urls.home + 'status/' + me.newjobid + '.json',
       success: function(o) {
         var response = Ext.JSON.decode(o.responseText);
         Ext.log({}, response.status);
@@ -384,15 +389,15 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
           annot_button.setText('Fetch result');
           annot_button.setTooltip('Job completed, fetch results');
           annot_button.setHandler(function() {
-              Ext.MessageBox.confirm('Fetch result', 'Job has been completed. Do you want to fetch results?', function(but) {
-                  if (but == 'yes') {
-                      window.location = app.urls.home+'results/'+me.newjobid;
-                  }
-              });
+            Ext.MessageBox.confirm('Fetch result', 'Job has been completed. Do you want to fetch results?', function(but) {
+              if (but == 'yes') {
+                window.location = app.urls.home + 'results/' + me.newjobid;
+              }
+            });
           });
           annot_button.enable();
         } else {
-            me.getAnnotateActionButton().setTooltip('Job '+response.status+', waiting for completion');
+          me.getAnnotateActionButton().setTooltip('Job ' + response.status + ', waiting for completion');
         }
       },
       failure: function() {
@@ -404,42 +409,42 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     });
   },
   annotateAction: function() {
-      if ('newjobid' in this) {
-          // job running or completed, do not annotate
-      } else {
-          this.showAnnotateForm();
-      }
+    if ('newjobid' in this) {
+      // job running or completed, do not annotate
+    } else {
+      this.showAnnotateForm();
+    }
   },
   assign_struct2peakAction: function(button) {
-      var me = this;
-      var url = this.application.rpcUrl('unassign');
-      if (button.pressed) {
-          url = this.application.rpcUrl('assign');
+    var me = this;
+    var url = this.application.rpcUrl('unassign');
+    if (button.pressed) {
+      url = this.application.rpcUrl('assign');
+    }
+    Ext.Ajax.request({
+      url: url,
+      params: button.params,
+      success: function(o) {
+        me.application.fireEvent('assignmentchanged', button.pressed, button.params);
+      },
+      failure: function(r, o) {
+        Ext.Error.raise('Failed to (un)assign molecule to peak');
       }
-      Ext.Ajax.request({
-          url: url,
-          params: button.params,
-          success: function(o) {
-              me.application.fireEvent('assignmentchanged', button.pressed, button.params);
-          },
-          failure: function(r,o) {
-              Ext.Error.raise('Failed to (un)assign molecule to peak');
-          }
-     });
+    });
   },
   getAssignStruct2PeakButton: function() {
-      return this.getFragmentTree().getAssignStruct2PeakButton();
+    return this.getFragmentTree().getAssignStruct2PeakButton();
   },
   /**
    * Apply role to user interface.
    * Checks assign feature and if false removes all assign action buttons.
    */
   applyRole: function() {
-      if (!this.application.features.assign) {
-          this.getAssignStruct2PeakButton().hide();
-      }
+    if (!this.application.features.assign) {
+      this.getAssignStruct2PeakButton().hide();
+    }
   },
   showHelp: function() {
-      this.application.showHelp('substructures');
+    this.application.showHelp('substructures');
   }
 });
