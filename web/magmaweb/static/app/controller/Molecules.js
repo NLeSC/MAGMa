@@ -367,7 +367,10 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
     // ending up in the same situation
     // break cycle by de-selecting molecules
     var sm = this.getSelectionModel();
-    sm.clearSelections();
+    if (sm.hasSelection()) {
+      sm.clearSelections();
+      this.application.fireEvent('moleculenoselect');
+    }
 
     var list = this.getMoleculeList();
     list.hideFragmentScoreColumn();
