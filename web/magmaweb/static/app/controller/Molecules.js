@@ -31,13 +31,13 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
 
     me.pendingLoads = 0;
     store.on('beforeload', function() {
-    	me.pendingLoads = me.pendingLoads + 1;
+        me.pendingLoads = me.pendingLoads + 1;
     });
     store.on('abort', function() {
-    	me.pendingLoads = me.pendingLoads - 1;
+        me.pendingLoads = me.pendingLoads - 1;
     });
     store.on('load', function() {
-    	me.pendingLoads = me.pendingLoads - 1;
+        me.pendingLoads = me.pendingLoads - 1;
     });
 
     store.on('load', this.onLoad, this);
@@ -279,7 +279,7 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
     var molid = molecule.data.molid;
     var store = this.getMoleculesStore();
     if (store.hasSelectedMolecule()) {
-    	store.loadPage(1);
+        store.loadPage(1);
     }
     this.application.fireEvent('moleculedeselect', molid, molecule);
   },
@@ -305,8 +305,8 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
    * Removes scan filter from molecule store.
    */
   clearScanFilter: function() {
-      this.clearMzFilter(null, 1);
       this.rememberSelectedMolecule();
+      this.clearMzFilter(null, 1);
       var store = this.getMoleculesStore();
       store.removeScanFilter();
   },
@@ -315,9 +315,9 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
    * And shows fragment score column.
    */
   applyMzFilter: function(mz, mslevel) {
-	  if (mslevel > 1) {
-		  return;
-	  }
+      if (mslevel > 1) {
+        return;
+      }
       var store = this.getMoleculesStore();
       store.sorters.clear();
       store.sorters.addAll([
@@ -334,12 +334,12 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
               direction: 'ASC'
           })
       ]);
-	  var list = this.getMoleculeList();
-	  if (store.isFilteredOnScan()) {
-		  this.rememberSelectedMolecule();
-	      store.setMzFilter(mz);
-		  list.showFragmentScoreColumn();
-	  }
+      var list = this.getMoleculeList();
+      if (store.isFilteredOnScan()) {
+          this.rememberSelectedMolecule();
+          store.setMzFilter(mz);
+          list.showFragmentScoreColumn();
+      }
   },
   /**
    * And hides fragment score/deltappm column.
@@ -347,9 +347,9 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
    * And resets sort if store is sorted on fragment score/deltappm.
    */
   clearMzFilter: function(mz, mslevel) {
-	  if (mslevel > 1) {
-		  return;
-	  }
+      if (mslevel > 1) {
+          return;
+      }
       var store = this.getMoleculesStore();
       if ('filters' in store) {
           store.filters.removeAtKey('score');
@@ -359,10 +359,17 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
           store.sorters.removeAtKey('score');
           store.sorters.removeAtKey('deltappm');
       }
-      this.rememberSelectedMolecule();
-	  var list = this.getMoleculeList();
+      // when molecule is selected and peak is unselected
+      // then a reload will select the molecule again forcing the peak to be selected
+      // ending up in the same situation
+      // break cycle by de-selecting molecules
+      var sm = this.getSelectionModel();
+      sm.clearSelections();
+
+      var list = this.getMoleculeList();
       list.hideFragmentScoreColumn();
-	  store.clearMzFilter();
+
+      store.clearMzFilter();
   },
   onPageSizeChange: function(combo) {
       this.getMoleculesStore().setPageSize(combo.getValue());
@@ -394,7 +401,7 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
     Ext.apply(params, this.getMoleculeList().getFilterQuery());
 
     // visible ordered columns
-    params['cols'] = Ext.JSON.encode(this.getMoleculeList().getVisiblColumnIndices());
+    params.cols = Ext.JSON.encode(this.getMoleculeList().getVisiblColumnIndices());
 
     var url = Ext.urlAppend(
         this.application.moleculesUrl(format),

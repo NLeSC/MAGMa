@@ -59,26 +59,26 @@ describe('Molecules', function() {
         expect(store.getProxy().extraParams.mz).toBeUndefined();
       });
 
-	  it('clearMzFilter', function() {
-	    var mz = 1133;
-	    store.getProxy().extraParams.mz = mz;
-	    spyOn(store, 'loadPage');
+      it('clearMzFilter', function() {
+        var mz = 1133;
+        store.getProxy().extraParams.mz = mz;
+        spyOn(store, 'loadPage');
 
-	    store.clearMzFilter();
+        store.clearMzFilter();
 
-	    expect(store.loadPage).toHaveBeenCalledWith(1);
-	    expect(store.getProxy().extraParams.mz).toBeUndefined();
-	  });
+        expect(store.loadPage).toHaveBeenCalledWith(1);
+        expect(store.getProxy().extraParams.mz).toBeUndefined();
+      });
 
-	  it('setMzFilter', function() {
-	    var mz = 1133;
-	    spyOn(store, 'loadPage');
+      it('setMzFilter', function() {
+        var mz = 1133;
+        spyOn(store, 'loadPage');
 
-	    store.setMzFilter(mz);
+        store.setMzFilter(mz);
 
-	    expect(store.loadPage).toHaveBeenCalledWith(1);
-	    expect(store.getProxy().extraParams.mz).toEqual(mz);
-	  });
+        expect(store.loadPage).toHaveBeenCalledWith(1);
+        expect(store.getProxy().extraParams.mz).toEqual(mz);
+      });
 
     it('setPageSize', function() {
       spyOn(store, 'loadPage');
@@ -137,7 +137,7 @@ describe('Molecules', function() {
         expect(store).toBeTruthy();
 
         waitsFor(
-            function() { return !store.isLoading()},
+            function() { return !store.isLoading(); },
             'load never completed',
             4000
         );
@@ -233,7 +233,7 @@ describe('Molecules', function() {
        // mock list
        var list = {
          getSelectionModel: function() {return {
-        	 hasSelection: function() { return false; }
+             hasSelection: function() { return false; }
          }; }
        };
        spyOn(ctrl, 'getMoleculeList').andReturn(list);
@@ -254,6 +254,10 @@ describe('Molecules', function() {
      describe('clear scan filter', function() {
        var mockedstore, list, sm;
        beforeEach(function() {
+           // mock selection model
+           sm = jasmine.createSpyObj('selectionModel', ['clearSelections']);
+           sm.hasSelection = function() {return false; };
+
            // mock list
            list = {
                getFragmentScoreColumn: function() { return scorecol; },
@@ -289,7 +293,7 @@ describe('Molecules', function() {
        });
 
        it('should remove mz filter', function() {
-    	   var scanid = 1133;
+           var scanid = 1133;
            ctrl.applyScanFilter(scanid);
 
            ctrl.clearScanFilter();
@@ -317,109 +321,114 @@ describe('Molecules', function() {
      });
 
      describe('applyMzFilter', function() {
-    	var store = null, list = null, sm = null;
-    	beforeEach(function() {
-    		sm = {
-    			hasSelection: function() {return false;}
-    		};
-    		store = {
-    		    isFilteredOnScan: function() { return true;},
-	            sorters: new Ext.util.AbstractMixedCollection(false, function(item) {
-	                return item.id || item.property;
-	            }),
-	            setMzFilter: jasmine.createSpy('setmzFilter')
-    		};
-    		spyOn(ctrl, 'getMoleculesStore').andReturn(store);
-    		list = jasmine.createSpyObj('list', ['showFragmentScoreColumn']);
-    		list.getSelectionModel = function() {
-    			return sm;
-    		};
-    		spyOn(ctrl, 'getMoleculeList').andReturn(list);
-    	});
+        var store = null, list = null, sm = null;
+        beforeEach(function() {
+            sm = {
+                hasSelection: function() {return false;}
+            };
+            store = {
+                isFilteredOnScan: function() { return true;},
+            sorters: new Ext.util.AbstractMixedCollection(false, function(item) {
+                    return item.id || item.property;
+                }),
+                setMzFilter: jasmine.createSpy('setmzFilter')
+            };
+            spyOn(ctrl, 'getMoleculesStore').andReturn(store);
+            list = jasmine.createSpyObj('list', ['showFragmentScoreColumn']);
+            list.getSelectionModel = function() {
+                return sm;
+            };
+            spyOn(ctrl, 'getMoleculeList').andReturn(list);
+        });
 
-    	it('should not filter on mz of level > 1 scan', function() {
-    		ctrl.applyMzFilter(122.0373001, 2);
+        it('should not filter on mz of level > 1 scan', function() {
+            ctrl.applyMzFilter(122.0373001, 2);
 
-    		expect(store.setMzFilter).not.toHaveBeenCalled();
-    	});
+            expect(store.setMzFilter).not.toHaveBeenCalled();
+        });
 
-    	it('should not filter on mz when no scan is selected', function() {
-    		store.isFilteredOnScan = function() { return false;};
+        it('should not filter on mz when no scan is selected', function() {
+            store.isFilteredOnScan = function() { return false;};
 
-    		ctrl.applyMzFilter(122.0373001, 1);
+            ctrl.applyMzFilter(122.0373001, 1);
 
-    		expect(store.setMzFilter).not.toHaveBeenCalled();
-    	});
+            expect(store.setMzFilter).not.toHaveBeenCalled();
+        });
 
-	    it('should tell list to filter on mz', function() {
-		  ctrl.applyMzFilter(122.0373001, 1);
+        it('should tell list to filter on mz', function() {
+          ctrl.applyMzFilter(122.0373001, 1);
 
-		  expect(store.setMzFilter).toHaveBeenCalledWith(122.0373001);
-		});
+          expect(store.setMzFilter).toHaveBeenCalledWith(122.0373001);
+        });
 
-	    it('should show score column', function() {
-	      ctrl.applyMzFilter(122.0373001, 1);
+        it('should show score column', function() {
+          ctrl.applyMzFilter(122.0373001, 1);
 
-	      expect(list.showFragmentScoreColumn).toHaveBeenCalled();
-	    });
+          expect(list.showFragmentScoreColumn).toHaveBeenCalled();
+        });
 
-	    it('should sort molecules on score, refscore and molid', function() {
-	    	ctrl.applyMzFilter(122.0373001, 1);
+        it('should sort molecules on score, refscore and molid', function() {
+            ctrl.applyMzFilter(122.0373001, 1);
 
-	        expect(store.sorters.indexOfKey('score')).toEqual(0);
-	        expect(store.sorters.getByKey('score').direction).toEqual('ASC');
-	        expect(store.sorters.indexOfKey('refscore')).toEqual(1);
-	        expect(store.sorters.getByKey('refscore').direction).toEqual('DESC');
-	        expect(store.sorters.indexOfKey('molid')).toEqual(2);
-	        expect(store.sorters.getByKey('molid').direction).toEqual('ASC');
-	    });
-	  });
+            expect(store.sorters.indexOfKey('score')).toEqual(0);
+            expect(store.sorters.getByKey('score').direction).toEqual('ASC');
+            expect(store.sorters.indexOfKey('refscore')).toEqual(1);
+            expect(store.sorters.getByKey('refscore').direction).toEqual('DESC');
+            expect(store.sorters.indexOfKey('molid')).toEqual(2);
+            expect(store.sorters.getByKey('molid').direction).toEqual('ASC');
+        });
+      });
 
-	  describe('clearMzFilter', function() {
-	    	var list = null, sm = null, store=null;
-	    	beforeEach(function() {
-	    		sm = {
-        			hasSelection: function() {return false;}
-        		};
-	    		list = jasmine.createSpyObj('list', ['clearMzFilter', 'hideFragmentScoreColumn']);
-	    		list.getSelectionModel = function() {
-	    			return sm;
-	    		};
-	    		spyOn(ctrl, 'getMoleculeList').andReturn(list);
+      describe('clearMzFilter', function() {
+            var list = null, sm = null, store=null;
+            beforeEach(function() {
+                sm = jasmine.createSpyObj('selectionModel', ['clearSelections']);
+                sm.hasSelection = function() { return false; };
+                list = jasmine.createSpyObj('list', ['clearMzFilter', 'hideFragmentScoreColumn']);
+                list.getSelectionModel = function() {
+                    return sm;
+                };
+                spyOn(ctrl, 'getMoleculeList').andReturn(list);
 
-	    		// mock store
-	            store = {
-	                setScanFilter: function() {},
-	                removeScanFilter: function() {},
-	                clearMzFilter: jasmine.createSpy('clearMzFilter'),
-	                sorters: new Ext.util.AbstractMixedCollection(false, function(item) {
-	                    return item.id || item.property;
-	                })
-	            };
-	            spyOn(ctrl, 'getMoleculesStore').andReturn(store);
-	            spyOn(store, 'setScanFilter');
-	            spyOn(store, 'removeScanFilter');
-	    	});
+                // mock store
+                store = {
+                    setScanFilter: function() {},
+                    removeScanFilter: function() {},
+                    clearMzFilter: jasmine.createSpy('clearMzFilter'),
+                    sorters: new Ext.util.AbstractMixedCollection(false, function(item) {
+                        return item.id || item.property;
+                    })
+                };
+                spyOn(ctrl, 'getMoleculesStore').andReturn(store);
+                spyOn(store, 'setScanFilter');
+                spyOn(store, 'removeScanFilter');
+            });
 
-		  it('should not filter on mz of level > 1 scan', function() {
-	    		ctrl.clearMzFilter(122.0373001, 2);
+          it('should not filter on mz of level > 1 scan', function() {
+                ctrl.clearMzFilter(122.0373001, 2);
 
-	    		expect(store.clearMzFilter).not.toHaveBeenCalled();
-	    	});
+                expect(store.clearMzFilter).not.toHaveBeenCalled();
+            });
 
-	    it('should tell store to filter on mz', function() {
-		  ctrl.clearMzFilter(122.0373001, 1);
+        it('should tell store to filter on mz', function() {
+          ctrl.clearMzFilter(122.0373001, 1);
 
-		  expect(store.clearMzFilter).toHaveBeenCalledWith();
-		});
+          expect(store.clearMzFilter).toHaveBeenCalledWith();
+        });
 
-	    it('should hide score column', function() {
-	    	ctrl.clearMzFilter(122.0373001, 1);
+        it('should hide score column', function() {
+            ctrl.clearMzFilter(122.0373001, 1);
 
             expect(list.hideFragmentScoreColumn).toHaveBeenCalled();
-	    });
+        });
 
-	    it('should not score filter and sort', function() {
+        it('should clear molecule selection', function() {
+            ctrl.clearMzFilter(122.0373001, 1);
+
+            expect(sm.clearSelections).toHaveBeenCalled();
+        });
+
+        it('should not score filter and sort', function() {
            var scanid = 1133;
            ctrl.applyScanFilter(scanid);
 
@@ -429,7 +438,7 @@ describe('Molecules', function() {
        });
 
        it('should clear score filter and sort', function() {
-    	   store.sorters.add('score', [1, 2, 3]);
+           store.sorters.add('score', [1, 2, 3]);
            store.filters = new Ext.util.MixedCollection();
            store.filters.add('score', [4, 5, 6]);
 
@@ -438,7 +447,7 @@ describe('Molecules', function() {
            expect(store.filters.containsKey('score')).toBeFalsy();
            expect(store.sorters.containsKey('score')).toBeFalsy();
        });
-	 });
+     });
 
      describe('onChromatrogramLoad', function() {
         var form;
@@ -536,9 +545,9 @@ describe('Molecules', function() {
       it('default', function() {
           spyOn(window, 'open');
           spyOn(ctrl, 'getMoleculeList').andReturn({
-             getFilterQuery: function() { return []},
-             getVisiblColumnIndices: function() { return ['name', 'score']}
-          })
+             getFilterQuery: function() { return []; },
+             getVisiblColumnIndices: function() { return ['name', 'score']; }
+         });
 
           ctrl.download_csv();
 
@@ -559,7 +568,7 @@ describe('Molecules', function() {
       });
 
       it('filtered', function() {
-      	  // select scan
+            // select scan
           var proxy = store.getProxy();
           proxy.extraParams.scanid = 50;
 
@@ -569,12 +578,12 @@ describe('Molecules', function() {
               value: 1,
               type: 'numeric',
               comparison: 'gt'
-          }])
+          }]);
           spyOn(window, 'open');
           spyOn(ctrl, 'getMoleculeList').andReturn({
-             getFilterQuery: function() { return {filter: filter}},
-             getVisiblColumnIndices: function() { return ['name', 'score']}
-          })
+             getFilterQuery: function() { return {filter: filter}; },
+             getVisiblColumnIndices: function() { return ['name', 'score']; }
+         });
 
           ctrl.download_csv();
 
@@ -671,7 +680,7 @@ describe('Molecules', function() {
             submit: function() {}
         };
         spyOn(form, 'submit');
-        var wf = { getForm: function() { return form }};
+        var wf = { getForm: function() { return form; }};
         ctrl.metabolizeForm = wf;
 
         ctrl.metabolizeHandler();
@@ -710,7 +719,7 @@ describe('Molecules', function() {
             submit: function() {}
         };
         spyOn(form, 'submit');
-        var wf = { getForm: function() { return form }};
+        var wf = { getForm: function() { return form; }};
         ctrl.metabolizeStructureForm = wf;
 
         ctrl.metabolizeOneHandler();
@@ -797,29 +806,29 @@ describe('Molecules', function() {
     });
 
     it('onLaunch', function() {
-    	spyOn(ctrl, 'applyRole');
-    	var mocklist = {
-    			filters: {
-    				createFilters: function() {}
-    			},
-    			setPageSize: function() {}
-    	};
-     	spyOn(ctrl, 'getMoleculeList').andReturn(mocklist);
+        spyOn(ctrl, 'applyRole');
+        var mocklist = {
+                filters: {
+                    createFilters: function() {}
+                },
+                setPageSize: function() {}
+        };
+         spyOn(ctrl, 'getMoleculeList').andReturn(mocklist);
 
-    	ctrl.onLaunch();
+        ctrl.onLaunch();
 
-    	expect(ctrl.applyRole).toHaveBeenCalledWith();
-    	expect(ctrl.getMoleculeList).toHaveBeenCalledWith();
+        expect(ctrl.applyRole).toHaveBeenCalledWith();
+        expect(ctrl.getMoleculeList).toHaveBeenCalledWith();
     });
 
     it('cantrun', function() {
-  	  ctrl.application.canRun = false;
+        ctrl.application.canRun = false;
       assignbut = jasmine.createSpyObj('abut', [ 'hideCommandsColumn']);
       spyOn(ctrl,'getMoleculeList').andReturn(assignbut);
 
-  	  ctrl.applyRole();
+        ctrl.applyRole();
 
-  	  expect(assignbut.hideCommandsColumn).toHaveBeenCalledWith();
+        expect(assignbut.hideCommandsColumn).toHaveBeenCalledWith();
     });
 
     it('showHelp', function() {
