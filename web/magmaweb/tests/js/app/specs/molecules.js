@@ -1,7 +1,7 @@
 describe('Molecules', function() {
   describe('store', function() {
     var store = null;
-    var url = 'data/molecules.json';
+    var url = appRootBase + '/data/molecules.json';
 
     beforeEach(function() {
       if (!store) {
@@ -128,7 +128,18 @@ describe('Molecules', function() {
 
     beforeEach(function() {
       if (!ctrl) {
-        ctrl = Application.getController('Molecules');
+        var app = Ext.create('Esc.magmaweb.resultsAppTest', {
+          controllers: ['Molecules'],
+          launch: function() {
+            // for some reason the view port is not auto created so do it here
+            var list = Ext.create('Esc.magmaweb.view.molecule.Panel', {
+              height: 200,
+              width: 400,
+              renderTo: Ext.getBody()
+            });
+          }
+        });
+        ctrl = app.getController('Molecules');
       }
 
       if (!store) {
@@ -164,7 +175,7 @@ describe('Molecules', function() {
     });
 
     it('controller configured store', function() {
-      expect(store.getProxy().url).toEqual('data/molecules.json');
+      expect(store.getProxy().url).toEqual(appRootBase + '/data/molecules.json');
     });
 
     it('scan filter', function() {
@@ -535,6 +546,8 @@ describe('Molecules', function() {
       };
       spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
+      var sm = { hasSelection: function() { return false; } };
+      spyOn(ctrl, 'getSelectionModel').andReturn(sm);
 
       store.fireEvent('load', store);
 
@@ -583,6 +596,8 @@ describe('Molecules', function() {
       };
       spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
+      var sm = { hasSelection: function() { return false; } };
+      spyOn(ctrl, 'getSelectionModel').andReturn(sm);
 
       // load zero
       store.loadRawData({
@@ -614,7 +629,7 @@ describe('Molecules', function() {
 
         ctrl.download_csv();
 
-        var url = Ext.urlAppend('data/molecules.csv', Ext.Object.toQueryString({
+        var url = Ext.urlAppend(appRootBase + '/data/molecules.csv', Ext.Object.toQueryString({
           page: 1,
           start: 0,
           limit: 10,
@@ -656,7 +671,7 @@ describe('Molecules', function() {
 
         ctrl.download_csv();
 
-        var url = Ext.urlAppend('data/molecules.csv', Ext.Object.toQueryString({
+        var url = Ext.urlAppend(appRootBase + '/data/molecules.csv', Ext.Object.toQueryString({
           scanid: 50,
           page: 1,
           start: 0,
@@ -724,7 +739,7 @@ describe('Molecules', function() {
       ctrl.addStructuresHandler();
 
       expect(form.submit).toHaveBeenCalledWith({
-        url: '/rpc/' + Application.jobid + '/add_structures',
+        url: appRootBase + '/rpc/' + ctrl.application.jobid + '/add_structures',
         submitEmptyText: false,
         waitMsg: jasmine.any(String),
         success: jasmine.any(Function),
@@ -773,7 +788,7 @@ describe('Molecules', function() {
       ctrl.metabolizeHandler();
 
       expect(form.submit).toHaveBeenCalledWith({
-        url: '/rpc/' + Application.jobid + '/metabolize',
+        url: appRootBase + '/rpc/' + ctrl.application.jobid + '/metabolize',
         submitEmptyText: false,
         waitMsg: jasmine.any(String),
         success: jasmine.any(Function),
@@ -818,7 +833,7 @@ describe('Molecules', function() {
       ctrl.metabolizeOneHandler();
 
       expect(form.submit).toHaveBeenCalledWith({
-        url: '/rpc/' + Application.jobid + '/metabolize_one',
+        url: appRootBase + '/rpc/' + ctrl.application.jobid + '/metabolize_one',
         submitEmptyText: false,
         waitMsg: jasmine.any(String),
         success: jasmine.any(Function),

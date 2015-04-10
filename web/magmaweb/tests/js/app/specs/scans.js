@@ -6,8 +6,21 @@ describe('Scans controller', function() {
 
   beforeEach(function() {
     if (!ctrl) {
-      ctrl = Application.getController('Scans');
+      var app = Ext.create('Esc.magmaweb.resultsAppTest', {
+        controllers: ['Scans'],
+        onBeforeLaunch: function() {
+          this.initQuickTips();
+          this.initViewport();
+          // prevent controllers onLaunch from fireing as it will do an ajax call
+          // ajax call will be tested later
+        },
+        launch: function() {
+          // for some reason the view port is not auto created so do it here
+        }
+      });
+      ctrl = app.getController('Scans');
     }
+
     mocked_chromatogram = {
       cutoff: null,
       setLoading: function() {},
@@ -50,7 +63,7 @@ describe('Scans controller', function() {
 
     expect(ctrl.getChromatogram()).toBeDefined();
     expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(true);
-    expect(d3.json).toHaveBeenCalledWith('data/chromatogram.json', jasmine.any(Function));
+    expect(d3.json).toHaveBeenCalledWith(appRootBase + '/data/chromatogram.json', jasmine.any(Function));
     expect(ctrl.applyRole).toHaveBeenCalledWith();
   });
 
@@ -166,7 +179,7 @@ describe('Scans controller', function() {
 
       expect(mocked_chromatogram.setLoading).toHaveBeenCalledWith(true);
       expect(d3.json).toHaveBeenCalledWith(
-        'data/extractedionchromatogram.352.json',
+        appRootBase + '/data/extractedionchromatogram.352.json',
         jasmine.any(Function)
       );
     });
@@ -507,7 +520,7 @@ describe('Scans controller', function() {
     ctrl.showUploadForm();
 
     expect(mocked_form_panel.setDisabledAnnotateFieldset).toHaveBeenCalledWith(true);
-    expect(mocked_form_panel.loadDefaults).toHaveBeenCalledWith('data/runinfo.json');
+    expect(mocked_form_panel.loadDefaults).toHaveBeenCalledWith(appRootBase + '/data/runinfo.json');
     expect(panel.setActiveItem).toHaveBeenCalledWith(1);
   });
 
@@ -531,7 +544,7 @@ describe('Scans controller', function() {
 
     expect(mocked_form.isValid).toHaveBeenCalledWith();
     expect(mocked_form.submit).toHaveBeenCalledWith({
-      url: '/rpc/' + Application.jobid + '/add_ms_data',
+      url: appRootBase + '/rpc/' + ctrl.application.jobid + '/add_ms_data',
       submitEmptyText: false,
       waitMsg: jasmine.any(String),
       success: jasmine.any(Function),
