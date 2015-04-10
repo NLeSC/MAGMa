@@ -1120,7 +1120,7 @@
             },
             {
                "name" : "AjaxSingle.js",
-               "path" : "static/app/store/proxy"
+               "path" : "static/app/store/proxy/"
             },
             {
                "name" : "Molecules.js",
