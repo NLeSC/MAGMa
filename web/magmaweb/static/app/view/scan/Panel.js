@@ -12,13 +12,13 @@ Ext.define('Esc.magmaweb.view.scan.Panel', {
     'Esc.d3.Chromatogram',
     'Esc.magmaweb.view.scan.UploadForm'
   ],
-  tools:[{
-    type:'search',
+  tools: [{
+    type: 'search',
     tooltip: 'Select level 1 scan by identifier',
     action: 'search'
   }, {
-    type:'refresh',
-    tooltip:'Clear scan selection',
+    type: 'refresh',
+    tooltip: 'Clear scan selection',
     action: 'clearselection'
   }, {
     type: 'restore',
@@ -35,12 +35,12 @@ Ext.define('Esc.magmaweb.view.scan.Panel', {
   }],
   layout: 'card',
   items: [{
-      emptyText: 'No chromatogram available: Upload ms data',
-      axesPadding: [16, 5, 58, 80],
-      xtype: 'chromatogram'
+    emptyText: 'No chromatogram available: Upload ms data',
+    axesPadding: [16, 5, 58, 80],
+    xtype: 'chromatogram'
   }, {
-      xtype: 'scanuploadform',
-      bodyPadding: 10
+    xtype: 'scanuploadform',
+    bodyPadding: 10
   }],
   /**
    * Shortcut to {@link Ext.layout.container.Card#setActiveItem setActiveItem} in layout.
@@ -48,6 +48,6 @@ Ext.define('Esc.magmaweb.view.scan.Panel', {
    * @param {Number} newCard 0 == chromatogram, 1 == upload form
    */
   setActiveItem: function(newCard) {
-      this.getLayout().setActiveItem(newCard);
+    this.getLayout().setActiveItem(newCard);
   }
 });

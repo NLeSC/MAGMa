@@ -8,7 +8,7 @@ Ext.define('Esc.magmaweb.store.Scenarios', {
   storeId: 'scenarios',
   fields: ['type', 'steps'],
   proxy: {
-      type: 'memory',
-      reader: 'json'
+    type: 'memory',
+    reader: 'json'
   }
 });
