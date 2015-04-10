@@ -1,6 +1,6 @@
 describe('Fragments', function() {
   describe('store', function() {
-    var url = 'base/magmaweb/tests/js/app/data/fragments.s1133.m352.json';
+    var url = appRootBase + '/data/fragments.s1133.m352.json';
     var store = null;
 
     beforeEach(function() {
@@ -56,7 +56,18 @@ describe('Fragments', function() {
 
     beforeEach(function() {
       if (!ctrl) {
-        ctrl = Application.getController('Fragments');
+        var app = Ext.create('Esc.magmaweb.resultsAppTest', {
+          controllers: ['Fragments'],
+          launch: function() {
+            // for some reason the view port is not auto created so do it here
+            var tree = Ext.create('Esc.magmaweb.view.fragment.Tree', {
+              height: 200,
+              width: 400,
+              renderTo: Ext.getBody()
+            });
+          }
+        });
+        ctrl = app.getController('Fragments');
       }
 
       if (!store) {
@@ -380,7 +391,8 @@ describe('Fragments', function() {
           getSelectionModel: function() {
             return sm;
           },
-          setLoading: function() {}
+          setLoading: function() {},
+          initMolecules: function() {}
         };
         spyOn(ctrl, 'getFragmentTree').andReturn(tree);
         spyOn(sm, 'select');
@@ -515,12 +527,13 @@ describe('Fragments', function() {
     it('annotateHandler', function() {
       ctrl.showAnnotateForm();
       var form = ctrl.annotateForm.getForm();
+      spyOn(form, 'isValid').andReturn(true);
       spyOn(form, 'submit');
 
       ctrl.annotateHandler();
 
       expect(form.submit).toHaveBeenCalledWith({
-        url: '/rpc/' + Application.jobid + '/annotate',
+        url: appRootBase + '/rpc/' + ctrl.application.jobid + '/annotate',
         submitEmptyText: false,
         waitMsg: jasmine.any(String),
         success: jasmine.any(Function),
@@ -577,7 +590,7 @@ describe('Fragments', function() {
         ctrl.pollJobStatus();
 
         expect(Ext.Ajax.request).toHaveBeenCalledWith({
-          url: '/status/3ad25048-26f6-11e1-851e-00012e260791.json',
+          url: appRootBase + '/status/3ad25048-26f6-11e1-851e-00012e260791.json',
           scope: ctrl,
           success: jasmine.any(Function),
           failure: jasmine.any(Function)
@@ -661,7 +674,7 @@ describe('Fragments', function() {
         ctrl.assign_struct2peakAction(button);
 
         expect(Ext.Ajax.request).toHaveBeenCalledWith({
-          url: '/rpc/3ad25048-26f6-11e1-851e-00012e260790/assign',
+          url: appRootBase + '/rpc/3ad25048-26f6-11e1-851e-00012e260790/assign',
           params: button.params,
           success: jasmine.any(Function),
           failure: jasmine.any(Function)
@@ -675,7 +688,7 @@ describe('Fragments', function() {
         ctrl.assign_struct2peakAction(button);
 
         expect(Ext.Ajax.request).toHaveBeenCalledWith({
-          url: '/rpc/3ad25048-26f6-11e1-851e-00012e260790/unassign',
+          url: appRootBase + '/rpc/3ad25048-26f6-11e1-851e-00012e260790/unassign',
           params: button.params,
           success: jasmine.any(Function),
           failure: jasmine.any(Function)

@@ -26,12 +26,13 @@ module.exports = function(config) {
       'magmaweb/tests/js/app/loader.js',
       'magmaweb/static/esc/**/*.js',
       'magmaweb/static/app/model/*.js',
+      'magmaweb/static/app/store/proxy/*.js',
       'magmaweb/static/app/store/*.js',
       'magmaweb/static/app/view/scan/UploadFieldSet.js',
-      'magmaweb/static/app/view/metabolite/ReactionFilter.js',
-      'magmaweb/static/app/view/metabolite/ReactionColumn.js',
-      'magmaweb/static/app/view/metabolite/ScenarioField.js',
-      'magmaweb/static/app/view/metabolite/MetabolizeFieldSet.js',
+      'magmaweb/static/app/view/molecule/ReactionFilter.js',
+      'magmaweb/static/app/view/molecule/ReactionColumn.js',
+      'magmaweb/static/app/view/molecule/ScenarioField.js',
+      'magmaweb/static/app/view/molecule/MetabolizeFieldSet.js',
       'magmaweb/static/app/view/fragment/AnnotateFieldSet.js',
       'magmaweb/static/app/view/scan/UploadForm.js',
       'magmaweb/static/app/view/*/*.js',
@@ -49,9 +50,10 @@ module.exports = function(config) {
         // source files, that you wanna generate coverage for
         // do not include tests or libraries
         // (these files will be instrumented by Istanbul)
-//        'magmaweb/static/esc/**/*.js': ['coverage'],
-//        'magmaweb/static/app/**/*.js': ['coverage'],
-//        'magmaweb/static/app/resultsApp.js': ['coverage']
+       'magmaweb/static/esc/**/*.js': ['coverage'],
+       'magmaweb/static/app/**/*.js': ['coverage'],
+      // resultsApp.js gives errors when covered, so skip it
+      //  'magmaweb/static/app/resultsApp.js': ['coverage']
     },
 
     // list of files to exclude

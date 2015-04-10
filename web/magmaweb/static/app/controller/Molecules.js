@@ -198,7 +198,8 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
   reselectMolecule: function() {
     var store = this.getMoleculesStore();
     var sm = this.getSelectionModel();
-    if ('molid' in store.getProxy().getReader().rawData) {
+    var  reader = store.getProxy().getReader();
+    if ('rawData' in reader && 'molid' in reader.rawData) {
       var selected = store.getProxy().getReader().rawData.molid;
       Ext.log({}, 'Reselecting molecule ' + selected);
 

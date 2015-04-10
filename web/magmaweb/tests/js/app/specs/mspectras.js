@@ -2,7 +2,19 @@ describe('MSpectras controller', function() {
   var ctrl = null;
   beforeEach(function() {
     if (!ctrl) {
-      ctrl = Application.getController('MSpectras');
+      var app = Ext.create('Esc.magmaweb.resultsAppTest', {
+        controllers: ['MSpectras'],
+        onBeforeLaunch: function() {
+          this.initQuickTips();
+          this.initViewport();
+          // prevent controllers onLaunch from fireing as it will do an ajax call
+          // ajax call will be tested later
+        },
+        launch: function() {
+          // for some reason the view port is not auto created so do it here
+        }
+      });
+      ctrl = app.getController('MSpectras');
     }
   });
 
@@ -17,7 +29,7 @@ describe('MSpectras controller', function() {
 
   it('config', function() {
     expect(ctrl.getMaxmslevel()).toEqual(3);
-    expect(ctrl.getUrl()).toEqual('data/mspectra.{0}.json?mslevel={1}');
+    expect(ctrl.getUrl()).toEqual(appRootBase + '/data/mspectra.{0}.json?mslevel={1}');
   });
 
   it('getMSpectra', function() {
@@ -53,7 +65,7 @@ describe('MSpectras controller', function() {
       expect(mspectra.setLoading).toHaveBeenCalledWith(true);
       expect(mspectra.scanid).toEqual(scanid);
       expect(d3.json).toHaveBeenCalledWith(
-        'data/mspectra.' + scanid + '.json?mslevel=' + mslevel,
+        appRootBase + '/data/mspectra.' + scanid + '.json?mslevel=' + mslevel,
         jasmine.any(Function)
       );
       expect(ctrl.clearMSpectraFrom).toHaveBeenCalledWith(2);
@@ -64,7 +76,7 @@ describe('MSpectras controller', function() {
 
       expect(mspectra.setLoading).toHaveBeenCalledWith(true);
       expect(d3.json).toHaveBeenCalledWith(
-        'data/mspectra.' + scanid + '.json?mslevel=' + mslevel,
+        appRootBase + '/data/mspectra.' + scanid + '.json?mslevel=' + mslevel,
         jasmine.any(Function)
       );
       expect(ctrl.clearMSpectraFrom).not.toHaveBeenCalledWith(2);
@@ -425,12 +437,19 @@ describe('MSpectras controller', function() {
     var mslevel = null;
     var mspectra = null;
     var callback = null;
+    var mspectrapanel = null;
+
     beforeEach(function() {
       mslevel = 2;
       mspectra = Ext.create('Esc.d3.MSpectra');
       mspectra.scanid = 1234;
       spyOn(ctrl, 'getMSpectra').andReturn(mspectra);
       spyOn(mspectra, 'setData');
+
+      mspectrapanel = {};
+      mspectrapanel.header = jasmine.createSpyObj('header', ['setTitle']);
+      spyOn(Ext, 'getCmp').andReturn(mspectrapanel);
+
       spyOn(mspectra, 'up').andCallFake(function() {
         return {
           down: function() {
@@ -466,6 +485,12 @@ describe('MSpectras controller', function() {
       ctrl.clearMSpectra(mslevel);
 
       expect(mspectra.setData).not.toHaveBeenCalled();
+    });
+
+    it('should clear mspectra title', function() {
+      ctrl.clearMSpectra(mslevel);
+
+      expect(mspectrapanel.header.setTitle).toHaveBeenCalledWith('Level 2 scan ...');
     });
   });
 
