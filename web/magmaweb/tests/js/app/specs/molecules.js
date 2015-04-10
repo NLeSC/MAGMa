@@ -461,10 +461,17 @@ describe('Molecules', function() {
         expect(list.hideFragmentScoreColumn).toHaveBeenCalled();
       });
 
-      it('should clear molecule selection', function() {
+      it('should clear molecule selection when molecule is selected', function() {
+        sm.hasSelection = function() { return true; };
+        var callback = jasmine.createSpy('callback').andReturn(false);
+        Ext.util.Observable.capture(ctrl.application, callback);
+
         ctrl.clearMzFilter(122.0373001, 1);
 
         expect(sm.clearSelections).toHaveBeenCalled();
+        expect(callback).toHaveBeenCalledWith('moleculenoselect');
+
+        Ext.util.Observable.releaseCapture(ctrl.application);
       });
 
       it('should not score filter and sort', function() {
