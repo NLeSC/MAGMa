@@ -8,6 +8,7 @@ from magmaweb.job import JobQuery
 
 
 class JobQueryTestCase(unittest.TestCase):
+
     def setUp(self):
         self.jobdir = '/somedir'
         self.jobquery = JobQuery(self.jobdir)
@@ -58,22 +59,22 @@ class JobQueryTestCase(unittest.TestCase):
 
     def test_defaults(self):
         expected = dict(scenario=[
-                                  {'type': 'phase1', 'steps': '2'},
-                                  {'type': 'phase2', 'steps': '1'}
-                                  ],
-                        ionisation_mode=1,
-                        ms_data_format='mzxml',
-                        ms_data_area='',
-                        ms_intensity_cutoff=0.0,
-                        msms_intensity_cutoff=5,
-                        mz_precision=5.0,
-                        mz_precision_abs=0.001,
-                        abs_peak_cutoff=5000,
-                        max_ms_level=10,
-                        precursor_mz_precision=0.005,
-                        max_broken_bonds=3,
-                        max_water_losses=1,
-                        )
+            {'type': 'phase1', 'steps': '2'},
+            {'type': 'phase2', 'steps': '1'}
+        ],
+            ionisation_mode=1,
+            ms_data_format='mzxml',
+            ms_data_area='',
+            ms_intensity_cutoff=0.0,
+            msms_intensity_cutoff=5,
+            mz_precision=5.0,
+            mz_precision_abs=0.001,
+            abs_peak_cutoff=5000,
+            max_ms_level=10,
+            precursor_mz_precision=0.005,
+            max_broken_bonds=3,
+            max_water_losses=1,
+        )
         self.assertDictEqual(expected, JobQuery.defaults())
 
     def test_defaults_example(self):
@@ -162,6 +163,7 @@ class JobQueryTestCase(unittest.TestCase):
 
 
 class JobQueryFileTestCase(unittest.TestCase):
+
     def test_valid(self):
         from cgi import FieldStorage
         f = FieldStorage()
@@ -191,6 +193,7 @@ class JobQueryFileTestCase(unittest.TestCase):
 
 
 class JobQueryActionTestCase(unittest.TestCase):
+
     def setUp(self):
         self.jobdir = tempfile.mkdtemp()
         self.jobquery = JobQuery(directory=self.jobdir,
@@ -206,12 +209,13 @@ class JobQueryActionTestCase(unittest.TestCase):
 
 
 class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
+
     def test_structures_as_string(self):
         params = {'structure_format': 'smiles', 'structures': 'CCO Ethanol'}
         query = self.jobquery.add_structures(params)
 
         sf = 'structures.dat'
-        script = "{magma} add_structures -t 'smiles' structures.dat {db}\n"
+        script = "{magma} add_structures -p -t 'smiles' structures.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=[sf],
                                   script=script,
@@ -232,7 +236,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.add_structures(params)
 
-        script = "{magma} add_structures -t 'smiles' structures.dat {db}\n"
+        script = "{magma} add_structures -p -t 'smiles' structures.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['structures.dat'],
                                   script=script,
@@ -247,17 +251,17 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                            structures='CCO Ethanol',
                            metabolize='on',
                            scenario=[
-                                     {'type': 'phase1', 'steps': '2'},
-                                     {'type': 'phase2', 'steps': '1'}
-                                     ],
+                               {'type': 'phase1', 'steps': '2'},
+                               {'type': 'phase2', 'steps': '1'}
+                           ],
                            )
 
         query = self.jobquery.add_structures(params)
 
         sf = 'structures.dat'
         scen = 'scenario.csv'
-        script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
-        script += "{magma} metabolize --scenario scenario.csv"
+        script = "{magma} add_structures -p -t 'smiles' structures.dat {db} |"
+        script += "{magma} metabolize -p --scenario scenario.csv"
         script += " --call_back_url '/' -j - {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=[sf, scen],
@@ -265,8 +269,10 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('CCO Ethanol', self.fetch_file('structures.dat'))
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'CCO Ethanol', self.fetch_file('structures.dat'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_with_annotate(self):
         params = {'structure_format': 'smiles',
@@ -279,7 +285,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_structures(params, True)
 
         sf = 'structures.dat'
-        script = "{magma} add_structures -t 'smiles' structures.dat {db} |"
+        script = "{magma} add_structures -p -t 'smiles' structures.dat {db} |"
         script += "{magma} annotate -c '200000.0'"
         script += " -d '10.0' -b '4'"
         script += " --max_water_losses '1' --call_back_url '/'"
@@ -290,7 +296,8 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('CCO Ethanol', self.fetch_file('structures.dat'))
+        self.assertMultiLineEqual(
+            'CCO Ethanol', self.fetch_file('structures.dat'))
 
     def test_with_metabolize_and_annotate(self):
 
@@ -307,9 +314,9 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_structures(params, True)
 
         sf = 'structures.dat'
-        script = "{magma} add_structures -t 'smiles'"
+        script = "{magma} add_structures -p -t 'smiles'"
         script += " structures.dat {db} |"
-        script += "{magma} metabolize --scenario scenario.csv"
+        script += "{magma} metabolize -p --scenario scenario.csv"
         script += " --call_back_url '/' -j - {db} |"
         script += "{magma} annotate -c '200000.0'"
         script += " -d '10.0' -b '4'"
@@ -321,8 +328,10 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('CCO Ethanol', self.fetch_file('structures.dat'))
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'CCO Ethanol', self.fetch_file('structures.dat'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_without_structures(self):
         params = {'structure_format': 'smiles',
@@ -379,7 +388,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -i '1' -l '3' -a '1000.0'"
+        script += " -i '1' -m '3' -a '1000.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -404,7 +413,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -i '1' -l '3' -a '1000.0'"
+        script += " -i '1' -m '3' -a '1000.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -481,7 +490,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params, True)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml' "
-        script += "-i '1' -l '3' -a '1000.0'"
+        script += "-i '1' -m '3' -a '1000.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         script += "{magma} annotate -c '200000.0'"
@@ -508,7 +517,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mass_tree'"
-        script += " -i '1' -l '0' -a '0.0'"
+        script += " -i '1' -m '0' -a '0.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -530,7 +539,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'form_tree_pos'"
-        script += " -i '1' -l '0' -a '0.0'"
+        script += " -i '1' -m '0' -a '0.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -552,7 +561,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'form_tree_neg'"
-        script += " -i '-1' -l '0' -a '0.0'"
+        script += " -i '-1' -m '0' -a '0.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -588,7 +597,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -i '1' -l '3' -a '1000.0'"
+        script += " -i '1' -m '3' -a '1000.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --scan '5' --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -612,7 +621,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mass_tree'"
-        script += " -i '1' -l '0' -a '0.0'"
+        script += " -i '1' -m '0' -a '0.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -637,7 +646,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -i '1' -l '3' -a '1000.0'"
+        script += " -i '1' -m '3' -a '1000.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --time_limit 1 --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -682,7 +691,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -i '1' -l '3' -a '1000.0'"
+        script += " -i '1' -m '3' -a '1000.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --scan '5'"
         script += " --time_limit 1 --call_back_url '/' ms_data.dat {db}\n"
@@ -708,7 +717,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_ms_data(params)
 
         script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        script += " -i '1' -l '3' -a '1000.0'"
+        script += " -i '1' -m '3' -a '1000.0'"
         script += " -p '5.0' -q '0.001' --precursor_mz_precision '0.005'"
         script += " --call_back_url '/' ms_data.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
@@ -730,7 +739,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize(params)
 
-        script = "{magma} metabolize --scenario scenario.csv"
+        script = "{magma} metabolize -p --scenario scenario.csv"
         script += " --call_back_url '/' {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['scenario.csv'],
@@ -738,7 +747,8 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_with_jsonified_scenario(self):
         scenario = '[{"steps": "2", "type": "phase1"}, '
@@ -747,7 +757,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize(params)
 
-        script = "{magma} metabolize --scenario scenario.csv"
+        script = "{magma} metabolize -p --scenario scenario.csv"
         script += " --call_back_url '/' {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['scenario.csv'],
@@ -755,7 +765,8 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_with_misformatjsonified_scenario(self):
         scenario = 'xxxxxx[{"steps": "2", "type": "phase1"}, '
@@ -776,7 +787,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                             ])
         query = self.jobquery.metabolize(params, True)
 
-        script = "{magma} metabolize --scenario scenario.csv"
+        script = "{magma} metabolize -p --scenario scenario.csv"
         script += " --call_back_url '/' {db} |"
         script += "{magma} annotate"
         script += " -c '200000.0' -d '10.0'"
@@ -789,7 +800,8 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_it_restricted(self):
         self.jobquery.restricted = True
@@ -799,7 +811,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize(params)
 
-        script = "{magma} metabolize --scenario scenario.csv"
+        script = "{magma} metabolize -p --scenario scenario.csv"
         script += " --call_back_url '/' --time_limit 3 {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['scenario.csv'],
@@ -830,14 +842,14 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
     def test_it(self):
 
-        params = MultiDict(metid=123,
+        params = MultiDict(molid=123,
                            scenario=[{'type': 'phase1', 'steps': '2'},
                                      {'type': 'phase2', 'steps': '1'}],
                            )
 
         query = self.jobquery.metabolize_one(params)
 
-        script = "echo '123' | {magma} metabolize -j - "
+        script = "echo '123' | {magma} metabolize -p -j - "
         script += "--scenario scenario.csv --call_back_url '/' {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['scenario.csv'],
@@ -845,11 +857,12 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_with_annotate(self):
 
-        params = MultiDict(metid=123,
+        params = MultiDict(molid=123,
                            scenario=[{'type': 'phase1', 'steps': '2'},
                                      {'type': 'phase2', 'steps': '1'}],
                            ms_intensity_cutoff=200000,
@@ -860,7 +873,7 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize_one(params, True)
 
-        script = "echo '123' | {magma} metabolize -j - --scenario scenario.csv"
+        script = "echo '123' | {magma} metabolize -p -j - --scenario scenario.csv"
         script += " --call_back_url '/' {db} |"
         script += "{magma} annotate"
         script += " -c '200000.0' -d '10.0'"
@@ -873,7 +886,8 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
                                   status_callback_url='/',
                                   )
         self.assertEqual(query, expected_query)
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
 
 class JobQueryAnnotateTestCase(JobQueryActionTestCase):
@@ -992,6 +1006,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
                                   )
         self.assertEqual(query, expected_query)
 
+
 class JobQueryAllInOneTestCase(JobQueryActionTestCase):
 
     def test_with_metabolize(self):
@@ -1026,16 +1041,16 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         query = self.jobquery.allinone(params)
 
         expected_script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        expected_script += " -i '1' -l '3' -a '1000.0'"
+        expected_script += " -i '1' -m '3' -a '1000.0'"
         expected_script += " -p '5.0' -q '0.001'"
         expected_script += " --precursor_mz_precision '0.005'"
         expected_script += " --call_back_url '/'"
         expected_script += " ms_data.dat {db}\n"
 
-        expected_script += "{magma} add_structures -t 'smiles'"
+        expected_script += "{magma} add_structures -p -t 'smiles'"
         expected_script += " structures.dat {db}\n"
 
-        expected_script += "{magma} metabolize --scenario scenario.csv"
+        expected_script += "{magma} metabolize -p --scenario scenario.csv"
         expected_script += " --call_back_url '/' {db}\n"
 
         expected_script += "{magma} annotate -c '200000.0'"
@@ -1055,7 +1070,8 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         self.assertMultiLineEqual(params['structures'],
                                   self.fetch_file('structures.dat'))
         self.assertMultiLineEqual('foo', self.fetch_file('ms_data.dat'))
-        self.assertMultiLineEqual('phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
+        self.assertMultiLineEqual(
+            'phase1,2\nphase2,1\n', self.fetch_file('scenario.csv'))
 
     def test_without_metabolize(self):
         self.maxDiff = 100000
@@ -1091,13 +1107,13 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         query = self.jobquery.allinone(params)
 
         expected_script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        expected_script += " -i '1' -l '3' -a '1000.0'"
+        expected_script += " -i '1' -m '3' -a '1000.0'"
         expected_script += " -p '5.0' -q '0.001'"
         expected_script += " --precursor_mz_precision '0.005'"
         expected_script += " --call_back_url '/'"
         expected_script += " ms_data.dat {db}\n"
 
-        expected_script += "{magma} add_structures -t 'smiles'"
+        expected_script += "{magma} add_structures -p -t 'smiles'"
         expected_script += " structures.dat {db}\n"
 
         expected_script += "{magma} annotate -c '200000.0'"
@@ -1141,7 +1157,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         query = self.jobquery.allinone(params)
 
         expected_script = "{magma} read_ms_data --ms_data_format 'mzxml'"
-        expected_script += " -i '1' -l '3' -a '1000.0'"
+        expected_script += " -i '1' -m '3' -a '1000.0'"
         expected_script += " -p '5.0' -q '0.001'"
         expected_script += " --precursor_mz_precision '0.005'"
         expected_script += " --call_back_url '/'"

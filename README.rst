@@ -25,11 +25,14 @@ Subproject interdependencies
 Joblauncher submodule
 ---------------------
 
-The Joblauncher subproject has been moved to it's own repository.
-It is now a submodule in the this repository.
-
 Use following command to initialize and fetch the joblauncher submodule:
 
 .. code-block:: bash
 
     git submodule update --init
+
+License
+-------
+
+MAGMa is released under the Apache License Version 2.0.
+The MAGMa web application uses ExtJS GPLv3 with application exception.

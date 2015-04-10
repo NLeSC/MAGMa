@@ -59,13 +59,13 @@ Ext.define('Esc.chemdoodle.Column', {
      * The width of the chemdoodle canvas in pixels.
      * If width is set then set this a little bit smaller (12pixels) so its not collapsed into an ellipsis.
      */
-    canvasWidth:150,
+    canvasWidth: 150,
     /**
      * @cfg {Number} canvasHeight
      * @accessor
      * The height of the chemdoodle canvas in pixels.
      */
-    canvasHeight:100,
+    canvasHeight: 100,
     /**
      * @cfg {String} canvasClass
      * @accessor
@@ -93,30 +93,30 @@ Ext.define('Esc.chemdoodle.Column', {
     // we want to run js on created dom, but that must be delayed until dom is complete.
     // create canvas with right dimensions using id unique to this gridview and cell (row/col)
     var c = this;
-    return '<canvas width='+c.getCanvasWidth()+' height='+c.getCanvasHeight()+' class="'+c.getCanvasClass()+'" id="'+gridview.id+'-'+r.internalId+'-'+col+'"></canvas>';
+    return '<canvas width=' + c.getCanvasWidth() + ' height=' + c.getCanvasHeight() + ' class="' + c.getCanvasClass() + '" id="' + gridview.id + '-' + r.internalId + '-' + col + '"></canvas>';
   },
   // find canvas tags and paint with chemdoodle
   initCanvases: function() {
     var self = this;
     Ext.Array.forEach(
-        Ext.DomQuery.select('canvas[class*="'+this.getCanvasClass()+'"]',this.grid.getView().dom),
-        function(canvas) {
-          var row;
-          var canvasid = canvas.id;
-          var rowid = canvasid.replace(this.grid.getView().id+'-', '');
-          rowid = rowid.replace(/-\d$/, ''); // remove column id
-          var store = this.grid.getStore();
-          // TreeStore doesn't have data.getByKey use getNodeById
-          if ('getNodeById' in store) {
-              row = store.getNodeById(rowid);
-          } else {
-              row = store.data.getByKey(rowid);
-          }
-          if (row && row.data[this.dataIndex]) {
-            this.initCanvas(canvasid,this.getCanvasWidth(),this.getCanvasHeight(),row.data[this.dataIndex],row);
-          }
-        },
-        self
+      Ext.DomQuery.select('canvas[class*="' + this.getCanvasClass() + '"]', this.grid.getView().dom),
+      function(canvas) {
+        var row;
+        var canvasid = canvas.id;
+        var rowid = canvasid.replace(this.grid.getView().id + '-', '');
+        rowid = rowid.replace(/-\d$/, ''); // remove column id
+        var store = this.grid.getStore();
+        // TreeStore doesn't have data.getByKey use getNodeById
+        if ('getNodeById' in store) {
+          row = store.getNodeById(rowid);
+        } else {
+          row = store.data.getByKey(rowid);
+        }
+        if (row && row.data[this.dataIndex]) {
+          this.initCanvas(canvasid, this.getCanvasWidth(), this.getCanvasHeight(), row.data[this.dataIndex], row);
+        }
+      },
+      self
     );
   },
   // use grid plugin so canvas can be selected with grid as root
@@ -124,8 +124,8 @@ Ext.define('Esc.chemdoodle.Column', {
   init: function(grid) {
     this.grid = grid;
     // after canvas tag has been added to dom
-    this.grid.getView().on('refresh', this.initCanvases , this);
-    this.grid.on('afteritemcollapse', this.initCanvases , this);
+    this.grid.getView().on('refresh', this.initCanvases, this);
+    this.grid.on('afteritemcollapse', this.initCanvases, this);
   },
   /**
    * @method

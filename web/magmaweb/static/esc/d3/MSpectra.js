@@ -26,30 +26,30 @@ Ext.define('Esc.d3.MSpectra', {
   alias: 'widget.mspectra',
   initComponent: function() {
     var defConfig = {
-        /**
-         * @cfg {Array} data array of objects with mz and intensity and hashit properties.
-         */
-        /**
-         * @property {Number} selectedPeak mz of selectedPeak.
-         * When no peaks are selected then it is set to -1.
-         * @readonly
-         */
-        selectedPeak: -1,
-        /**
-         * @cfg {Number} cutoff intensity under which peaks where disregarded
-         */
-        cutoff: 0,
-        /**
-         * @cfg {String} cutoffCls The CSS class applied to cutoff line.
-         */
-        cutoffCls: 'cutoffline',
-        /**
-         * @cfg {String} selectedPeakCls The CSS class applied to markers of a selected peak.
-         */
-        selectedPeakCls: 'selected',
-        markers: [],
-        chartWidth: 0,
-        chartHeight: 0
+      /**
+       * @cfg {Array} data array of objects with mz and intensity and hashit properties.
+       */
+      /**
+       * @property {Number} selectedPeak mz of selectedPeak.
+       * When no peaks are selected then it is set to false.
+       * @readonly
+       */
+      selectedpeak: false,
+      /**
+       * @cfg {Number} cutoff intensity under which peaks where disregarded
+       */
+      cutoff: 0,
+      /**
+       * @cfg {String} cutoffCls The CSS class applied to cutoff line.
+       */
+      cutoffCls: 'cutoffline',
+      /**
+       * @cfg {String} selectedPeakCls The CSS class applied to markers of a selected peak.
+       */
+      selectedPeakCls: 'selected',
+      markers: [],
+      chartWidth: 0,
+      chartHeight: 0
         // TODO add cutoff and basepeakintensity so cutoff line can be drawn
     };
 
@@ -89,51 +89,65 @@ Ext.define('Esc.d3.MSpectra', {
 
     if (this.markers.length) {
       this.svg.selectAll("path.lowermarker")
-        .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + (me.scales.y(0)+4) + ")"; });
+        .attr("transform", function(d) {
+          return "translate(" + me.scales.x(d.mz) + "," + (me.scales.y(0) + 4) + ")";
+        });
       this.svg.selectAll("path.uppermarker")
-        .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + (me.scales.y(me.ranges.y.max)-4) + ")"; });
+        .attr("transform", function(d) {
+          return "translate(" + me.scales.x(d.mz) + "," + (me.scales.y(me.ranges.y.max) - 4) + ")";
+        });
     }
 
     this.svg.selectAll("line.mspeak")
-        .attr("x1", function(d) { return me.scales.x(d.mz); })
-        .attr("y1", function(d) { return me.scales.y(0); })
-        .attr("x2", function(d) { return me.scales.x(d.mz); })
-        .attr("y2", function(d) { return me.scales.y(d.intensity); })
-    ;
+      .attr("x1", function(d) {
+        return me.scales.x(d.mz);
+      })
+      .attr("y1", function(d) {
+        return me.scales.y(0);
+      })
+      .attr("x2", function(d) {
+        return me.scales.x(d.mz);
+      })
+      .attr("y2", function(d) {
+        return me.scales.y(d.intensity);
+      });
 
-    this.svg.selectAll("line."+this.cutoffCls)
-		.attr('x1',0)
-		.attr('x2',this.chartWidth)
-		.attr('y1',this.scales.y(this.cutoff))
-		.attr('y2',this.scales.y(this.cutoff))
-    ;
+    this.svg.selectAll("line." + this.cutoffCls)
+      .attr('x1', 0)
+      .attr('x2', this.chartWidth)
+      .attr('y1', this.scales.y(this.cutoff))
+      .attr('y2', this.scales.y(this.cutoff));
   },
   initScales: function() {
     this.callParent(arguments);
     this.ranges.x.min = 0;
-    this.ranges.x.max = d3.max(this.data, function(r) { return r.mz; });
+    this.ranges.x.max = d3.max(this.data, function(r) {
+      return r.mz;
+    });
     this.ranges.y.min = 0;
-    this.ranges.y.max = d3.max(this.data, function(r) { return r.intensity; });
+    this.ranges.y.max = d3.max(this.data, function(r) {
+      return r.intensity;
+    });
     this.scales.x = d3.scale.linear().domain([this.ranges.x.min, this.ranges.x.max]).range([0, this.chartWidth]);
     this.scales.y = d3.scale.linear().domain([this.ranges.y.min, this.ranges.y.max]).range([this.chartHeight, 0]);
   },
   initAxes: function() {
-	this.callParent(arguments);
+    this.callParent(arguments);
     var nrxticks = this.ticks.x;
-    if (this.chartWidth < 25*(6+2)) {
-        nrxticks = 2;
+    if (this.chartWidth < 25 * (6 + 2)) {
+      nrxticks = 2;
     }
-    if (this.chartWidth < 25*2) {
-        nrxticks = 0;
+    if (this.chartWidth < 25 * 2) {
+      nrxticks = 0;
     }
     this.axes.x = d3.svg.axis().scale(this.scales.x).ticks(nrxticks);
 
     var nryticks = this.ticks.y;
-    if (this.chartHeight < 16*(1+2)) {
-        nryticks = 2;
+    if (this.chartHeight < 16 * (1 + 2)) {
+      nryticks = 2;
     }
-    if (this.chartHeight < 16*2) {
-        nryticks = 0;
+    if (this.chartHeight < 16 * 2) {
+      nryticks = 0;
     }
     this.axes.y = d3.svg.axis().scale(this.scales.y).ticks(nryticks).orient("left").tickFormat(d3.format('.2e'));
   },
@@ -143,46 +157,54 @@ Ext.define('Esc.d3.MSpectra', {
 
     // Add the x-axis.
     this.svg.append("svg:g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + this.chartHeight + ")")
-        .call(this.axes.x)
-        .append("svg:text")
-          .attr("x",this.chartWidth/2).attr("y",30)
-          .attr("text-anchor","middle")
-          .text('M/z')
-    ;
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + this.chartHeight + ")")
+      .call(this.axes.x)
+      .append("svg:text")
+      .attr("x", this.chartWidth / 2).attr("y", 30)
+      .attr("text-anchor", "middle")
+      .text('M/z');
 
     // Add the y-axis.
     this.svg.append("svg:g")
-        .attr("class", "y axis")
-        .call(this.axes.y)
-    ;
+      .attr("class", "y axis")
+      .call(this.axes.y);
 
     // cutoff
     if (this.cutoff) {
       this.svg.append("svg:line")
         .attr('class', this.cutoffCls)
-        .attr('x1',0)
-        .attr('x2',this.chartWidth)
-        .attr('y1',this.scales.y(this.cutoff))
-        .attr('y2',this.scales.y(this.cutoff))
-      ;
+        .attr('x1', 0)
+        .attr('x2', this.chartWidth)
+        .attr('y1', this.scales.y(this.cutoff))
+        .attr('y2', this.scales.y(this.cutoff));
     }
 
     // of each mz plot intensity as vertical line
-    var peaks = this.svg.selectAll('line.mspeak').data(this.data, function(d) { return d.mz;});
+    var peaks = this.svg.selectAll('line.mspeak').data(this.data, function(d) {
+      return d.mz;
+    });
 
     peaks.enter().append("svg:line")
-        .attr("class", "mspeak")
-        .classed('assigned', function(d) { return d.assigned_metid !== null;})
-        .attr("x1", function(d) { return me.scales.x(d.mz); })
-        .attr("y1", function(d) { return me.scales.y(0); })
-        .attr("x2", function(d) { return me.scales.x(d.mz); })
-        .attr("y2", function(d) { return me.scales.y(d.intensity); })
-        .on('mouseover', function(peak) {
-            me.fireEvent('mouseoverpeak', peak);
-        })
-    ;
+      .attr("class", "mspeak")
+      .classed('assigned', function(d) {
+        return d.assigned_molid !== null;
+      })
+      .attr("x1", function(d) {
+        return me.scales.x(d.mz);
+      })
+      .attr("y1", function(d) {
+        return me.scales.y(0);
+      })
+      .attr("x2", function(d) {
+        return me.scales.x(d.mz);
+      })
+      .attr("y2", function(d) {
+        return me.scales.y(d.intensity);
+      })
+      .on('mouseover', function(peak) {
+        me.fireEvent('mouseoverpeak', peak);
+      });
 
     if (this.hasMarkers()) {
       this.onMarkersReady();
@@ -193,7 +215,7 @@ Ext.define('Esc.d3.MSpectra', {
     this.svg.selectAll('line.mspeak').remove();
     this.clearPeakSelection();
     this.svg.selectAll('.marker').remove();
-    this.svg.selectAll('.'+this.cutoffCls).remove();
+    this.svg.selectAll('.' + this.cutoffCls).remove();
     this.callParent(arguments);
   },
   /**
@@ -205,11 +227,14 @@ Ext.define('Esc.d3.MSpectra', {
       return (mz == e.mz && me.selectedpeak != e.mz);
     });
     if (mz != me.selectedpeak) {
+      if (me.selectedpeak) {
+        me.fireEvent('unselectpeak', me.selectedpeak);
+      }
       me.fireEvent('selectpeak', mz);
       me.selectedpeak = mz;
     } else {
       me.fireEvent('unselectpeak', mz);
-      me.selectedpeak = -1;
+      me.selectedpeak = false;
     }
   },
   /**
@@ -219,25 +244,35 @@ Ext.define('Esc.d3.MSpectra', {
    */
   markerSelect: function(f) {
     this.svg.selectAll("path.marker")
-      .classed(this.selectedPeakCls, f)
-    ;
+      .classed(this.selectedPeakCls, f);
   },
   /**
    * Select peak by its mz
    * @param mz float An mz of a peak
    */
   selectPeak: function(mz) {
-    this.markerSelect(function(d) {
+    var sameMz = function(d) {
       return (d.mz == mz);
-    });
-    this.selectedpeak = mz;
+    };
+    if (this.data.some(sameMz)) {
+      // only select peak when mspectra has peak with that mz
+      this.markerSelect(sameMz);
+      this.selectedpeak = mz;
+      return true;
+    } else {
+      return false;
+    }
   },
   /**
    * Clears any selected peaks
    */
   clearPeakSelection: function() {
+    var selectedPeak = this.selectedpeak;
     this.markerSelect(false);
-    this.selectedpeak = -1;
+    this.selectedpeak = false;
+    if (selectedPeak) {
+      this.fireEvent('unselectpeak', selectedPeak);
+    }
   },
   /**
    * Set markers on mz's which can be selected
@@ -250,7 +285,7 @@ Ext.define('Esc.d3.MSpectra', {
     this.onMarkersReady();
   },
   hasMarkers: function() {
-    return (this.markers.length>0);
+    return (this.markers.length > 0);
   },
   onMarkersReady: function() {
     // can not add markers if there is no data
@@ -259,35 +294,43 @@ Ext.define('Esc.d3.MSpectra', {
     }
 
     var me = this;
+
     function markerTitle(d) {
-      return 'm/z='+d.mz;
+      return 'm/z=' + d.mz;
     }
+
     function markerClick(d) {
       me.onToggleMarker(d.mz);
     }
 
     // lower markers
     this.svg.selectAll("path.lowermarker")
-    .data(function() {return me.markers;})
-    .enter().append("svg:path")
+      .data(function() {
+        return me.markers;
+      })
+      .enter().append("svg:path")
       .attr('class', 'marker lowermarker annotated')
-      .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + (me.scales.y(0)+4) + ")"; })
-      .attr("d", d3.svg.symbol().type('triangle-up').size(32) )
+      .attr("transform", function(d) {
+        return "translate(" + me.scales.x(d.mz) + "," + (me.scales.y(0) + 4) + ")";
+      })
+      .attr("d", d3.svg.symbol().type('triangle-up').size(32))
       .on('click', markerClick)
       .append("svg:title")
-        .text(markerTitle)
-    ;
+      .text(markerTitle);
 
     // upper markers
     this.svg.selectAll("path.uppermarker")
-    .data(function() {return me.markers;})
-    .enter().append("svg:path")
+      .data(function() {
+        return me.markers;
+      })
+      .enter().append("svg:path")
       .attr('class', 'marker uppermarker annotated')
-      .attr("transform", function(d) { return "translate(" + me.scales.x(d.mz) + "," + (me.scales.y(me.ranges.y.max)-4) + ")"; })
-      .attr("d", d3.svg.symbol().type('triangle-down').size(32) )
+      .attr("transform", function(d) {
+        return "translate(" + me.scales.x(d.mz) + "," + (me.scales.y(me.ranges.y.max) - 4) + ")";
+      })
+      .attr("d", d3.svg.symbol().type('triangle-down').size(32))
       .on('click', markerClick)
       .append("svg:title")
-        .text(markerTitle)
-    ;
+      .text(markerTitle);
   }
 });

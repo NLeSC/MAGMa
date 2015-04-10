@@ -15,7 +15,8 @@ MAGMa requires
 RDKit installation
 ~~~~~~~~~~~~~~~~~~
 
-See http://code.google.com/p/rdkit/wiki/BuildingWithCmake for RDKit installation instructions.
+See https://github.com/rdkit/rdkit/blob/master/Docs/Book/Install.rst for RDKit installation instructions.
+Download release from https://github.com/rdkit/rdkit/releases
 
 .. code-block:: bash
 
@@ -23,9 +24,11 @@ See http://code.google.com/p/rdkit/wiki/BuildingWithCmake for RDKit installation
    virtualenv env
    . env/bin/activate
    pip install numpy
-   tar -zxf RDKit_2013_09_2.tgz
-   cd RDKit_2013_09_2/
-   cd ../External/INCHI-API/
+   tar -zxf Release_2014_09_2.tar.gz
+   cd rdkit-Release_2014_09_2/
+   cd External/INCHI-API/
+   ./download-inchi.sh
+   cd ../..
    mkdir build
    cd build
    cmake -DRDK_BUILD_INCHI_SUPPORT=ON ..
@@ -36,7 +39,7 @@ To `env/bin/activate` add:
 
 .. code-block:: bash
 
-   export RDBASE=<somedir>/RDKit_2013_09_2
+   export RDBASE=<somedir>/rdkit-Release_2014_09_2
    export LD_LIBRARY_PATH=$RDBASE/lib
    export PYTHONPATH=$PYTHONPATH:$RDBASE
 
@@ -137,4 +140,3 @@ On compute node ::
 
    tar -zxf Magma-<version>.tar.gz
    ./Magma-<version>/magma ...
-

@@ -1,5 +1,4 @@
 import unittest
-from magma.models import Metabolite
 import magma.fragmentation_py
 import magma.fragmentation_cy
 
@@ -22,11 +21,12 @@ class TestFragmentEnginePython(unittest.TestCase):
         self.FragmentEngine = magma.fragmentation_py.FragmentEngine
 
     def test_it(self):
-        structure = Metabolite()
-        structure.mol = alcohol
-        fe = self.FragmentEngine(structure=structure,
+        fe = self.FragmentEngine(mol=alcohol,
                             max_broken_bonds=3,
-                            max_small_losses=2
+                            max_water_losses=2,
+                            ionisation_mode=1,
+                            skip_fragmentation=0,
+                            molcharge=0
                             )
         assert fe.get_natoms() == 3
 
