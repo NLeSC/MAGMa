@@ -230,8 +230,14 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
    * Selects molecule if store only contains 1 molecule.
    *
    * @param {Ext.data.Store} store
+   * @param {Ext.data.Model[]} records
+   * @param {Boolean} successful
    */
-  onLoad: function(store) {
+  onLoad: function(store, records, successful) {
+	if (!successful) {
+		// not interested in aborted loads
+		return;
+	}
     this.reselectMolecule();
     this.application.fireEvent('moleculeload', store);
     this.metabolizable(store.getTotalUnfilteredCount() > 0);
