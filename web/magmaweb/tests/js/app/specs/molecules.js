@@ -130,13 +130,11 @@ describe('Molecules', function() {
       if (!ctrl) {
         var app = Ext.create('Esc.magmaweb.resultsAppTest', {
           controllers: ['Molecules'],
+          onBeforeLaunch: function() {
+            // create the viewport components for this controller
+            Ext.create('Esc.magmaweb.view.molecule.Panel');
+          },
           launch: function() {
-            // for some reason the view port is not auto created so do it here
-            var list = Ext.create('Esc.magmaweb.view.molecule.Panel', {
-              height: 200,
-              width: 400,
-              renderTo: Ext.getBody()
-            });
           }
         });
         ctrl = app.getController('Molecules');
@@ -559,7 +557,7 @@ describe('Molecules', function() {
 
     it('aborted load molecules', function() {
       spyOn(ctrl, 'metabolizable');
-        
+
       ctrl.onLoad(store, [], false);
 
       expect(ctrl.metabolizable).not.toHaveBeenCalled();
@@ -943,7 +941,8 @@ describe('Molecules', function() {
         filters: {
           createFilters: function() {}
         },
-        setPageSize: function() {}
+        setPageSize: function() {},
+        getSelectionModel: function() {}
       };
       spyOn(ctrl, 'getMoleculeList').andReturn(mocklist);
 

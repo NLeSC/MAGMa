@@ -58,13 +58,11 @@ describe('Fragments', function() {
       if (!ctrl) {
         var app = Ext.create('Esc.magmaweb.resultsAppTest', {
           controllers: ['Fragments'],
+          onBeforeLaunch: function() {
+            // create the viewport components for this controller
+            Ext.create('Esc.magmaweb.view.fragment.Tree');
+          },
           launch: function() {
-            // for some reason the view port is not auto created so do it here
-            var tree = Ext.create('Esc.magmaweb.view.fragment.Tree', {
-              height: 200,
-              width: 400,
-              renderTo: Ext.getBody()
-            });
           }
         });
         ctrl = app.getController('Fragments');

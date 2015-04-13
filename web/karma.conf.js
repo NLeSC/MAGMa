@@ -15,10 +15,10 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       // all js files used in index.html
-      'magmaweb/static/extjs-4.2.0/ext-all-debug.js',
-      'magmaweb/static/extjs-4.2.0/examples/ux/grid/filter/Filter.js',
-      'magmaweb/static/extjs-4.2.0/examples/ux/grid/filter/DateFilter.js',
-      'magmaweb/static/extjs-4.2.0/examples/ux/grid/**/*.js',
+      'magmaweb/static/ext-4.2.1.883/ext-all-debug.js',
+      'magmaweb/static/ext-4.2.1.883/examples/ux/grid/filter/Filter.js',
+      'magmaweb/static/ext-4.2.1.883/examples/ux/grid/filter/DateFilter.js',
+      'magmaweb/static/ext-4.2.1.883/examples/ux/grid/**/*.js',
       'magmaweb/static/ChemDoodleWeb/ChemDoodleWeb-libs.js',
       'magmaweb/static/ChemDoodleWeb/ChemDoodleWeb.js',
       'magmaweb/static/d3/d3.min.js',
