@@ -6,12 +6,14 @@ describe('MSpectras controller', function() {
         controllers: ['MSpectras'],
         onBeforeLaunch: function() {
           this.initQuickTips();
-          this.initViewport();
-          // prevent controllers onLaunch from fireing as it will do an ajax call
-          // ajax call will be tested later
+          // create the viewport components for this controller
+          Ext.create('Ext.Panel', {
+        	id: 'mspectrapanel'
+          });
         },
         launch: function() {
-          // for some reason the view port is not auto created so do it here
+          // prevent controllers onLaunch from fireing as it will do an ajax call
+          // ajax call will be tested later
         }
       });
       ctrl = app.getController('MSpectras');
