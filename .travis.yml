@@ -1,0 +1,24 @@
+language: python
+python: 
+  - "2.7"
+before_install:
+  - pip install numpy cython
+  - cd job && ./install_rdkit.sh
+  - wget -nc http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip && unzip -nd web/magmaweb/static ext-4.2.1-gpl.zip
+install:
+  - python job/setup.py develop
+  - python web/setup.py develop
+  - cd web && npm install
+before_script:
+  - npm install karma-cli
+  - pip install nose
+script:
+  - cd job && nosetests
+  - cd web && nosetests 
+  - cd web && karma start
+sudo: false
+cache:
+  - web/magmaweb/static/ext-4.2.1.883
+  - job/rdkit-Release_2014_09_2
+  - $HOME/.cache/pip
+  - web/node_modules
