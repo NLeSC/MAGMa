@@ -549,12 +549,20 @@ describe('Molecules', function() {
       var sm = { hasSelection: function() { return false; } };
       spyOn(ctrl, 'getSelectionModel').andReturn(sm);
 
-      store.fireEvent('load', store);
+      store.fireEvent('load', store, [], true);
 
       expect(f.callback).toHaveBeenCalledWith('moleculeload', jasmine.any(Object));
       expect(ctrl.metabolizable).toHaveBeenCalledWith(true);
 
       Ext.util.Observable.releaseCapture(ctrl.application);
+    });
+
+    it('aborted load molecules', function() {
+      spyOn(ctrl, 'metabolizable');
+        
+      ctrl.onLoad(store, [], false);
+
+      expect(ctrl.metabolizable).not.toHaveBeenCalled();
     });
 
     it('load molecules, one molecule', function() {
@@ -578,7 +586,7 @@ describe('Molecules', function() {
       // fake loading a filtered list of molecules with only one molecule
       var record = store.getById(352);
       store.loadRecords([record]);
-      store.fireEvent('load', store);
+      store.fireEvent('load', store, [record], true);
 
       expect(store.getCount()).toEqual(1);
       expect(sm.hasSelection).toHaveBeenCalled();
@@ -606,7 +614,7 @@ describe('Molecules', function() {
         totalUnfiltered: 0,
         scans: []
       });
-      store.fireEvent('load', store);
+      store.fireEvent('load', store, [], true);
 
       expect(f.callback).toHaveBeenCalledWith('moleculeload', jasmine.any(Object));
       expect(ctrl.metabolizable).toHaveBeenCalledWith(false);
