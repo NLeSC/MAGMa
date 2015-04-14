@@ -1117,7 +1117,7 @@ class PubChemEngine(object):
             self.add_result2molecules(result,molecules)
         return molecules
     def add_result2molecules(self,result,molecules):
-        for (cid,mim,charge,natoms,molblock,inchikey,molform,name,refscore,logp) in result:
+        for (cid,mim,charge,natoms,molblock,inchikey,smiles,molform,name,refscore,logp) in result:
             molecules.append(get_molecule(
                            zlib.decompress(molblock),
                            name+' ('+str(cid)+')',
@@ -1127,6 +1127,7 @@ class PubChemEngine(object):
                            natoms=natoms,
                            molform=molform,
                            inchikey14=inchikey,
+                           smiles=smiles,
                            reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
                                      str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>',
                            logp=float(logp)/10.0,
@@ -1173,7 +1174,7 @@ class KeggEngine(object):
             self.add_result2molecules(result,molecules)
         return molecules
     def add_result2molecules(self,result,molecules):
-        for (cid,mim,charge,natoms,molblock,inchikey,molform,name,reference,logp) in result:
+        for (cid,mim,charge,natoms,molblock,inchikey,smiles,molform,name,reference,logp) in result:
             keggids=reference.split(',')
             keggrefs='<a href="http://www.genome.jp/dbget-bin/www_bget?cpd:'+keggids[0]+'" target="_blank">'+keggids[0]+' (Kegg)</a>'
             for keggid in keggids[1:]:
@@ -1187,6 +1188,7 @@ class KeggEngine(object):
                            natoms=natoms,
                            molform=molform,
                            inchikey14=inchikey,
+                           smiles=smiles,
                            reference=keggrefs,
                            logp=float(logp)/10.0,
                            ))

@@ -13,8 +13,8 @@ def version():
     return '1.0'
 
 def process(args):
-    """Update local PubChem database
-    Has to be run twice, with and without -f option
+    """Update local PubChem database.
+    This has to be run twice, with and without -f option,
     to generate db's for halogenated and non-halogenated compounds respectively"""
     kegg_info={}
     if args.kegg != None:
@@ -97,9 +97,6 @@ def parse_kegg_file(kegg_file):
         line=kf.readline()
     return kegg_info
 
-
-
-
 def create_pubchem_dbs(data_dir,dbs_dir,kegg_info,halogens):
     """Generate Pubchem_MAGMa.db and Pubchem_MAGMa_kegg.db in dbs_dir from data in data_dir"""
     pubchem_dir=data_dir+"/ftp.ebi.ac.uk/pub/databases/pubchem/Compound/CURRENT-Full/SDF/"
@@ -120,7 +117,6 @@ def create_pubchem_dbs(data_dir,dbs_dir,kegg_info,halogens):
     for infile in listing:
         if infile[-3:] == '.gz':
             curs_list.execute('INSERT INTO files (file, processed) VALUES (?,?)',(infile,0))
-            print infile
     conn_list.commit()
     print ("Pubchem_Listing.db created")
     
@@ -130,7 +126,7 @@ def create_pubchem_dbs(data_dir,dbs_dir,kegg_info,halogens):
         conn_pubchem = sqlite3.connect(dbs_dir+"/Pubchem_MAGMa.db")
     curs_pubchem = conn_pubchem.cursor()
     try:
-        curs_pubchem.execute("CREATE TABLE molecules (cid INTEGER PRIMARY KEY, mim INTEGER NOT NULL, charge INTEGER NOT NULL, natoms INTEGER NOT NULL, molblock BLOB, inchikey TEXT, molform TEXT, name TEXT, refscore INTEGER, logp INT)")
+        curs_pubchem.execute("CREATE TABLE molecules (cid INTEGER PRIMARY KEY, mim INTEGER NOT NULL, charge INTEGER NOT NULL, natoms INTEGER NOT NULL, molblock BLOB, inchikey TEXT, smiles TEXT, molform TEXT, name TEXT, refscore INTEGER, logp INT)")
         conn_pubchem.commit()
         print ("Pubchem_MAGMa.db created")
     except:
@@ -143,7 +139,7 @@ def create_pubchem_dbs(data_dir,dbs_dir,kegg_info,halogens):
             conn_kegg = sqlite3.connect(dbs_dir+"/Pubchem_MAGMa_Kegg.db")
         curs_kegg = conn_kegg.cursor()
         try:
-            curs_kegg.execute("CREATE TABLE molecules (cid INTEGER PRIMARY KEY, mim INTEGER NOT NULL, charge INTEGER NOT NULL, natoms INTEGER NOT NULL, molblock BLOB, inchikey TEXT, molform TEXT, name TEXT, reference TEXT, logp INT)")
+            curs_kegg.execute("CREATE TABLE molecules (cid INTEGER PRIMARY KEY, mim INTEGER NOT NULL, charge INTEGER NOT NULL, natoms INTEGER NOT NULL, molblock BLOB, inchikey TEXT, smiles TEXT, molform TEXT, name TEXT, reference TEXT, logp INT)")
             conn_kegg.commit()
             print ("Pubchem_MAGMa_kegg.db created")
         except:
@@ -266,11 +262,12 @@ def create_pubchem_dbs(data_dir,dbs_dir,kegg_info,halogens):
                     if (refscore > dbrefscore) or \
                         (refscore == dbrefscore and dbionized > ionized): # prefer CID's with higher refscore, then prefer non-ionized CID's
                         molblock = zlib.compress(''.join(record))
-                        curs_pubchem.execute('UPDATE molecules SET cid=?, mim=?, charge=?,  molblock=?, molform=?, name=?, refscore=?, logp=? WHERE cid == ?', (
+                        curs_pubchem.execute('UPDATE molecules SET cid=?, mim=?, charge=?,  molblock=?, smiles=?, molform=?, name=?, refscore=?, logp=? WHERE cid == ?', (
                                                                                     cid,
                                                                                     int(mim*1e6),
                                                                                     charge,
                                                                                     buffer(molblock),
+                                                                                    unicode(smiles),
                                                                                     unicode(molform),
                                                                                     unicode(molname),
                                                                                     refscore,
@@ -281,13 +278,14 @@ def create_pubchem_dbs(data_dir,dbs_dir,kegg_info,halogens):
                 else:
                     molblock = zlib.compress(''.join(record))
                     curr_id+=1
-                    curs_pubchem.execute('INSERT INTO molecules (cid,mim,charge,natoms,molblock,inchikey,molform,name,refscore,logp) VALUES (?,?,?,?,?,?,?,?,?,?)', (
+                    curs_pubchem.execute('INSERT INTO molecules (cid,mim,charge,natoms,molblock,inchikey,smiles,molform,name,refscore,logp) VALUES (?,?,?,?,?,?,?,?,?,?,?)', (
                                                                                     cid,
                                                                                     int(mim*1e6),
                                                                                     charge,
                                                                                     heavy_atoms,
                                                                                     buffer(molblock),
                                                                                     unicode(inchikey),
+                                                                                    unicode(smiles),
                                                                                     unicode(molform),
                                                                                     unicode(molname),
                                                                                     refscore,
@@ -304,12 +302,13 @@ def create_pubchem_dbs(data_dir,dbs_dir,kegg_info,halogens):
                         print 'Duplicates:',reference,molname
                         if dbionized > ionized: # prefer non-ionized CID's
                             molblock = zlib.compress(''.join(record))
-                            curs_kegg.execute('UPDATE molecules SET cid=?, mim=?, charge=?, molblock=?, molform=?, name=?, reference=?, logp=? WHERE cid == ?', (
+                            curs_kegg.execute('UPDATE molecules SET cid=?, mim=?, charge=?, molblock=?, smiles=?, molform=?, name=?, reference=?, logp=? WHERE cid == ?', (
                                                                                         cid,
                                                                                         int(mim*1e6),
                                                                                         charge,
                                                                                         buffer(molblock),
                                                                                         unicode(molform),
+                                                                                        unicode(smiles),
                                                                                         unicode(molname),
                                                                                         unicode(reference),
                                                                                         int(logp*10),
@@ -325,13 +324,14 @@ def create_pubchem_dbs(data_dir,dbs_dir,kegg_info,halogens):
                     else:
                         molblock = zlib.compress(''.join(record))
                         curr_id+=1
-                        curs_kegg.execute('INSERT INTO molecules (cid,mim,charge,natoms,molblock,inchikey,molform,name,reference,logp) VALUES (?,?,?,?,?,?,?,?,?,?)', (
+                        curs_kegg.execute('INSERT INTO molecules (cid,mim,charge,natoms,molblock,inchikey,smiles,molform,name,reference,logp) VALUES (?,?,?,?,?,?,?,?,?,?,?)', (
                                                                                         cid,
                                                                                         int(mim*1e6),
                                                                                         charge,
                                                                                         heavy_atoms,
                                                                                         buffer(molblock),
                                                                                         unicode(inchikey),
+                                                                                        unicode(smiles),
                                                                                         unicode(molform),
                                                                                         unicode(molname),
                                                                                         unicode(keggid),
@@ -352,11 +352,11 @@ def create_pubchem_dbs(data_dir,dbs_dir,kegg_info,halogens):
     memstore_kegg={}
     print "Creating index ..."
     curs_pubchem.execute('PRAGMA temp_store = 2')
-    curs_pubchem.execute('CREATE INDEX idx_cover ON molecules (charge,mim,natoms,refscore,molform,inchikey,name,molblock,logp)')
+    curs_pubchem.execute('CREATE INDEX idx_cover ON molecules (charge,mim,natoms,refscore,molform,inchikey,smiles,name,molblock,logp)')
     conn_pubchem.commit()
     if len(kegg_info) > 0:
         curs_kegg.execute('PRAGMA temp_store = 2')
-        curs_kegg.execute('CREATE INDEX idx_cover ON molecules (charge,mim,natoms,reference,molform,inchikey,name,molblock,logp)')
+        curs_kegg.execute('CREATE INDEX idx_cover ON molecules (charge,mim,natoms,reference,molform,inchikey,smiles,name,molblock,logp)')
         conn_kegg.commit()
 
 #main
