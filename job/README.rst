@@ -71,7 +71,7 @@ Defaults to using 'rdkit' as chemical engine.
 
 A 'magma_job.ini' config file is read from current working directory or from users home directory (~/).
 
-Exampe config file ::
+Exampe config file:
 
 .. code-block:: INI
 
@@ -92,7 +92,7 @@ Running on cluster
 On the compute node not all dependencies of Magma will be installed.
 By freezing the magma application on the head node we include all dependencies like rdkit.
 
-On head node ::
+On head node:
 
 .. code-block:: bash
 
@@ -102,7 +102,7 @@ On head node ::
    chmod +x dist/Magma-<version>/Magma-<version>-py2.7.egg/magma/script/reactor
    tar -zcf Magma-<version>.tar.gz Magma-<version>
 
-On compute node ::
+On compute node:
 
 .. code-block:: bash
 
