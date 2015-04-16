@@ -81,6 +81,7 @@ describe('Fragments', function() {
     var fill = function(callback) {
       assignbut = jasmine.createSpyObj('abut', ['setParams', 'disable', 'enable', 'toggle']);
       spyOn(ctrl, 'getAssignStruct2PeakButton').andReturn(assignbut);
+      store.getProxy().url = '';
       ctrl.loadFragments(1133, 352);
       waitsFor(
         function() {

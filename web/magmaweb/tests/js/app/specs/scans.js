@@ -430,8 +430,8 @@ describe('Scans controller', function() {
       ctrl.setScans(scans);
 
       expect(mocked_chromatogram.setMarkers).toHaveBeenCalledWith(scans);
-      expect(mocked_chromatogram.clearScanSelection).toHaveBeenCalledWith();
-      expect(f.callback).toHaveBeenCalledWith('noselectscan');
+      expect(mocked_chromatogram.clearScanSelection).not.toHaveBeenCalled();
+      expect(f.callback).not.toHaveBeenCalledWith('noselectscan');
       Ext.util.Observable.releaseCapture(ctrl.application);
     });
 

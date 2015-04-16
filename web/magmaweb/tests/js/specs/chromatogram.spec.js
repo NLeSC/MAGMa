@@ -193,11 +193,11 @@ describe('Esc.d3.Chromatogram', function() {
     spyOn(chart, 'getWidth').andReturn(500);
     spyOn(chart, 'getHeight').andReturn(400);
     chart.svg = mockSvg();
-    spyOn(chart, 'clearScanSelection');
+    spyOn(chart, 'markerSelect');
 
     chart.undraw();
 
-    expect(chart.clearScanSelection).toHaveBeenCalled();
+    expect(chart.markerSelect).toHaveBeenCalledWith(false);
     expect(chart.svg.remove).toHaveBeenCalled();
     expect(chart.svg.remove.callCount).toBeGreaterThan(5);
   });

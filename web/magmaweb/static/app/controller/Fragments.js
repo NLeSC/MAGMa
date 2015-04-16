@@ -134,10 +134,15 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
    * @param {Number} molid Molecule idenfitier.
    */
   loadFragments: function(scanid, molid) {
+    var fragmentsUrl = Ext.String.format(this.application.getUrls().fragments, scanid, molid);
+    var store = this.getFragmentsStore();
+    if (fragmentsUrl === store.getProxy().url) {
+      // fragment of scanid and molid is already loaded
+      return;
+    }
     this.getFragmentTree().setLoading(true);
     this.clearFragments();
     Ext.log({}, 'Show fragments of scan ' + scanid + ' molecule ' + molid);
-    var store = this.getFragmentsStore();
     store.setProxy(this.fragmentProxyFactory(scanid, molid));
     store.load();
     store.lastRequest = Ext.Ajax.getLatest();

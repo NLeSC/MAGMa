@@ -204,10 +204,10 @@ Ext.define('Esc.magmaweb.resultsApp', {
     );
 
     // uncomment to see all application events fired in console
-    //   Ext.util.Observable.capture(this, function() {
-    //     console.error(arguments[0], arguments);
-    //     return true;
-    //   });
+    //  Ext.util.Observable.capture(this, function() {
+    //    console.error(new Date(Date.now()).toISOString(), arguments[0], arguments);
+    //    return true;
+    //  });
 
     this.on('selectscan', function(scanid) {
       this.selected.scanid = scanid;
@@ -220,7 +220,12 @@ Ext.define('Esc.magmaweb.resultsApp', {
       this.selected.scanid = false;
     }, this);
     this.on('moleculeselect', function(molid) {
-
+      this.selected.molid = molid;
+      if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+        this.fireEvent('mzandmoleculeselect', this.selected.scanid, molid, this.selected.mz);
+      }
+    }, this);
+    this.on('moleculereselect', function(molid) {
       this.selected.molid = molid;
       if (this.selected.molid && this.selected.scanid && this.selected.mz) {
         this.fireEvent('mzandmoleculeselect', this.selected.scanid, molid, this.selected.mz);
