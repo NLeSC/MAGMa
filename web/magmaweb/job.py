@@ -1168,14 +1168,12 @@ class JobDb(object):
         peak = self._peak(scanid, mz)
         peak.assigned_molid = molid
         self.session.add(peak)
-        self.session.commit()
 
     def unassign_molecule2peak(self, scanid, mz):
         """Unassign any molecule from peak"""
         peak = self._peak(scanid, mz)
         peak.assigned_molid = None
         self.session.add(peak)
-        self.session.commit()
 
     def hasMolecules(self):
         """Does job database contain molecules"""
