@@ -190,11 +190,11 @@ describe('Esc.d3.MSpectra', function() {
     spyOn(chart, 'getWidth').andReturn(500);
     spyOn(chart, 'getHeight').andReturn(400);
     chart.svg = mockSvg();
-    spyOn(chart, 'clearPeakSelection');
+    spyOn(chart, 'markerSelect');
 
     chart.undraw();
 
-    expect(chart.clearPeakSelection).toHaveBeenCalled();
+    expect(chart.markerSelect).toHaveBeenCalledWith(false);
     expect(chart.svg.remove).toHaveBeenCalled();
     expect(chart.svg.remove.callCount).toBeGreaterThan(3);
   });

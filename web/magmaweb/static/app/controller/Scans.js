@@ -96,15 +96,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     this.application.on('rpcsubmitsuccess', function() {
       Ext.getCmp('uploadmssaction').disable();
     });
-    this.application.on('assignmentchanged', function(isAssigned, params) {
-      me.loadChromatogram(function(data) {
-        var chromatogram = this.getChromatogram();
-        var selectedScan = chromatogram.selectedScan;
-        chromatogram.setLoading(false);
-        chromatogram.setData(data.scans);
-        chromatogram.selectScan(selectedScan);
-      });
-    });
+    this.application.on('assignmentchanged', this.scanAssignmentChanged, this);
     this.application.on('mspectraload', function(scanid, mslevel) {
       var chromatogram = this.getChromatogram();
       if (mslevel === 1 && chromatogram.selectedScan !== scanid) {
@@ -224,6 +216,10 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     }
     me.application.fireEvent('chromatogramload', chromatogram);
   },
+  scanAssignmentChanged: function(isAssigned) {
+    var chromatogram = this.getChromatogram();
+    chromatogram.setAssignment(isAssigned);
+  },
   clearExtractedIonChromatogram: function() {
     this.getChromatogram().setExtractedIonChromatogram([]);
   },
@@ -325,10 +321,6 @@ Ext.define('Esc.magmaweb.controller.Scans', {
         chromatogram.setMarkers(scans);
         chromatogram.selectScan(selectedScan);
       } else {
-        // if a scan was selected, but can not be reselected then clear selection.
-        if (selectedScan) {
-          this.clearScanSelection();
-        }
         chromatogram.setMarkers(scans);
       }
     } else {
