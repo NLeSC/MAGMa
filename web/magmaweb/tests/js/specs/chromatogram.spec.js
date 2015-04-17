@@ -45,16 +45,16 @@ describe('Esc.d3.Chromatogram', function() {
         return this;
       }
     };
-    spyOn(svg, 'selectAll').andCallThrough();
-    spyOn(svg, 'select').andCallThrough();
-    spyOn(svg, 'append').andCallThrough();
-    spyOn(svg, 'attr').andCallThrough();
-    spyOn(svg, 'text').andCallThrough();
-    spyOn(svg, 'data').andCallThrough();
-    spyOn(svg, 'enter').andCallThrough();
-    spyOn(svg, 'remove').andCallThrough();
-    spyOn(svg, 'classed').andCallThrough();
-    spyOn(svg, 'on').andCallThrough();
+    spyOn(svg, 'selectAll').and.callThrough();
+    spyOn(svg, 'select').and.callThrough();
+    spyOn(svg, 'append').and.callThrough();
+    spyOn(svg, 'attr').and.callThrough();
+    spyOn(svg, 'text').and.callThrough();
+    spyOn(svg, 'data').and.callThrough();
+    spyOn(svg, 'enter').and.callThrough();
+    spyOn(svg, 'remove').and.callThrough();
+    spyOn(svg, 'classed').and.callThrough();
+    spyOn(svg, 'on').and.callThrough();
     return svg;
   }
 
@@ -77,8 +77,8 @@ describe('Esc.d3.Chromatogram', function() {
       axesPadding: [0, 0, 0, 0]
     });
     // mock initSvg
-    spyOn(chart, 'getWidth').andReturn(500);
-    spyOn(chart, 'getHeight').andReturn(400);
+    spyOn(chart, 'getWidth').and.returnValue(500);
+    spyOn(chart, 'getHeight').and.returnValue(400);
 
     chart.initScales();
 
@@ -106,21 +106,17 @@ describe('Esc.d3.Chromatogram', function() {
       axesPadding: [0, 0, 0, 0]
     });
     // mock initSvg
-    spyOn(chart, 'getWidth').andReturn(500);
-    spyOn(chart, 'getHeight').andReturn(400);
+    spyOn(chart, 'getWidth').and.returnValue(500);
+    spyOn(chart, 'getHeight').and.returnValue(400);
     chart.initScales();
 
     chart.initAxes();
 
     expect(chart.axes.x.scale()).toEqual(chart.scales.x);
-    expect(chart.axes.x.ticks()).toEqual({
-      0: chart.ticks.x
-    });
+    expect(chart.axes.x.ticks()[0]).toEqual(chart.ticks.x);
     expect(chart.axes.x.orient()).toEqual('bottom');
     expect(chart.axes.y.scale()).toEqual(chart.scales.y);
-    expect(chart.axes.y.ticks()).toEqual({
-      0: chart.ticks.y
-    });
+    expect(chart.axes.y.ticks()[0]).toEqual(chart.ticks.y);
     expect(chart.axes.y.orient()).toEqual('left');
   });
 
@@ -134,8 +130,8 @@ describe('Esc.d3.Chromatogram', function() {
         axesPadding: [0, 0, 0, 0]
       });
       // mock initSvg
-      spyOn(chart, 'getWidth').andReturn(500);
-      spyOn(chart, 'getHeight').andReturn(400);
+      spyOn(chart, 'getWidth').and.returnValue(500);
+      spyOn(chart, 'getHeight').and.returnValue(400);
       chart.svg = mockSvg();
       spyOn(chart, 'onMarkersReady');
       chart.initScales();
@@ -164,8 +160,8 @@ describe('Esc.d3.Chromatogram', function() {
         axesPadding: [0, 0, 0, 0]
       });
       // mock initSvg
-      spyOn(chart, 'getWidth').andReturn(500);
-      spyOn(chart, 'getHeight').andReturn(400);
+      spyOn(chart, 'getWidth').and.returnValue(500);
+      spyOn(chart, 'getHeight').and.returnValue(400);
 
       chart.svg = mockSvg();
       spyOn(chart, 'onMarkersReady');
@@ -190,8 +186,8 @@ describe('Esc.d3.Chromatogram', function() {
       axesPadding: [0, 0, 0, 0]
     });
     // mock initSvg
-    spyOn(chart, 'getWidth').andReturn(500);
-    spyOn(chart, 'getHeight').andReturn(400);
+    spyOn(chart, 'getWidth').and.returnValue(500);
+    spyOn(chart, 'getHeight').and.returnValue(400);
     chart.svg = mockSvg();
     spyOn(chart, 'clearScanSelection');
 
@@ -199,7 +195,7 @@ describe('Esc.d3.Chromatogram', function() {
 
     expect(chart.clearScanSelection).toHaveBeenCalled();
     expect(chart.svg.remove).toHaveBeenCalled();
-    expect(chart.svg.remove.callCount).toBeGreaterThan(5);
+    expect(chart.svg.remove.calls.count()).toBeGreaterThan(5);
   });
 
   describe('onZoom', function() {
@@ -211,8 +207,8 @@ describe('Esc.d3.Chromatogram', function() {
         axesPadding: [0, 0, 0, 0]
       });
       // mock initSvg
-      spyOn(chart, 'getWidth').andReturn(500);
-      spyOn(chart, 'getHeight').andReturn(400);
+      spyOn(chart, 'getWidth').and.returnValue(500);
+      spyOn(chart, 'getHeight').and.returnValue(400);
       chart.svg = mockSvg();
       chart.initScales();
       chart.initAxes();
@@ -238,8 +234,8 @@ describe('Esc.d3.Chromatogram', function() {
         }]
       });
       // mock initSvg
-      spyOn(chart, 'getWidth').andReturn(500);
-      spyOn(chart, 'getHeight').andReturn(400);
+      spyOn(chart, 'getWidth').and.returnValue(500);
+      spyOn(chart, 'getHeight').and.returnValue(400);
       chart.svg = mockSvg();
       chart.initScales();
       chart.initAxes();
@@ -464,8 +460,8 @@ describe('Esc.d3.Chromatogram', function() {
       axesPadding: [0, 0, 0, 0]
     });
     // mock initSvg
-    spyOn(chart, 'getWidth').andReturn(500);
-    spyOn(chart, 'getHeight').andReturn(400);
+    spyOn(chart, 'getWidth').and.returnValue(500);
+    spyOn(chart, 'getHeight').and.returnValue(400);
 
     chart.svg = mockSvg();
 

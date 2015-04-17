@@ -294,10 +294,9 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
    * Shows annotate form in modal window
    */
   showAnnotateForm: function() {
-    var me = this;
     if (!this.annotateForm) {
       this.annotateForm = Ext.create('Esc.magmaweb.view.fragment.AnnotateForm');
-      this.annotateForm.loadDefaults(me.application.runInfoUrl());
+      this.annotateForm.loadDefaults(this.application.runInfoUrl());
     }
     this.annotateForm.show();
   },
