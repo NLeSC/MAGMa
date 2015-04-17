@@ -58,9 +58,9 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
       Ext.getCmp('mspectra' + mslevel + 'panel').header.setTitle('Level ' + mslevel + ' scan ' + scanid + ' (m/z=' + peak.mz + ', intensity=' + peak.intensity + ')');
     });
     this.application.on('assignmentchanged', function(isAssigned, params) {
-      // reload mspectra to show (un)assigned peak update
-      me.loadMSpectra(1, params.scanid, me.getMSpectra(1).markers);
-    });
+      var mspectra = me.getMSpectra(1);
+      mspectra.setAssignment(isAssigned, params.molid);
+    }, this);
     this.application.on('moleculeselect', this.selectPeakOfMolecule, this);
     this.application.on('moleculedeselect', this.deselectPeakOfMolecule, this);
     this.application.on('moleculereselect', this.selectPeakOfMolecule, this);
@@ -196,6 +196,11 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
     if (mspectra.scanid === scanid) {
       // dont load mspectra if it already loaded
       return;
+    }
+    if (mslevel === 1 && mspectra.scanid) {
+      // clear lvl1 spectra if another scan is already loaded
+      // deselect possibly selected peaks
+      this.clearMSpectra1();
     }
     mspectra.scanid = scanid;
     mspectra.setLoading(true);

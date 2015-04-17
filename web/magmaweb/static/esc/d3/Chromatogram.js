@@ -248,7 +248,7 @@ Ext.define('Esc.d3.Chromatogram', {
     this.svg.selectAll('.peak').remove();
     this.svg.selectAll('.line').remove();
     this.svg.selectAll('.' + this.cutoffCls).remove();
-    this.clearScanSelection();
+    this.markerSelect(false);
     this.svg.selectAll('.marker').remove();
     this.moleculedata = [];
     this.svg.selectAll('path.moleculeline').remove();
@@ -377,6 +377,13 @@ Ext.define('Esc.d3.Chromatogram', {
       .on('click', markerClick)
       .append("svg:title")
       .text(markerTitle);
+
+    if (this.selectedScan) {
+      var scanid = this.selectedScan;
+      this.markerSelect(function(d) {
+        return (scanid == d.id);
+      });
+    }
   },
   /**
    * Overlay the extracted ion chromatogram of a molecule on the chromatogram.
@@ -388,5 +395,20 @@ Ext.define('Esc.d3.Chromatogram', {
     this.svg.append('svg:path')
       .attr('class', 'moleculeline')
       .attr('d', this.line(this.moleculedata));
+  },
+  /**
+   * Mark selected scan as assigned or unassigned
+   *
+   * @param {Boolean} isAssigned True to set mark selected scan as assigned
+   *                             or False to mark selected scan as unassigned.
+   */
+  setAssignment: function(isAssigned) {
+    var selectedScanId = this.selectedScan;
+    this.data.forEach(function(d) {
+      if (d.id === selectedScanId) {
+        d.ap = isAssigned ? 1 : 0;
+      }
+    });
+    this.setData(this.data);
   }
 });

@@ -124,6 +124,7 @@ describe('Molecules', function() {
 
   describe('controller', function() {
     var store = null,
+      data = null,
       ctrl = null;
 
     beforeEach(function(done) {
@@ -140,13 +141,21 @@ describe('Molecules', function() {
         ctrl = app.getController('Molecules');
       }
 
-      if (!store) {
-        store = ctrl.getStore('Molecules');
-        // mock onLaunch of controller
-        store.on('load', done, this, {single: true});
-        store.load();
-      } else {
+      // mock onLaunch of controller
+      store = ctrl.getStore('Molecules');
+      if (data) {
+        store.loadRawData(data);
         done();
+      } else {
+        store.setProxy(Ext.create('Ext.data.proxy.Ajax', {
+          reader: store.getProxy().getReader(),
+          url: store.getProxy().url
+        }));
+        store.on('load', function() {
+          data = store.getProxy().getReader().rawData;
+          done();
+        }, this, {single: true});
+        store.load();
       }
     });
 
