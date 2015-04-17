@@ -213,7 +213,7 @@ Ext.define('Esc.d3.MSpectra', {
   undraw: function() {
     this.svg.selectAll('g.axis').remove();
     this.svg.selectAll('line.mspeak').remove();
-    this.clearPeakSelection();
+    this.markerSelect(false);
     this.svg.selectAll('.marker').remove();
     this.svg.selectAll('.' + this.cutoffCls).remove();
     this.callParent(arguments);
@@ -332,5 +332,25 @@ Ext.define('Esc.d3.MSpectra', {
       .on('click', markerClick)
       .append("svg:title")
       .text(markerTitle);
+
+    if (this.selectedpeak) {
+      this.selectPeak(this.selectedpeak);
+    }
+  },
+  /**
+   * Mark selected peak as assigned or unassigned
+   *
+   * @param {Boolean} isAssigned True to set mark selected peak as assigned
+   *                             or False to mark selected peak as unassigned.
+   * @param {Number} molid The molecule identifier assigned to the peak.
+   */
+  setAssignment: function(isAssigned, molid) {
+    var selectedMz = this.selectedpeak;
+    this.data.forEach(function(d) {
+      if (d.mz === selectedMz) {
+        d.assigned_molid = isAssigned ? molid : null;
+      }
+    });
+    this.setData(this.data);
   }
 });
