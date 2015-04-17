@@ -124,6 +124,7 @@ describe('Molecules', function() {
 
   describe('controller', function() {
     var store = null,
+      data = null,
       ctrl = null;
 
     beforeEach(function() {
@@ -142,21 +143,29 @@ describe('Molecules', function() {
         ctrl = app.getController('Molecules');
       }
 
-      if (!store) {
-        store = ctrl.getStore('Molecules');
-        // mock onLaunch of controller
+      // mock onLaunch of controller
+      store = ctrl.getStore('Molecules');
+      if (data) {
+        store.loadRawData(data);
+      } else {
+        store.setProxy(Ext.create('Ext.data.proxy.Ajax', {
+          reader: store.getProxy().getReader(),
+          url: store.getProxy().url
+        }));
         store.load();
+
+        waitsFor(
+          function() {
+            return !store.isLoading();
+          },
+          'load never completed',
+          4000
+        );
+
+        runs(function() {
+          data = store.getProxy().getReader().rawData;
+        });
       }
-
-      expect(store).toBeTruthy();
-
-      waitsFor(
-        function() {
-          return !store.isLoading();
-        },
-        'load never completed',
-        4000
-      );
     });
 
     afterEach(function() {
@@ -473,7 +482,9 @@ describe('Molecules', function() {
       });
 
       it('should clear molecule selection when molecule is selected', function() {
-        sm.hasSelection = function() { return true; };
+        sm.hasSelection = function() {
+          return true;
+        };
         var callback = jasmine.createSpy('callback').andReturn(false);
         Ext.util.Observable.capture(ctrl.application, callback);
 
@@ -546,7 +557,11 @@ describe('Molecules', function() {
       };
       spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
-      var sm = { hasSelection: function() { return false; } };
+      var sm = {
+        hasSelection: function() {
+          return false;
+        }
+      };
       spyOn(ctrl, 'getSelectionModel').andReturn(sm);
 
       store.fireEvent('load', store, [], true);
@@ -559,7 +574,7 @@ describe('Molecules', function() {
 
     it('aborted load molecules', function() {
       spyOn(ctrl, 'metabolizable');
-        
+
       ctrl.onLoad(store, [], false);
 
       expect(ctrl.metabolizable).not.toHaveBeenCalled();
@@ -604,7 +619,11 @@ describe('Molecules', function() {
       };
       spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
-      var sm = { hasSelection: function() { return false; } };
+      var sm = {
+        hasSelection: function() {
+          return false;
+        }
+      };
       spyOn(ctrl, 'getSelectionModel').andReturn(sm);
 
       // load zero

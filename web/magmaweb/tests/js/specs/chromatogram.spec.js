@@ -1,13 +1,16 @@
 describe('Esc.d3.Chromatogram', function() {
-  var data = [{
-    rt: 1,
-    intensity: 100,
-    id: 4
-  }, {
-    rt: 2,
-    intensity: 50,
-    id: 5
-  }];
+  var data = [];
+  beforeEach(function() {
+    data = [{
+      rt: 1,
+      intensity: 100,
+      id: 4
+    }, {
+      rt: 2,
+      intensity: 50,
+      id: 5
+    }];
+  });
 
   function mockSvg() {
     var svg = {
@@ -454,6 +457,26 @@ describe('Esc.d3.Chromatogram', function() {
       expect(chart.svg.text).toHaveBeenCalledWith(jasmine.any(Function));
       expect(chart.svg.on).toHaveBeenCalledWith('click', jasmine.any(Function));
     });
+
+    it('with selected scan', function() {
+      var chart = Ext.create('Esc.d3.Chromatogram', {
+        width: 500,
+        height: 400,
+        data: data,
+        cutoff: 3,
+        markers: data
+      });
+
+      // mock initSvg
+      chart.chartWidth = 500;
+      chart.chartHeight = 400;
+      chart.svg = mockSvg();
+      chart.selectedScan = data[0].id;
+
+      chart.onMarkersReady();
+
+      expect(chart.svg.classed).toHaveBeenCalledWith('selected', jasmine.any(Function));
+    });
   });
 
   it('setExtractedIonChromatogram', function() {
@@ -476,5 +499,41 @@ describe('Esc.d3.Chromatogram', function() {
 
     expect(chart.moleculedata).toEqual(eic);
     expect(chart.svg.attr).toHaveBeenCalledWith('class', 'moleculeline');
+  });
+
+  describe('setAssignment', function() {
+    var chart;
+    beforeEach(function() {
+      chart = Ext.create('Esc.d3.Chromatogram', {
+        width: 500,
+        height: 400,
+        data: data,
+        axesPadding: [0, 0, 0, 0]
+      });
+      // mock initSvg
+      spyOn(chart, 'getWidth').andReturn(500);
+      spyOn(chart, 'getHeight').andReturn(400);
+      chart.svg = mockSvg();
+      chart.initScales();
+      chart.initAxes();
+      chart.initZoom();
+    });
+
+    it('mark selected scan as assigned', function() {
+      chart.selectScan(data[0].id);
+
+      chart.setAssignment(true);
+
+      expect(data[0].ap).toEqual(1);
+    });
+
+    it('mark selected scan as unassigned', function() {
+      chart.selectScan(data[0].id);
+      data[0].ap = 1;
+
+      chart.setAssignment(false);
+
+      expect(data[0].ap).toEqual(0);
+    });
   });
 });
