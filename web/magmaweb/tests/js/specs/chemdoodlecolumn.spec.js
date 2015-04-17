@@ -75,10 +75,10 @@ describe('Esc.ChemDoodleColumn', function() {
       col.grid.getView = function() {};
       // calls initCanvas on all canvas tags with class="x-chemdoodle-cols"
       var canvases = [];
-      spyOn(col.grid, 'getView').andReturn(function() {
+      spyOn(col.grid, 'getView').and.returnValue(function() {
         dom = 'dom';
       });
-      spyOn(Ext.DomQuery, 'select').andReturn(canvases);
+      spyOn(Ext.DomQuery, 'select').and.returnValue(canvases);
       col.initCanvases();
       expect(Ext.DomQuery.select).toHaveBeenCalled();
     });
@@ -114,9 +114,9 @@ describe('Esc.ChemDoodleColumn', function() {
         id: 'gridview-1234-5-2'
       }];
 
-      spyOn(Ext.DomQuery, 'select').andReturn(canvases);
+      spyOn(Ext.DomQuery, 'select').and.returnValue(canvases);
       spyOn(col, 'initCanvas');
-      spyOn(store.data, 'getByKey').andCallThrough();
+      spyOn(store.data, 'getByKey').and.callThrough();
 
       col.initCanvases();
 
@@ -154,9 +154,9 @@ describe('Esc.ChemDoodleColumn', function() {
         id: 'gridview-1234-5-2'
       }];
 
-      spyOn(Ext.DomQuery, 'select').andReturn(canvases);
+      spyOn(Ext.DomQuery, 'select').and.returnValue(canvases);
       spyOn(col, 'initCanvas');
-      spyOn(store, 'getNodeById').andCallThrough();
+      spyOn(store, 'getNodeById').and.callThrough();
 
       col.initCanvases();
 
@@ -171,8 +171,8 @@ describe('Esc.ChemDoodleColumn', function() {
       var col = createDefault();
       var doodle = function() {};
       doodle.loadMolecule = function() {};
-      spyOn(ChemDoodle, 'ViewerCanvas').andReturn(doodle);
-      spyOn(ChemDoodle, 'readMOL').andReturn('caffiene');
+      spyOn(ChemDoodle, 'ViewerCanvas').and.returnValue(doodle);
+      spyOn(ChemDoodle, 'readMOL').and.returnValue('caffiene');
       spyOn(doodle, 'loadMolecule');
 
       var record = {
@@ -226,7 +226,7 @@ describe('Esc.ChemDoodleColumn', function() {
       var doodle = function() {};
       doodle.loadMolecule = function() {};
       doodle.specs = defspecs;
-      spyOn(ChemDoodle, 'ViewerCanvas').andReturn(doodle);
+      spyOn(ChemDoodle, 'ViewerCanvas').and.returnValue(doodle);
       spyOn(doodle, 'loadMolecule');
 
       var record = {
@@ -239,7 +239,7 @@ describe('Esc.ChemDoodleColumn', function() {
 
       expect(ChemDoodle.ViewerCanvas).toHaveBeenCalledWith('gridview-1234-5-2', 150, 100, true);
       expect(doodle.loadMolecule).toHaveBeenCalled();
-      var mol = doodle.loadMolecule.mostRecentCall.args[0];
+      var mol = doodle.loadMolecule.calls.mostRecent().args[0];
       expect(doodle.specs.atoms_color).toEqual('cyan');
       expect(doodle.specs.bonds_color).toEqual('cyan');
       expect(mol.atoms[0].specs).toBeUndefined();

@@ -91,7 +91,7 @@ describe('Molecules', function() {
     });
 
     it('proxy exception', function() {
-      spyOn(Ext.Error, 'handle').andReturn(true);
+      spyOn(Ext.Error, 'handle').and.returnValue(true);
 
       var proxy = store.getProxy();
       proxy.fireEvent('exception', proxy, 'bla', 'foo');
@@ -126,7 +126,7 @@ describe('Molecules', function() {
     var store = null,
       ctrl = null;
 
-    beforeEach(function() {
+    beforeEach(function(done) {
       if (!ctrl) {
         var app = Ext.create('Esc.magmaweb.resultsAppTest', {
           controllers: ['Molecules'],
@@ -143,18 +143,11 @@ describe('Molecules', function() {
       if (!store) {
         store = ctrl.getStore('Molecules');
         // mock onLaunch of controller
+        store.on('load', done, this, {single: true});
         store.load();
+      } else {
+        done();
       }
-
-      expect(store).toBeTruthy();
-
-      waitsFor(
-        function() {
-          return !store.isLoading();
-        },
-        'load never completed',
-        4000
-      );
     });
 
     afterEach(function() {
@@ -210,7 +203,7 @@ describe('Molecules', function() {
       var f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
 
       ctrl.onSelect(rm, record);
@@ -241,7 +234,7 @@ describe('Molecules', function() {
       var f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
 
       ctrl.onSelect(rm, record);
@@ -262,13 +255,13 @@ describe('Molecules', function() {
           };
         }
       };
-      spyOn(ctrl, 'getMoleculeList').andReturn(list);
+      spyOn(ctrl, 'getMoleculeList').and.returnValue(list);
 
       // mock store
       var mockedstore = {
         setScanFilter: function() {}
       };
-      spyOn(ctrl, 'getMoleculesStore').andReturn(mockedstore);
+      spyOn(ctrl, 'getMoleculesStore').and.returnValue(mockedstore);
       spyOn(mockedstore, 'setScanFilter');
 
       var scanid = 1133;
@@ -298,7 +291,7 @@ describe('Molecules', function() {
           hideFragmentScoreColumn: function() {}
         };
 
-        spyOn(ctrl, 'getMoleculeList').andReturn(list);
+        spyOn(ctrl, 'getMoleculeList').and.returnValue(list);
         spyOn(list, 'clearMzFilter');
 
         // mock store
@@ -310,7 +303,7 @@ describe('Molecules', function() {
           }),
           clearMzFilter: jasmine.createSpy('clearMzFilter')
         };
-        spyOn(ctrl, 'getMoleculesStore').andReturn(mockedstore);
+        spyOn(ctrl, 'getMoleculesStore').and.returnValue(mockedstore);
         spyOn(mockedstore, 'setScanFilter');
         spyOn(mockedstore, 'removeScanFilter');
       });
@@ -339,14 +332,14 @@ describe('Molecules', function() {
       var list = {
         clearFilters: function() {}
       };
-      spyOn(ctrl, 'getMoleculeList').andReturn(list);
+      spyOn(ctrl, 'getMoleculeList').and.returnValue(list);
       spyOn(list, 'clearFilters');
 
       // mock application eventbus
       var f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
 
       ctrl.clearFilters();
@@ -375,12 +368,12 @@ describe('Molecules', function() {
           }),
           setMzFilter: jasmine.createSpy('setmzFilter')
         };
-        spyOn(ctrl, 'getMoleculesStore').andReturn(store);
+        spyOn(ctrl, 'getMoleculesStore').and.returnValue(store);
         list = jasmine.createSpyObj('list', ['showFragmentScoreColumn']);
         list.getSelectionModel = function() {
           return sm;
         };
-        spyOn(ctrl, 'getMoleculeList').andReturn(list);
+        spyOn(ctrl, 'getMoleculeList').and.returnValue(list);
       });
 
       it('should not filter on mz of level > 1 scan', function() {
@@ -436,7 +429,7 @@ describe('Molecules', function() {
         list.getSelectionModel = function() {
           return sm;
         };
-        spyOn(ctrl, 'getMoleculeList').andReturn(list);
+        spyOn(ctrl, 'getMoleculeList').and.returnValue(list);
 
         // mock store
         store = {
@@ -447,7 +440,7 @@ describe('Molecules', function() {
             return item.id || item.property;
           })
         };
-        spyOn(ctrl, 'getMoleculesStore').andReturn(store);
+        spyOn(ctrl, 'getMoleculesStore').and.returnValue(store);
         spyOn(store, 'setScanFilter');
         spyOn(store, 'removeScanFilter');
       });
@@ -472,7 +465,7 @@ describe('Molecules', function() {
 
       it('should clear molecule selection when molecule is selected', function() {
         sm.hasSelection = function() { return true; };
-        var callback = jasmine.createSpy('callback').andReturn(false);
+        var callback = jasmine.createSpy('callback').and.returnValue(false);
         Ext.util.Observable.capture(ctrl.application, callback);
 
         ctrl.clearMzFilter(122.0373001, 1);
@@ -511,7 +504,7 @@ describe('Molecules', function() {
           setDisabledAnnotateFieldset: function() {}
         };
         spyOn(form, 'setDisabledAnnotateFieldset');
-        spyOn(ctrl, 'getMoleculeAddForm').andReturn(form);
+        spyOn(ctrl, 'getMoleculeAddForm').and.returnValue(form);
       });
 
       it('initially', function() {
@@ -542,10 +535,10 @@ describe('Molecules', function() {
       var f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
       var sm = { hasSelection: function() { return false; } };
-      spyOn(ctrl, 'getSelectionModel').andReturn(sm);
+      spyOn(ctrl, 'getSelectionModel').and.returnValue(sm);
 
       store.fireEvent('load', store, [], true);
 
@@ -569,15 +562,15 @@ describe('Molecules', function() {
         hasSelection: function() {},
         select: function() {}
       };
-      spyOn(ctrl, 'getSelectionModel').andReturn(sm);
-      spyOn(sm, 'hasSelection').andReturn(false);
+      spyOn(ctrl, 'getSelectionModel').and.returnValue(sm);
+      spyOn(sm, 'hasSelection').and.returnValue(false);
       spyOn(sm, 'select');
 
       spyOn(ctrl, 'metabolizable');
       var f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
 
       Ext.util.Observable.capture(ctrl.application, f.callback);
 
@@ -600,10 +593,10 @@ describe('Molecules', function() {
       var f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
       var sm = { hasSelection: function() { return false; } };
-      spyOn(ctrl, 'getSelectionModel').andReturn(sm);
+      spyOn(ctrl, 'getSelectionModel').and.returnValue(sm);
 
       // load zero
       store.loadRawData({
@@ -624,7 +617,7 @@ describe('Molecules', function() {
     describe('download molecules in csv', function() {
       it('default', function() {
         spyOn(window, 'open');
-        spyOn(ctrl, 'getMoleculeList').andReturn({
+        spyOn(ctrl, 'getMoleculeList').and.returnValue({
           getFilterQuery: function() {
             return [];
           },
@@ -664,7 +657,7 @@ describe('Molecules', function() {
           comparison: 'gt'
         }]);
         spyOn(window, 'open');
-        spyOn(ctrl, 'getMoleculeList').andReturn({
+        spyOn(ctrl, 'getMoleculeList').and.returnValue({
           getFilterQuery: function() {
             return {
               filter: filter
@@ -702,12 +695,12 @@ describe('Molecules', function() {
         loadDefaults: function() {}
       };
       spyOn(addform, 'loadDefaults');
-      spyOn(ctrl, 'getMoleculeAddForm').andReturn(addform);
+      spyOn(ctrl, 'getMoleculeAddForm').and.returnValue(addform);
       var panel = {
         setActiveItem: function() {}
       };
       spyOn(panel, 'setActiveItem');
-      spyOn(ctrl, 'getMoleculePanel').andReturn(panel);
+      spyOn(ctrl, 'getMoleculePanel').and.returnValue(panel);
 
       ctrl.showAddStructuresForm();
 
@@ -720,7 +713,7 @@ describe('Molecules', function() {
         setActiveItem: function() {}
       };
       spyOn(panel, 'setActiveItem');
-      spyOn(ctrl, 'getMoleculePanel').andReturn(panel);
+      spyOn(ctrl, 'getMoleculePanel').and.returnValue(panel);
 
       ctrl.showGrid();
 
@@ -740,7 +733,7 @@ describe('Molecules', function() {
           return form;
         }
       };
-      spyOn(ctrl, 'getMoleculeAddForm').andReturn(panel);
+      spyOn(ctrl, 'getMoleculeAddForm').and.returnValue(panel);
 
       ctrl.addStructuresHandler();
 
@@ -750,29 +743,6 @@ describe('Molecules', function() {
         waitMsg: jasmine.any(String),
         success: jasmine.any(Function),
         failure: jasmine.any(Function)
-      });
-    });
-
-    it('showMetabolizeForm', function() {
-      ctrl.showMetabolizeForm();
-
-      waitsFor(
-        function() {
-          return !ctrl.metabolizeForm.loading;
-        },
-        'Form defaults never loaded',
-        1000
-      );
-
-      expect(ctrl.metabolizeForm.isVisible()).toBeTruthy();
-      ctrl.metabolizeForm.hide();
-
-      runs(function() {
-        // scenario gets serialized to json string
-        expect(ctrl.metabolizeForm.getForm().getValues()).toEqual({
-          "metabolize": "on",
-          "scenario": '[{"type":"phase1","steps":2},{"type":"phase2","steps":1}]'
-        });
       });
     });
 
@@ -852,7 +822,7 @@ describe('Molecules', function() {
         setDisabled: function() {}
       };
       spyOn(button, 'setDisabled');
-      spyOn(Ext, 'getCmp').andReturn(button);
+      spyOn(Ext, 'getCmp').and.returnValue(button);
 
       ctrl.metabolizable(true);
 
@@ -890,7 +860,7 @@ describe('Molecules', function() {
       var list = {
         getSelectionModel: function() {}
       };
-      spyOn(ctrl, 'getMoleculeList').andReturn(list);
+      spyOn(ctrl, 'getMoleculeList').and.returnValue(list);
       spyOn(list, 'getSelectionModel');
 
       ctrl.getSelectionModel();
@@ -915,11 +885,11 @@ describe('Molecules', function() {
           },
           select: function() {}
         };
-        spyOn(ctrl, 'getSelectionModel').andReturn(sm);
+        spyOn(ctrl, 'getSelectionModel').and.returnValue(sm);
       });
 
       it('has no selection and reselects nothing', function() {
-        spyOn(sm, 'hasSelection').andReturn(false);
+        spyOn(sm, 'hasSelection').and.returnValue(false);
 
         ctrl.rememberSelectedMolecule();
 
@@ -927,7 +897,7 @@ describe('Molecules', function() {
       });
 
       it('has selection and reselects', function() {
-        spyOn(sm, 'hasSelection').andReturn(true);
+        spyOn(sm, 'hasSelection').and.returnValue(true);
 
         ctrl.rememberSelectedMolecule();
 
@@ -944,7 +914,7 @@ describe('Molecules', function() {
         setPageSize: function() {},
         getSelectionModel: function() {}
       };
-      spyOn(ctrl, 'getMoleculeList').andReturn(mocklist);
+      spyOn(ctrl, 'getMoleculeList').and.returnValue(mocklist);
 
       ctrl.onLaunch();
 
@@ -955,7 +925,7 @@ describe('Molecules', function() {
     it('cantrun', function() {
       ctrl.application.canRun = false;
       assignbut = jasmine.createSpyObj('abut', ['hideCommandsColumn']);
-      spyOn(ctrl, 'getMoleculeList').andReturn(assignbut);
+      spyOn(ctrl, 'getMoleculeList').and.returnValue(assignbut);
 
       ctrl.applyRole();
 

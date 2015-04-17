@@ -33,7 +33,7 @@ describe('Scans controller', function() {
       resetScales: function() {},
       setZoom: function() {}
     };
-    spyOn(ctrl, 'getChromatogram').andReturn(mocked_chromatogram);
+    spyOn(ctrl, 'getChromatogram').and.returnValue(mocked_chromatogram);
     mocked_form = {
       submit: function() {},
       isValid: function() {
@@ -50,7 +50,7 @@ describe('Scans controller', function() {
         return mocked_form;
       }
     };
-    spyOn(ctrl, 'getUploadForm').andReturn(mocked_form_panel);
+    spyOn(ctrl, 'getUploadForm').and.returnValue(mocked_form_panel);
   });
 
   it('onLaunch', function() {
@@ -72,11 +72,11 @@ describe('Scans controller', function() {
       spyOn(mocked_chromatogram, 'setData');
       spyOn(ctrl, 'resetScans');
       var mocked_panel = jasmine.createSpyObj('panel', ['hide']);
-      spyOn(ctrl, 'getChromatogramPanel').andReturn(mocked_panel);
+      spyOn(ctrl, 'getChromatogramPanel').and.returnValue(mocked_panel);
       var f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
 
       var data = {
@@ -100,11 +100,11 @@ describe('Scans controller', function() {
       spyOn(mocked_chromatogram, 'setData');
       spyOn(ctrl, 'resetScans');
       var mocked_panel = jasmine.createSpyObj('panel', ['hide']);
-      spyOn(ctrl, 'getChromatogramPanel').andReturn(mocked_panel);
+      spyOn(ctrl, 'getChromatogramPanel').and.returnValue(mocked_panel);
       var f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
 
       var data = {
@@ -123,7 +123,7 @@ describe('Scans controller', function() {
     });
 
     it('server error', function() {
-      spyOn(Ext.Error, 'handle').andReturn(true);
+      spyOn(Ext.Error, 'handle').and.returnValue(true);
 
       ctrl.loadChromatogramCallback(null);
 
@@ -140,11 +140,11 @@ describe('Scans controller', function() {
       spyOn(mocked_chromatogram, 'selectScan');
       spyOn(ctrl, 'resetScans');
       var mocked_panel = jasmine.createSpyObj('panel', ['collapse']);
-      spyOn(ctrl, 'getChromatogramPanel').andReturn(mocked_panel);
+      spyOn(ctrl, 'getChromatogramPanel').and.returnValue(mocked_panel);
       var f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
 
       var data = {
@@ -200,7 +200,7 @@ describe('Scans controller', function() {
     });
 
     it('load callback failure', function() {
-      spyOn(Ext.Error, 'handle').andReturn(true);
+      spyOn(Ext.Error, 'handle').and.returnValue(true);
 
       ctrl.loadExtractedIonChromatogramCallback(null);
 
@@ -227,7 +227,7 @@ describe('Scans controller', function() {
     var f = {
       callback: function() {}
     };
-    spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+    spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
     Ext.util.Observable.capture(ctrl.application, f.callback);
     spyOn(mocked_chromatogram, 'clearScanSelection');
 
@@ -245,7 +245,7 @@ describe('Scans controller', function() {
       f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
       spyOn(mocked_chromatogram, 'selectScan');
     });
@@ -339,18 +339,18 @@ describe('Scans controller', function() {
 
   describe('setScans', function() {
     it('no chromatogram', function() {
-      spyOn(mocked_chromatogram, 'hasData').andReturn(false);
+      spyOn(mocked_chromatogram, 'hasData').and.returnValue(false);
       ctrl.setScans([]);
       expect(mocked_chromatogram.hasData).toHaveBeenCalled();
     });
 
     it('no scans', function() {
-      spyOn(mocked_chromatogram, 'hasData').andReturn(true);
+      spyOn(mocked_chromatogram, 'hasData').and.returnValue(true);
 
       var f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
 
       ctrl.setScans([]);
@@ -360,14 +360,14 @@ describe('Scans controller', function() {
     });
 
     it('one scan, not prev selected', function() {
-      spyOn(mocked_chromatogram, 'hasData').andReturn(true);
+      spyOn(mocked_chromatogram, 'hasData').and.returnValue(true);
       spyOn(mocked_chromatogram, 'setMarkers');
       spyOn(mocked_chromatogram, 'selectScan');
       spyOn(ctrl, 'selectScan');
       var f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
 
       var scans = [{
@@ -384,14 +384,14 @@ describe('Scans controller', function() {
     });
 
     it('one scan, prev selected', function() {
-      spyOn(mocked_chromatogram, 'hasData').andReturn(true);
+      spyOn(mocked_chromatogram, 'hasData').and.returnValue(true);
       spyOn(mocked_chromatogram, 'setMarkers');
       spyOn(mocked_chromatogram, 'selectScan');
       spyOn(ctrl, 'selectScan');
       var f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
 
       mocked_chromatogram.selectedScan = 1133;
@@ -409,13 +409,13 @@ describe('Scans controller', function() {
     });
 
     it('one scan, prev other scan selected', function() {
-      spyOn(mocked_chromatogram, 'hasData').andReturn(true);
+      spyOn(mocked_chromatogram, 'hasData').and.returnValue(true);
       spyOn(mocked_chromatogram, 'setMarkers');
       spyOn(mocked_chromatogram, 'clearScanSelection');
       var f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
 
       mocked_chromatogram.selectedScan = 204;
@@ -435,14 +435,14 @@ describe('Scans controller', function() {
     });
 
     it('selected scan', function() {
-      spyOn(mocked_chromatogram, 'hasData').andReturn(true);
+      spyOn(mocked_chromatogram, 'hasData').and.returnValue(true);
       spyOn(mocked_chromatogram, 'setMarkers');
       spyOn(mocked_chromatogram, 'selectScan');
       spyOn(ctrl, 'selectScan');
       var f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
 
       mocked_chromatogram.selectedScan = 1133;
@@ -463,14 +463,14 @@ describe('Scans controller', function() {
     });
 
     it('no selected scan', function() {
-      spyOn(mocked_chromatogram, 'hasData').andReturn(true);
+      spyOn(mocked_chromatogram, 'hasData').and.returnValue(true);
       spyOn(mocked_chromatogram, 'setMarkers');
       spyOn(mocked_chromatogram, 'selectScan');
       spyOn(ctrl, 'selectScan');
       var f = {
         callback: function() {}
       };
-      spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+      spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
       Ext.util.Observable.capture(ctrl.application, f.callback);
 
       var scans = [{
@@ -514,7 +514,7 @@ describe('Scans controller', function() {
       setActiveItem: function() {}
     };
     spyOn(panel, 'setActiveItem');
-    spyOn(ctrl, 'getChromatogramPanel').andReturn(panel);
+    spyOn(ctrl, 'getChromatogramPanel').and.returnValue(panel);
 
     ctrl.showUploadForm();
 
@@ -528,7 +528,7 @@ describe('Scans controller', function() {
       setActiveItem: function() {}
     };
     spyOn(panel, 'setActiveItem');
-    spyOn(ctrl, 'getChromatogramPanel').andReturn(panel);
+    spyOn(ctrl, 'getChromatogramPanel').and.returnValue(panel);
 
     ctrl.showChromatogram();
 
@@ -536,7 +536,7 @@ describe('Scans controller', function() {
   });
 
   it('uploadHandler', function() {
-    spyOn(mocked_form, 'isValid').andReturn(true);
+    spyOn(mocked_form, 'isValid').and.returnValue(true);
     spyOn(mocked_form, 'submit');
 
     ctrl.uploadHandler();
@@ -552,7 +552,7 @@ describe('Scans controller', function() {
   });
 
   it('uploadHandler with invalid form', function() {
-    spyOn(mocked_form, 'isValid').andReturn(false);
+    spyOn(mocked_form, 'isValid').and.returnValue(false);
     spyOn(mocked_form, 'submit');
 
     ctrl.uploadHandler();
@@ -621,7 +621,7 @@ describe('Scans controller', function() {
   });
 
   it('loadExample', function() {
-    spyOn(ctrl.application, 'runInfoUrl').andReturn('http://example.com/defaults.json');
+    spyOn(ctrl.application, 'runInfoUrl').and.returnValue('http://example.com/defaults.json');
     spyOn(mocked_form, 'load');
 
     ctrl.loadExample();

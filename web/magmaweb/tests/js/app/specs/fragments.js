@@ -21,7 +21,7 @@ describe('Fragments', function() {
       expect(store.getNodeById).toHaveBeenCalledWith(fragid);
     });
 
-    it('getNodeByMzMslevel', function() {
+    it('getNodeByMzMslevel', function(done) {
       store.setProxy(
         Ext.create('Ext.data.proxy.Ajax', {
           // url is build when scan and molecule are selected
@@ -33,19 +33,14 @@ describe('Fragments', function() {
           }
         })
       );
-      store.load();
-      waitsFor(
-        function() {
-          return !store.isLoading();
-        },
-        'Fragment store never loaded',
-        5000
-      );
-
-      runs(function() {
+      store.on('load', function() {
         var node = store.getNodeByMzMslevel(122.0373001, 2);
         expect(node.getId()).toEqual(2471);
+        done();
+      }, this, {
+        single: true
       });
+      store.load();
     });
   });
 
@@ -62,8 +57,7 @@ describe('Fragments', function() {
             // create the viewport components for this controller
             Ext.create('Esc.magmaweb.view.fragment.Tree');
           },
-          launch: function() {
-          }
+          launch: function() {}
         });
         ctrl = app.getController('Fragments');
       }
@@ -73,36 +67,31 @@ describe('Fragments', function() {
       }
     });
 
-    /**
-     * Loads fragment tree with static json file
-     */
-    var fill = function(callback) {
-      assignbut = jasmine.createSpyObj('abut', ['setParams', 'disable', 'enable', 'toggle']);
-      spyOn(ctrl, 'getAssignStruct2PeakButton').andReturn(assignbut);
-      ctrl.loadFragments(1133, 352);
-      waitsFor(
-        function() {
-          return !store.isLoading();
-        },
-        'Fragment store never loaded',
-        5000
-      );
-      runs(callback);
-    };
+    describe('filled', function() {
+      /**
+       * Loads fragment tree with static json file
+       */
+      beforeEach(function(done) {
+        assignbut = jasmine.createSpyObj('abut', ['setParams', 'disable', 'enable', 'toggle']);
+        spyOn(ctrl, 'getAssignStruct2PeakButton').and.returnValue(assignbut);
+        store.on('load', function() {
+          done();
+        }, this, {
+          single: true
+        });
+        ctrl.loadFragments(1133, 352);
+      });
 
-    it('loadFragments', function() {
-      fill(function() {
+      it('loadFragments', function() {
         expect(store.getRootNode().hasChildNodes()).toBeTruthy();
         expect(store.getById(2469)).toBeDefined();
         expect(store.getById(2471)).toBeDefined();
         expect(store.lastRequest).toBeDefined();
       });
-    });
 
-    describe('clearFragment', function() {
-      it('remove all nodes', function() {
-        // first fill then clear
-        fill(function() {
+      describe('clearFragment', function() {
+        it('remove all nodes', function() {
+          // first fill then clear
           expect(store.getRootNode().hasChildNodes()).toBeTruthy();
 
           ctrl.clearFragments();
@@ -111,10 +100,8 @@ describe('Fragments', function() {
           expect(assignbut.disable).toHaveBeenCalled();
           expect(assignbut.toggle).toHaveBeenCalledWith(false);
         });
-      });
 
-      it('should cancel request when loading', function() {
-        fill(function() {
+        it('should cancel request when loading', function() {
           store.loading = true;
           store.lastRequest = 'bla';
           spyOn(Ext.Ajax, 'abort');
@@ -124,14 +111,12 @@ describe('Fragments', function() {
           expect(Ext.Ajax.abort).toHaveBeenCalledWith(store.lastRequest);
         });
       });
-    });
 
-    it('onFragmentExpand', function() {
-      fill(function() {
+      it('onFragmentExpand', function() {
         var f = {
           callback: function() {}
         };
-        spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+        spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
         Ext.util.Observable.capture(ctrl.application, f.callback);
 
         var frag = store.getById(2469);
@@ -142,18 +127,16 @@ describe('Fragments', function() {
         ctrl.onFragmentExpand(frag);
 
         expect(f.callback).toHaveBeenCalledWith('fragmentexpand', jasmine.any(Object));
-        var expandedfrag = f.callback.mostRecentCall.args[1];
+        var expandedfrag = f.callback.calls.mostRecent().args[1];
         expect(expandedfrag.isExpanded()).toBeTruthy();
         Ext.util.Observable.releaseCapture(ctrl.application);
       });
-    });
 
-    it('onFragmentCollapse', function() {
-      fill(function() {
+      it('onFragmentCollapse', function() {
         var f = {
           callback: function() {}
         };
-        spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+        spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
         Ext.util.Observable.capture(ctrl.application, f.callback);
 
         var frag = store.getById(2469);
@@ -164,22 +147,20 @@ describe('Fragments', function() {
         expect(frag.isExpanded()).toBeFalsy();
 
         expect(f.callback).toHaveBeenCalledWith('fragmentcollapse', jasmine.any(Object));
-        var collapsedfrag = f.callback.mostRecentCall.args[1];
+        var collapsedfrag = f.callback.calls.mostRecent().args[1];
         expect(collapsedfrag.isExpanded()).toBeFalsy();
         Ext.util.Observable.releaseCapture(ctrl.application);
       });
-    });
 
-    describe('onSelect', function() {
-      it('on leaf fragment', function() {
-        fill(function() {
+      describe('onSelect', function() {
+        it('on leaf fragment', function() {
           var frag = store.getById(2470);
           var rm = Ext.create('Ext.selection.RowModel');
 
           var f = {
             callback: function() {}
           };
-          spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+          spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
           Ext.util.Observable.capture(ctrl.application, f.callback);
 
           ctrl.onSelect(rm, frag);
@@ -187,17 +168,15 @@ describe('Fragments', function() {
           expect(f.callback).toHaveBeenCalledWith('fragmentselect', jasmine.any(Object));
           Ext.util.Observable.releaseCapture(ctrl.application);
         });
-      });
 
-      it('on expanded fragment', function() {
-        fill(function() {
+        it('on expanded fragment', function() {
           var frag = store.getById(2471);
           var rm = Ext.create('Ext.selection.RowModel');
 
           var f = {
             callback: function() {}
           };
-          spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+          spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
           Ext.util.Observable.capture(ctrl.application, f.callback);
 
           ctrl.onSelect(rm, frag);
@@ -206,10 +185,8 @@ describe('Fragments', function() {
           expect(f.callback).toHaveBeenCalledWith('fragmentselect', jasmine.any(Object));
           Ext.util.Observable.releaseCapture(ctrl.application);
         });
-      });
 
-      it('on collapsed fragment', function() {
-        fill(function() {
+        it('on collapsed fragment', function() {
           var frag = store.getById(2471);
           spyOn(frag, 'expand');
           var rm = Ext.create('Ext.selection.RowModel');
@@ -217,7 +194,7 @@ describe('Fragments', function() {
           var f = {
             callback: function() {}
           };
-          spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+          spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
           Ext.util.Observable.capture(ctrl.application, f.callback);
 
           ctrl.onSelect(rm, frag);
@@ -226,23 +203,101 @@ describe('Fragments', function() {
           expect(f.callback).toHaveBeenCalledWith('fragmentselect', jasmine.any(Object));
           Ext.util.Observable.releaseCapture(ctrl.application);
         });
-      });
 
-      it('should not select lvl1 fragment', function() {
-        fill(function() {
+        it('should not select lvl1 fragment', function() {
           var frag = store.getById(2469);
           var rm = Ext.create('Ext.selection.RowModel');
 
           var f = {
             callback: function() {}
           };
-          spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+          spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
           Ext.util.Observable.capture(ctrl.application, f.callback);
 
           ctrl.onSelect(rm, frag);
 
           expect(f.callback).not.toHaveBeenCalled();
           Ext.util.Observable.releaseCapture(ctrl.application);
+        });
+      });
+
+      describe('selectFragment', function() {
+        beforeEach(function() {
+          // mock tree
+          var sm = {
+            select: function() {}
+          };
+          var tree = {
+            getSelectionModel: function() {
+              return sm;
+            },
+            setLoading: function() {},
+            initMolecules: function() {}
+          };
+          spyOn(ctrl, 'getFragmentTree').and.returnValue(tree);
+          spyOn(sm, 'select');
+        });
+
+        it('leaf', function() {
+          var f = {
+            callback: function() {}
+          };
+          spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
+          Ext.util.Observable.capture(ctrl.application, f.callback);
+
+          var frag = store.getById(2470);
+          ctrl.selectFragment(frag);
+
+          expect(f.callback).not.toHaveBeenCalled();
+          Ext.util.Observable.releaseCapture(ctrl.application);
+        });
+
+        it('expanded', function() {
+          var f = {
+            callback: function() {}
+          };
+          spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
+          Ext.util.Observable.capture(ctrl.application, f.callback);
+
+          var frag = store.getById(2469);
+          ctrl.selectFragment(frag);
+
+          expect(f.callback).toHaveBeenCalledWith('fragmentexpand', jasmine.any(Object));
+          Ext.util.Observable.releaseCapture(ctrl.application);
+        });
+
+        it('collapsed', function() {
+          var f = {
+            callback: function() {}
+          };
+          spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
+          Ext.util.Observable.capture(ctrl.application, f.callback);
+
+          var frag = store.getById(2469);
+          spyOn(frag, 'expand');
+          frag.collapse();
+          ctrl.selectFragment(frag);
+
+          expect(frag.expand).toHaveBeenCalled();
+          Ext.util.Observable.releaseCapture(ctrl.application);
+        });
+      });
+
+      describe('selectFragmentByPeak', function() {
+        it('should select fragment when peak has fragment', function() {
+          spyOn(ctrl, 'selectFragment');
+          ctrl.selectFragmentByPeak(122.0373001, 2);
+          expect(ctrl.selectFragment).toHaveBeenCalled();
+          expect(ctrl.selectFragment.calls.mostRecent().args[0].data.fragid).toEqual(2471);
+        });
+
+        it('should not select fragment when peak has no fragment does not exist', function() {
+
+          spyOn(ctrl, 'selectFragment');
+
+          ctrl.selectFragmentByPeak(1193.35278320312, 1);
+
+          expect(ctrl.selectFragment).not.toHaveBeenCalled();
         });
       });
     });
@@ -252,7 +307,7 @@ describe('Fragments', function() {
         var f = {
           callback: function() {}
         };
-        spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+        spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
         Ext.util.Observable.capture(ctrl.application, f.callback);
 
         var frag = store.getById(2470);
@@ -268,7 +323,7 @@ describe('Fragments', function() {
         var f = {
           callback: function() {}
         };
-        spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+        spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
         Ext.util.Observable.capture(ctrl.application, f.callback);
 
         var frag = store.getById(2469);
@@ -294,7 +349,7 @@ describe('Fragments', function() {
             return sm;
           }
         };
-        spyOn(ctrl, 'getFragmentTree').andReturn(tree);
+        spyOn(ctrl, 'getFragmentTree').and.returnValue(tree);
         spyOn(sm, 'deselectAll');
 
       });
@@ -335,10 +390,10 @@ describe('Fragments', function() {
         var f = {
           callback: function() {}
         };
-        spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+        spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
         Ext.util.Observable.capture(ctrl.application, f.callback);
         assignbut = jasmine.createSpyObj('abut', ['setParams', 'disable', 'enable', 'toggle']);
-        spyOn(ctrl, 'getAssignStruct2PeakButton').andReturn(assignbut);
+        spyOn(ctrl, 'getAssignStruct2PeakButton').and.returnValue(assignbut);
 
         store.fireEvent('load', store, node, 'bar');
 
@@ -368,7 +423,7 @@ describe('Fragments', function() {
         var f = {
           callback: function() {}
         };
-        spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+        spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
         Ext.util.Observable.capture(ctrl.application, f.callback);
 
         store.fireEvent('load', store, node, 'bar');
@@ -379,102 +434,12 @@ describe('Fragments', function() {
       });
     });
 
-    describe('selectFragment', function() {
-      beforeEach(function() {
-        // mock tree
-        var sm = {
-          select: function() {}
-        };
-        var tree = {
-          getSelectionModel: function() {
-            return sm;
-          },
-          setLoading: function() {},
-          initMolecules: function() {}
-        };
-        spyOn(ctrl, 'getFragmentTree').andReturn(tree);
-        spyOn(sm, 'select');
-      });
-
-      it('leaf', function() {
-        fill(function() {
-          var f = {
-            callback: function() {}
-          };
-          spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
-          Ext.util.Observable.capture(ctrl.application, f.callback);
-
-          var frag = store.getById(2470);
-          ctrl.selectFragment(frag);
-
-          expect(f.callback).not.toHaveBeenCalled();
-          Ext.util.Observable.releaseCapture(ctrl.application);
-        });
-      });
-
-      it('expanded', function() {
-        fill(function() {
-          var f = {
-            callback: function() {}
-          };
-          spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
-          Ext.util.Observable.capture(ctrl.application, f.callback);
-
-          var frag = store.getById(2469);
-          ctrl.selectFragment(frag);
-
-          expect(f.callback).toHaveBeenCalledWith('fragmentexpand', jasmine.any(Object));
-          Ext.util.Observable.releaseCapture(ctrl.application);
-        });
-      });
-
-      it('collapsed', function() {
-        fill(function() {
-          var f = {
-            callback: function() {}
-          };
-          spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
-          Ext.util.Observable.capture(ctrl.application, f.callback);
-
-          var frag = store.getById(2469);
-          spyOn(frag, 'expand');
-          frag.collapse();
-          ctrl.selectFragment(frag);
-
-          expect(frag.expand).toHaveBeenCalled();
-          Ext.util.Observable.releaseCapture(ctrl.application);
-        });
-      });
-    });
-
-    describe('selectFragmentByPeak', function() {
-      it('should select fragment when peak has fragment', function() {
-        fill(function() {
-          spyOn(ctrl, 'selectFragment');
-          ctrl.selectFragmentByPeak(122.0373001, 2);
-          expect(ctrl.selectFragment).toHaveBeenCalled();
-          expect(ctrl.selectFragment.mostRecentCall.args[0].data.fragid).toEqual(2471);
-        });
-      });
-
-      it('should not select fragment when peak has no fragment does not exist', function() {
-        fill(function() {
-
-          spyOn(ctrl, 'selectFragment');
-
-          ctrl.selectFragmentByPeak(1193.35278320312, 1);
-
-          expect(ctrl.selectFragment).not.toHaveBeenCalled();
-        });
-      });
-    });
-
     it('initMolecules', function() {
       // mock tree
       var tree = {
         initMolecules: function() {}
       };
-      spyOn(ctrl, 'getFragmentTree').andReturn(tree);
+      spyOn(ctrl, 'getFragmentTree').and.returnValue(tree);
       spyOn(tree, 'initMolecules');
 
       ctrl.initMolecules();
@@ -483,7 +448,7 @@ describe('Fragments', function() {
     });
 
     it('proxy exception', function() {
-      spyOn(Ext.Error, 'handle').andReturn(true);
+      spyOn(Ext.Error, 'handle').and.returnValue(true);
 
       var proxy = ctrl.fragmentProxyFactory(2, 3);
       proxy.fireEvent('exception', proxy, 'bla', 'foo');
@@ -495,37 +460,10 @@ describe('Fragments', function() {
       });
     });
 
-    it('showAnnotateForm', function() {
-      ctrl.showAnnotateForm();
-
-      waitsFor(
-        function() {
-          return !ctrl.annotateForm.loading;
-        },
-        'Form defaults never loaded',
-        1000
-      );
-
-      runs(function() {
-        expect(ctrl.annotateForm.getForm().getValues()).toEqual({
-          ionisation_mode: -1,
-          max_broken_bonds: '3',
-          max_water_losses: '1',
-          precursor_mz_precision: '0.001',
-          ms_intensity_cutoff: '200000',
-          msms_intensity_cutoff: '10',
-          mz_precision: '5',
-          mz_precision_abs: '0.001'
-        });
-      });
-      expect(ctrl.annotateForm.isVisible()).toBeTruthy();
-      ctrl.annotateForm.hide();
-    });
-
     it('annotateHandler', function() {
       ctrl.showAnnotateForm();
       var form = ctrl.annotateForm.getForm();
-      spyOn(form, 'isValid').andReturn(true);
+      spyOn(form, 'isValid').and.returnValue(true);
       spyOn(form, 'submit');
 
       ctrl.annotateHandler();
@@ -556,7 +494,7 @@ describe('Fragments', function() {
         setHandler: function() {},
         enable: function() {}
       };
-      spyOn(ctrl, 'getAnnotateActionButton').andReturn(button);
+      spyOn(ctrl, 'getAnnotateActionButton').and.returnValue(button);
 
       ctrl.rpcSubmitted(newjobid);
 
@@ -596,13 +534,13 @@ describe('Fragments', function() {
       });
 
       it('callback_jobrunning', function() {
-        spyOn(Ext.Ajax, 'request').andCallFake(function(options) {
+        spyOn(Ext.Ajax, 'request').and.callFake(function(options) {
           Ext.callback(options.success, ctrl, [{
             responseText: "{\"status\":\"RUNNING\"}"
           }]);
         });
         spyOn(annotateActionButton, 'setTooltip');
-        spyOn(ctrl, 'getAnnotateActionButton').andReturn(annotateActionButton);
+        spyOn(ctrl, 'getAnnotateActionButton').and.returnValue(annotateActionButton);
 
         ctrl.pollJobStatus();
 
@@ -610,7 +548,7 @@ describe('Fragments', function() {
       });
 
       it('callback_jobstopped', function() {
-        spyOn(Ext.Ajax, 'request').andCallFake(function(options) {
+        spyOn(Ext.Ajax, 'request').and.callFake(function(options) {
           Ext.callback(options.success, ctrl, [{
             responseText: "{\"status\":\"STOPPED\"}"
           }]);
@@ -622,7 +560,7 @@ describe('Fragments', function() {
         spyOn(annotateActionButton, 'setText');
         spyOn(annotateActionButton, 'setHandler');
         spyOn(annotateActionButton, 'enable');
-        spyOn(ctrl, 'getAnnotateActionButton').andReturn(annotateActionButton);
+        spyOn(ctrl, 'getAnnotateActionButton').and.returnValue(annotateActionButton);
 
         ctrl.pollJobStatus();
 
@@ -636,7 +574,7 @@ describe('Fragments', function() {
       });
 
       it('callback_failure', function() {
-        spyOn(Ext.Ajax, 'request').andCallFake(function(options) {
+        spyOn(Ext.Ajax, 'request').and.callFake(function(options) {
           Ext.callback(options.failure, ctrl);
         });
         ctrl.pollTask = 1234;
@@ -697,10 +635,10 @@ describe('Fragments', function() {
         var f = {
           callback: function() {}
         };
-        spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+        spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
         Ext.util.Observable.capture(ctrl.application, f.callback);
 
-        spyOn(Ext.Ajax, 'request').andCallFake(function(options) {
+        spyOn(Ext.Ajax, 'request').and.callFake(function(options) {
           Ext.callback(options.success);
         });
 
@@ -714,9 +652,9 @@ describe('Fragments', function() {
         var f = {
           callback: function() {}
         };
-        spyOn(f, 'callback').andReturn(false); // listeners dont hear any events
+        spyOn(f, 'callback').and.returnValue(false); // listeners dont hear any events
         Ext.util.Observable.capture(ctrl.application, f.callback);
-        spyOn(Ext.Ajax, 'request').andCallFake(function(options) {
+        spyOn(Ext.Ajax, 'request').and.callFake(function(options) {
           Ext.callback(options.failure);
         });
         spyOn(Ext.Error, 'raise');
@@ -741,7 +679,7 @@ describe('Fragments', function() {
     it('canassign', function() {
       ctrl.application.features.assign = true;
       assignbut = jasmine.createSpyObj('abut', ['hide']);
-      spyOn(ctrl, 'getAssignStruct2PeakButton').andReturn(assignbut);
+      spyOn(ctrl, 'getAssignStruct2PeakButton').and.returnValue(assignbut);
 
       ctrl.applyRole();
 
@@ -751,7 +689,7 @@ describe('Fragments', function() {
     it('cantassign', function() {
       ctrl.application.features.assign = false;
       assignbut = jasmine.createSpyObj('abut', ['hide']);
-      spyOn(ctrl, 'getAssignStruct2PeakButton').andReturn(assignbut);
+      spyOn(ctrl, 'getAssignStruct2PeakButton').and.returnValue(assignbut);
 
       ctrl.applyRole();
 

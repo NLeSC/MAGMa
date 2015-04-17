@@ -36,16 +36,16 @@ describe('Esc.d3.Abstract', function() {
         return this;
       }
     };
-    spyOn(svg, 'selectAll').andCallThrough();
-    spyOn(svg, 'select').andCallThrough();
-    spyOn(svg, 'append').andCallThrough();
-    spyOn(svg, 'attr').andCallThrough();
-    spyOn(svg, 'text').andCallThrough();
-    spyOn(svg, 'data').andCallThrough();
-    spyOn(svg, 'enter').andCallThrough();
-    spyOn(svg, 'remove').andCallThrough();
-    spyOn(svg, 'classed').andCallThrough();
-    spyOn(svg, 'on').andCallThrough();
+    spyOn(svg, 'selectAll').and.callThrough();
+    spyOn(svg, 'select').and.callThrough();
+    spyOn(svg, 'append').and.callThrough();
+    spyOn(svg, 'attr').and.callThrough();
+    spyOn(svg, 'text').and.callThrough();
+    spyOn(svg, 'data').and.callThrough();
+    spyOn(svg, 'enter').and.callThrough();
+    spyOn(svg, 'remove').and.callThrough();
+    spyOn(svg, 'classed').and.callThrough();
+    spyOn(svg, 'on').and.callThrough();
     return svg;
   }
 
@@ -171,9 +171,9 @@ describe('Esc.d3.Abstract', function() {
           return this;
         }
       };
-      spyOn(chart.svg, 'append').andCallThrough();
-      spyOn(chart.svg, 'attr').andCallThrough();
-      spyOn(chart.svg, 'text').andCallThrough();
+      spyOn(chart.svg, 'append').and.callThrough();
+      spyOn(chart.svg, 'attr').and.callThrough();
+      spyOn(chart.svg, 'text').and.callThrough();
       spyOn(chart, 'undraw');
       chart.chartWidth = 300;
       chart.chartHeight = 400;
@@ -205,8 +205,8 @@ describe('Esc.d3.Abstract', function() {
       axesPadding: [20, 10, 40, 80]
     });
     // mock initSvg
-    spyOn(chart, 'getWidth').andReturn(400);
-    spyOn(chart, 'getHeight').andReturn(500);
+    spyOn(chart, 'getWidth').and.returnValue(400);
+    spyOn(chart, 'getHeight').and.returnValue(500);
 
     chart.initScales();
 
@@ -298,8 +298,8 @@ describe('Esc.d3.Abstract', function() {
         }
       });
       // mock initSvg
-      spyOn(chart, 'getWidth').andReturn(500);
-      spyOn(chart, 'getHeight').andReturn(400);
+      spyOn(chart, 'getWidth').and.returnValue(500);
+      spyOn(chart, 'getHeight').and.returnValue(400);
       chart.svg = mockSvg();
       chart.initScales();
       chart.scales.x = d3.scale.linear().domain([1, 3]).range([0, chart.chartWidth]);
