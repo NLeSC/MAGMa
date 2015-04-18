@@ -507,8 +507,8 @@ describe('Esc.d3.Chromatogram', function() {
         axesPadding: [0, 0, 0, 0]
       });
       // mock initSvg
-      spyOn(chart, 'getWidth').andReturn(500);
-      spyOn(chart, 'getHeight').andReturn(400);
+      spyOn(chart, 'getWidth').and.returnValue(500);
+      spyOn(chart, 'getHeight').and.returnValue(400);
       chart.svg = mockSvg();
       chart.initScales();
       chart.initAxes();

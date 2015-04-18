@@ -341,13 +341,12 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
    * @param {String} jobid Identifier of new job
    */
   rpcSubmitted: function(jobid) {
-    var me = this;
     var app = this.application;
     /**
      * @property {String} newjobid
      * Keep track of id of submitted job
      */
-    me.newjobid = jobid;
+    this.newjobid = jobid;
     // Overwrite annotate button to waiting/cancel button
     var annot_button = this.getAnnotateActionButton();
     annot_button.setIconCls('icon-loading');
@@ -366,7 +365,7 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
      * @property {Ext.util.TaskRunner.Task} pollTask
      * Polls status of submitted job
      */
-    me.pollTask = Ext.TaskManager.start({
+    this.pollTask = Ext.TaskManager.start({
       run: this.pollJobStatus,
       interval: 5000,
       scope: this
@@ -378,38 +377,37 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
    * When status is STOPPED then change annotate button to fetch result button.
    */
   pollJobStatus: function() {
-    var me = this;
     var app = this.application;
     Ext.Ajax.request({
-      url: app.urls.home + 'status/' + me.newjobid + '.json',
+      url: app.urls.home + 'status/' + this.newjobid + '.json',
+      scope: this,
       success: function(o) {
         var response = Ext.JSON.decode(o.responseText);
         Ext.log({}, response.status);
         if (response.status == 'STOPPED') {
-          Ext.TaskManager.stop(me.pollTask);
-          delete me.pollTask;
-          var annot_button = me.getAnnotateActionButton();
+          Ext.TaskManager.stop(this.pollTask);
+          delete this.pollTask;
+          var annot_button = this.getAnnotateActionButton();
           annot_button.setIconCls('');
           annot_button.setText('Fetch result');
           annot_button.setTooltip('Job completed, fetch results');
           annot_button.setHandler(function() {
             Ext.MessageBox.confirm('Fetch result', 'Job has been completed. Do you want to fetch results?', function(but) {
               if (but == 'yes') {
-                window.location = app.urls.home + 'results/' + me.newjobid;
+                window.location = app.urls.home + 'results/' + this.newjobid;
               }
             });
           });
           annot_button.enable();
         } else {
-          me.getAnnotateActionButton().setTooltip('Job ' + response.status + ', waiting for completion');
+          this.getAnnotateActionButton().setTooltip('Job ' + response.status + ', waiting for completion');
         }
       },
       failure: function() {
-        Ext.TaskManager.stop(me.pollTask);
-        delete me.pollTask;
+        Ext.TaskManager.stop(this.pollTask);
+        delete this.pollTask;
         Ext.Error.raise('Failed to poll job status');
-      },
-      scope: me
+      }
     });
   },
   annotateAction: function() {
@@ -420,7 +418,6 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     }
   },
   assign_struct2peakAction: function(button) {
-    var me = this;
     var url = this.application.rpcUrl('unassign');
     if (button.pressed) {
       url = this.application.rpcUrl('assign');
@@ -428,8 +425,9 @@ Ext.define('Esc.magmaweb.controller.Fragments', {
     Ext.Ajax.request({
       url: url,
       params: button.params,
+      scope: this,
       success: function(o) {
-        me.application.fireEvent('assignmentchanged', button.pressed, button.params);
+        this.application.fireEvent('assignmentchanged', button.pressed, button.params);
       },
       failure: function(r, o) {
         Ext.Error.raise('Failed to (un)assign molecule to peak');
