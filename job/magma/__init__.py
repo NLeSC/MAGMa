@@ -326,7 +326,7 @@ class StructureEngine(object):
         try:
             p = self.db_session.query(Molecule).filter_by(molid=molid).one()
         except:
-            logger.warn('Molecule record ',molid,' does not exist.')
+            logger.warn('Molecule record %s does not exist.', molid)
             return
         parent = Chem.MolFromMolBlock(p.mol)
         if self.metabolize_engine==None:
