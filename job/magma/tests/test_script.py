@@ -2,6 +2,7 @@ import unittest
 import argparse
 import magma.script
 import tempfile, os
+import pkg_resources
 from magma.models import Base, Molecule, Scan, Peak, Fragment, Run
 
 class TestMagmaCommand(unittest.TestCase):
@@ -87,7 +88,7 @@ class TestMagmaCommand(unittest.TestCase):
         args.call_back_url = None
         args.scans= 'all'
         args.structure_database = 'hmdb'
-        args.db_options=''
+        args.db_options=pkg_resources.resource_filename('magma', "tests/HMDB_MAGMa_test.db")
         args.molids = None
         args.ncpus = 1
         args.fast = False
