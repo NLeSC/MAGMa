@@ -85,6 +85,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
 
     this.application.on('moleculeload', this.setScansOfMolecules, this);
     this.application.on('moleculeselect', this.loadExtractedIonChromatogram, this);
+    this.application.on('moleculereselect', this.loadExtractedIonChromatogram, this);
     this.application.on('moleculedeselect', function() {
       this.resetScans();
       this.clearExtractedIonChromatogram();
@@ -139,11 +140,16 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     });
 
     /**
-     * @property {Boolean} hasStructures
+     * @property {Boolean} hasMolecules
      * Whether there are structures.
      * Used to disable/enable annotate options
      */
-    this.hasStructures = false;
+    this.hasMolecules = false;
+    /**
+     * @property {Number} Molecule identifier
+     * Extracted ion chromatogram is shown for this molecule
+     */
+    this.molid = null;
 
     this.application.addEvents(
       /**
@@ -221,6 +227,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
     chromatogram.setAssignment(isAssigned);
   },
   clearExtractedIonChromatogram: function() {
+    this.molid = null;
     this.getChromatogram().setExtractedIonChromatogram([]);
   },
   /**
@@ -229,8 +236,12 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    */
   loadExtractedIonChromatogram: function(molid) {
     Ext.log({}, 'Loading extracted ion chromatogram');
-    this.getChromatogram().setLoading(true);
     var me = this;
+    if (molid === this.molid) {
+      return;
+    }
+    this.getChromatogram().setLoading(true);
+    this.molid = molid;
     d3.json(
       Ext.String.format(this.application.getUrls().extractedionchromatogram, molid),
       function(data) {
@@ -290,7 +301,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
    * @param {Esc.magmaweb.store.Molecules} moleculestore rawdata of store reader has scans
    */
   setScansOfMolecules: function(moleculestore) {
-    this.hasStructures = moleculestore.getTotalCount() > 0;
+    this.hasMolecules = moleculestore.getTotalCount() > 0;
     this.scans_of_molecules = moleculestore.getProxy().getReader().rawData.scans;
     this.setScans(this.scans_of_molecules);
   },
@@ -332,7 +343,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   },
   showUploadForm: function() {
     var me = this;
-    this.getUploadForm().setDisabledAnnotateFieldset(!this.hasStructures);
+    this.getUploadForm().setDisabledAnnotateFieldset(!this.hasMolecules);
     this.getUploadForm().loadDefaults(me.application.runInfoUrl());
     this.getChromatogramPanel().setActiveItem(1);
   },

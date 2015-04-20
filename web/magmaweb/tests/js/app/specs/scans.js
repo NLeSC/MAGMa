@@ -5,20 +5,18 @@ describe('Scans controller', function() {
   var mocked_form = null;
 
   beforeEach(function() {
-    if (!ctrl) {
-      var app = Ext.create('Esc.magmaweb.resultsAppTest', {
-        controllers: ['Scans'],
-        onBeforeLaunch: function() {
-          // create the viewport components for this controller
-          Ext.create('Esc.magmaweb.view.scan.Panel');
-        },
-        launch: function() {
-          // prevent controllers onLaunch from fireing as it will do an ajax call
-          // ajax call will be tested later
-        }
-      });
-      ctrl = app.getController('Scans');
-    }
+    var app = Ext.create('Esc.magmaweb.resultsAppTest', {
+      controllers: ['Scans'],
+      onBeforeLaunch: function() {
+        // create the viewport components for this controller
+        Ext.create('Esc.magmaweb.view.scan.Panel');
+      },
+      launch: function() {
+        // prevent controllers onLaunch from fireing as it will do an ajax call
+        // ajax call will be tested later
+      }
+    });
+    ctrl = app.getController('Scans');
 
     mocked_chromatogram = {
       cutoff: null,
@@ -168,6 +166,7 @@ describe('Scans controller', function() {
       spyOn(mocked_chromatogram, 'setExtractedIonChromatogram');
       ctrl.clearExtractedIonChromatogram();
       expect(mocked_chromatogram.setExtractedIonChromatogram).toHaveBeenCalledWith([]);
+      expect(ctrl.molid).toBeFalsy();
     });
 
     it('load', function() {
@@ -181,6 +180,17 @@ describe('Scans controller', function() {
         appRootBase + '/data/extractedionchromatogram.352.json',
         jasmine.any(Function)
       );
+      expect(ctrl.molid).toEqual(352);
+    });
+
+    it('load same molecule twice, only l load', function() {
+      spyOn(d3, 'json');
+      spyOn(mocked_chromatogram, 'setLoading');
+
+      ctrl.loadExtractedIonChromatogram(352);
+      ctrl.loadExtractedIonChromatogram(352);
+
+      expect(d3.json.calls.count()).toEqual(1);
     });
 
     it('load callback success', function() {
@@ -297,7 +307,7 @@ describe('Scans controller', function() {
 
       expect(ctrl.scans_of_molecules).toEqual([1, 2]);
       expect(ctrl.setScans).toHaveBeenCalledWith([1, 2]);
-      expect(ctrl.hasStructures).toBeTruthy();
+      expect(ctrl.hasMolecules).toBeTruthy();
     });
 
     it('empty', function() {
@@ -326,7 +336,7 @@ describe('Scans controller', function() {
 
       expect(ctrl.scans_of_molecules).toEqual([]);
       expect(ctrl.setScans).toHaveBeenCalledWith([]);
-      expect(ctrl.hasStructures).toBeFalsy();
+      expect(ctrl.hasMolecules).toBeFalsy();
     });
   });
 
@@ -507,7 +517,7 @@ describe('Scans controller', function() {
   });
 
   it('showUploadForm', function() {
-    ctrl.hasStructures = false;
+    ctrl.hasMolecules = false;
     spyOn(mocked_form_panel, 'setDisabledAnnotateFieldset');
     spyOn(mocked_form_panel, 'loadDefaults');
     var panel = {
