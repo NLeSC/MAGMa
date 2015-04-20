@@ -14,13 +14,20 @@ Development installation
 1. Requires ExtJS 4 for user inteface.
   * Download ExtJS from http://www.sencha.com/products/extjs/download/ext-js-4.2.1/2281 or directy http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip
   * Unzip it in in `web/magmaweb/static`.
-  * The ext.js is missing some bits, fix by
+  * The ext.js is missing some bits, fix by using sencha cmd
 
 .. code-block:: base
 
    cd magmaweb/static/ext-4.2.1.883
    mv ext.js ext-cmd.js
    sencha fs minify -yui -f ext-debug.js -t ext.js
+
+Or by using yui compressor
+
+   cd magmaweb/static/ext-4.2.1.883
+   mv ext.js ext-cmd.js
+   wget https://github.com/yui/yuicompressor/releases/download/v2.4.8/yuicompressor-2.4.8.jar
+   java -jar yuicompressor-2.4.8.jar ext-debug.js -o ext.js
 
 2. Create users and register jobs see :ref:`User management <user>` or `docs/user.rst <docs/user.rst>`_.
 3. Install MAGMa web and it's dependencies
