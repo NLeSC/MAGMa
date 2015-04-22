@@ -16,6 +16,7 @@ install:
 before_script:
   - npm install karma-cli
   - pip install nose
+  - cd job && echo -e '[magma job]\nstructure_database.pubchem=magma/tests/HMDB_MAGMa_test.db' > magma_job.ini
 script:
   - cd job && nosetests
   - cd web && nosetests 
