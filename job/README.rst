@@ -10,7 +10,6 @@ Requirements
 MAGMa requires
 * RDKit with INCHI support.
 * libxml2-dev and libxslt-dev for mzxml file parsing.
-* CactVS. See http://www2.ccc.uni-erlangen.de/software/cactvs/
 
 RDKit installation
 ~~~~~~~~~~~~~~~~~~
@@ -45,28 +44,6 @@ To `env/bin/activate` add:
 
 `<somedir>` should be replaced with path where RDKit was untarred.
 
-Cactvs installation
-~~~~~~~~~~~~~~~~~~~
-
-1. On http://www.xemistry.com/ follow the Academic downloads link.
-2. Download the tarball for your OS.
-
-.. code-block:: bash
-
-   cd /tmp
-   mkdir v
-   cd v
-   tar -zxf ../cactvstools-Linux3.1-SuSE12.1-64-3.420.tar.gz
-   ./installme
-   # use defaults
-
-MAGMa requires the path where Cactvs was installed.
-For example during `./installme` of Cactvs version `3.420`, filled in `/usr/local/lib` for the libraries location then MAGMa
-requires `/usr/local/lib/cactvs3.420`.
-
-If metabolism is not working compare `magma/script/csreact` with `csbr` (available in Cactvs bin dir).
-The `magma/script/csreact` must use the same paths/versions as the `csbr` script.
-
 Development installation
 ------------------------
 
@@ -94,7 +71,7 @@ Defaults to using 'rdkit' as chemical engine.
 
 A 'magma_job.ini' config file is read from current working directory or from users home directory (~/).
 
-Exampe config file ::
+Exampe config file:
 
 .. code-block:: INI
 
@@ -109,22 +86,13 @@ Exampe config file ::
    macs.id = <MAC key identifier>
    macs.key = <MAC key>
 
-   # choose cdk or rdkit as chemical engine
-   chemical_engine = rdkit
-
-   # choose cactvs or reactor as metabolism engine
-   metabolism_engine = cactvs
-
-   # Cactvs is needed to perform reactions
-   cactvs_root = /usr/local/lib/cactvs3.409
-
 Running on cluster
 ------------------
 
 On the compute node not all dependencies of Magma will be installed.
 By freezing the magma application on the head node we include all dependencies like rdkit.
 
-On head node ::
+On head node:
 
 .. code-block:: bash
 
@@ -134,7 +102,7 @@ On head node ::
    chmod +x dist/Magma-<version>/Magma-<version>-py2.7.egg/magma/script/reactor
    tar -zcf Magma-<version>.tar.gz Magma-<version>
 
-On compute node ::
+On compute node:
 
 .. code-block:: bash
 

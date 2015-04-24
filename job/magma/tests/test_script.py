@@ -2,6 +2,7 @@ import unittest
 import argparse
 import magma.script
 import tempfile, os
+import pkg_resources
 from magma.models import Base, Molecule, Scan, Peak, Fragment, Run
 
 class TestMagmaCommand(unittest.TestCase):
@@ -13,7 +14,7 @@ class TestMagmaCommand(unittest.TestCase):
 
         self.assertEqual(self.mc.version(), '1.0')
 
-    def test_chlorogenic_acid_example(self):
+    def test_chlorogenic_acid_example_without_fast_option(self):
         treefile = tempfile.NamedTemporaryFile(delete=False)
         dbfile = tempfile.NamedTemporaryFile(delete=False)
 
@@ -32,18 +33,19 @@ class TestMagmaCommand(unittest.TestCase):
         args.log = 'debug'
         args.call_back_url = None
 
+        # allow,but not require, commas at the end of a line
         treefile.write("""353.087494: 69989984 (
     191.055756: 54674544 (
         85.029587: 2596121,
-        93.034615: 1720164,
-        109.029442: 917026,
+        93.034615: 1720164
+        109.029442: 917026
         111.045067: 1104891 (
-            81.034691: 28070,
-            83.014069: 7618,
-            83.050339: 25471,
+\t          81.034691: 28070,
+            83.014069:7618,
+            83.050339:25471,
             93.034599: 36300,
             96.021790: 8453
-            ),
+            )
         127.039917: 2890439 (
             57.034718: 16911,
             81.034706: 41459,
@@ -86,10 +88,10 @@ class TestMagmaCommand(unittest.TestCase):
         args.call_back_url = None
         args.scans= 'all'
         args.structure_database = 'hmdb'
-        args.db_options=''
+        args.db_options=pkg_resources.resource_filename('magma', "tests/HMDB_MAGMa_test.db")
         args.molids = None
         args.ncpus = 1
-        args.fast = True
+        args.fast = False
         args.time_limit = None
 
         self.mc.annotate(args)
@@ -117,7 +119,7 @@ class TestMagmaCommand(unittest.TestCase):
 
         os.remove(dbfile.name)
 
-    def test_JWH015_example(self):
+    def test_JWH015_example_with_fast_option(self):
         dbfile = tempfile.NamedTemporaryFile(delete=False)
 
         treefile = tempfile.NamedTemporaryFile(delete=False)
@@ -229,9 +231,9 @@ class TestMagmaCommand(unittest.TestCase):
         peakdata = ms.db_session.query(Peak).count()
         self.assertEqual(peakdata,19)
         moleculedata = ms.db_session.query(Molecule).count()
-        self.assertGreater(moleculedata,60)
+        self.assertEqual(moleculedata,68)
         fragmentdata = ms.db_session.query(Fragment).count()
-        self.assertGreater(fragmentdata,100)
+        self.assertEqual(fragmentdata,122)
         hits = ms.db_session.query(Molecule).filter(Molecule.nhits>0).count()
         self.assertEqual(hits,30)
 
