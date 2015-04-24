@@ -16,11 +16,9 @@ Also for certain journals it is required that you can use the application withou
 Anonymous mode
 --------------
 
-To enable put in the *.ini config file:
+To enable put in the `*.ini` config file:
 
-.. code-block:: ini
-
-  auto_register = true
+    auto_register = true
 
 If you go to the application you will not be asked to login.
 You still have a workspace and make results public if you want.
@@ -28,10 +26,8 @@ You still have a workspace and make results public if you want.
 Restricted mode
 ---------------
 
-To enable put in the *.ini config file:
+To enable put in the `*.ini` config file:
 
-.. code-block:: ini
-
-  restricted = true
+    restricted = true
 
 This applies restrictions to the calculations to make sure calculations run fast.

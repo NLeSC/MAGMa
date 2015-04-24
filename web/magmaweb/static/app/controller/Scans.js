@@ -195,7 +195,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   /**
    * Callback for loading chromatogram
    *
-   * @params {Array} data Array of scans with rt, id and itensity props
+   * @param {Array} data Array of scans with rt, id and itensity props
    */
   loadChromatogramCallback: function(data) {
     if (data === null) {

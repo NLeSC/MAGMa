@@ -208,7 +208,7 @@ class Scan(Base):
     precursorscanid = Column(Integer, ForeignKey('scans.scanid'))
     # Each scan has many peaks
     peaks = relationship('Peak', backref='scan')
-    #: A scan can have child product scans and a parent precursor scan
+    # A scan can have child product scans and a parent precursor scan
     products = relationship('Scan', backref=backref('precursor',
                                                     remote_side=[scanid]))
     # Fragments can be found on a scan
@@ -254,7 +254,7 @@ class Fragment(Base):
     smiles = Column(Unicode)
     # molecular formula of fragment
     formula = Column(Unicode)
-    #: A fragment can have child fragments
+    # A fragment can have child fragments
     children_backref = backref('parent', remote_side=[fragid])
     children = relationship('Fragment', backref=children_backref,
                             lazy='joined', join_depth=1)

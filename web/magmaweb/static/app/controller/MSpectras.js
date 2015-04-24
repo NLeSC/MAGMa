@@ -27,7 +27,7 @@ Ext.define('Esc.magmaweb.controller.MSpectras', {
    */
   mspectras: [],
   /**
-   * @property {Float} Mz of selected lvl1 peak
+   * @property {Number} Mz of selected lvl1 peak
    */
   selectedMolecule: null,
   constructor: function(config) {

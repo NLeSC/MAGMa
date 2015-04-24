@@ -34,10 +34,12 @@ class ScanNotFound(Exception):
     """Raised when a scan identifier is not found"""
     pass
 
+
 class MoleculeNotFound(Exception):
 
     """Raised when a molecule identifier is not found"""
     pass
+
 
 class FragmentNotFound(Exception):
 
@@ -756,7 +758,7 @@ class JobDb(object):
             q = self.extjsgridfilter(q, col, afilter)
 
         q = self._addSortingToMoleculesQuery(sorts, scanid,
-                                               q, fragal, assign_q)
+                                             q, fragal, assign_q)
 
         return q
 
@@ -774,17 +776,22 @@ class JobDb(object):
         else:
             raise MoleculeNotFound()
 
-    def startOfSelectedMolecule(self, limit, sorts, scanid, filters, molid, mz):
-        rowNr = self.rowNumberOfSelectedMolecule(sorts, scanid, filters, molid, mz)
+    def startOfSelectedMolecule(self,
+                                limit, sorts,
+                                scanid, filters,
+                                molid, mz):
+        rowNr = self.rowNumberOfSelectedMolecule(sorts, scanid, filters,
+                                                 molid, mz)
         start = rowNr / limit * limit
-        logger.info('Mol ' + str(molid) + ' found at row ' + str(rowNr) + 'start ' + str(start) + 'page ' + str(start / limit + 1))
+        logger.info('Mol ' + str(molid) + ' found at row ' + str(rowNr) +
+                    'start ' + str(start) + 'page ' + str(start / limit + 1))
         return start
 
     def molecules(self,
-                    start=0, limit=10,
-                    sorts=None, filters=None,
-                    scanid=None, mz=None,
-                    molid=None):
+                  start=0, limit=10,
+                  sorts=None, filters=None,
+                  scanid=None, mz=None,
+                  molid=None):
         """Returns dict with total and rows attribute
 
         start
@@ -903,7 +910,8 @@ class JobDb(object):
 
         return s
 
-    def scansWithMolecules(self, filters=None, molid=None, mz=None, scanid=None):
+    def scansWithMolecules(self, filters=None,
+                           molid=None, mz=None, scanid=None):
         """Returns id and rt of lvl1 scans which have a fragment in it
         and for which the filters in params pass
 
@@ -1066,7 +1074,9 @@ class JobDb(object):
                     }
         if (scan.mslevel == 1):
             fragments = []
-            for fragment in self.session.query(distinct(Fragment.mz).label('mz')).filter_by(scanid=scanid):
+            fragq = self.session.query(distinct(Fragment.mz).label('mz'))
+            fragq = fragq.filter_by(scanid=scanid)
+            for fragment in fragq:
                 fragments.append({'mz': fragment.mz})
             response['fragments'] = fragments
         return response

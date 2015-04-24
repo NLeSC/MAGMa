@@ -391,7 +391,7 @@ Ext.define('Esc.magmaweb.controller.Molecules', {
    * Open a new window with molecules as comma seperated file or sdf.
    * Uses store/proxy/gridfilter state to construct queryString so what you see in grid is what in csv file.
    *
-   * @params {String} format Can be csv or sdf.
+   * @param {String} format Can be csv or sdf.
    */
   download: function(format) {
     // download needs to make an url with has the same query parameters as the store.load()

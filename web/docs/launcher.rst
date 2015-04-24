@@ -22,6 +22,8 @@ Installation
 3. Login as the joblauncher user on web site
 4. On workspace page generate an access token. Example token object:
 
+.. code-block:: javascript
+
     {
         "acesss_token": "bGFpYmFldGhlZXRoZWV0aGFwaGVpZm9vZmFlc2hvcmVpbW9oamluZ2lheG9jaGV6b3VwZW92YWVzaGVhYmFobmdvb3F1ZWlib2thaG5nZWV0ZWVwaG9odGhldXR=",
         "mac_key": "dW9oYml1cGllZ2hhaWNhdWZvaAo=",
@@ -31,6 +33,7 @@ Installation
     }
 
 5. Configure joblauncher with supplied token.
+
 * Use "access_token" from token object in joblauncher config as "id"
 * Use "mac_key" from token object in joblauncher config as "key"
 * Use "http(s):\\host:port" where MAGMa web is running at as "scope" in joblauncher config. Examples:
@@ -39,9 +42,9 @@ Installation
 
 The joblauncher config will look like:
 
+.. code-block:: yaml
+
    macs:
    - id: bGFpYmFldGhlZXRoZWV0aGFwaGVpZm9vZmFlc2hvcmVpbW9oamluZ2lheG9jaGV6b3VwZW92YWVzaGVhYmFobmdvb3F1ZWlib2thaG5nZWV0ZWVwaG9odGhldXR=
      key: dW9oYml1cGllZ2hhaWNhdWZvaAo=
      scope: https://www.emetabolomics.org
-
-

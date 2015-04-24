@@ -12,17 +12,20 @@ Development installation
 
 0. Requires Python 2.6 with development libraries for compilations
 1. Requires ExtJS 4 for user inteface.
-  * Download ExtJS from http://www.sencha.com/products/extjs/download/ext-js-4.2.1/2281 or directy http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip
-  * Unzip it in in `web/magmaweb/static`.
-  * The ext.js is missing some bits, fix by using sencha cmd
 
-.. code-block:: base
+  1. Download ExtJS from http://www.sencha.com/products/extjs/download/ext-js-4.2.1/2281 or directy http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip
+  2. Unzip it in in `web/magmaweb/static`.
+  3. The ext.js is missing some bits, fix by using sencha cmd
+
+.. code-block:: bash
 
    cd magmaweb/static/ext-4.2.1.883
    mv ext.js ext-cmd.js
    sencha fs minify -yui -f ext-debug.js -t ext.js
 
 Or by using yui compressor
+
+.. code-block:: bash
 
    cd magmaweb/static/ext-4.2.1.883
    mv ext.js ext-cmd.js
@@ -53,7 +56,7 @@ Production installation
 
 Additional to the `Development installation`_ to make application more complete/robust/faster.
 
-* `Minimize javscript`_
+* `Minimize javascript`_
 * Configure reverse http proxy webserver like `nginx`_ to host static content
 * Use a faster wsgi python server like `gunicorn`_ or `uWSGI`_
 * Install :ref:`job launcher <launcher>` or `docs/launcher.rst <docs/launcher.rst>`_ to perform calculations
@@ -107,7 +110,7 @@ Edit /etc/nginx/sites-enabled/default to:
 gunicorn
 --------
 
-`Gunicorn wsgi server <http://gunicorn.org/>`_ is a Python WSGI HTTP Server for UNIX.
+Gunicorn wsgi server (http://gunicorn.org/) is a Python WSGI HTTP Server for UNIX.
 
 Edit `development.ini` file by commenting out the `server:main` section with `waitress`.
 And remove comment in-front of the `server:main` section with `gunicorn`.
@@ -122,10 +125,10 @@ Then start gunicorn with:
 uWSGI
 -----
 
-`uWSGI wsgi server<http://projects.unbit.it/uwsgi/>`_  is a fast,
+uWSGI wsgi server (http://projects.unbit.it/uwsgi/)  is a fast,
 self-healing and developer/sysadmin-friendly application container server coded in pure C.
 
-The `HttpUwsgiModule <http://wiki.nginx.org/HttpUwsgiModule>`_ is required.
+The HttpUwsgiModule (http://wiki.nginx.org/HttpUwsgiModule) is required.
 
 In `production.ini-dist` there is a section for uwsgi configuration.
 
@@ -282,7 +285,7 @@ The ExtJS tests can be run using karma runner (http://karma-runner.github.io/).
     npm install
     karma start
 
-It will generate JUnit XML files as TEST-*.xml and a coverage report in coverage/ directory.
+It will generate JUnit XML files as `TEST-*.xml` and a coverage report in coverage/ directory.
 
 Generate documentation
 ======================

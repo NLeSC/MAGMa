@@ -311,13 +311,13 @@ class InCompleteJobViews(object):
         Body of request can have `application/json` content type.
         The JSON string should be formatted like:
 
-        ..code-block :: javascript
+        .. code-block:: javascript
 
-          {
-            "done": true,
-            "state": "DONE",
-            "exception": null
-          }
+            {
+              "done": true,
+              "state": "DONE",
+              "exception": null
+            }
 
         The state is set to the JSON state if `done` is false.
         The state is set to STOPPED if `done` is true and `exception` is null.
@@ -469,8 +469,11 @@ class JobViews(object):
         `limit`
             Maximum nr of molecules to return
         `scanid`
-            Only return molecules that have hits in scan with this identifier
+            Only return molecules that have fragments in that scan.
             Adds score column.
+        `mz`
+            Only return molecules that have fragments with that mz.
+            Requires `scanid` param.
         `molid`
             Return page containing molecule with this identifier.
             Adds molid and page keys to response.
@@ -573,7 +576,8 @@ class JobViews(object):
             scanid=scanid, filters=filters, sorts=sorts,
             molid=molid, mz=mz,
         )
-        # use molecules['molid'] because when molid cant be found it will be set to None
+        # use molecules['molid'] because when
+        # molid cant be found it will be set to None
         # and then the scans wont be filtered on the original molid
         scans = job.scansWithMolecules(filters=filters,
                                        molid=molecules.get('molid', None),
