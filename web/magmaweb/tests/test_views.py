@@ -218,6 +218,7 @@ class ViewsTestCase(AbstractViewsTestCase):
                         is_public=False,)]
         request.user.jobs = jobs
         views = Views(request)
+        views.job_factory.dbSize = Mock(return_value=1234)
 
         response = views.workspace()
 
@@ -229,7 +230,9 @@ class ViewsTestCase(AbstractViewsTestCase):
                           'is_public': False,
                           'ms_filename': 'F1234.mzxml',
                           'state': 'STOPPED',
-                          'created_at': '2012-11-14T10:48:26'}]
+                          'created_at': '2012-11-14T10:48:26',
+                          'size': 1234,
+                          }]
         self.assertEqual(response, {'jobs': expected_jobs})
 
     @patch('magmaweb.views.JobQuery')

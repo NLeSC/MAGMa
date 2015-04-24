@@ -395,6 +395,11 @@ class JobFactory(object):
         url = job.launcher_url
         return requests.delete(url)
 
+    def dbSize(self, jid):
+        """Return size of job db in bytes"""
+        dbfile = self.id2db(jid)
+        return os.path.getsize(dbfile)
+
 
 class Job(object):
 

@@ -574,6 +574,19 @@ class JobFactoryTestCase(unittest.TestCase):
 
         ua.assert_called_with(url)
 
+    @patch('os.stat')
+    def test_dbSize(self, stat):
+        class Mystat(object):
+            st_size = 1234
+
+        mystat = Mystat()
+        stat.return_value = mystat
+        jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
+
+        result = self.factory.dbSize(jobid)
+
+        self.assertEqual(result, 1234)
+
 
 class JobNotFoundTestCase(unittest.TestCase):
     def test_it(self):

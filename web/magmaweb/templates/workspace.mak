@@ -96,7 +96,8 @@ Ext.onReady(function() {
         {name: 'created_at', type: 'date'},
         'url',
         'is_public',
-        'state'
+        'state',
+        'size'
       ],
       proxy: {
         type: 'rest',
@@ -163,6 +164,9 @@ Ext.onReady(function() {
     }, {
       text: 'Created at', dataIndex: 'created_at', width: 120,
       xtype: 'datecolumn', format: "Y-m-d H:i:s"
+    }, {
+      text: 'Size', dataIndex: 'size', width: 60,
+      renderer: Ext.util.Format.fileSize
     }, {
       xtype: 'actioncolumn',
       width:30,

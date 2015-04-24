@@ -115,8 +115,7 @@ class Views(object):
                  permission='view',
                  renderer='workspace.mak')
     def workspace(self):
-        """Returns list of jobs owned by current user
-        """
+        """Returns list of jobs owned by current user"""
         jobs = []
         owner = self.request.user
         for jobmeta in owner.jobs:
@@ -131,6 +130,7 @@ class Views(object):
                          'created_at': created_at,
                          'is_public': jobmeta.is_public,
                          'state': jobmeta.state,
+                         'size': self.job_factory.dbSize(jobmeta.jobid)
                          })
 
         return {'jobs': jobs}
