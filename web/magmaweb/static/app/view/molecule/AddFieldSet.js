@@ -163,7 +163,7 @@ Ext.define('Esc.magmaweb.view.molecule.AddFieldSet', {
         }, {
             title : 'Draw',
             items : [{
-            	// during form submit fetch molblock from sketcher
+                // during form submit fetch molblock from sketcher
                 id : 'sketcher',
                 contentEl : 'sketcher_content',
                 border : false
