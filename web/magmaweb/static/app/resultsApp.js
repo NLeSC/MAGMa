@@ -23,7 +23,7 @@
 Ext.define('Esc.magmaweb.resultsApp', {
   name: 'Esc.magmaweb',
   appFolder: Ext.Loader.getPath('Esc.magmaweb'),
-  extend:'Ext.app.Application',
+  extend: 'Ext.app.Application',
   constructor: function(config) {
     Ext.log({}, 'Construct app');
     this.initConfig(config);
@@ -31,7 +31,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
     return this;
   },
   autoCreateViewport: true,
-  controllers: [ 'Molecules', 'Fragments', 'Scans', 'MSpectras' ],
+  controllers: ['Molecules', 'Fragments', 'Scans', 'MSpectras'],
   config: {
     /**
      * Molecule grid page size.
@@ -53,65 +53,65 @@ Ext.define('Esc.magmaweb.resultsApp', {
      * @cfg {Object}
      */
     features: {
-        /**
-         * Whether user has rights to (un)assign a peak to a structure.
-         * @cfg {Boolean}
-         */
-        run: false,
-        /**
-         * Whether user has rights to (un)assign a peak to a structure.
-         * @cfg {Boolean}
-         */
-        assign: true,
-        /**
-         * Whether user is logged in, shows login or logout button.
-         * @cfg {Boolean}
-         */
-        authenticated: true,
-        /**
-         * Whether user is needs to be logged in, shows login or logout button.
-         * @cfg {Boolean}
-         */
-        anonymous: false,
-        /**
-         * Whether restrictions should be applied ie force one spectral tree
-         * @cfg {Boolean}
-         */
-        restricted: false
+      /**
+       * Whether user has rights to (un)assign a peak to a structure.
+       * @cfg {Boolean}
+       */
+      run: false,
+      /**
+       * Whether user has rights to (un)assign a peak to a structure.
+       * @cfg {Boolean}
+       */
+      assign: true,
+      /**
+       * Whether user is logged in, shows login or logout button.
+       * @cfg {Boolean}
+       */
+      authenticated: true,
+      /**
+       * Whether user is needs to be logged in, shows login or logout button.
+       * @cfg {Boolean}
+       */
+      anonymous: false,
+      /**
+       * Whether restrictions should be applied ie force one spectral tree
+       * @cfg {Boolean}
+       */
+      restricted: false
     },
     /**
      * Endpoints/templates for contacting server.
      * @cfg {Object}
      */
     urls: {
-        /**
-         * Homepage.
-         * @cfg {String} urls.home
-         */
-        home: null,
-        /**
-         * Fragments endpoint.
-         * Tokenized string with scanid and molid tokens.
-         * @cfg {String} urls.fragments
-         */
-        fragments: null,
-        /**
-         * MSpectra endpoint.
-         * Tokenized string with scanid and mslevel tokens.
-         * @cfg {String} urls.mspectra
-         */
-        mspectra: null,
-        /**
-         * Extracted ion chromatogram endpoint.
-         * Tokenized string with molid token.
-         * @cfg {String} urls.extractedionchromatogram
-         */
-        extractedionchromatogram: null,
-        /**
-         * Chromatogram endpoint.
-         * @cfg {String} urls.chromatogram
-         */
-        chromatogram: null,
+      /**
+       * Homepage.
+       * @cfg {String} urls.home
+       */
+      home: null,
+      /**
+       * Fragments endpoint.
+       * Tokenized string with scanid and molid tokens.
+       * @cfg {String} urls.fragments
+       */
+      fragments: null,
+      /**
+       * MSpectra endpoint.
+       * Tokenized string with scanid and mslevel tokens.
+       * @cfg {String} urls.mspectra
+       */
+      mspectra: null,
+      /**
+       * Extracted ion chromatogram endpoint.
+       * Tokenized string with molid token.
+       * @cfg {String} urls.extractedionchromatogram
+       */
+      extractedionchromatogram: null,
+      /**
+       * Chromatogram endpoint.
+       * @cfg {String} urls.chromatogram
+       */
+      chromatogram: null,
     }
   },
   /**
@@ -120,21 +120,26 @@ Ext.define('Esc.magmaweb.resultsApp', {
    * @property {Boolean} selected.scanid Scan identifier
    * @property {Boolean} selected.molid Molecule identifier
    */
-  selected: { scanid: false, molid: false },
+  selected: {
+    scanid: false,
+    molid: false
+  },
   /**
    * Logs error in console and shows a error message box to user
    *
    * @param {Ext.Error} err The raised error
    */
   errorHandle: function(err) {
-      Ext.log({level:'error'}, err);
-      Ext.Msg.show({
-          title: 'Error',
-          msg: err.msg,
-          buttons: Ext.Msg.OK,
-          icon: Ext.Msg.ERROR
-      });
-      return true;
+    Ext.log({
+      level: 'error'
+    }, err);
+    Ext.Msg.show({
+      title: 'Error',
+      msg: err.msg,
+      buttons: Ext.Msg.OK,
+      icon: Ext.Msg.ERROR
+    });
+    return true;
   },
   /**
    * Get url of rpc method
@@ -142,14 +147,14 @@ Ext.define('Esc.magmaweb.resultsApp', {
    * @return {String}
    */
   rpcUrl: function(method) {
-    return this.urls.home+'rpc/'+this.jobid+'/'+method;
+    return this.urls.home + 'rpc/' + this.jobid + '/' + method;
   },
   /**
    * Get url of runinfo json, used to set defaults in forms.
    * @return {String}
    */
   runInfoUrl: function() {
-    return this.urls.home+'results/'+this.jobid+'/runinfo.json';
+    return this.urls.home + 'results/' + this.jobid + '/runinfo.json';
   },
   /**
    * Get molecules url based on format.
@@ -158,7 +163,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
    * @return {String}
    */
   moleculesUrl: function(format) {
-    return this.urls.home+'results/'+this.jobid+'/molecules.'+format;
+    return this.urls.home + 'results/' + this.jobid + '/molecules.' + format;
   },
   /**
    * Get url of log file of job
@@ -166,7 +171,7 @@ Ext.define('Esc.magmaweb.resultsApp', {
    * @return {String}
    */
   getLogUrl: function() {
-      return this.urls.home+'results/'+this.jobid+'/stderr.txt';
+    return this.urls.home + 'results/' + this.jobid + '/stderr.txt';
   },
   /**
    * Creates mspectraspanels and viewport and fires/listens for mspectra events
@@ -199,37 +204,65 @@ Ext.define('Esc.magmaweb.resultsApp', {
     );
 
     // uncomment to see all application events fired in console
-//    Ext.util.Observable.capture(this, function() { console.log(arguments);return true;});
+    //  Ext.util.Observable.capture(this, function() {
+    //    console.error(new Date(Date.now()).toISOString(), arguments[0], arguments);
+    //    return true;
+    //  });
 
-    this.on('moleculeselect', function(molid) {
-      this.selected.molid = molid;
-      if (this.selected.molid && this.selected.scanid) {
-        this.fireEvent('scanandmoleculeselect', this.selected.scanid, molid);
-      }
-    }, this);
     this.on('selectscan', function(scanid) {
-        this.selected.scanid = scanid;
-        if (this.selected.molid && this.selected.scanid) {
-            this.fireEvent('scanandmoleculeselect', scanid, this.selected.molid);
-        }
+      this.selected.scanid = scanid;
     }, this);
     this.on('noselectscan', function() {
-        if (this.selected.molid && this.selected.scanid) {
-            this.fireEvent('scanandmoleculenoselect');
-        }
-        this.selected.scanid = false;
+      if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+        this.fireEvent('mzandmoleculenoselect');
+      }
+      this.selected.mz = false;
+      this.selected.scanid = false;
+    }, this);
+    this.on('moleculeselect', function(molid) {
+      this.selected.molid = molid;
+      if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+        this.fireEvent('mzandmoleculeselect', this.selected.scanid, molid, this.selected.mz);
+      }
+    }, this);
+    this.on('moleculereselect', function(molid) {
+      this.selected.molid = molid;
+      if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+        this.fireEvent('mzandmoleculeselect', this.selected.scanid, molid, this.selected.mz);
+      }
     }, this);
     this.on('moleculedeselect', function() {
-        if (this.selected.molid && this.selected.scanid) {
-            this.fireEvent('scanandmoleculenoselect');
-        }
-        this.selected.molid = false;
+      if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+        this.fireEvent('mzandmoleculenoselect');
+      }
+      this.selected.molid = false;
     }, this);
     this.on('moleculenoselect', function() {
-        if (this.selected.molid && this.selected.scanid) {
-            this.fireEvent('scanandmoleculenoselect');
+      if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+        this.fireEvent('mzandmoleculenoselect');
+      }
+      this.selected.molid = false;
+    }, this);
+    this.on('peakselect', function(mz, mslevel, scanid) {
+      if (mslevel === 1) {
+        if (this.selected.mz === mz && this.selected.scanid === scanid) {
+          // peak already selected
+          return;
         }
-        this.selected.molid = false;
+        this.selected.mz = mz;
+        this.selected.scanid = scanid;
+        if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+          this.fireEvent('mzandmoleculeselect', this.selected.scanid, this.selected.molid, mz);
+        }
+      }
+    }, this);
+    this.on('peakdeselect', function(mz, mslevel) {
+      if (mslevel === 1) {
+        if (this.selected.molid && this.selected.scanid && this.selected.mz) {
+          this.fireEvent('mzandmoleculenoselect');
+        }
+        this.selected.mz = false;
+      }
     }, this);
 
     Ext.log({}, 'Launch app');
@@ -239,22 +272,22 @@ Ext.define('Esc.magmaweb.resultsApp', {
      * Information window which shows settings used, description and error log.
      */
     this.infoWindow = Ext.create('Ext.window.Window', {
-        title: 'Information',
-        width: 600,
-        autoHeight: true,
-        closeAction: 'hide',
-        contentEl: 'resultsinfo',
-        tools: [{
-            type: 'save',
-            tooltip: 'Save log file',
-            handler: function() {
-                window.open(me.getLogUrl(), 'Log');
-            }
-        }]
+      title: 'Information',
+      width: 600,
+      autoHeight: true,
+      closeAction: 'hide',
+      contentEl: 'resultsinfo',
+      tools: [{
+        type: 'save',
+        tooltip: 'Save log file',
+        handler: function() {
+          window.open(me.getLogUrl(), 'Log');
+        }
+      }]
     });
     // cant use this.control, find component and setHandler
     Ext.ComponentQuery.query('component[action=information]')[0].setHandler(function() {
-        me.infoWindow.show();
+      me.infoWindow.show();
     });
 
     this.applyRole();
@@ -267,21 +300,21 @@ Ext.define('Esc.magmaweb.resultsApp', {
   applyRole: function() {
     var features = this.features;
     if (!this.features.run) {
-        Ext.ComponentQuery.query('component[id=annotateaction]')[0].hide();
+      Ext.ComponentQuery.query('component[id=annotateaction]')[0].hide();
     }
     if (features.authenticated || features.anonymous) {
-        Ext.ComponentQuery.query('component[text=Login]')[0].hide();
-        if (features.anonymous) {
-          // non-anonymous authenticated can not logout
-          Ext.ComponentQuery.query('component[text=Logout]')[0].hide();
-        }
-    } else {
+      Ext.ComponentQuery.query('component[text=Login]')[0].hide();
+      if (features.anonymous) {
+        // non-anonymous authenticated can not logout
         Ext.ComponentQuery.query('component[text=Logout]')[0].hide();
-        Ext.ComponentQuery.query('component[text=Workspace]')[0].hide();
+      }
+    } else {
+      Ext.ComponentQuery.query('component[text=Logout]')[0].hide();
+      Ext.ComponentQuery.query('component[text=Workspace]')[0].hide();
     }
   },
   showHelp: function(section) {
-      var url = this.urls.home + 'help#' + section;
-      window.open(url, 'magmaHelp','width=700,height=500');
+    var url = this.urls.home + 'help#' + section;
+    window.open(url, 'magmaHelp', 'width=700,height=500');
   }
 });

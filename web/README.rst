@@ -11,7 +11,24 @@ Development installation
 ========================
 
 0. Requires Python 2.6 with development libraries for compilations
-1. Download ExtJs at http://sencha.com/products/extjs and unzip in `web/magmaweb/static`.
+1. Requires ExtJS 4 for user inteface.
+  * Download ExtJS from http://www.sencha.com/products/extjs/download/ext-js-4.2.1/2281 or directy http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip
+  * Unzip it in in `web/magmaweb/static`.
+  * The ext.js is missing some bits, fix by using sencha cmd
+
+.. code-block:: base
+
+   cd magmaweb/static/ext-4.2.1.883
+   mv ext.js ext-cmd.js
+   sencha fs minify -yui -f ext-debug.js -t ext.js
+
+Or by using yui compressor
+
+   cd magmaweb/static/ext-4.2.1.883
+   mv ext.js ext-cmd.js
+   wget https://github.com/yui/yuicompressor/releases/download/v2.4.8/yuicompressor-2.4.8.jar
+   java -jar yuicompressor-2.4.8.jar ext-debug.js -o ext.js
+
 2. Create users and register jobs see :ref:`User management <user>` or `docs/user.rst <docs/user.rst>`_.
 3. Install MAGMa web and it's dependencies
 
@@ -148,8 +165,8 @@ Then concatenate and compress javascript with:
 .. code-block:: bash
 
    cd magmaweb
-   sencha build -d static/app -p magmaweb.results-4.2.0.jsb3
-   ln -s magmaweb/static/app/resultsApp-all-4.2.0.js magmaweb/static/app/resultsApp-all.js
+   sencha build -d static/app -p magmaweb.results-4.2.1.jsb3
+   ln -s magmaweb/static/app/resultsApp-all-4.2.1.js magmaweb/static/app/resultsApp-all.js
 
 Now not hundreds of seperate javascript files are loaded, but a single javascript file.
 
@@ -168,7 +185,7 @@ The `sencha create` command does not work for our pages. So we role our own jsb3
 6. Goto developers/firebug console
 7. Enter `copy(Ext.Loader.history)`
 8. Open file `myhistory` for appending and paste clipboard (CTRL-p)
-9. Run `perl loader2jsb3.pl myhistory > magmaweb.results-4.2.0.jsb3`
+9. Run `perl loader2jsb3.pl myhistory > magmaweb.results-4.2.1.jsb3`
 
 loader2jsb3.pl looks like:
 
@@ -181,8 +198,8 @@ loader2jsb3.pl looks like:
    use JSON;
 
    my %paths = (
-      'Ext' => 'static/extjs-4.2.0/src',
-      'Ux'  => 'static/extjs-4.2.0/examples/ux',
+      'Ext' => 'static/ext-4.2.1.883/src',
+      'Ux'  => 'static/ext-4.2.1.883/examples/ux',
       'Esc' => 'static/esc',
       'App' => 'static/app'
    );
@@ -209,7 +226,7 @@ loader2jsb3.pl looks like:
        } elsif ($path=~/^Ext\/ux/) {
            $path =~ s/^Ext\/ux/$paths{Ux}/;
        } else {
-   	$path =~ s/^Ext/$paths{Ext}/;
+   	       $path =~ s/^Ext/$paths{Ext}/;
        }
        push(@files, {'path'=> $path, 'name'=> $name});
      }
@@ -221,7 +238,7 @@ loader2jsb3.pl looks like:
        "builds"=> [
            {
                "name"=> "All Classes",
-               "target"=> "resultsApp-all-4.2.0.js",
+               "target"=> "resultsApp-all-4.2.1.js",
                "compress"=> JSON::true,
                "files"=> \@files
    }
@@ -257,40 +274,15 @@ To run only functional tests:
 Javascript
 ----------
 
-The ExtJS tests can be run by hosting the `web` directory in a web server (like apache or nginx) and
-opening `magmaweb/tests/js/SpecRunner.html` and `magmaweb/tests/js/app/run-tests.html` in a web-browser.
-
-Or headless for automatisation using PhantomJS and JSCover.
-First install PhantomJS (http://phantomjs.org) and download JSCover (http://tntim96.github.io/JSCover/) then run test with:
+The ExtJS tests can be run using karma runner (http://karma-runner.github.io/).
 
 .. code-block:: bash
 
-     # !!Requires PhantomJS and JSCover to be installed
+    npm install -g karma-cli
+    npm install
+    karma start
 
-     # start jscover server
-     rm -rf jscover
-     java -jar ~/downloads/complete/JSCover-0.2.7/target/dist/JSCover-all.jar -ws --port=8099  --branch --document-root=web/magmaweb --no-instrument=static/extjs-4.2.0 --no-instrument=static/d3 --no-instrument=static/ChemDoodleWeb --no-instrument=tests/js/lib --report-dir=jscover &
-
-     # give jscover time to start
-     sleep 5
-
-     # run Jasmine specs
-     cd web/magmaweb/tests/js
-     rm -f TEST-*.xml
-     /usr/bin/phantomjs lib/jasmine-reporters/test/phantomjs-testrunner.js http://localhost:8099/tests/js/SpecRunner.html || true
-     cd app
-     rm -f TEST-*.xml
-     /usr/bin/phantomjs ../lib/jasmine-reporters/test/phantomjs-testrunner.js http://localhost:8099/tests/js/app/run-tests.html || true
-
-     # kill jscover server
-     curl http://localhost:8099/stop
-
-     # create coburtura xml file for use in ci
-     cd $WORKSPACE
-     java -cp ~/downloads/complete/JSCover-0.2.7/target/dist/JSCover-all.jar jscover.report.Main --format=COBERTURAXML jscover/phantom jscover/
-
-
-It will generate JUnit XML files as TEST-*.xml and a coverage report in jscover/ directory.
+It will generate JUnit XML files as TEST-*.xml and a coverage report in coverage/ directory.
 
 Generate documentation
 ======================
@@ -315,9 +307,9 @@ See https://github.com/senchalabs/jsduck
 
 .. code-block:: bash
 
-   jsduck magmaweb/static/extjs-4.2.0/src magmaweb/static/extjs-4.2.0/examples/ux \
-   magmaweb/static/d3/d3.v3.js magmaweb/static/esc magmaweb/static/app --builtin-classes \
-   --output jsdoc --images magmaweb/static/extjs-4.2.0/docs/images
+   jsduck magmaweb/static/ext-4.2.1.883/src magmaweb/static/ext-4.2.1.883/examples/ux \
+   magmaweb/static/d3/d3.min.js magmaweb/static/esc magmaweb/static/app --builtin-classes \
+   --output jsdoc --images magmaweb/static/ext-4.2.1.883/docs/images
    firefox jsdoc/index.html
 
 Database migration

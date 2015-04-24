@@ -1,0 +1,26 @@
+{
+  "name": "MAGMa-js",
+  "type": "code",
+  "creator": "NLeSC",
+  "summary": "MAGMa javascript ui test",
+  "detailedDescription": "MAGMa javascript ui test",
+  "version": "1.0.0",
+  "compatVersion": "1.0.0",
+  "format": "1",
+  "local": true,
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/NLeSC/MAGMa.git"
+  },
+  "requires": [],
+  "devDependencies": {
+    "jasmine-core": "^2.2.0",
+    "karma": "~0.12.0",
+    "karma-jasmine": "~0.3.0",
+    "karma-chrome-launcher": "^0.1.7",
+    "karma-coverage": "^0.2.4",
+    "karma-firefox-launcher": "^0.1.4",
+    "karma-junit-reporter": "^0.2.2",
+    "karma-phantomjs-launcher": "^0.1.1"
+  }
+}
