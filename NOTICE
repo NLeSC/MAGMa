@@ -4,7 +4,7 @@ Copyright 2011 Lars Ridder and Netherlands eScience Center.
 This product includes software developed at
 Netherlands eScience Center (http://www.esciencecenter.nl/).
 
-This product bundles d3 which is available under a BDD license. For details, see web/magmaweb/static/d3/.
+This product bundles d3 which is available under a BSD license. For details, see web/magmaweb/static/d3/.
 
 This product bundles ChemDoodleWeb which is available under GPLv3 license with exceptions. For details see web/magmaweb/static/ChemDoodleWeb/.
 

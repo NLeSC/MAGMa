@@ -7,7 +7,7 @@ Homepage: http://www.emetabolomics.org
 
 MAGMa is a abbreviation for 'Ms Annotation based on in silico Generated Metabolites'.
 
-  .. image:: emetabolomics_site/images/metabolites.png
+  .. image:: web/magmaweb/static/img/metabolites.png
      :alt: Screenshot MAGMa results page
 
 Subprojects:
