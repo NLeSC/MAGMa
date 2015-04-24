@@ -27,23 +27,23 @@
                     To login an account is required.
                 </p>
                 <p>
-                    An account can be requested at <a href="mailto:Lars.Ridder@wur.nl">Lars.Ridder@wur.nl</a>
+                    An account can be requested from <a href="mailto:Lars.Ridder@wur.nl">Lars.Ridder@wur.nl</a>
                 </p>
                 <h3>Account benefits</h3>
                 <p>
                     <ul>
                         <li>
-                            Able to annotate all scans in a mzxml-file against candidate molecules from database.
-                            Anonymous access is limited to a single scan.
+                            Allow annotation of all precursor ions in a mzxml-file by candidate molecules from a database.
+                            Anonymous access is limited to a single (level 1) precursor ion.
                         </li>
                         <li>
-                            No time limit during calculations.
+                            No time limit for calculations.
                         </li>
                         <li>
-                            Can retrieve candidate molecules with more than 64 atoms from Pubchem, Kegg or Human metabolome database.
+                            Allow candidate molecules larger than 64 atoms from Pubchem, Kegg or Human metabolome database.
                         </li>
                         <li>
-                            Able to assign molecules to peak on a scan.
+                            Option to assign molecules to level 1 precursor ions.
                         </li>
                     </ul>
 
