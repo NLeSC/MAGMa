@@ -12,24 +12,24 @@ Ext.define('Esc.magmaweb.view.molecule.Panel', {
     'Esc.magmaweb.view.molecule.AddForm'
   ],
   tools: [{
-      type: 'save',
-      tooltip: 'Save molecules',
-      action: 'download'
+    type: 'save',
+    tooltip: 'Save molecules',
+    action: 'download'
   }, {
-      type: 'gear',
-      tooltip: 'Perform actions on molecules',
-      action: 'actions'
+    type: 'gear',
+    tooltip: 'Perform actions on molecules',
+    action: 'actions'
   }, {
-      type: 'help',
-      tooltip: 'Help',
-      action: 'help'
+    type: 'help',
+    tooltip: 'Help',
+    action: 'help'
   }],
   layout: 'card',
   items: [{
-      xtype: 'moleculelist'
+    xtype: 'moleculelist'
   }, {
-      xtype: 'moleculeaddform',
-      bodyPadding: 10
+    xtype: 'moleculeaddform',
+    bodyPadding: 10
   }],
   /**
    * Shortcut to {@link Ext.layout.container.Card#setActiveItem setActiveItem} in layout.
@@ -37,6 +37,9 @@ Ext.define('Esc.magmaweb.view.molecule.Panel', {
    * @param {Number} newCard 0 == grid, 1 == add form
    */
   setActiveItem: function(newCard) {
-      this.getLayout().setActiveItem(newCard);
+    this.getLayout().setActiveItem(newCard);
+  },
+  getPagingToolbar: function() {
+    return this.items.getAt(0).dockedItems.getAt(1);
   }
 });

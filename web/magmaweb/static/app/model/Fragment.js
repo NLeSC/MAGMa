@@ -3,37 +3,41 @@
  * @author <a href="mailto:s.verhoeven@esciencecenter.nl">Stefan Verhoeven</a>
  */
 Ext.define('Esc.magmaweb.model.Fragment', {
-  extend:'Ext.data.Model',
+  extend: 'Ext.data.Model',
   idProperty: 'fragid',
   fields: [{
     name: 'fragid'
-  },{
+  }, {
     name: 'molid'
-  },{
+  }, {
     name: 'scanid'
-  },{
+  }, {
     name: 'mz'
-  },{
+  }, {
     name: 'mass'
-  },{
+  }, {
     name: 'score'
-  },{
+  }, {
     name: 'parentfragid'
-  },{
-    name: 'mol', type: 'string'
-  },{
-    name: 'atoms', defaultValue: [] // array of atom indexes of molecule which are the substructure of the query
-  },{
+  }, {
+    name: 'mol',
+    type: 'string'
+  }, {
+    name: 'atoms',
+    defaultValue: [] // array of atom indexes of molecule which are the substructure of the query
+  }, {
     name: 'deltah'
-  },{
+  }, {
     name: 'deltappm'
-  },{
+  }, {
     name: 'mslevel'
   }, {
     name: 'isAssigned'
   }, {
-	name: 'formula'
+    name: 'formula'
   }],
-  hasMany: { model: 'Fragment', name:'children' }
+  hasMany: {
+    model: 'Fragment',
+    name: 'children'
+  }
 });
-

@@ -5,15 +5,21 @@
 Ext.define('Esc.magmaweb.store.Molecules', {
   extend: 'Ext.data.Store',
   model: 'Esc.magmaweb.model.Molecule',
+  requires: ['Esc.magmaweb.store.proxy.AjaxSingle'],
   proxy: {
-    type: 'ajax',
+    type: 'ajaxsingle',
     listeners: {
       exception: function(proxy, response, operation) {
-          Ext.Error.raise({
-              msg: 'Failed to load molecules from server',
-              response: response,
-              operation: operation
-          });
+        if (response.statusText === 'transaction aborted') {
+          // a newer request was made so this one was canceled.
+          this.fireEvent('abort', proxy, response, operation);
+          return;
+        }
+        Ext.Error.raise({
+          msg: 'Failed to load molecules from server',
+          response: response,
+          operation: operation
+        });
       }
     },
     reader: {
@@ -25,12 +31,15 @@ Ext.define('Esc.magmaweb.store.Molecules', {
   sorters: [{
     property: 'refscore',
     direction: 'DESC'
-  },{
+  }, {
     property: 'molid',
     direction: 'ASC'
   }],
   remoteSort: true,
   remoteFilter: true,
+  initComponent: function() {
+    this.addEvents('abort');
+  },
   /**
    * Shortcut for this.getProxy().url
    *
@@ -60,6 +69,19 @@ Ext.define('Esc.magmaweb.store.Molecules', {
     this.getProxy().extraParams.scanid = scanid;
     this.loadPage(1);
   },
+  isFilteredOnScan: function() {
+    return 'scanid' in this.getProxy().extraParams;
+  },
+  setMzFilter: function(mz) {
+    this.getProxy().extraParams.mz = mz;
+    this.loadPage(1);
+  },
+  clearMzFilter: function() {
+    if ('mz' in this.getProxy().extraParams) {
+      delete(this.getProxy().extraParams.mz);
+      this.loadPage(1);
+    }
+  },
   /**
    * Sets the pagesize of the store and reloads store to first page.
    *
@@ -77,11 +99,20 @@ Ext.define('Esc.magmaweb.store.Molecules', {
    * @return {Number} The total number of unfiltered molecules
    */
   getTotalUnfilteredCount: function() {
-      var reader = this.getProxy().getReader();
-      if ('rawData' in reader) {
-          return reader.rawData.totalUnfiltered || 0;
-      } else {
-          return 0;
-      }
+    var reader = this.getProxy().getReader();
+    if ('rawData' in reader) {
+      return reader.rawData.totalUnfiltered || 0;
+    } else {
+      return 0;
+    }
+  },
+  selectMolecule: function(molecule) {
+    this.getProxy().extraParams.molid = molecule.getId();
+  },
+  clearMoleculeSelection: function() {
+    delete(this.getProxy().extraParams.molid);
+  },
+  hasSelectedMolecule: function() {
+    return 'molid' in this.getProxy().getReader().rawData;
   }
 });

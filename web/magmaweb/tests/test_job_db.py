@@ -1,6 +1,6 @@
 """Tests for magmaweb.job.JobDb"""
 import unittest
-from magmaweb.job import JobDb
+from magmaweb.job import JobDb, ScanRequiredError
 from magmaweb.models import Scan, Peak, Run, Molecule, Fragment
 from magmaweb.tests.test_job import initTestingDB
 
@@ -204,6 +204,8 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
             response,
             {
                 'total': 2,
+                'molid': None,
+                'page': 1,
                 'rows': [{
                     'molid': 72,
                     'predicted': False,
@@ -253,7 +255,20 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
         response = self.job.molecules(scanid=641)
         self.assertIn('score', response['rows'][0])
         self.assertIn('deltappm', response['rows'][0])
+        self.assertIn('mz', response['rows'][0])
         self.assertEqual(response['total'], 1)
+
+    def test_molid(self):
+        response = self.job.molecules(molid=352)
+
+        self.assertEqual(response['molid'], 352)
+        self.assertEqual(response['total'], 2)
+
+    def test_molid_notfound(self):
+        response = self.job.molecules(molid=1234)
+
+        self.assertIsNone(response['molid'])
+        self.assertEqual(response['total'], 2)
 
     def test_filteredon_nrscanseq(self):
         response = self.job.molecules(filters=[{"type": "numeric",
@@ -302,7 +317,6 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
         self.assertEqual(response['total'], 1)
 
     def test_filteredon_score_without_scan(self):
-        from magmaweb.job import ScanRequiredError
         with self.assertRaises(ScanRequiredError):
             self.job.molecules(filters=[{"type": "numeric",
                                          "comparison": "eq",
@@ -318,12 +332,20 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
         self.assertEqual(response['total'], 1)
 
     def test_filteredon_deltappm_without_scan(self):
-        from magmaweb.job import ScanRequiredError
         with self.assertRaises(ScanRequiredError):
             self.job.molecules(filters=[{"type": "numeric",
                                          "comparison": "eq",
                                          "value": -1.84815979523607e-08,
                                          "field": "deltappm"}])
+
+    def test_filteredon_mz(self):
+        response = self.job.molecules(scanid=641, mz=109.0295639038086)
+
+        self.assertEqual(response['total'], 1)
+
+    def test_filteredon_mz_without_scan(self):
+        with self.assertRaises(ScanRequiredError):
+            self.job.molecules(mz=109.0295639038086)
 
     def test_filteredon_not_assigned(self):
         response = self.job.molecules(filters=[{"type": "boolean",
@@ -377,7 +399,6 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
         self.assertEqual(response['total'], 1)
 
     def test_sort_score_without_scan(self):
-        from magmaweb.job import ScanRequiredError
         with self.assertRaises(ScanRequiredError):
             self.job.molecules(sorts=[{"property": "score",
                                        "direction": "DESC"}])
@@ -391,7 +412,19 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
 
     def test_sort_deltappm_without_scan(self):
         sorts = [{"property": "deltappm", "direction": "DESC"}]
-        from magmaweb.job import ScanRequiredError
+
+        with self.assertRaises(ScanRequiredError):
+            self.job.molecules(sorts=sorts)
+
+    def test_sort_mz(self):
+        sorts = [{"property": "mz", "direction": "DESC"}]
+
+        response = self.job.molecules(scanid=641, sorts=sorts)
+
+        self.assertEqual(response['total'], 1)
+
+    def test_sort_mz_without_scan(self):
+        sorts = [{"property": "mz", "direction": "DESC"}]
 
         with self.assertRaises(ScanRequiredError):
             self.job.molecules(sorts=sorts)
@@ -783,6 +816,13 @@ class JobScansWithMoleculesTestCase(JobDbTestCaseAbstract):
             {'id': 870, 'rt': 1254.15}
         ])
 
+    def test_scanandmz(self):
+        response = self.job.scansWithMolecules(mz=109.0295639038086, scanid=641)
+
+        self.assertEqual(response, [
+            {'id': 641, 'rt': 933.317}
+        ])
+
 
 class JobMSpectraTestCase(JobDbTestCaseAbstract):
 
@@ -800,7 +840,8 @@ class JobMSpectraTestCase(JobDbTestCaseAbstract):
                 ],
                 'cutoff': 200000.0,
                 'mslevel': 1,
-                'precursor': {'id': None, 'mz': None}
+                'precursor': {'id': None, 'mz': None},
+                'fragments': [{'mz': 109.0295639038086}],
             }
         )
 
@@ -818,7 +859,8 @@ class JobMSpectraTestCase(JobDbTestCaseAbstract):
                 ],
                 'cutoff': 200000.0,
                 'mslevel': 1,
-                'precursor': {'id': None, 'mz': None}
+                'precursor': {'id': None, 'mz': None},
+                'fragments': [{'mz': 109.0295639038086}],
             }
         )
 
@@ -858,7 +900,8 @@ class JobMSpectraTestCase(JobDbTestCaseAbstract):
                 ],
                 'cutoff': 200000.0,
                 'mslevel': 1,
-                'precursor': {'id': None, 'mz': None}
+                'precursor': {'id': None, 'mz': None},
+                'fragments': [{'mz': 109.0295639038086}],
             }
         )
 
@@ -1003,6 +1046,8 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
             response,
             {
                 'total': 1,
+                'page': 1,
+                'molid': None,
                 'rows': [{
                     'molid': 12,
                     'predicted': True,

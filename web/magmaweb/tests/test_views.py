@@ -884,8 +884,11 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                             limit=10,
                                             sorts=[],
                                             scanid=None,
-                                            filters=[])
-        job.db.scansWithMolecules.assert_called_with(filters=[])
+                                            filters=[],
+                                            molid=None,
+                                            mz=None,
+                                            )
+        job.db.scansWithMolecules.assert_called_with(filters=[], molid=None, mz=None, scanid=None)
 
     def test_moleculesjson_scanidfilter(self):
         request = testing.DummyRequest(params={'start': 0,
@@ -901,7 +904,10 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                             limit=10,
                                             sorts=[],
                                             scanid=641,
-                                            filters=[])
+                                            filters=[],
+                                            molid=None,
+                                            mz=None,
+                                            )
 
     def test_moleculesjson_nrscaneqfilter(self):
         filter_in = '[{"type":"numeric","comparison":"eq",'
@@ -921,8 +927,14 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                             limit=10,
                                             sorts=[],
                                             scanid=None,
-                                            filters=filter_expected)
-        job.db.scansWithMolecules.assert_called_with(filters=filter_expected)
+                                            filters=filter_expected,
+                                            molid=None,
+                                            mz=None,
+                                            )
+        job.db.scansWithMolecules.assert_called_with(filters=filter_expected,
+                                                     molid=None,
+                                                     mz=None,
+                                                     scanid=None)
 
     def test_moleculesjson_notfilledreturn(self):
         request = testing.DummyRequest(params={'start': 0,
@@ -938,6 +950,37 @@ class JobViewsTestCase(AbstractViewsTestCase):
                                     'total': 3,
                                     'rows': [1, 2, 3],
                                     'scans': [4, 5]})
+
+    def test_moleculesjson_molpage(self):
+        request = testing.DummyRequest(params={'start': 0,
+                                               'limit': 10,
+                                               'molid': 1,
+                                               })
+        job = self.fake_job()
+        views = JobViews(job, request)
+        job.db.molecules.return_value = {'total': 3, 'rows': [1, 2, 3], 'page': 1}
+
+        response = views.moleculesjson()
+
+        self.assertEqual(response, {'totalUnfiltered': 3,
+                                    'total': 3,
+                                    'rows': [1, 2, 3],
+                                    'molid': 1,
+                                    'page': 1,
+                                    'scans': [4, 5]})
+
+    def test_moleculesjson_scansfilteredonmol(self):
+        request = testing.DummyRequest(params={'start': 0,
+                                               'limit': 10,
+                                               'molid': 1,
+                                               })
+        job = self.fake_job()
+        views = JobViews(job, request)
+        job.db.molecules.return_value = {'total': 3, 'rows': [1, 2, 3], 'page': 1, 'molid': 1}
+
+        views.moleculesjson()
+
+        job.db.scansWithMolecules.assert_called_once_with(filters=[], molid=1, mz=None, scanid=None)
 
     def test_moleculescsv(self):
         import StringIO
