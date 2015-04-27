@@ -81,6 +81,14 @@ class TestFragmentEnginePython(unittest.TestCase):
         self.assertEqual(fe.accepted(),True)
         nfrags = fe.generate_fragments()
         self.assertEqual(nfrags,768)
+        atomstring,atomlist,formula,inchikey=fe.get_fragment_info(1,0) # fragment is atom 1
+        self.assertEqual(formula, 'Cl')
+        atomstring,atomlist,formula,inchikey=fe.get_fragment_info(36,0) # fragment is atom 3 and 6
+        self.assertEqual(formula, 'CHO')
+        self.assertEqual(atomlist, [2,5])
+        self.assertEqual(atomstring, '2,5')
+        fragments=fe.find_fragments(181.0, 2^26-1,1.0,0.1)
+        self.assertEqual(len(fragments[0]),5)
 
 
 class TestFragmentEngineCython(TestFragmentEnginePython):

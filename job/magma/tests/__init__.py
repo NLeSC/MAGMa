@@ -4,6 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from rdkit import Chem
 from rdkit.Chem import AllChem
+import pkg_resources
 import magma
 from magma.errors import FileFormatError,DataProcessingError
 from magma.models import Base, Molecule, Scan, Peak, Fragment, Run
@@ -324,7 +325,7 @@ class TestMsDataEngine(unittest.TestCase):
         os.remove(treefile.name)
 
     def test_store_manual_tree_unallowed_element(self):
-        mde = magma.MsDataEngine(self.db_session, 1, 1000, 5, 0.001, 0.005, 3)
+        mde = magma.MsDataEngine(self.db_session, -1, 1000, 5, 0.001, 0.005, 3)
         # create corrupt manual tree file
         import tempfile, os
         treefile = tempfile.NamedTemporaryFile(delete=False)
@@ -337,6 +338,27 @@ class TestMsDataEngine(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'Element not allowed in formula tree: At')
 
         os.remove(treefile.name)
+
+    def test_read_mzxml(self):
+        mde = magma.MsDataEngine(self.db_session, -1, 10000, 5, 0.001, 0.005, 3)
+        mzxml_file=pkg_resources.resource_filename('magma', "tests/theogallin.mzXML")
+        mde.store_mzxml_file(mzxml_file)
+        with self.assertRaises(DataProcessingError) as cm:
+            mde.store_mzxml_file(mzxml_file)
+        self.assertEqual(str(cm.exception), 'Attempt to read MS data twice')
+        scandata = self.db_session.query(Scan).count()
+        self.assertEqual(scandata,4)
+        ae = magma.AnnotateEngine(self.db_session,0,3,1,0,5,0)
+        ae.build_spectra()
+        tree=ae.write_tree(217)
+        self.assertEqual(tree, '343.067200: 848424 (169.014206: 151964 (125.024445: 41011), 191.056137: 1872487 (85.029510: 78351, 87.008797: 11659, 93.034584: 47026, 109.029495: 23205, 111.045113: 26778, 127.039986: 74176, 131.501495: 11190, 171.029648: 19777, 173.045380: 57426), 192.059341: 109119)')
+
+    def test_read_mzxml_ramped(self):
+        mde = magma.MsDataEngine(self.db_session, 1, 1000, 5, 0.001, 0.005, 3)
+        mzxml_file=pkg_resources.resource_filename('magma', "tests/ramped_collision_data.mzXML")
+        mde.store_mzxml_file(mzxml_file)
+        scandata = self.db_session.query(Scan).count()
+        self.assertEqual(scandata,2)
 
 
 class TestAnnotateEngine(unittest.TestCase):

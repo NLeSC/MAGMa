@@ -50,7 +50,7 @@ class MagmaCommand(object):
         sc = subparsers.add_parser("read_ms_data", help=self.read_ms_data.__doc__, description=self.read_ms_data.__doc__)
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # read_ms_data arguments
-        sc.add_argument('ms_data', type=argparse.FileType('r'), help="file with MS/MS data")
+        sc.add_argument('ms_data', type=str, help="file with MS/MS data")
         sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml", "mass_tree","form_tree_pos","form_tree_neg"])
         sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
         sc.add_argument('-m', '--max_ms_level', help="Maximum MS level to be processsed (default: %(default)s)", default=10,type=int)
@@ -168,10 +168,10 @@ class MagmaCommand(object):
                     max_ms_level=args.max_ms_level,
                     call_back_url=args.call_back_url)
             if args.ms_data_format == "mzxml":
-                ms_data_engine.store_mzxml_file(args.ms_data.name,args.scan,args.time_limit)
+                ms_data_engine.store_mzxml_file(args.ms_data,args.scan,args.time_limit)
             else:
                 tree_type={"mass_tree":0,"form_tree_neg":-1,"form_tree_pos":1}[args.ms_data_format]
-                ms_data_engine.store_manual_tree(args.ms_data.name,tree_type)
+                ms_data_engine.store_manual_tree(args.ms_data,tree_type)
         except Exception as error:
             if args.log == 'debug':
                 logging.exception(error)

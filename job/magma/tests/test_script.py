@@ -14,13 +14,93 @@ class TestMagmaCommand(unittest.TestCase):
 
         self.assertEqual(self.mc.version(), '1.0')
 
+    def test_theogallin_example(self):
+        mzxmlfile = pkg_resources.resource_filename('magma', "tests/theogallin.mzXML")
+        sdfile = pkg_resources.resource_filename('magma', "tests/theogallin.sdf")
+        dbfile = tempfile.NamedTemporaryFile(delete=False)
+
+        args = argparse.Namespace()
+        args.db = dbfile.name
+        args.ms_data = mzxmlfile
+        args.description = 'Theogallin_example'
+        args.ionisation_mode = -1
+        args.abs_peak_cutoff = 10000
+        args.mz_precision = 5
+        args.mz_precision_abs = 0.001
+        args.precursor_mz_precision = 0.005
+        args.max_ms_level = 5
+        args.ms_data_format = 'mzxml'
+        args.scan=None
+        #args.ms_data = argparse.Namespace(name='bogus.mzxml')
+        args.log = 'debug'
+        args.call_back_url = None
+        args.time_limit = None
+
+        self.mc.read_ms_data(args)
+
+        args = argparse.Namespace()        
+        args.db = dbfile.name
+        args.description = None
+        args.log = 'debug'
+        args.pubchem_names = False
+        args.structure_format = 'sdf'
+        args.mass_filter = 9999
+        args.structures = sdfile
+        self.mc.add_structures(args)
+
+        args = argparse.Namespace()        
+        args.db = dbfile.name
+        args.description = None
+        args.skip_fragmentation = False
+        args.max_broken_bonds = 3
+        args.max_water_losses = 1
+        args.ms_intensity_cutoff = 0
+        args.msms_intensity_cutoff = 0
+        args.use_all_peaks = True
+        args.adducts = None
+        args.max_charge = 1
+        args.log = 'debug'
+        args.call_back_url = None
+        args.scans= 'all'
+        args.structure_database = ''
+        args.db_options=''
+        args.molids = None
+        args.ncpus = 1
+        args.fast = False
+        args.time_limit = None
+
+        self.mc.annotate(args)
+
+        ms = magma.MagmaSession(dbfile.name)
+        rundata = ms.db_session.query(Run).one()
+        self.assertDictContainsSubset(
+                          {
+                          'ionisation_mode': -1,
+                          'abs_peak_cutoff': 10000,
+                          'max_ms_level': 5,
+                          'mz_precision': 5.0,
+                          'precursor_mz_precision': 0.005,
+                          'max_broken_bonds': 3,
+                          'ms_intensity_cutoff': 0
+                           }, rundata.__dict__)
+        scandata = ms.db_session.query(Scan).count()
+        self.assertEqual(scandata,4)
+        peakdata = ms.db_session.query(Peak).count()
+        self.assertEqual(peakdata,32)
+        moleculedata = ms.db_session.query(Molecule).count()
+        self.assertEqual(moleculedata,1)
+        fragmentdata = ms.db_session.query(Fragment).count()
+        self.assertEqual(fragmentdata,13)
+
+        os.remove(dbfile.name)
+
     def test_chlorogenic_acid_example_without_fast_option(self):
         treefile = tempfile.NamedTemporaryFile(delete=False)
         dbfile = tempfile.NamedTemporaryFile(delete=False)
 
         args = argparse.Namespace()
         args.db = dbfile.name
-        args.ms_data = treefile
+        args.ms_data = treefile.name
         args.description = 'Example'
         args.ionisation_mode = -1
         args.abs_peak_cutoff = 0
@@ -86,7 +166,7 @@ class TestMagmaCommand(unittest.TestCase):
         args.max_charge = 1
         args.log = 'debug'
         args.call_back_url = None
-        args.scans= 'all'
+        args.scans= '1'
         args.structure_database = 'hmdb'
         args.db_options=pkg_resources.resource_filename('magma', "tests/HMDB_MAGMa_test.db")
         args.molids = None
@@ -121,11 +201,11 @@ class TestMagmaCommand(unittest.TestCase):
 
     def test_JWH015_example_with_fast_option(self):
         dbfile = tempfile.NamedTemporaryFile(delete=False)
-
         treefile = tempfile.NamedTemporaryFile(delete=False)
+        outfile = tempfile.NamedTemporaryFile(delete=False)
         args = argparse.Namespace()
         args.db = dbfile.name
-        args.ms_data = treefile
+        args.ms_data = treefile.name
         args.description = 'Example'
         args.ionisation_mode = 1
         args.abs_peak_cutoff = 0
@@ -186,7 +266,7 @@ class TestMagmaCommand(unittest.TestCase):
         args.call_back_url = None
         args.scenario = scenariofile.name
         args.time_limit = None
-        scenariofile.write('phase1,1\nphase2,1')
+        scenariofile.write('phase1_selected,1\nmass_filter,500\nphase2_selected,2')
         scenariofile.close()
         self.mc.metabolize(args)
         os.remove(scenariofile.name)
@@ -231,10 +311,11 @@ class TestMagmaCommand(unittest.TestCase):
         peakdata = ms.db_session.query(Peak).count()
         self.assertEqual(peakdata,19)
         moleculedata = ms.db_session.query(Molecule).count()
-        self.assertEqual(moleculedata,68)
+        self.assertEqual(moleculedata,39)
         fragmentdata = ms.db_session.query(Fragment).count()
-        self.assertEqual(fragmentdata,122)
+        self.assertEqual(fragmentdata,85)
         hits = ms.db_session.query(Molecule).filter(Molecule.nhits>0).count()
-        self.assertEqual(hits,30)
+        self.assertEqual(hits,21)
 
         os.remove(dbfile.name)
+        
