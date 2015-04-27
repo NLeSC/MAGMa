@@ -233,12 +233,10 @@ cdef class FragmentEngine(object):
     def get_fragment_info(self,unsigned long long fragment,deltaH):
         cdef int atom
         mol=Chem.MolFromMolBlock(str(self.mol))
-        atomstring=""
         atomlist=[]
         elements={'C':0,'H':0,'N':0,'O':0,'F':0,'P':0,'S':0,'Cl':0,'Br':0,'I':0}
         for atom in range(self.natoms):
             if ((1ULL<<atom) & fragment):
-                atomstring+=','+str(atom)
                 atomlist.append(atom)
                 elements[self.atom_elements[atom]]+=1
                 elements['H']+=self.atomHs[atom]
@@ -249,6 +247,7 @@ cdef class FragmentEngine(object):
                 formula+=el
             if nel>1:
                 formula+=str(nel)
+        atomstring=','.join(str(a) for a in atomlist)
         return atomstring,atomlist,formula,fragment2inchikey(mol,atomlist)
     
     def get_natoms(self):

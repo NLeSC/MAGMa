@@ -170,12 +170,10 @@ class FragmentEngine(object):
         return fragment_set
     
     def get_fragment_info(self,fragment,deltaH):
-        atomstring=""
         atomlist=[]
         elements={'C':0,'H':0,'N':0,'O':0,'F':0,'P':0,'S':0,'Cl':0,'Br':0,'I':0}
         for atom in range(self.natoms):
             if ((1<<atom) & fragment):
-                atomstring+=','+str(atom)
                 atomlist.append(atom)
                 elements[self.mol.GetAtomWithIdx(atom).GetSymbol()]+=1
                 elements['H']+=self.atomHs[atom]
@@ -186,6 +184,7 @@ class FragmentEngine(object):
                 formula+=el
             if nel>1:
                 formula+=str(nel)
+        atomstring=','.join(str(a) for a in atomlist)
         return atomstring,atomlist,formula,fragment2inchikey(self.mol,atomlist)
 
     def get_natoms(self):
