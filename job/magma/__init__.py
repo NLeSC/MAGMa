@@ -35,6 +35,8 @@ logger=logging.getLogger('MagmaLogger')
 
 
 class MagmaSession(object):
+    """ MAGMa session object, which is linked to a sqlite3 db_name.db file
+        and enables starting different engines to perform MAGMa functions """
     def __init__(self,db_name,description="",loglevel='info'):
         engine = create_engine('sqlite:///'+db_name,echo=False)
         session = sessionmaker()
@@ -92,6 +94,7 @@ class MagmaSession(object):
         self.db_session.close()
 
 class CallBackEngine(object):
+    """ Callback engine object, used to send job status info to callback url"""
     def __init__(self, url):
         self.access_token=config.get('magma job','macs.id')
         self.mac_key=config.get('magma job','macs.key')
@@ -120,6 +123,7 @@ class CallBackEngine(object):
             r = requests.put(self.url, status, auth=HTTPMacAuth(self.access_token, self.mac_key))
 
 class MetabolizeEngine(object):
+    """ Engine to perform in silico reactions on chemical structures """
     def __init__(self):
         metabolism_files={
             "phase1": pkg_resources.resource_filename( #@UndefinedVariable
@@ -145,6 +149,7 @@ class MetabolizeEngine(object):
                     self.reactions[m].append((splitline[1],AllChem.ReactionFromSmarts(splitline[0])))
 
     def react(self,reactant,reaction):
+        """ Apply reaction to reactant and return products """
         ps=reaction.RunReactants([reactant])
         products=[]
         for product in ps:
@@ -157,6 +162,7 @@ class MetabolizeEngine(object):
         return products
 
     def gen_coords(self,mol):
+        """ Calculate 2D positions for atoms without coordinates """ 
         conf = mol.GetConformer(0)
         coordDict = {}
         # Put known coordinates in coordDict
@@ -179,6 +185,7 @@ class MetabolizeEngine(object):
             AllChem.Compute2DCoords(mol,coordMap=coordDict,bondLength=av)
 
     def metabolize(self,mol,metabolism,endpoints=False):
+        """ Metabolize a molecule based on a set of metabolism rules and return products"""
         metabolites={} # {ikey:[rulename,product mol]}
         if metabolism not in self.reactions:
             return metabolites
@@ -186,7 +193,7 @@ class MetabolizeEngine(object):
         name=metabolism
         for reaction in self.reactions[metabolism]:
             if not endpoints:
-                # name refers to the rule generating a product
+                # else name refers to the rule generating a product
                 name=reaction[0] 
             products=self.react(mol,reaction[1])
             for p in products:
@@ -203,6 +210,7 @@ class MetabolizeEngine(object):
         return metabolites
 
 def get_molecule(molblock,name,refscore,predicted,mim=None,smiles=None,natoms=None,inchikey14=None,molform=None,reference=None,logp=None,mass_filter=9999):
+    """ Returns a Molecule with the given attributes """
     if inchikey14==None or mim==None or molform==None or logp==None or natoms==None:
         mol=Chem.MolFromMolBlock(molblock)
         if mol==None:
@@ -235,6 +243,7 @@ def get_molecule(molblock,name,refscore,predicted,mim=None,smiles=None,natoms=No
         )
 
 class StructureEngine(object):
+    """Engine to add and query MAGMa candidate molecules"""
     def __init__(self,db_session,pubchem_names=False,call_back_url=None):
         self.db_session = db_session
         self.pubchem_names=pubchem_names
@@ -254,13 +263,15 @@ class StructureEngine(object):
         logger.info(str(len(molids))+' molecules added to library\n')
 
     def read_smiles(self,smiles,mass_filter=9999):
+        """ Read smiles file,
+            each line consists of a smiles string
+            optionally followed by a name in which spaces a replaced by underscores """
         logger.info('READING SMILES')
         try:
             smiles_file=open(smiles)
         except:
             smiles_file=[smiles]
         molids=set([])
-        nonames=0
         for line in smiles_file:
             line = line.strip()
             if line=="":
@@ -270,8 +281,7 @@ class StructureEngine(object):
             if len(splitline) > 1:
                 name='_'.join(splitline[1:])
             else:
-                nonames+=1
-                name="Noname"+str(nonames)
+                name=''
             try:
                 mol = Chem.MolFromSmiles(smiles)
                 mol.SetProp('_Name', name)
@@ -281,11 +291,19 @@ class StructureEngine(object):
                 logger.warn('Failed to read smiles: '+smiles+' ('+name+')')
         logger.info(str(len(molids))+' molecules added to library\n')
 
-    def add_structure(self,molblock,name,refscore,predicted,mim=None,smiles=None,natoms=None,inchi=None,molform=None,reference=None,logp=None,mass_filter=9999):
+    def add_structure(self,molblock,name,refscore,predicted,
+                      mim=None,smiles=None,natoms=None,inchi=None,molform=None,reference=None,logp=None,mass_filter=9999):
+        """ Get molecule with given attributes and add to database
+            Return molid """
         molecule=get_molecule(molblock,name,refscore,predicted,mim,natoms,inchi,molform,reference,logp)
         return self.add_molecule(molecule,mass_filter)
 
     def add_molecule(self,newmol,mass_filter=9999,check_duplicates=True,merge=False):
+        """ Add molecule to database
+            Optionally lookup name in pubchem
+            Return molid """
+        # Checking duplicates is slow, option to turn off should only be used
+        # when candidates from a single chemical db query are added
         if check_duplicates:
             dup=self.db_session.query(Molecule).filter_by(inchikey14=newmol.inchikey14).first()
             if dup != None:
@@ -323,6 +341,9 @@ class StructureEngine(object):
         return newmol.molid
 
     def metabolize(self,molid,metabolism,endpoints=False):
+        """ Metabolize a molecule based on a set of metabolism rules and store
+            reactions and products in reactions and molecules tables
+            Return molids """
         try:
             p = self.db_session.query(Molecule).filter_by(molid=molid).one()
         except:
@@ -351,6 +372,7 @@ class StructureEngine(object):
         return molids
 
     def metabolize_all(self,metabolism,endpoints=False):
+        """ Metabolize all current molecules based on a set of metabolism rules """
         logger.info('Metabolize all')
         parentids = self.db_session.query(Molecule.molid).all()
         molids=set([])
@@ -359,6 +381,7 @@ class StructureEngine(object):
         return molids
 
     def run_scenario(self, scenario, time_limit=None):
+        """ Metabolize according to scenario """
         logger.info('RUNNING METABOLIC SCENARIO')
         if time_limit == None:
             result=self.db_session.query(Molecule.molid).all()
@@ -419,23 +442,8 @@ class StructureEngine(object):
                 self.call_back_engine.update_callback_url('Transformations completed',force=True)
         logger.info(str(self.db_session.query(Molecule).count())+' molecules in library\n')      
  
-#    def retrieve_structures(self,mass):
-#        dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
-#        conn = sqlite3.connect(dbfilename)
-#        c = conn.cursor()
-#        result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass-0.01,mass+0.01))
-#        for (id,mim,molblock,smiles,chebi_name) in result:
-#            self.add_molecule(zlib.decompress(molblock),str(chebi_name),1.0,1,"",1)
-
-    def get_molids_with_mass_less_then(self,mass,molids=None):
-        if molids==None:
-            result=self.db_session.query(Molecule.molid).filter(Molecule.mim<mass).all()
-        else:
-            result=self.db_session.query(Molecule.molid).filter(Molecule.mim<mass,Molecule.molid.in_(molids)).all()
-        molids={x[0] for x in result} #set comprehension
-        return molids
-
 class MsDataEngine(object):
+    """ Engine to read MS/MS data """
     def __init__(self,db_session,ionisation_mode,abs_peak_cutoff,mz_precision,mz_precision_abs,precursor_mz_precision,max_ms_level,call_back_url=None):
         self.db_session = db_session
         mz_precision_abs=max(mz_precision_abs,0.000001)
@@ -475,6 +483,7 @@ class MsDataEngine(object):
             self.call_back_engine=None
 
     def store_mzxml_file(self,mzxml_file,scan_filter=None,time_limit=None):
+        """ Read mzxml_file and store scans and peaks in the scans and peaks tables """
         logger.info('READING MZXML FILE')
         rundata=self.db_session.query(Run).one()
         if rundata.ms_filename != None:
@@ -486,7 +495,7 @@ class MsDataEngine(object):
         root=tree.getroot()
         namespace='{'+root.nsmap[None]+'}'
         mzxml_query=namespace+"msRun/"+namespace+"scan"
-        prec_scans=[] # in case of non-hierarchical mzXML, also find child scans
+        prec_scans=[] # in case of non-hierarchical mzXML, also find child scans of scan_filter
         start_time=time.time()
         for mzxmlScan in root.findall(mzxml_query):
             elapsed_time=time.time()-start_time
@@ -567,6 +576,8 @@ class MsDataEngine(object):
         self.db_session.flush()
 
     def merge_spectrum(self,existing_scan,newscan,decoded):
+        """ Generate composite spectrum: in case of matching m/z values, keep the peak with
+            highest intensity """
         logger.info('Merging scans '+str(existing_scan.scanid)+' and '+str(newscan.scanid))
         if existing_scan.lowmz > newscan.lowmz:
             existing_scan.lowmz = newscan.lowmz
@@ -634,10 +645,12 @@ class MsDataEngine(object):
         self.db_session.commit()
 
     def store_manual_tree(self,manual_tree,tree_type):
+        """ Store scans and peaks from mass tree formatted data in scans and peaks tables """
         # tree_type: 0 for mass tree, -1 and 1 for formula trees with negative or positive ionisation mode respectively
         tree_string=open(manual_tree).read()
         tree_string=tree_string.replace(' ','').\
                                 replace('\t','').\
+                                replace('\r','').\
                                 replace('(\n','(').\
                                 replace(',\n',',').\
                                 replace('\n)',')').\
@@ -715,6 +728,8 @@ class MsDataEngine(object):
         return mass
 
 class AnnotateEngine(object):
+    """ Engine to perform MAGMa annotation of the MS/MS data based candidate molecules present
+        or retrieved from a chemical database """
     def __init__(self,db_session,skip_fragmentation,max_broken_bonds,max_water_losses,
                  ms_intensity_cutoff,msms_intensity_cutoff,use_all_peaks,adducts=None,max_charge=1,call_back_url=None):
         self.db_session = db_session
@@ -771,6 +786,15 @@ class AnnotateEngine(object):
         logger.info('Maximum absolute m/z error (Da): '+str(self.mz_precision_abs)+'\n')
 
     def generate_ions(self,iontypes,maxcharge):
+        """ Generate ions according to allowed number of charges and adducts 
+            Returns list (one entry per absolute charge) of dictionaries with possible ions {delta mass:symbol}
+            Example (negative mode with -a Cl and -m 2):
+            [
+             {0: '[M]-'},                                           # delta mass 0, (=> candidate molecules already charged)
+             {-1.0078250321: '[M-H]-', 34.96885271: '[M+Cl]-'},     # singly charged
+             {-2.0156500642: '[M-H-H]2-', 33.9610276779: '[M+Cl-H]2-', 69.93770542: '[M+Cl+Cl]2-'}  #doubly charged, etc.
+            ]
+            """
         ions=[{0:''}]
         for c in range(0,maxcharge):
             ions.append({})
@@ -787,6 +811,8 @@ class AnnotateEngine(object):
         return ions
 
     def build_spectrum(self,dbscan):
+        """ Create in memory ScanType object from db Scan object, with list of peaks (of PeakType)
+            return ScanType object and a list of depths of the derived spectral trees """
         scan=types.ScanType(dbscan.scanid,dbscan.mslevel)
         logger.debug('Building scan '+str(dbscan.scanid))
         if scan.mslevel==1:
@@ -822,6 +848,8 @@ class AnnotateEngine(object):
         return scan,max_depth
 
     def build_spectra(self,scans='all'):
+        """ Build list of scans (of ScanType) requested for annotation
+            Precursor peaks are indexed based on integer mass """
         logger.info('BUILDING SPECTRAL TREES')
         ndepths={}
         if scans=='all':
@@ -843,6 +871,7 @@ class AnnotateEngine(object):
             logger.info(str(ndepths[depth])+' spectral trees of depth '+str(depth))
         logger.info('')
         self.indexed_peaks={}   # dictionary: sets of peaks for each integer m/z value
+        peak_string=''
         for scan in self.scans:
             for peak in scan.peaks:
                 if not ((not self.use_all_peaks) and peak.childscan==None):
@@ -850,15 +879,11 @@ class AnnotateEngine(object):
                     if int_mass not in self.indexed_peaks:
                         self.indexed_peaks[int_mass]=set([])
                     self.indexed_peaks[int_mass].add(peak)
+                    # write mass_tree for selected level 1 peak
+                    logger.debug('Mass_tree for scan '+str(scan.scanid)+', m/z='+str(peak.mz)+':\n'+
+                                 self.write_mass_tree(peak))
 
-    def write_tree(self,scanid):
-        for scan in self.scans:
-            if scan.scanid==scanid:
-                for peak in scan.peaks:
-                    if not ((not self.use_all_peaks) and peak.childscan==None):
-                        self.write_peak(peak)
-
-    def write_peak(self,peak):
+    def write_mass_tree(self,peak):
         peak_string="%.6f: %i" % (peak.mz,peak.intensity)
         if peak.childscan!=None:
             peak_string+=' ('
@@ -866,30 +891,14 @@ class AnnotateEngine(object):
             for childpeak in peak.childscan.peaks:
                 if n>0:
                     peak_string+=", "
-                peak_string+=self.write_peak(childpeak)
+                peak_string+=self.write_mass_tree(childpeak)
                 n+=1
             peak_string+=')'
         return peak_string
 
-    def get_chebi_candidates(self):
-        dbfilename = '/home/ridderl/chebi/ChEBI_complete_3star.sqlite'
-        conn = sqlite3.connect(dbfilename)
-        c = conn.cursor()
-        db_candidates={}
-        # First a dictionary is created with candidate molecules based on all level1 peaks
-        # In this way duplicates originating from repeated detection of the same component
-        # are removed before attempting to add the candidates to the database
-        for scan in self.scans:
-            for peak in scan.peaks:
-                mass=peak.mz-self.ionisation_mode*pars.Hmass
-                if not ((not self.use_all_peaks) and peak.childscan==None):
-                    result = c.execute('SELECT * FROM molecules WHERE mim BETWEEN ? AND ?' , (mass/self.precision,mass*self.precision))
-                    for (id,mim,molblock,chebi_name) in result:
-                        db_candidates[id]=[molblock,chebi_name]
-                    print str(mass)+' --> '+str(len(db_candidates))+' candidates'
-        return db_candidates
-
     def get_db_candidates(self,query_engine,max_mim=""):
+        """ Query given query engine to retrieve all relevant candidate molecules,
+            store in molecules table and return corresponding molids """
         logger.info('RETRIEVING CANDIDATE MOLECULES FROM: '+str(query_engine.name))
         if max_mim=='':
             max_mim='1200'
@@ -940,6 +949,8 @@ class AnnotateEngine(object):
         return molids
 
     def search_structures(self,molids=None,ncpus=1,fast=False,time_limit=None):
+        """ Match candidate molecules with precursor ions, find substructures
+            for fragment peaks and calculate candidate scores """
         logger.info('MATCHING CANDIDATE MOLECULES')
         global fragid
         fragid=self.db_session.query(func.max(Fragment.fragid)).scalar()
@@ -974,6 +985,7 @@ class AnnotateEngine(object):
                 molcharge+=1*((structure.formula[-1]=='-' and self.ionisation_mode==-1) or \
                                (structure.formula[-1]=='+' and self.ionisation_mode==1)) # derive charge from molecular formula
                 peaks=set([])
+                # select a subset of precursor peaks potentially matching the candidate structure
                 for charge in range(1,len(self.ions)):
                     for ionmass in self.ions[charge-molcharge]:
                         int_mass=int(round((structure.mim+ionmass)/charge))
@@ -996,6 +1008,7 @@ class AnnotateEngine(object):
                     fragmentation_module='magma.fragmentation_cy'
                 else:
                     fragmentation_module='magma.fragmentation_py'
+                # distribute search_structure tasks over different cpus
                 jobs.append((structure,
                    job_server.submit(search_structure,(structure.mol,
                               structure.mim,
@@ -1016,6 +1029,7 @@ class AnnotateEngine(object):
                               fragmentation_module
                               )
                            )))
+            # process results from search_structure tasks
             count=0
             for structure,job in jobs:
                 raw_result=job(raw_result=True)
@@ -1055,6 +1069,7 @@ class AnnotateEngine(object):
         job_server.destroy()
 
     def store_hit(self,hit,molid,parentfragid):
+        """ Store candidate molecule and its substructures in fragments table """
         global fragid
         fragid+=1
         currentFragid=fragid
@@ -1086,6 +1101,7 @@ class AnnotateEngine(object):
         return score
 
 class PubChemEngine(object):
+    """Engine to retrieve candidate molecules from PubChem"""
     def __init__(self,dbfilename='',max_64atoms=False,incl_halo='',min_refscore=''):
         self.name='PubChem'
         if dbfilename=='':
@@ -1109,6 +1125,7 @@ class PubChemEngine(object):
         if max_64atoms==True:
             self.where += ' AND natoms <= 64'
     def query_on_mim(self,low,high,charge):
+        """ Return all molecules with given charge from PubChem between low and high mass limits """
         molecules=[]
         result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         self.add_result2molecules(result,molecules)
@@ -1145,6 +1162,7 @@ class PubChemEngine(object):
             return False
 
 class KeggEngine(object):
+    """Engine to retrieve candidate molecules from the Kegg subset of PubChem"""
     def __init__(self,dbfilename='',max_64atoms=False,incl_halo=''):
         self.name='Kegg'
         if dbfilename=='':
@@ -1166,6 +1184,7 @@ class KeggEngine(object):
         if max_64atoms==True:
             self.where += ' AND natoms <= 64'
     def query_on_mim(self,low,high,charge):
+        """ Return all molecules with given charge from Kegg between low and high mass limits """
         molecules=[]
         result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         self.add_result2molecules(result,molecules)
@@ -1194,6 +1213,7 @@ class KeggEngine(object):
                            ))
 
 class HmdbEngine(object):
+    """Engine to retrieve candidate molecules from HMDB"""
     def __init__(self,dbfilename='',max_64atoms=False):
         self.name='Human Metabolite Database'
         if dbfilename=='':
@@ -1205,6 +1225,7 @@ class HmdbEngine(object):
         self.conn.text_factory=str
         self.c = self.conn.cursor()
     def query_on_mim(self,low,high,charge):
+        """ Return all molecules with given charge from HMDB between low and high mass limits """
         result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         molecules=[]
         for (cid,mim,charge,natoms,molblock,inchikey,smiles,molform,name,reference,logp) in result:
@@ -1228,6 +1249,8 @@ class HmdbEngine(object):
         return molecules
 
 class MetaCycEngine(object):
+    """Engine to retrieve candidate molecules from MetaCyc, requires a license from SRI to download MetaCyc compounds as flat file:
+       http://metacyc.org/download-flatfiles.shtml"""
     def __init__(self,dbfilename='',max_64atoms=False):
         self.name='MetaCyc'
         if dbfilename=='':
@@ -1239,6 +1262,7 @@ class MetaCycEngine(object):
         self.conn.text_factory=str
         self.c = self.conn.cursor()
     def query_on_mim(self,low,high,charge):
+        """ Return all molecules with given charge from MetaCyc between low and high mass limits """
         result=self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where, (charge,low,high))
         molecules=[]
         for (cid,mim,charge,natoms,molblock,inchikey,molform,name,reference,logp) in result:
@@ -1457,6 +1481,8 @@ class DataAnalysisEngine(object):
                 f.write(str(molid)+" "+str(start_compound[molid]+0)+'\n')
 
 def search_structure(mol,mim,molcharge,peaks,max_broken_bonds,max_water_losses,precision,mz_precision_abs,use_all_peaks,ionisation_mode,skip_fragmentation,fast,ions):
+    """ Match a candidate molecule with precursor ions. Return a list of hits (=hierarchical trees of (sub)structures and 
+        scores) """
     pars=magma.pars
     if fast:
         Fragmentation=magma.fragmentation_cy
@@ -1474,7 +1500,6 @@ def search_structure(mol,mim,molcharge,peaks,max_broken_bonds,max_water_losses,p
                     return [ionmass,ions[charge-molcharge][ionmass]]
         return False
 
-    #def findhit(self,childscan,parent):
     def gethit (peak,fragment,score,bondbreaks,mass,ionmass,ion):
         try:
             hit=types.HitType(peak,fragment,score,bondbreaks,mass,ionmass,ion)
@@ -1515,7 +1540,7 @@ def search_structure(mol,mim,molcharge,peaks,max_broken_bonds,max_water_losses,p
                     if childhit != None: # still need to work out how to deal with missed fragments
                         add_fragment_data_to_hit(childhit)
 
-# for peak in self.db_session.query(Peak).filter(Scan.mslevel)==1.filter(Peak.intensity>MSfilter)
+    # main loop
     Fragmented=False
     hits=[]
     frags=0

@@ -350,8 +350,6 @@ class TestMsDataEngine(unittest.TestCase):
         self.assertEqual(scandata,4)
         ae = magma.AnnotateEngine(self.db_session,0,3,1,0,5,0)
         ae.build_spectra()
-        tree=ae.write_tree(217)
-        self.assertEqual(tree, '343.067200: 848424 (169.014206: 151964 (125.024445: 41011), 191.056137: 1872487 (85.029510: 78351, 87.008797: 11659, 93.034584: 47026, 109.029495: 23205, 111.045113: 26778, 127.039986: 74176, 131.501495: 11190, 171.029648: 19777, 173.045380: 57426), 192.059341: 109119)')
 
     def test_read_mzxml_ramped(self):
         mde = magma.MsDataEngine(self.db_session, 1, 1000, 5, 0.001, 0.005, 3)

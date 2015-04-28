@@ -132,6 +132,7 @@ class MagmaCommand(object):
                 magma_session = self.get_magma_session(args.db,args.description,args.log)
             struct_engine = magma_session.get_structure_engine(pubchem_names=args.pubchem_names, call_back_url=args.call_back_url)
             if args.scenario != None:
+                # Convert comma separated file into list of [action,value] pairs: [[action,value][action,value]..]
                 scenario=[]
                 scenario_file=open(args.scenario,'r')
                 for line in scenario_file:
