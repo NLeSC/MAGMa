@@ -193,16 +193,34 @@ class TestMagmaCommand(unittest.TestCase):
         peakdata = ms.db_session.query(Peak).count()
         self.assertEqual(peakdata,28)
         moleculedata = ms.db_session.query(Molecule).count()
-        self.assertGreater(moleculedata,4)
+        self.assertEqual(moleculedata,5)
         fragmentdata = ms.db_session.query(Fragment).count()
-        self.assertGreater(fragmentdata,86)
+        self.assertEqual(fragmentdata,87)
 
+        sdfile = tempfile.NamedTemporaryFile(delete=False)
+        args = argparse.Namespace()        
+        args.db = dbfile.name
+        args.description = None
+        args.filename = sdfile.name
+        args.assigned = None
+        self.mc.export_structures(args)
+        
+        scores=''
+        sl=False
+        for line in open(sdfile.name,'r'):
+            if sl:
+                scores+=line
+                sl=False
+            elif line == '> <score>\n':
+                sl=True
+        self.assertEqual(scores,'1.77587\n1.78058\n1.78367\n7.05795\n7.05795\n')
+
+        os.remove(sdfile.name)
         os.remove(dbfile.name)
 
     def test_JWH015_example_with_fast_option(self):
         dbfile = tempfile.NamedTemporaryFile(delete=False)
         treefile = tempfile.NamedTemporaryFile(delete=False)
-        outfile = tempfile.NamedTemporaryFile(delete=False)
         args = argparse.Namespace()
         args.db = dbfile.name
         args.ms_data = treefile.name
@@ -317,5 +335,45 @@ class TestMagmaCommand(unittest.TestCase):
         hits = ms.db_session.query(Molecule).filter(Molecule.nhits>0).count()
         self.assertEqual(hits,21)
 
+        sdfile = tempfile.NamedTemporaryFile(delete=False)
+        args = argparse.Namespace()        
+        args.db = dbfile.name
+        args.description = None
+        args.filename = sdfile.name
+        args.assigned = None
+        self.mc.export_structures(args)
+        nonmatched=0
+        hl=False
+        for line in open(sdfile.name,'r'):
+            if hl:
+                if line=='0\n':
+                    nonmatched+=1
+                hl=False
+            elif line == '> <nhits>\n':
+                hl=True
+        self.assertEqual(nonmatched,18)
+        os.remove(sdfile.name)
+
+        #assign parent to first peak in data
+        peak=ms.db_session.query(Peak).first()
+        peak.assigned_molid=1
+        ms.db_session.add(peak)
+        ms.db_session.commit()
+
+        sdfile = tempfile.NamedTemporaryFile(delete=False)
+        args = argparse.Namespace()        
+        args.db = dbfile.name
+        args.description = None
+        args.filename = sdfile.name
+        args.assigned = True
+        self.mc.export_structures(args)
+        l=''
+        f=open(sdfile.name,'r')
+        while l != '> <mz>\n':
+            l=f.readline()
+        l=f.readline()
+        self.assertEqual(l, '328.1696\n')
+        os.remove(sdfile.name)
+        
         os.remove(dbfile.name)
         

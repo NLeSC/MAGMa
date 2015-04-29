@@ -96,9 +96,11 @@ class MagmaCommand(object):
         sc.add_argument('db_out', type=str, help="Output qlite database file with selected results")
         sc.set_defaults(func=self.select)
 
-        sc = subparsers.add_parser("writeSDF", help=self.writeSDF.__doc__, description=self.writeSDF.__doc__)
+        sc = subparsers.add_parser("export_structures", help=self.export_structures.__doc__, description=self.export_structures.__doc__)
+        sc.add_argument('-f', '--filename', help="Output filename (default: stdout)", default=None, type=str)
+        sc.add_argument('-a', '--assigned', help="Only assigned molecules (default: %(default)s)", action="store_true")
         sc.add_argument('db', type=str, help="Sqlite database file with results")
-        sc.set_defaults(func=self.writeSDF)
+        sc.set_defaults(func=self.export_structures)
         
     def version(self):
         return '1.0' # TODO move to main magma package and reuse in setup.py so version is specified in one place
@@ -234,14 +236,17 @@ class MagmaCommand(object):
         select_engine = magma_session.get_select_engine()
         select_engine.select_fragment(args.frag_id)
 
-    def writeSDF(self, args, magma_session=None):
+    def export_structures(self, args, magma_session=None):
         if magma_session == None:
             magma_session = self.get_magma_session(args.db)
-        analysis_engine = magma_session.get_data_analysis_engine()
-        analysis_engine.write_SDF()
+        export_engine = magma_session.get_export_molecules_engine()
+        if args.assigned:
+            export_engine.export_assigned_molecules(args.filename)
+        else:
+            export_engine.export_molecules(args.filename)
 
     def run(self, argv=sys.argv[1:]):
-        """Parse arguments and runs subcommand"""
+        """Parse arguments and run subcommand"""
         args = self.parser.parse_args(argv)
         return args.func(args)
 

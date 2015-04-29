@@ -79,8 +79,8 @@ class MagmaSession(object):
                  ms_intensity_cutoff,msms_intensity_cutoff,use_all_peaks,adducts,max_charge,call_back_url)
     def get_select_engine(self):
         return SelectEngine(self.db_session)
-    def get_data_analysis_engine(self):
-        return DataAnalysisEngine(self.db_session)
+    def get_export_molecules_engine(self):
+        return ExportMoleculesEngine(self.db_session)
     def get_call_back_engine(self,
                  id,
                  key
@@ -1309,9 +1309,9 @@ class SelectEngine(object):
             dot_product=self.dot_product_scans(ref_scan,query_scan)
             compounds = self.db_session.query(Molecule).filter(Molecule.molid.in_(
                             self.db_session.query(Fragment.molid).filter(Fragment.scanid==query_scan))).all()
-            #for compound in compounds:
-            #    compound.reactionsequence+='Scan: '+str(query_scan)+' - Similarity: '+str(dot_product)+'\n'
-            self.db_session.add(compound)
+            for compound in compounds:
+                compound.reference+='</br>Scan: '+str(query_scan)+' - Similarity: '+str(dot_product)
+                self.db_session.add(compound)
         self.db_session.commit()
 
     def dot_product_scans(self,ref_scan,query_scan):
@@ -1356,7 +1356,7 @@ class SelectEngine(object):
         return dot_product
         
 
-class DataAnalysisEngine(object):
+class ExportMoleculesEngine(object):
     def __init__(self,db_session):
         self.db_session = db_session
 
@@ -1370,31 +1370,58 @@ class DataAnalysisEngine(object):
     def get_num_peaks(self,scanid):
         return self.db_session.query(Peak).filter(Peak.scanid==scanid).count()
 
-    def export_assigned_molecules(self,name):
-        for molecule,peak in self.db_session.query(Molecule,Peak).filter(Molecule.molid==Peak.assigned_molid):
-            print molecule.name.splitlines()[0]
-            print molecule.mol[molecule.mol.find("\n")+1:-1]
-            print "> <ScanID>\n"+str(peak.scanid)+"\n"
-            print "> <mz>\n"+str(peak.mz)+"\n"
-            print "> <intensity>\n"+str(peak.intensity)+"\n"
-            print "> <rt>\n"+str(self.db_session.query(Scan.rt).filter(Scan.scanid==peak.scanid).all()[0][0])+"\n"
-            print "> <molecular formula>\n"+molecule.formula+"\n"
-            print "$$$$"
-
-    def write_SDF(self,file=sys.stdout,molecules=None,columns=None,sortcolumn=None,descend=False):
-        if molecules==None:
+    def export_molecules(self,filename=None,columns=None,sortcolumn='refscore',descend=True):
+        """ Write SDFile with candidate molecules to filename (or stdout).
+            If data is for a single percursor ion: also provide candidate scores and sort accordingly """
+        if filename == None:
+            file=sys.stdout
+        else:
+            file=open(filename,'w')
+        # If data is for a single percursor ion: also provide candidate scores and sort accordingly
+        nprecursors = self.db_session.query(Fragment.mz,Fragment.scanid).filter(Fragment.parentfragid==0).distinct().count()
+        if nprecursors == 1:
+            result=self.db_session.query(Molecule,Fragment.score).\
+                    filter(Molecule.molid==Fragment.molid).\
+                    filter(Fragment.parentfragid==0).\
+                    order_by(Fragment.score,desc(Molecule.refscore)).all()
+        else:
             if descend:
-                molecules=self.db_session.query(Molecule).order_by(desc(sortcolumn)).all()
+                result=self.db_session.query(Molecule,Molecule.molid).order_by(desc(sortcolumn)).all()
             else:
-                molecules=self.db_session.query(Molecule).order_by(sortcolumn).all()
-        for molecule in molecules:
+                result=self.db_session.query(Molecule,Molecule.molid).order_by(sortcolumn).all()
+        for molecule,value in result:
             file.write(molecule.mol)
+            if nprecursors==1:
+                file.write('> <score>\n%.5f\n\n' % value)
             if columns==None:
                 columns=dir(molecule)
             for column in columns:
-                if column[:1] != '_' and column != 'mol' and column != 'metadata':
+                if column[:1] != '_' and column != 'mol' and column != 'metadata' and column != 'fragments':
                     file.write('> <'+column+'>\n'+str(molecule.__getattribute__(column))+'\n\n')
             file.write('$$$$\n')
+        file.close()
+
+    def export_assigned_molecules(self,filename=None):
+        """ Write SDFile with assigned candidate molecules to filename (or stdout).
+            Include scanid, RT and m/z of assigned peaks """
+        if filename == None:
+            file=sys.stdout
+        else:
+            file=open(filename,'w')
+        result=self.db_session.query(Molecule,Peak,Scan.rt).filter(Molecule.molid==Peak.assigned_molid).filter(Peak.scanid==Scan.scanid).all()
+        for molecule,peak,rt in result:
+            file.write(molecule.mol)
+            cm=dir(molecule)
+            cp=dir(peak)
+            for column in cm:
+                if column[:1] != '_' and column != 'mol' and column != 'metadata' and column != 'fragments':
+                    file.write('> <'+column+'>\n'+str(molecule.__getattribute__(column))+'\n\n')
+            for column in cp:
+                if column[:1] != '_' and column != 'metadata' and column != 'scan':
+                    file.write('> <'+column+'>\n'+str(peak.__getattribute__(column))+'\n\n')
+            file.write('> <rt>\n' + str(rt)+'\n\n')
+            file.write('$$$$\n')
+        file.close()
 
     def write_smiles(self,file=sys.stdout,molecules=None,columns=None,sortcolumn=None,descend=False):
         if molecules==None:
