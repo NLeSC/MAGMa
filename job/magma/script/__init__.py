@@ -115,12 +115,12 @@ class MagmaCommand(object):
     def add_structures(self, args, magma_session=None):
         try:
             if magma_session == None:
-                magma_session = self.get_magma_session(args.db,args.description,args.log)
+                magma_session = self.get_magma_session(args.db, args.description, args.log)
             struct_engine = magma_session.get_structure_engine(pubchem_names=args.pubchem_names)
             if args.structure_format == 'smiles':
-                struct_engine.read_smiles(args.structures,mass_filter=args.mass_filter)
+                struct_engine.read_smiles(args.structures, mass_filter=args.mass_filter)
             elif args.structure_format == 'sdf':
-                struct_engine.read_sdf(args.structures,args.mass_filter)
+                struct_engine.read_sdf(args.structures, args.mass_filter)
             magma_session.commit()
         except Exception as error:
             if args.log == 'debug':
@@ -131,17 +131,17 @@ class MagmaCommand(object):
     def metabolize(self, args, magma_session=None):
         try:
             if magma_session == None:
-                magma_session = self.get_magma_session(args.db,args.description,args.log)
+                magma_session = self.get_magma_session(args.db, args.description, args.log)
             struct_engine = magma_session.get_structure_engine(pubchem_names=args.pubchem_names, call_back_url=args.call_back_url)
             if args.scenario != None:
                 # Convert comma separated file into list of [action,value] pairs: [[action,value][action,value]..]
                 scenario=[]
-                scenario_file=open(args.scenario,'r')
+                scenario_file=open(args.scenario, 'r')
                 for line in scenario_file:
                     step=line.split('#')[0].rstrip().split(',') # Comments indicated by # are allowed
                     if len(step)>1:
                         scenario.append(step)
-                struct_engine.run_scenario(scenario,args.time_limit)
+                struct_engine.run_scenario(scenario, args.time_limit)
             elif args.molids == None:
                 molids=struct_engine.metabolize_all(args.metabolism_types, args.n_reaction_steps)
                 for molid in molids:
@@ -149,7 +149,7 @@ class MagmaCommand(object):
             else:
                 molids=[]
                 for reactantid in args.molids:
-                    molids.extend(struct_engine.metabolize(reactantid,args.metabolism_types, args.n_reaction_steps))
+                    molids.extend(struct_engine.metabolize(reactantid, args.metabolism_types, args.n_reaction_steps))
                 for molid in set(molids):
                     print molid
             magma_session.fill_molecules_reactions()
@@ -162,7 +162,7 @@ class MagmaCommand(object):
     def read_ms_data(self, args, magma_session=None):
         try:
             if magma_session == None:
-                magma_session = self.get_magma_session(args.db,args.description,args.log)
+                magma_session = self.get_magma_session(args.db, args.description, args.log)
             ms_data_engine = magma_session.get_ms_data_engine(ionisation_mode=args.ionisation_mode,
                     abs_peak_cutoff=args.abs_peak_cutoff,
                     mz_precision=args.mz_precision,
@@ -171,7 +171,7 @@ class MagmaCommand(object):
                     max_ms_level=args.max_ms_level,
                     call_back_url=args.call_back_url)
             if args.ms_data_format == "mzxml":
-                ms_data_engine.store_mzxml_file(args.ms_data,args.scan,args.time_limit)
+                ms_data_engine.store_mzxml_file(args.ms_data, args.scan, args.time_limit)
             else:
                 tree_type={"mass_tree":0,"form_tree_neg":-1,"form_tree_pos":1}[args.ms_data_format]
                 ms_data_engine.store_manual_tree(args.ms_data,tree_type)
@@ -208,19 +208,19 @@ class MagmaCommand(object):
                 for x in range(len(db_options)):
                     db_opts[x]=db_options[x]
                 if args.structure_database == 'pubchem':
-                    query_engine=magma.PubChemEngine(db_opts[0],(db_opts[2]=='True'),db_opts[3],db_opts[4])
+                    query_engine=magma.PubChemEngine(db_opts[0], (db_opts[2]=='True'), db_opts[3], db_opts[4])
                 elif args.structure_database == 'kegg':
-                    query_engine=magma.KeggEngine(db_opts[0],(db_opts[2]=='True'),db_opts[3])
+                    query_engine=magma.KeggEngine(db_opts[0], (db_opts[2]=='True'), db_opts[3])
                 elif args.structure_database == 'hmdb':
-                    query_engine=magma.HmdbEngine(db_opts[0],(db_opts[2]=='True'))
+                    query_engine=magma.HmdbEngine(db_opts[0], (db_opts[2]=='True'))
                 elif args.structure_database == 'metacyc':
-                    query_engine=magma.MetaCycEngine(db_opts[0],(db_opts[2]=='True'))
-                pubchem_molids=annotate_engine.get_db_candidates(query_engine,db_opts[1])
+                    query_engine=magma.MetaCycEngine(db_opts[0], (db_opts[2]=='True'))
+                pubchem_molids=annotate_engine.get_db_candidates(query_engine, db_opts[1])
             if args.molids == None:
-                annotate_engine.search_structures(ncpus=args.ncpus,fast=args.fast,time_limit=args.time_limit)
+                annotate_engine.search_structures(ncpus=args.ncpus, fast=args.fast, time_limit=args.time_limit)
             else:
                 molids=args.molids.split(',')+pubchem_molids
-                annotate_engine.search_structures(molids=molids,ncpus=args.ncpus,fast=args.fast,time_limit=args.time_limit)
+                annotate_engine.search_structures(molids=molids, ncpus=args.ncpus, fast=args.fast, time_limit=args.time_limit)
             magma_session.commit()
             magma_session.fill_molecules_reactions()
                 # annotate_engine.search_some_structures(molids)
@@ -231,7 +231,7 @@ class MagmaCommand(object):
                 logging.error(error)
 
     def select(self, args):
-        shutil.copy(args.db_in,args.db_out)
+        shutil.copy(args.db_in, args.db_out)
         magma_session = self.get_magma_session(args.db_out)
         select_engine = magma_session.get_select_engine()
         select_engine.select_fragment(args.frag_id)
