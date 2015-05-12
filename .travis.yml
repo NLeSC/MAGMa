@@ -10,17 +10,17 @@ before_install:
   - conda install --yes numpy cython lxml nose coverage
   - wget -nc http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip && unzip -nd web/magmaweb/static ext-4.2.1-gpl.zip
 install:
-  - cd job && python setup.py develop
+  - cd job && python setup.py develop && cd ..
   - python web/setup.py develop
-  - cd web && npm install
+  - cd web && npm install && cd ..
 before_script:
   - npm install karma-cli
   - pip install nose
-  - cd job && echo -e '[magma job]\nstructure_database.pubchem=magma/tests/HMDB_MAGMa_test.db' > magma_job.ini
+  - cd job && echo -e '[magma job]\nstructure_database.pubchem=magma/tests/HMDB_MAGMa_test.db' > magma_job.ini && cd ..
 script:
-  - cd job && nosetests
-  - cd web && nosetests 
-  - cd web && karma start
+  - cd job && nosetests && cd ..
+  - cd web && nosetests && cd ..
+  - cd web && karma start && cd ..
 sudo: false
 cache:
   - web/magmaweb/static/ext-4.2.1.883
