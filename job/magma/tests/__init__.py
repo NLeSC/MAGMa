@@ -125,7 +125,7 @@ class TestStructureEngine(unittest.TestCase):
         engine = create_engine('sqlite://')
         Base.metadata.create_all(engine)
         self.db_session = sessionmaker(bind=engine)()
-        
+
 
     def test_construct_new_db(self):
         se = magma.StructureEngine(self.db_session)
@@ -507,3 +507,99 @@ M  END
         metabolites=me.metabolize(mol,'glycosidase',True)
         self.assertEqual(len(metabolites),3)
 
+
+class TestSearchStructure(unittest.TestCase):
+    def setUp(self):
+        engine = create_engine('sqlite://')
+        Base.metadata.create_all(engine)
+        self.db_session = sessionmaker(bind=engine)()
+
+    def test_it(self):
+        molblock = """Theogallin
+  Mrv0541 05061310592D
+
+ 24 25  0  0  0  0            999 V2000
+    5.0013    2.0625    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    3.5724    2.0625    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    5.0013    6.1875    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    5.7158    4.9500    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    4.2868    2.4750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    5.0013    1.2375    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    3.5724    1.2375    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    4.2868    5.7750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    5.0013    4.5375    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    4.2868    0.8250    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    4.2868    4.9500    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    4.2868    3.3000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    6.1530    6.4746    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    5.7158    5.7750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    5.7158    0.8250    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    2.8579    0.8250    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    3.5724    6.1875    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    4.2868    0.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    3.5724    4.5375    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    3.5724    3.7125    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    5.7656    7.2031    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    6.9774    6.4458    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    6.5403    5.8038    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    5.0013    3.7125    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+  5  1  2  0  0  0  0
+  5  2  1  0  0  0  0
+  6  1  1  0  0  0  0
+  7  2  2  0  0  0  0
+  8  3  1  0  0  0  0
+  9  4  1  0  0  0  0
+ 10  6  2  0  0  0  0
+ 10  7  1  0  0  0  0
+ 11  8  1  0  0  0  0
+ 11  9  1  0  0  0  0
+ 12  5  1  0  0  0  0
+ 14  3  1  0  0  0  0
+ 14  4  1  0  0  0  0
+ 14 13  1  0  0  0  0
+ 15  6  1  0  0  0  0
+ 16  7  1  0  0  0  0
+ 17  8  1  0  0  0  0
+ 18 10  1  0  0  0  0
+ 19 11  1  0  0  0  0
+ 20 12  2  0  0  0  0
+ 21 13  2  0  0  0  0
+ 22 13  1  0  0  0  0
+ 23 14  1  0  0  0  0
+ 24  9  1  0  0  0  0
+ 24 12  1  0  0  0  0
+M  END
+"""
+
+        class Stub(object):
+            pass
+
+        # search_structure gets called by pp.Server.submit
+        # submit will import modules, during test we have do the same
+        import magma.pars as pars
+        import magma.types as types
+        import magma.fragmentation_cy as fragcy
+        import magma.fragmentation_py as fragpy
+        magma.magma = Stub()
+        magma.magma.pars = pars
+        magma.magma.types = types
+        magma.magma.fragmentation_cy = fragcy
+        magma.magma.fragmentation_py = fragpy
+
+        magma.MsDataEngine(self.db_session, 1, 10000, 5, 0.001, 0.005, 5)
+        ae = magma.AnnotateEngine(self.db_session, False, 3, 1, 0, 5, True, adducts='Na,K')
+        mol = Chem.MolFromMolBlock(molblock)
+        mim = 344.07434673460006
+        molcharge = 1
+        # TODO fill peaks
+        peaks = []
+        fast = False
+
+        result = magma.search_structure(mol, mim, molcharge,
+                                        peaks, ae.max_broken_bonds,
+                                        ae.max_water_losses, ae.precision,
+                                        ae.mz_precision_abs, ae.use_all_peaks,
+                                        ae.ionisation_mode,
+                                        ae.skip_fragmentation, fast, ae.ions)
+
+        self.assertEquals(result, ([], 0))
