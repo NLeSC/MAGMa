@@ -1,3 +1,5 @@
+tools:
+    external_code_coverage: true
 checks:
     python:
         code_rating: true

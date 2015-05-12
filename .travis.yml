@@ -21,6 +21,7 @@ script:
   - cd job && nosetests && cd ..
   - cd web && nosetests && cd ..
   - cd web && node_modules/karma/bin/karma start && cd ..
+  - pip install scrutinizer-ocular && cp web/.coverage .coverage.web && cp job/.coverage .coverage.job && coverage combine && ocular
 sudo: false
 cache:
   - web/magmaweb/static/ext-4.2.1.883
