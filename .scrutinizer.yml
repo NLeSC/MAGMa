@@ -28,7 +28,3 @@ checks:
         classes_no_self_argument: true
         classes_bad_mcs_method_argument: true
         classes_bad_classmethod_argument: true
-filter:
-    paths: [job/magma/*, web/magmaweb/*]
-    exclude_paths:
-        - */tests/*
