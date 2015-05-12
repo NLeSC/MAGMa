@@ -587,6 +587,15 @@ class JobFactoryTestCase(unittest.TestCase):
 
         self.assertEqual(result, 1234)
 
+    @patch('os.stat')
+    def test_dbSize_noresultdbfile(self, stat):
+        stat.side_effect = OSError()
+        jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
+
+        result = self.factory.dbSize(jobid)
+
+        self.assertEqual(result, 0)
+
 
 class JobNotFoundTestCase(unittest.TestCase):
     def test_it(self):

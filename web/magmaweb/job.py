@@ -398,7 +398,10 @@ class JobFactory(object):
     def dbSize(self, jid):
         """Return size of job db in bytes"""
         dbfile = self.id2db(jid)
-        return os.path.getsize(dbfile)
+        try:
+            return os.path.getsize(dbfile)
+        except OSError:
+            return 0
 
 
 class Job(object):
