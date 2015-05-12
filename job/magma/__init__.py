@@ -12,7 +12,7 @@ import copy
 import pkg_resources
 import logging
 from lxml import etree
-from sqlalchemy import create_engine, and_, desc, distinct
+from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 from models import Base, Molecule, Reaction, fill_molecules_reactions, Scan, Peak, Fragment, Run
@@ -24,7 +24,6 @@ import cPickle as pickle
 import types
 from magma.errors import FileFormatError, DataProcessingError
 import pars
-from operator import itemgetter
 
 import ConfigParser
 config = ConfigParser.ConfigParser()

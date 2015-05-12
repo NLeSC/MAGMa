@@ -26,25 +26,21 @@ logger = logging.getLogger('magmaweb')
 class ScanRequiredError(Exception):
 
     """Raised when a scan identifier is required, but non is supplied"""
-    pass
 
 
 class ScanNotFound(Exception):
 
     """Raised when a scan identifier is not found"""
-    pass
 
 
 class MoleculeNotFound(Exception):
 
     """Raised when a molecule identifier is not found"""
-    pass
 
 
 class FragmentNotFound(Exception):
 
     """Raised when a fragment is not found"""
-    pass
 
 
 class JobIdException(Exception):
@@ -110,7 +106,6 @@ def make_job_factory(params):
 
 
 class JobFactory(object):
-
     """Factory which can create jobs """
 
     def __init__(self,
@@ -151,7 +146,7 @@ class JobFactory(object):
         self.init_script = init_script
 
     def _makeJobSession(self, jobid):
-        """ Create job db connection """
+        """Create job db connection"""
         engine = create_engine(self.id2url(jobid))
         try:
             engine.connect()
@@ -200,7 +195,6 @@ class JobFactory(object):
 
     def fromDb(self, dbfile, owner):
         """A job directory is created and the dbfile is copied into it
-        Returns a Job instance
 
         ``dbfile``
             The sqlite result db
@@ -377,7 +371,7 @@ class JobFactory(object):
             raise JobSubmissionError()
 
     def id2jobdir(self, jid):
-        """Returns job directory based on jid and root_dir """
+        """Returns job directory based on jid and root_dir"""
         return os.path.join(self.root_dir, str(jid))
 
     def id2db(self, jid):
@@ -385,13 +379,12 @@ class JobFactory(object):
         return os.path.join(self.id2jobdir(jid), self.db_fn)
 
     def id2url(self, jid):
-        """Returns sqlalchemy url of sqlite db of job with jid """
+        """Returns sqlalchemy url of sqlite db of job with jid"""
         # 3rd / is for username:pw@host which sqlite does not need
         return 'sqlite:///' + self.id2db(jid)
 
     def cancel(self, job):
-        """Cancel in-complete :class:`Job` on the job server
-        """
+        """Cancel in-complete :class:`Job` on the job server"""
         url = job.launcher_url
         return requests.delete(url)
 
@@ -409,7 +402,8 @@ class Job(object):
     """Job contains results database of Magma calculation run"""
 
     def __init__(self, meta, directory, db=None):
-        """
+        """Constructor
+
         meta
             :class:`magmaweb.user.JobMeta` instance.
             For owner, parent etc.
@@ -773,6 +767,7 @@ class JobDb(object):
     def rowNumberOfSelectedMolecule(self,
                                     sorts, scanid,
                                     filters, molid, mz):
+        """Return row number of selected molecule"""
         q = self.session.query(Molecule.molid)
         q = self._addFilter2MoleculesQuery(q, sorts, scanid, filters, mz)
 
@@ -788,6 +783,7 @@ class JobDb(object):
                                 limit, sorts,
                                 scanid, filters,
                                 molid, mz):
+        """Return offset of selected molecule in result set"""
         rowNr = self.rowNumberOfSelectedMolecule(sorts, scanid, filters,
                                                  molid, mz)
         start = rowNr / limit * limit
@@ -982,7 +978,7 @@ class JobDb(object):
         return hits
 
     def extractedIonChromatogram(self, molid):
-        """Returns extracted ion chromatogram of molecule with id molid """
+        """Returns extracted ion chromatogram of molecule with id molid"""
         chromatogram = []
         mzqq = self.session.query(func.avg(Fragment.mz))
         mzqq = mzqq.filter(Fragment.molid == molid)
@@ -1138,7 +1134,6 @@ class JobDb(object):
         Raises FragmentNotFound when no fragment is found
         with the given scanid/molid combination
         """
-
         # parent molecule
         if (node == 'root'):
             structures = []

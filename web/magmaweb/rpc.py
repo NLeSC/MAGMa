@@ -75,11 +75,7 @@ class RpcViews(object):
         if (has_scans and
                 'structure_database' in params and
                 params['structure_database']):
-            # add structure database location
-            # when structure_database is selected
-            key = 'structure_database.' + params['structure_database']
-            str_db_loc = self.request.registry.settings[key]
-            jobquery = jobquery.annotate(params, False, str_db_loc)
+            jobquery = jobquery.annotate(params, False)
 
         self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}

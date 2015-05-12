@@ -82,14 +82,12 @@ class RpcViewsTestCase(unittest.TestCase):
         invalid = Invalid(SchemaNode(String()))
         self.jobquery.add_structures.side_effect = invalid
         self.rpc.request.POST['structure_database'] = 'pubchem'
-        s = self.rpc.request.registry.settings
-        s['structure_database.pubchem'] = 'data/pubchem.db'
 
         self.rpc.add_structures()
 
         self.jobquery.annotate.assert_called_with(self.post,
-                                                  False,
-                                                  'data/pubchem.db')
+                                                  False
+                                                  )
 
     def test_addstructure_with_db_and_no_msdata(self):
         self.job2.db.maxMSLevel.return_value = 0
