@@ -95,7 +95,7 @@ class MagmaCommand(object):
         sc.add_argument('-a', '--assigned', help="Only assigned molecules (default: %(default)s)", action="store_true")
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.export_structures)
-        
+
     def version(self):
         return '1.0' # TODO move to main magma package and reuse in setup.py so version is specified in one place
 
@@ -104,11 +104,11 @@ class MagmaCommand(object):
 
     def init_db(self,args):
         """Initialize database"""
-        magma_session = self.get_magma_session(args.db,"")
+        return self.get_magma_session(args.db,"")
 
     def add_structures(self, args, magma_session=None):
         try:
-            if magma_session == None:
+            if magma_session is None:
                 magma_session = self.get_magma_session(args.db, args.description, args.log)
             struct_engine = magma_session.get_structure_engine(pubchem_names=args.pubchem_names)
             if args.structure_format == 'smiles':
@@ -124,10 +124,10 @@ class MagmaCommand(object):
 
     def metabolize(self, args, magma_session=None):
         try:
-            if magma_session == None:
+            if magma_session is None:
                 magma_session = self.get_magma_session(args.db, args.description, args.log)
             struct_engine = magma_session.get_structure_engine(pubchem_names=args.pubchem_names, call_back_url=args.call_back_url)
-            if args.scenario != None:
+            if args.scenario is not None:
                 # Convert comma separated file into list of [action,value] pairs: [[action,value][action,value]..]
                 scenario=[]
                 scenario_file=open(args.scenario, 'r')
@@ -136,7 +136,7 @@ class MagmaCommand(object):
                     if len(step)>1:
                         scenario.append(step)
                 struct_engine.run_scenario(scenario, args.time_limit)
-            elif args.molids == None:
+            elif args.molids is None:
                 molids=struct_engine.metabolize_all(args.metabolism_types, args.n_reaction_steps)
                 for molid in molids:
                     print molid
@@ -155,7 +155,7 @@ class MagmaCommand(object):
 
     def read_ms_data(self, args, magma_session=None):
         try:
-            if magma_session == None:
+            if magma_session is None:
                 magma_session = self.get_magma_session(args.db, args.description, args.log)
             ms_data_engine = magma_session.get_ms_data_engine(ionisation_mode=args.ionisation_mode,
                     abs_peak_cutoff=args.abs_peak_cutoff,
@@ -177,7 +177,7 @@ class MagmaCommand(object):
 
     def annotate(self, args, magma_session=None):
         try:
-            if magma_session == None:
+            if magma_session is None:
                 magma_session = self.get_magma_session(args.db,args.description,args.log)
             annotate_engine = magma_session.get_annotate_engine(skip_fragmentation=args.skip_fragmentation,
                 max_broken_bonds=args.max_broken_bonds,
@@ -210,7 +210,7 @@ class MagmaCommand(object):
                 elif args.structure_database == 'metacyc':
                     query_engine=magma.MetaCycEngine(db_opts[0], (db_opts[2]=='True'))
                 pubchem_molids=annotate_engine.get_db_candidates(query_engine, db_opts[1])
-            if args.molids == None:
+            if args.molids is None:
                 annotate_engine.search_structures(ncpus=args.ncpus, fast=args.fast, time_limit=args.time_limit)
             else:
                 molids=args.molids.split(',')+pubchem_molids
@@ -225,7 +225,7 @@ class MagmaCommand(object):
                 logging.error(error)
 
     def export_structures(self, args, magma_session=None):
-        if magma_session == None:
+        if magma_session is None:
             magma_session = self.get_magma_session(args.db)
         export_engine = magma_session.get_export_molecules_engine()
         if args.assigned:

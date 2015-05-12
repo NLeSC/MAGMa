@@ -1,11 +1,11 @@
 language: python
-python: 
+python:
   - "2.7"
 before_install:
   - wget -nc http://repo.continuum.io/miniconda/Miniconda-3.5.5-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p conda
   - source conda/bin/activate root
-  - conda update --yes -q conda 
+  - conda update --yes -q conda
   - conda install --yes -c https://conda.binstar.org/rdkit rdkit=2014.09.2 boost=1.56.0
   - conda install --yes numpy cython lxml nose coverage
   - cd conda && wget -nc http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip && cd .. && unzip -qnd web/magmaweb/static conda/ext-4.2.1-gpl.zip
@@ -15,16 +15,16 @@ install:
   - cd web && npm install && cd ..
 before_script:
   - npm install karma-cli
-  - pip install nose
+  - pip install nose coveralls
   - cd job && echo -e '[magma job]\nstructure_database.pubchem=magma/tests/HMDB_MAGMa_test.db' > magma_job.ini && cd ..
 script:
   - cd job && nosetests && cd ..
   - cd web && nosetests && cd ..
   - cd web && node_modules/karma/bin/karma start && cd ..
-  - pip install scrutinizer-ocular && cp web/.coverage .coverage.web && cp job/.coverage .coverage.job && coverage combine && ocular
+  - cp web/.coverage .coverage.web && cp job/.coverage .coverage.job && coverage combine && coveralls
+# TODO add Javascript coverage from web/coverage/*/lcov.info
 sudo: false
 cache:
   - web/magmaweb/static/ext-4.2.1.883
   - conda
   - web/node_modules
-

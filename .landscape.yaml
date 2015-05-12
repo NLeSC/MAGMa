@@ -1,0 +1,5 @@
+doc-warnings: yes
+strictness: medium
+requirements:
+    - job/setup.py
+    - web/setup.py

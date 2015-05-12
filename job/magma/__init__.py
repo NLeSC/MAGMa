@@ -135,16 +135,16 @@ class CallBackEngine(object):
         update_last = time.time() - self.update_time
         # update status every second
         if force or update_last > self.update_interval:
-            if elapsed_time != None:
+            if elapsed_time is not None:
                 status += '<h3>Time: %02d:%02d:%02d' % (
                     elapsed_time // 3600, (elapsed_time % 3600) // 60, elapsed_time % 60)
-                if time_limit != None:
+                if time_limit is not None:
                     status += ' / max. %02d:%02d:00 (%d%%)' % (
                         time_limit // 60, time_limit % 60, elapsed_time / time_limit / 60 * 100)
                 status += '</h3>'
             self.update_time = self.update_time + \
                 update_last // self.update_interval * self.update_interval
-            r = requests.put(
+            requests.put(
                 self.url, status, auth=HTTPMacAuth(self.access_token, self.mac_key))
 
 
@@ -201,15 +201,15 @@ class MetabolizeEngine(object):
                 coordDict[i] = Geometry.Point2D(pos.x, pos.y)
         if len(coordDict) > 0:
             # calculate average length of all bonds with coordinates
-            sum = 0
+            total = 0
             n = 0
             for bond in mol.GetBonds():
                 b = bond.GetBeginAtomIdx()
                 e = bond.GetEndAtomIdx()
                 if b in coordDict and e in coordDict:
                     n += 1
-                    sum += rdMolTransforms.GetBondLength(conf, b, e)
-            av = sum / n
+                    total += rdMolTransforms.GetBondLength(conf, b, e)
+            av = total / n
             # compute coordinates for new atoms, keeping known coordinates
             AllChem.Compute2DCoords(mol, coordMap=coordDict, bondLength=av)
 
@@ -229,7 +229,7 @@ class MetabolizeEngine(object):
                 ikey = AllChem.InchiToInchiKey(AllChem.MolToInchi(p))[:14]
                 if ikey not in metabolites:
                     if endpoints:
-                    	# Try further reactions, otherwise store end product
+                        # Try further reactions, otherwise store end product
                         endproducts = self.metabolize(p, metabolism, True)
                         if len(endproducts) > 0:
                             metabolites.update(endproducts)
@@ -285,7 +285,7 @@ class StructureEngine(object):
         if pubchem_names:
             self.pubchem_engine = PubChemEngine()
         self.metabolize_engine = None
-        if call_back_url != None:
+        if call_back_url is not None:
             self.call_back_engine = CallBackEngine(call_back_url)
         else:
             self.call_back_engine = None
@@ -346,7 +346,7 @@ class StructureEngine(object):
         if check_duplicates:
             dup = self.db_session.query(Molecule).filter_by(
                 inchikey14=newmol.inchikey14).first()
-            if dup != None:
+            if dup is not None:
                 if merge:
                     if dup.name == "" and newmol.name != "":
                         dup.name = newmol.name
@@ -452,7 +452,7 @@ class StructureEngine(object):
                 for molid in molids:
                     new_molids |= self.metabolize(molid, action, endpoints)
                     elapsed_time = time.time() - start_time
-                    if self.call_back_engine != None:
+                    if self.call_back_engine is not None:
                         status = 'Transformation: %s, step 1<br>Metabolites generated: %d' % (
                             action, len(prev_molids) + len(molids) + len(new_molids))
                         self.call_back_engine.update_callback_url(status, elapsed_time, time_limit)
@@ -466,7 +466,7 @@ class StructureEngine(object):
                         for molid in active_molids:
                             new_molids |= self.metabolize(molid, action, endpoints)
                             elapsed_time = time.time() - start_time
-                            if self.call_back_engine != None:
+                            if self.call_back_engine is not None:
                                 status = 'Transformation: %s, step %d<br>Metabolites generated: %d' % (
                                     action, i + 1, len(prev_molids) + len(molids) + len(new_molids))
                                 self.call_back_engine.update_callback_url(status, elapsed_time, time_limit)
@@ -482,13 +482,13 @@ class StructureEngine(object):
                 if not endpoints:
                     molids |= prev_molids
             if time_limit and time.time() - start_time > time_limit * 60:
-                if self.call_back_engine != None:
+                if self.call_back_engine is not None:
                     self.call_back_engine.update_callback_url(
                         'Transformation stopped: time limit exceeded', force=True)
                 logger.warn('Transformation stopped: time limit exceeded')
                 break
         else:
-            if self.call_back_engine != None:
+            if self.call_back_engine is not None:
                 self.call_back_engine.update_callback_url('Transformations completed', force=True)
         logger.info(str(self.db_session.query(Molecule).count()) + ' molecules in library\n')
 
@@ -500,7 +500,8 @@ class MsDataEngine(object):
     def __init__(self, db_session, ionisation_mode, abs_peak_cutoff, mz_precision, mz_precision_abs,
                  precursor_mz_precision, max_ms_level, call_back_url=None):
         self.db_session = db_session
-        # a small mz_precision_abs is required, even when matching theoretical masses,
+        # a small mz_precision_abs is required,
+        # even when matching theoretical masses,
         # because of finite floating point precision
         mz_precision_abs = max(mz_precision_abs, 0.000001)
         precursor_mz_precision = max(precursor_mz_precision, 0.000001)
@@ -534,7 +535,7 @@ class MsDataEngine(object):
         self.precision = 1 + 2 * rundata.mz_precision / 1e6
         self.mz_precision_abs = rundata.mz_precision_abs * 2
         self.precursor_mz_precision = rundata.precursor_mz_precision
-        if call_back_url != None:
+        if call_back_url is not None:
             self.call_back_engine = CallBackEngine(call_back_url)
         else:
             self.call_back_engine = None
@@ -543,7 +544,7 @@ class MsDataEngine(object):
         """ Read mzxml_file and store scans and peaks in the scans and peaks tables """
         logger.info('READING MZXML FILE')
         rundata = self.db_session.query(Run).one()
-        if rundata.ms_filename != None:
+        if rundata.ms_filename is not None:
             raise DataProcessingError('Attempt to read MS data twice')
         rundata.ms_filename = unicode(mzxml_file)
         self.db_session.add(rundata)
@@ -563,16 +564,16 @@ class MsDataEngine(object):
                      ):
                 self.store_mzxml_scan(mzxmlScan, 0, namespace)
                 prec_scans.append(mzxmlScan.attrib['num']) # in case of non-hierarchical mzXML, also find child scans
-                if self.call_back_engine != None:
+                if self.call_back_engine is not None:
                     status = 'Reading mzXML, scan: %s' % (prec_scans[-1],)
                     self.call_back_engine.update_callback_url(status, elapsed_time, time_limit)
             if time_limit and elapsed_time > time_limit * 60:
-                if self.call_back_engine != None:
+                if self.call_back_engine is not None:
                     self.call_back_engine.update_callback_url('Reading mzXML stopped: time limit exceeded', force=True)
                 logger.warn('Reading mzXML stopped: time limit exceeded\n')
                 break
         else:
-            if self.call_back_engine != None:
+            if self.call_back_engine is not None:
                 self.call_back_engine.update_callback_url('Reading mzXML completed', force=True)
         self.db_session.commit()
         logger.info(str(self.db_session.query(Scan).count()) + ' spectra read from file\n')
@@ -607,8 +608,8 @@ class MsDataEngine(object):
             if child.tag == namespace + 'precursorMz':
                 scan.precursormz = float(child.text)
                 scan.precursorintensity = float(child.attrib['precursorIntensity'])
-                if child.attrib.get('precursorScanNum') != None:
-	                # Non-hierarchical mzXML!
+                if child.attrib.get('precursorScanNum') is not None:
+                    # Non-hierarchical mzXML!
                     scan.precursorscanid = float(child.attrib['precursorScanNum'])
                 if scan.precursorscanid == 0:
                     # MS>1 scan is not in a hierarchy and does not contain precursor scan information
@@ -630,7 +631,7 @@ class MsDataEngine(object):
                 if comp is None or len(comp) == 0:
                     self.store_mzxml_peaks(scan, decoded)
                 else:
-		            # generate composite spectrum with the existing scan of the same precursor
+                    # generate composite spectrum with the existing scan of the same precursor
                     self.merge_spectrum(comp[0], scan, decoded)
             if child.tag == namespace + 'scan' and int(child.attrib['msLevel']) <= self.max_ms_level:
                 self.store_mzxml_scan(child, scan.scanid, namespace)
@@ -714,8 +715,8 @@ class MsDataEngine(object):
     def store_manual_tree(self, manual_tree, tree_type):
         """ Store scans and peaks from mass tree formatted data in scans and peaks tables """
         # tree_type: 0 for mass tree, -1 and 1 for formula trees with negative or positive ionisation mode respectively
-        tree_string=open(manual_tree).read()
-        tree_string=tree_string.replace(' ', '').\
+        tree_string = open(manual_tree).read()
+        tree_string = tree_string.replace(' ', '').\
                                 replace('\t', '').\
                                 replace('\r', '').\
                                 replace('(\n', '(').\
@@ -837,7 +838,7 @@ class AnnotateEngine(object):
 
         self.scans = []
 
-        if call_back_url != None:
+        if call_back_url is not None:
             self.call_back_engine = CallBackEngine(call_back_url)
         else:
             self.call_back_engine = None
@@ -847,7 +848,7 @@ class AnnotateEngine(object):
             iontypes = ['+H']
         if self.ionisation_mode == -1:
             iontypes = ['-H']
-        if adducts != None:
+        if adducts is not None:
             for i in adducts.split(','):
                 iontypes.append('+' + i)
         self.ions = self.generate_ions(iontypes, max_charge)
@@ -890,7 +891,7 @@ class AnnotateEngine(object):
         if scan.mslevel == 1:
             cutoff = self.ms_intensity_cutoff
         else:
-            cutoff = dbscan.basepeakintensity *  self.msms_intensity_cutoff / 100
+            cutoff = dbscan.basepeakintensity * self.msms_intensity_cutoff / 100
         dbpeaks = self.db_session.query(Peak).filter(
             Peak.scanid == scan.scanid).filter(Peak.intensity >= cutoff).all()
         for dbpeak in dbpeaks:
@@ -946,8 +947,7 @@ class AnnotateEngine(object):
         for depth in ndepths:
             logger.info(str(ndepths[depth]) + ' spectral trees of depth ' + str(depth))
         logger.info('')
-        self.indexed_peaks={}   # sets of peaks for each integer m/z value
-        peak_string = ''
+        self.indexed_peaks = {}   # sets of peaks for each integer m/z value
         for scan in self.scans:
             for peak in scan.peaks:
                 if not ((not self.use_all_peaks) and peak.childscan is None):
@@ -961,7 +961,7 @@ class AnnotateEngine(object):
 
     def write_mass_tree(self, peak):
         peak_string = "%.6f: %i" % (peak.mz, peak.intensity)
-        if peak.childscan != None:
+        if peak.childscan is not None:
             peak_string += ' ('
             n = 0
             for childpeak in peak.childscan.peaks:
@@ -978,7 +978,6 @@ class AnnotateEngine(object):
         logger.info('RETRIEVING CANDIDATE MOLECULES FROM: ' + str(query_engine.name))
         if max_mim == '':
             max_mim = '1200'
-        mmim = int(float(max_mim) * 1e6)
         logger.info('Mass limit: ' + str(max_mim))
 
         struct_engine = StructureEngine(self.db_session)
@@ -1063,7 +1062,7 @@ class AnnotateEngine(object):
                     continue
                 # collect all peaks with masses within 3 Da range
                 molcharge = 0
-                 # derive charge from molecular formula
+                # derive charge from molecular formula
                 molcharge += 1 * ((structure.formula[-1] == '-' and self.ionisation_mode == -1) or
                                   (structure.formula[-1] == '+' and self.ionisation_mode == 1))
                 peaks = set([])
@@ -1133,21 +1132,21 @@ class AnnotateEngine(object):
                 self.db_session.flush()
                 count += 1
                 elapsed_time = time.time() - start_time
-                if self.call_back_engine != None:
+                if self.call_back_engine is not None:
                     status = 'Annotation: %d / %d candidate molecules processed  (%d%%)' % (total_molids - len(molids) - len(ids) + count,
                         total_molids, 100.0 * (total_molids - len(molids) - len(ids) + count) / total_molids)
                     self.call_back_engine.update_callback_url(status, elapsed_time, time_limit)
                 if time_limit and elapsed_time > time_limit * 60:
                     # break out of while-loop
                     molids = []
-                    if self.call_back_engine != None:
+                    if self.call_back_engine is not None:
                         self.call_back_engine.update_callback_url(
                             'Annotation stopped: time limit exceeded', force=True)
                     logger.warn('Annotation stopped: time limit exceeded')
                     break
             self.db_session.commit()
             logger.info(str(total_molids - len(molids)) + ' molecules processed')
-        if self.call_back_engine != None:
+        if self.call_back_engine is not None:
             self.call_back_engine.update_callback_url(
                 'Annotation completed', force=True)
         logger.info(str(total_frags) + ' fragments generated in total.')
@@ -1163,7 +1162,7 @@ class AnnotateEngine(object):
         currentFragid = fragid
         score = hit.score
         deltappm = None
-        if score != None:
+        if score is not None:
             score = score / hit.intensity_weight
             charge = 1
             if hit.ion[-2] in '123456789':
@@ -1185,7 +1184,7 @@ class AnnotateEngine(object):
             ))
         if len(hit.besthits) > 0:
             for childhit in hit.besthits:
-                if childhit != None:
+                if childhit is not None:
                     self.store_hit(childhit, molid, currentFragid)
         return score
 
@@ -1214,7 +1213,7 @@ class PubChemEngine(object):
         self.where = ''
         if min_refscore != '':
             self.where += ' AND refscore >= ' + min_refscore
-        if max_64atoms == True:
+        if max_64atoms:
             self.where += ' AND natoms <= 64'
 
     def query_on_mim(self, low, high, charge):
@@ -1378,7 +1377,7 @@ class ExportMoleculesEngine(object):
         nprecursors = self.db_session.query(Fragment.mz, Fragment.scanid).\
                       filter(Fragment.parentfragid == 0).distinct().count()
         if nprecursors == 1:
-            result = self.db_session.query(Molecule ,Fragment.score).\
+            result = self.db_session.query(Molecule, Fragment.score).\
                      filter(Molecule.molid == Fragment.molid).\
                      filter(Fragment.parentfragid == 0).\
                      order_by(Fragment.score, desc(Molecule.refscore)).all()
@@ -1450,7 +1449,7 @@ def search_structure(mol, mim, molcharge, peaks, max_broken_bonds, max_water_los
         except:
             hit = magma.types.HitType(peak, fragment, score, bondbreaks, mass, ionmass, ion)
         # fragment=0 means it is a missing fragment
-        if fragment > 0 and peak.childscan != None and len(peak.childscan.peaks) > 0:
+        if fragment > 0 and peak.childscan is not None and len(peak.childscan.peaks) > 0:
             n_child_peaks = len(peak.childscan.peaks)
             total_score = 0.0
             total_count = 0.0
@@ -1461,7 +1460,7 @@ def search_structure(mol, mim, molcharge, peaks, max_broken_bonds, max_water_los
                 for childfrag, childscore, childbbreaks, childmass, childH in \
                         fragment_engine.find_fragments(mz_neutral, fragment, precision, mz_precision_abs):
                     if childfrag & fragment == childfrag:
-                        ion='[X' + '+' * (childH > 0) + '-' * (childH < 0) + str(abs(childH)) * (not -2 < childH < 2) + \
+                        ion = '[X' + '+' * (childH > 0) + '-' * (childH < 0) + str(abs(childH)) * (not -2 < childH < 2) + \
                                 'H' * (childH != 0) + ']' + '+' * (ionisation_mode > 0) + '-' * (ionisation_mode < 0)
                         childhit = gethit(childpeak, childfrag, childscore * (childpeak.intensity**0.5),
                                           childbbreaks, childmass, childH * pars.Hmass, ion)
@@ -1489,7 +1488,7 @@ def search_structure(mol, mim, molcharge, peaks, max_broken_bonds, max_water_los
             #    exit('failed inchi for: '+atomstring+'--'+str(hit.fragment))
             if len(hit.besthits) > 0:
                 for childhit in hit.besthits:
-                    if childhit != None:
+                    if childhit is not None:
                         add_fragment_data_to_hit(childhit)
 
     # main loop

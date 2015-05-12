@@ -5,15 +5,13 @@ Revises: 28182dc2d089
 Create Date: 2014-01-03 10:10:32.558457
 
 """
+from alembic import op
+from sqlalchemy.orm.session import sessionmaker
+from magmaweb.models import fill_molecules_reactions
 
 # revision identifiers, used by Alembic.
 revision = '14322145f9b5'
 down_revision = '28182dc2d089'
-
-from alembic import op
-import sqlalchemy as sa
-from sqlalchemy.orm.session import sessionmaker
-from magmaweb.models import fill_molecules_reactions
 
 
 def upgrade():
