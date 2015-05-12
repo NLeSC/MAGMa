@@ -55,7 +55,7 @@ class MagmaSession(object):
             rundata = self.db_session.query(Run).one()
         except:
             rundata = Run()
-        if rundata.description == None:
+        if rundata.description is None:
             rundata.description = unicode(description)
         self.db_session.add(rundata)
         self.db_session.commit()
@@ -243,9 +243,9 @@ class MetabolizeEngine(object):
 def get_molecule(molblock, name, refscore, predicted, mim=None, smiles=None, natoms=None,
                  inchikey14=None, molform=None, reference=None, logp=None, mass_filter=9999):
     """ Returns a Molecule with the given attributes """
-    if inchikey14 == None or mim == None or molform == None or logp == None or natoms == None:
+    if inchikey14 is None or mim is None or molform is None or logp is None or natoms is None:
         mol = Chem.MolFromMolBlock(molblock)
-        if mol == None:
+        if mol is None:
             return
         inchikey14 = Chem.AllChem.InchiToInchiKey(AllChem.MolToInchi(mol))[:14]
         smiles = Chem.MolToSmiles(mol)
@@ -373,7 +373,7 @@ class StructureEngine(object):
                     newmol.name = unicode(name, 'utf-8', 'xmlcharrefreplace')
                 if newmol.reference == "None":
                     newmol.reference = unicode(reference)
-                if newmol.refscore == None:
+                if newmol.refscore is None:
                     newmol.refscore = refscore
         self.db_session.add(newmol)
         logger.debug('Added molecule: ' + newmol.name)
@@ -390,7 +390,7 @@ class StructureEngine(object):
             logger.warn('Molecule record %s does not exist.', molid)
             return
         parent = Chem.MolFromMolBlock(p.mol)
-        if self.metabolize_engine == None:
+        if self.metabolize_engine is None:
             self.metabolize_engine = MetabolizeEngine()
         molids = set()
         products = self.metabolize_engine.metabolize(parent, metabolism, endpoints)
@@ -426,7 +426,7 @@ class StructureEngine(object):
     def run_scenario(self, scenario, time_limit=None):
         """ Metabolize according to scenario """
         logger.info('RUNNING METABOLIC SCENARIO')
-        if time_limit == None:
+        if time_limit is None:
             result = self.db_session.query(Molecule.molid).all()
             molids = {x[0] for x in result}
         else:
@@ -508,17 +508,17 @@ class MsDataEngine(object):
             rundata = self.db_session.query(Run).one()
         except:
             rundata = Run()
-        if rundata.ionisation_mode == None:
+        if rundata.ionisation_mode is None:
             rundata.ionisation_mode = ionisation_mode
-        if rundata.abs_peak_cutoff == None:
+        if rundata.abs_peak_cutoff is None:
             rundata.abs_peak_cutoff = abs_peak_cutoff
-        if rundata.max_ms_level == None:
+        if rundata.max_ms_level is None:
             rundata.max_ms_level = max_ms_level
-        if rundata.mz_precision == None:
+        if rundata.mz_precision is None:
             rundata.mz_precision = mz_precision
-        if rundata.mz_precision_abs == None:
+        if rundata.mz_precision_abs is None:
             rundata.mz_precision_abs = mz_precision_abs
-        if rundata.precursor_mz_precision == None:
+        if rundata.precursor_mz_precision is None:
             rundata.precursor_mz_precision = precursor_mz_precision
         self.db_session.add(rundata)
         self.db_session.commit()
@@ -557,7 +557,7 @@ class MsDataEngine(object):
         for mzxmlScan in root.findall(mzxml_query):
             elapsed_time = time.time() - start_time
             if mzxmlScan.attrib['polarity'] == self.polarity and \
-                    (scan_filter == None or \
+                    (scan_filter is None or \
                      mzxmlScan.attrib['num'] == scan_filter or \
                      (int(mzxmlScan.attrib['msLevel'])>1 and mzxmlScan.find(namespace+'precursorMz').attrib['precursorScanNum'] in prec_scans)
                      ):
@@ -627,14 +627,14 @@ class MsDataEngine(object):
                         decoded = zlib.decompress(decoded)
                 except:
                     pass
-                if comp == None or len(comp) == 0:
+                if comp is None or len(comp) == 0:
                     self.store_mzxml_peaks(scan, decoded)
                 else:
 		            # generate composite spectrum with the existing scan of the same precursor
                     self.merge_spectrum(comp[0], scan, decoded)
             if child.tag == namespace + 'scan' and int(child.attrib['msLevel']) <= self.max_ms_level:
                 self.store_mzxml_scan(child, scan.scanid, namespace)
-        if comp == None or len(comp) == 0:
+        if comp is None or len(comp) == 0:
             self.db_session.add(scan)
         self.db_session.flush()
 
@@ -715,13 +715,13 @@ class MsDataEngine(object):
         """ Store scans and peaks from mass tree formatted data in scans and peaks tables """
         # tree_type: 0 for mass tree, -1 and 1 for formula trees with negative or positive ionisation mode respectively
         tree_string=open(manual_tree).read()
-        tree_string=tree_string.replace(' ','').\
-                                replace('\t','').\
-                                replace('\r','').\
-                                replace('(\n','(').\
-                                replace(',\n',',').\
-                                replace('\n)',')').\
-                                replace('\n',',')
+        tree_string=tree_string.replace(' ', '').\
+                                replace('\t', '').\
+                                replace('\r', '').\
+                                replace('(\n', '(').\
+                                replace(',\n', ',').\
+                                replace('\n)', ')').\
+                                replace('\n', ',')
         tree_list = re.split('([\,\(\)])',tree_string)
         self.global_scanid = 1
         self.store_manual_subtree(tree_list, 0, 0, 0, 1, tree_type)
@@ -744,11 +744,11 @@ class MsDataEngine(object):
                     mz = self.mass_from_formula(mz) - tree_type * pars.elmass
                 self.db_session.add(Peak(scanid=scanid, mz=mz, intensity=intensity))
                 npeaks += 1
-                if lowmz == None or mz < lowmz:
+                if lowmz is None or mz < lowmz:
                     lowmz = mz
-                if highmz == None or mz > highmz:
+                if highmz is None or mz > highmz:
                     highmz = mz
-                if basepeakintensity == None or intensity > basepeakintensity:
+                if basepeakintensity is None or intensity > basepeakintensity:
                     basepeakmz = mz
                     basepeakintensity = intensity
             elif tree_item == '(':
@@ -807,17 +807,17 @@ class AnnotateEngine(object):
             rundata = self.db_session.query(Run).one()
         except:
             rundata = Run()
-        if rundata.skip_fragmentation == None:
+        if rundata.skip_fragmentation is None:
             rundata.skip_fragmentation = skip_fragmentation
-        if rundata.max_broken_bonds == None:
+        if rundata.max_broken_bonds is None:
             rundata.max_broken_bonds = max_broken_bonds
-        if rundata.max_water_losses == None:
+        if rundata.max_water_losses is None:
             rundata.max_water_losses = max_water_losses
-        if rundata.ms_intensity_cutoff == None:
+        if rundata.ms_intensity_cutoff is None:
             rundata.ms_intensity_cutoff = ms_intensity_cutoff
-        if rundata.msms_intensity_cutoff == None:
+        if rundata.msms_intensity_cutoff is None:
             rundata.msms_intensity_cutoff = msms_intensity_cutoff
-        if rundata.use_all_peaks == None:
+        if rundata.use_all_peaks is None:
             rundata.use_all_peaks = use_all_peaks
         self.db_session.add(rundata)
         self.db_session.commit()
@@ -827,7 +827,7 @@ class AnnotateEngine(object):
         self.max_water_losses = rundata.max_water_losses
         self.ms_intensity_cutoff = rundata.ms_intensity_cutoff
         self.msms_intensity_cutoff = rundata.msms_intensity_cutoff
-        if rundata.mz_precision == None:
+        if rundata.mz_precision is None:
             raise DataProcessingError('No MS data parameters read.')
         self.mz_precision = rundata.mz_precision
         self.precision = 1 + rundata.mz_precision / 1e6
@@ -856,7 +856,7 @@ class AnnotateEngine(object):
         logger.info('Maximum absolute m/z error (Da): ' + str(self.mz_precision_abs) + '\n')
 
     def generate_ions(self, iontypes, maxcharge):
-        """ Generate ions according to allowed number of charges and adducts 
+        """ Generate ions according to allowed number of charges and adducts
             Returns list (one entry per absolute charge) of dictionaries with possible ions {delta mass:symbol}
             Example (negative mode with -a Cl and -m 2):
             [
@@ -950,7 +950,7 @@ class AnnotateEngine(object):
         peak_string = ''
         for scan in self.scans:
             for peak in scan.peaks:
-                if not ((not self.use_all_peaks) and peak.childscan == None):
+                if not ((not self.use_all_peaks) and peak.childscan is None):
                     int_mass = int(round(peak.mz))
                     if int_mass not in self.indexed_peaks:
                         self.indexed_peaks[int_mass] = set([])
@@ -987,7 +987,7 @@ class AnnotateEngine(object):
         mzs = []
         for scan in self.scans:
             for peak in scan.peaks:
-                if not ((not self.use_all_peaks) and peak.childscan == None):
+                if not ((not self.use_all_peaks) and peak.childscan is None):
                     mzs.append(peak.mz)
         mzs.sort()
         # build non-overlapping set of queries around these masses
@@ -1034,13 +1034,13 @@ class AnnotateEngine(object):
         logger.info('MATCHING CANDIDATE MOLECULES')
         global fragid
         fragid = self.db_session.query(func.max(Fragment.fragid)).scalar()
-        if fragid == None:
+        if fragid is None:
             fragid = 0
         ppservers = ()
         logger.info('calculating on ' + str(ncpus) + ' cpus')
         job_server = pp.Server(ncpus, ppservers=ppservers)
-        if molids == None:
-            if time_limit == None:
+        if molids is None:
+            if time_limit is None:
                 metabdata = self.db_session.query(Molecule.molid).order_by(desc(Molecule.molid)).all()
             else:
                 metabdata = self.db_session.query(Molecule.molid).order_by(Molecule.refscore).all()
@@ -1370,7 +1370,7 @@ class ExportMoleculesEngine(object):
     def export_molecules(self, filename=None, columns=None, sortcolumn='refscore', descend=True):
         """ Write SDFile with candidate molecules to filename (or stdout).
             If data is for a single percursor ion: also provide candidate scores and sort accordingly """
-        if filename == None:
+        if filename is None:
             file = sys.stdout
         else:
             file = open(filename, 'w')
@@ -1378,10 +1378,10 @@ class ExportMoleculesEngine(object):
         nprecursors = self.db_session.query(Fragment.mz, Fragment.scanid).\
                       filter(Fragment.parentfragid == 0).distinct().count()
         if nprecursors == 1:
-            result = self.db_session.query(Molecule,Fragment.score).\
+            result = self.db_session.query(Molecule ,Fragment.score).\
                      filter(Molecule.molid == Fragment.molid).\
                      filter(Fragment.parentfragid == 0).\
-                     order_by(Fragment.score,desc(Molecule.refscore)).all()
+                     order_by(Fragment.score, desc(Molecule.refscore)).all()
         else:
             if descend:
                 result = self.db_session.query(Molecule, Molecule.molid).order_by(desc(sortcolumn)).all()
@@ -1391,7 +1391,7 @@ class ExportMoleculesEngine(object):
             file.write(molecule.mol)
             if nprecursors == 1:
                 file.write('> <score>\n%.5f\n\n' % value)
-            if columns == None:
+            if columns is None:
                 columns = dir(molecule)
             for column in columns:
                 if column[:1] != '_' and column != 'mol' and column != 'metadata' and column != 'fragments':
@@ -1402,7 +1402,7 @@ class ExportMoleculesEngine(object):
     def export_assigned_molecules(self, filename=None):
         """ Write SDFile with assigned candidate molecules to filename (or stdout).
             Include scanid, RT and m/z of assigned peaks """
-        if filename == None:
+        if filename is None:
             file = sys.stdout
         else:
             file = open(filename, 'w')
@@ -1423,7 +1423,7 @@ class ExportMoleculesEngine(object):
         file.close()
 
 
-def search_structure(mol, mim, molcharge, peaks, max_broken_bonds, max_water_losses, precision, 
+def search_structure(mol, mim, molcharge, peaks, max_broken_bonds, max_water_losses, precision,
                      mz_precision_abs, use_all_peaks, ionisation_mode, skip_fragmentation, fast, ions):
     """ Match a candidate molecule with precursor ions.
         Return a list of hits (=hierarchical trees of (sub)structures and scores) """
@@ -1465,12 +1465,12 @@ def search_structure(mol, mim, molcharge, peaks, max_broken_bonds, max_water_los
                                 'H' * (childH != 0) + ']' + '+' * (ionisation_mode > 0) + '-' * (ionisation_mode < 0)
                         childhit = gethit(childpeak, childfrag, childscore * (childpeak.intensity**0.5),
                                           childbbreaks, childmass, childH * pars.Hmass, ion)
-                        if besthit.score == None or besthit.score > childhit.score or \
+                        if besthit.score is None or besthit.score > childhit.score or \
                                 (besthit.score == childhit.score and abs(besthit.deltaH) > abs(childhit.deltaH)) or \
                                 fragment_engine.score_fragment_rel2parent(besthit.fragment, fragment) > \
                                         fragment_engine.score_fragment_rel2parent(childhit.fragment, fragment):
                             besthit = childhit
-                if besthit.score == None:
+                if besthit.score is None:
                     total_score += childpeak.missing_fragment_score
                     # total_score+=missingfragmentpenalty*weight
                 else:
@@ -1497,7 +1497,7 @@ def search_structure(mol, mim, molcharge, peaks, max_broken_bonds, max_water_los
     hits = []
     frags = 0
     for peak in peaks:
-        if not ((not use_all_peaks) and peak.childscan == None):
+        if not ((not use_all_peaks) and peak.childscan is None):
             i = massmatch(peak, mim, molcharge)
             if i != False:
                 if not Fragmented:
@@ -1511,4 +1511,3 @@ def search_structure(mol, mim, molcharge, peaks, max_broken_bonds, max_water_los
                     add_fragment_data_to_hit(hit)
                     hits.append(hit)
     return (hits, frags)
-

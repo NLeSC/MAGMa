@@ -228,7 +228,7 @@ class JobQuery(object):
 
         return self
 
-    def _getMsDataSchema(self):
+    def _get_msdata_schema(self):
         def textarea_or_file(node, value):
             """Validator that either textarea or file upload is filled"""
             if not(not value['ms_data'] is colander.null or
@@ -293,7 +293,7 @@ class JobQuery(object):
                                        name='mz_precision_abs'))
         return schema
 
-    def _writeMsFile(self, params):
+    def _write_msfile(self, params):
         msfile = file(os.path.join(self.dir, 'ms_data.dat'), 'w')
         if not params['ms_data_file'] is colander.null:
             msf = params['ms_data_file'].file
@@ -308,7 +308,7 @@ class JobQuery(object):
             msfile.write(params['ms_data'])
         msfile.close()
 
-    def _writeScenarioFile(self, params):
+    def _write_scenario_file(self, params):
         with open(os.path.join(self.dir, 'scenario.csv'), 'w') as f:
             for transformation in params['scenario']:
                 f.write(",".join([transformation['type'],
@@ -322,7 +322,7 @@ class JobQuery(object):
             except TypeError:
                 pass
 
-    def _addIonisationToFormulaTree(self, params, schema, orig_params):
+    def _add_ionisation_to_formulatree(self, params, schema, orig_params):
         if params['ms_data_format'] == 'form_tree':
             if 'ionisation_mode' in orig_params:
                 if orig_params['ionisation_mode'] == "1":
@@ -355,16 +355,16 @@ class JobQuery(object):
         If both ``ms_data`` and ``ms_data_file`` is filled then
             ``ms_data`` is ignored.
         """
-        schema = self._getMsDataSchema()
+        schema = self._get_msdata_schema()
 
         if has_molecules:
             self._addAnnotateSchema(schema)
         orig_params = params
         params = schema.deserialize(params)
 
-        self._writeMsFile(params)
+        self._write_msfile(params)
 
-        self._addIonisationToFormulaTree(params, schema, orig_params)
+        self._add_ionisation_to_formulatree(params, schema, orig_params)
 
         pmzp = params['precursor_mz_precision']
         script__substitution = {
@@ -438,7 +438,7 @@ class JobQuery(object):
         self._deserialize_scenario(params)
         params = schema.deserialize(params)
 
-        self._writeScenarioFile(params)
+        self._write_scenario_file(params)
         self.prestaged.append('scenario.csv')
 
         script = "{{magma}} metabolize -p"
@@ -487,7 +487,7 @@ class JobQuery(object):
         self._deserialize_scenario(params)
         params = schema.deserialize(params)
 
-        self._writeScenarioFile(params)
+        self._write_scenario_file(params)
         self.prestaged.append('scenario.csv')
 
         script = "echo '{molid}' | {{magma}} metabolize -p -j -"
