@@ -90,9 +90,6 @@ class MagmaSession(object):
         return AnnotateEngine(self.db_session, skip_fragmentation, max_broken_bonds, max_water_losses,
                               ms_intensity_cutoff, msms_intensity_cutoff, use_all_peaks, adducts, max_charge, call_back_url)
 
-    def get_select_engine(self):
-        return SelectEngine(self.db_session)
-
     def get_export_molecules_engine(self):
         return ExportMoleculesEngine(self.db_session)
 
@@ -1365,137 +1362,10 @@ class HmdbEngine(object):
         return molecules
 
 
-class MetaCycEngine(object):
-
-    """Engine to retrieve candidate molecules from MetaCyc, requires a license from SRI to download MetaCyc compounds as flat file:
-       http://metacyc.org/download-flatfiles.shtml"""
-
-    def __init__(self, dbfilename='', max_64atoms=False):
-        self.name = 'MetaCyc'
-        if dbfilename == '':
-            dbfilename = config.get('magma job', 'structure_database.metacyc')
-        self.where = ''
-        if max_64atoms == True:
-            self.where += ' AND natoms <= 64'
-        self.conn = sqlite3.connect(dbfilename)
-        self.conn.text_factory = str
-        self.c = self.conn.cursor()
-
-    def query_on_mim(self, low, high, charge):
-        """ Return all molecules with given charge from MetaCyc between low and high mass limits """
-        result = self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
-                                (charge, low, high))
-        molecules = []
-        for (cid, mim, charge, natoms, molblock, inchikey, molform, name, reference, logp) in result:
-            metacyc_ids = reference.split(',')
-            metacyc_refs = '<a href="http://www.biocyc.org/META/NEW-IMAGE?type=COMPOUND&object=' + \
-                metacyc_ids[0] + '" target="_blank">' +  metacyc_ids[0] + ' (MetaCyc)</a>'
-            for metacyc_id in metacyc_ids[1:]:
-                metacyc_refs += '<br><a href="http://www.biocyc.org/META/NEW-IMAGE?type=COMPOUND&object=' + \
-                    metacyc_id + '" target="_blank">' + metacyc_id + ' (MetaCyc)</a>'
-            molecules.append(types.MoleculeType(
-                           molblock=zlib.decompress(molblock),
-                           name=name,
-                           mim=float(mim / 1e6),
-                           natoms=natoms,
-                           molform=molform,
-                           inchikey14=inchikey,
-                           refscore=None,
-                           predicted=0,
-                           reference=metacyc_refs,
-                           logp=float(logp) / 10.0,
-                           ))
-        return molecules
-
-
-class SelectEngine(object):
-
-    def __init__(self, db_session):
-        self.db_session = db_session
-        mz_precision, mz_precision_abs = self.db_session.query( Run.mz_precision, Run.mz_precision_abs).all()[0]
-        self.precision = 1 + mz_precision / 1e6
-        self.mz_precision_abs = mz_precision_abs
-
-    def select_fragment(self, fragid):
-        child_frags = self.db_session.query(Fragment.fragid).filter(Fragment.parentfragid == fragid).all()
-        if len(child_frags) == 0:
-            exit('Fragment not fragmented')
-        fragmented_fragids = self.db_session.query(distinct(Fragment.parentfragid))
-        smiles = self.db_session.query(Fragment.smiles).filter(Fragment.fragid == fragid).all()
-        sys.stderr.write(str(smiles) + '\n')
-        molids = self.db_session.query(Fragment.molid).filter(Fragment.smiles == smiles[0][0], Fragment.fragid.in_(fragmented_fragids))
-        self.db_session.query(Fragment).filter(~Fragment.molid.in_(molids)).delete(synchronize_session='fetch')
-        self.db_session.query(Molecule).filter(~Molecule.molid.in_(molids)).delete(synchronize_session='fetch')
-        self.db_session.commit()
-        ref_scan = self.db_session.query(distinct(Fragment.scanid)).filter(Fragment.parentfragid == fragid).all()[0][0]
-        fragids = self.db_session.query(Fragment.fragid).filter(Fragment.smiles == smiles[0][0], Fragment.fragid.in_(fragmented_fragids))
-        query_scans = self.db_session.query(distinct(Fragment.scanid)).filter(Fragment.parentfragid.in_(fragids)).all()
-        for query_scan, in query_scans:
-            dot_product = self.dot_product_scans(ref_scan, query_scan)
-            compounds = self.db_session.query(Molecule).filter(Molecule.molid.in_(
-                self.db_session.query(Fragment.molid).filter(Fragment.scanid == query_scan))).all()
-            for compound in compounds:
-                compound.reference += '</br>Scan: ' + str(query_scan) + ' - Similarity: ' + str(dot_product)
-                self.db_session.add(compound)
-        self.db_session.commit()
-
-    def dot_product_scans(self, ref_scan, query_scan):
-        ref_peaks = self.db_session.query(Peak.mz, Peak.intensity).filter(Peak.scanid == ref_scan).all()
-        query_peaks = self.db_session.query(Peak.mz, Peak.intensity).filter(Peak.scanid == query_scan).all()
-        # Start peak matching with most intense peaks first
-        ref_peaks_sorted = sorted(ref_peaks, key=itemgetter(1), reverse=True)
-        query_peaks_sorted = sorted(query_peaks, key=itemgetter(1), reverse=True)
-        dot_product = None
-        if len(query_peaks) > 0:
-            matched_intensities = []
-            for pr in ref_peaks_sorted:
-                # print ref_peaks_sorted
-                # print '-------------'
-                # print query_peaks_sorted
-                # print '============='
-                ll = min(pr[0] / self.precision, pr[0] - self.mz_precision_abs)
-                hl = max(pr[0] * self.precision, pr[0] + self.mz_precision_abs)
-                min_delta_intensity = None
-                match = None
-                for pq in query_peaks_sorted:
-                    if ll < pq[0] < hl:
-                        delta_intensity = abs(pq[1] - pr[1])
-                        if min_delta_intensity == None or min_delta_intensity > delta_intensity:
-                            min_delta_intensity = delta_intensity
-                            match = pq
-                if match == None:
-                    matched_intensities.append((pr[1], 0))
-                else:
-                    matched_intensities.append((pr[1], match[1]))
-                    query_peaks_sorted.remove(match)
-            for pq in query_peaks_sorted:
-                matched_intensities.append((0, pq[1]))
-            # print matched_intensities
-            srq = 0
-            sr = 0
-            sq = 0
-            for match in matched_intensities:
-                srq += (match[0] * match[1])**0.5
-                sr += match[0]
-                sq += match[1]
-            dot_product = srq**2 / (sr * sq)
-        return dot_product
-
-
 class ExportMoleculesEngine(object):
 
     def __init__(self, db_session):
         self.db_session = db_session
-
-    def get_scores(self, scanid):
-        return self.db_session.query(Fragment.score, Molecule.inchikey14, Molecule.formula).\
-            join((Molecule, and_(Fragment.molid == Molecule.molid))).\
-            filter(Fragment.parentfragid == 0).\
-            filter(Fragment.scanid == scanid).\
-            all()
-
-    def get_num_peaks(self, scanid):
-        return self.db_session.query(Peak).filter(Peak.scanid == scanid).count()
 
     def export_molecules(self, filename=None, columns=None, sortcolumn='refscore', descend=True):
         """ Write SDFile with candidate molecules to filename (or stdout).
@@ -1551,94 +1421,6 @@ class ExportMoleculesEngine(object):
             file.write('> <rt>\n' + str(rt) + '\n\n')
             file.write('$$$$\n')
         file.close()
-
-    def write_smiles(self, file=sys.stdout, molecules=None, columns=None, sortcolumn=None, descend=False):
-        if molecules == None:
-            if descend:
-                molecules = self.db_session.query(Molecule).order_by(desc(sortcolumn)).all()
-            else:
-                molecules = self.db_session.query(Molecule).order_by(sortcolumn).all()
-        for molecule in molecules:
-            file.write(str(molecule.name).split()[-1][1:-1] + '_' + str(molecule.inchikey14) + ' ')
-            file.write(Chem.MolToSmiles(Chem.MolFromMolBlock(str(molecule.mol))) + '\n')
-
-    def write_network1(self, filename):
-        f = open(filename + '.sif', 'w')
-        assigned_molids = self.db_session.query(distinct(Peak.assigned_molid))
-        written_molids = set([])
-        for reactant, product in self.db_session.query(Reaction.reactant, Reaction.product). \
-                filter(Reaction.reactant.in_(assigned_molids) | Reaction.product.in_(assigned_molids)).all():
-            f.write(str(reactant) + ' pp ' + str(product) + '\n')
-            written_molids.add(reactant)
-            written_molids.add(product)
-        f.close()
-        f = open(filename + '.txt', 'w')
-        assigned = assigned_molids.all()
-        for molid in written_molids:
-            if (molid,) in assigned:
-                f.write(str(molid) + ' assigned\n')
-            else:
-                f.write(str(molid) + ' unassigned\n')
-
-    def write_network2(self, filename):
-        nodes = {}
-        for reactant, product in self.db_session.query(Reaction.reactant, Reaction.product).all():
-            r = int(reactant)
-            p = int(product)
-            if r not in nodes:
-                nodes[r] = set([])
-            if p not in nodes:
-                nodes[p] = set([])
-            nodes[r].add(p)
-            nodes[p].add(r)
-        result = self.db_session.query(distinct(Peak.assigned_molid)).all()
-        assigned_molids = [x[0] for x in result]
-        start_compound = {}
-        result = self.db_session.query(Molecule.molid, Molecule.predicted).all()
-        for molid, predicted in result:
-            start_compound[molid] = predicted
-        print result
-        print assigned_molids
-        nnodes = len(nodes) + 1
-        while len(nodes) < nnodes:
-            nnodes = len(nodes)
-            print nnodes
-            nodekeys = nodes.keys()
-            for n in nodekeys:
-                if n not in assigned_molids and start_compound[n] == False:
-                    # and list(nodes[n])[0] not in assigned_molids:
-                    if len(nodes[n]) == 1:
-                        nodes[list(nodes[n])[0]].remove(n)
-                        del nodes[n]
-                    else:
-                        if len(nodes[n]) == 2:
-                            tmpnode = list(nodes[n])
-                            # if len(nodes[tmpnode[0]] & nodes[tmpnode[1]]) > 1
-                            # and tmpnode[0] not in assigned_molids and
-                            # tmpnode[1] not in assigned_molids:
-                            if len(nodes[tmpnode[0]] & nodes[tmpnode[1]]) > 1 or \
-                                    len(nodes[tmpnode[0]] & nodes[n]) > 0 or \
-                                    len(nodes[tmpnode[1]] & nodes[n]) > 0:
-                                for c in nodes[n]:
-                                    nodes[c].remove(n)
-                                del nodes[n]
-        f = open(filename + '.sif', 'w')
-        written_molids = set([])
-        connections = []
-        for n in nodes:
-            for c in nodes[n]:
-                l = set([n, c])
-                if l not in connections:
-                    f.write(str(n) + ' pp ' + str(c) + '\n')
-                    connections.append(l)
-            written_molids.add(n)
-        f.close()
-        f = open(filename + '.txt', 'w')
-        for molid in written_molids:
-            if (molid) in assigned_molids:
-                f.write(str(molid) + " " + str(start_compound[molid] + 2) + '\n')
-            else:
-                f.write(str(molid) + " " + str(start_compound[molid] + 0) + '\n')
 
 
 def search_structure(mol, mim, molcharge, peaks, max_broken_bonds, max_water_losses, precision, 

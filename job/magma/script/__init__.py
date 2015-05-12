@@ -76,7 +76,7 @@ class MagmaCommand(object):
         sc.add_argument('-u', '--use_all_peaks', help="Annotate all level 1 peaks, including those not fragmented (default: %(default)s)", action="store_true")
         sc.add_argument('--skip_fragmentation', help="Skip substructure annotation of fragment peaks (default: %(default)s)", action="store_true")
         sc.add_argument('-f', '--fast', help="Quick calculations for molecules up to 64 atoms (default: %(default)s)", action="store_true")
-        sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["pubchem","kegg","hmdb","metacyc"])
+        sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["pubchem","kegg","hmdb"])
         sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,incl_halo,min_refscore(only for PubChem) (default: %(default)s)",default=",1200,False",type=str)
         sc.add_argument('-a', '--adducts' ,default=None,type=str, help="""Specify adduct (as comma separated list) for matching at MS1.
                                                                         Positive mode: [Na,K,NH4] Negative mode: [Cl]
@@ -89,12 +89,6 @@ class MagmaCommand(object):
         sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
-
-        sc = subparsers.add_parser("select", help=self.select.__doc__, description=self.select.__doc__)
-        sc.add_argument('-f', '--frag_id', help="Fragment_identifier as selection query (default: %(default)s)", default=None,type=int)
-        sc.add_argument('db_in', type=str, help="Input sqlite database file with annotation results")
-        sc.add_argument('db_out', type=str, help="Output qlite database file with selected results")
-        sc.set_defaults(func=self.select)
 
         sc = subparsers.add_parser("export_structures", help=self.export_structures.__doc__, description=self.export_structures.__doc__)
         sc.add_argument('-f', '--filename', help="Output filename (default: stdout)", default=None, type=str)
@@ -229,12 +223,6 @@ class MagmaCommand(object):
                 logging.exception(error)
             else:
                 logging.error(error)
-
-    def select(self, args):
-        shutil.copy(args.db_in, args.db_out)
-        magma_session = self.get_magma_session(args.db_out)
-        select_engine = magma_session.get_select_engine()
-        select_engine.select_fragment(args.frag_id)
 
     def export_structures(self, args, magma_session=None):
         if magma_session == None:
