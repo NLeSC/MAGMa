@@ -20,7 +20,7 @@ before_script:
 script:
   - cd job && nosetests && cd ..
   - cd web && nosetests && cd ..
-  - cd web && karma start && cd ..
+  - cd web && node_modules/.bin/karma start && cd ..
 sudo: false
 cache:
   - web/magmaweb/static/ext-4.2.1.883
