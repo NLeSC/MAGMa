@@ -1,6 +1,8 @@
 The eMetabolomics research project
 ==================================
 
+[![Build Status](https://travis-ci.org/NLeSC/MAGMa.svg?branch=master)](https://travis-ci.org/NLeSC/MAGMa) [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/NLeSC/MAGMa/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/NLeSC/MAGMa/?branch=master)
+
 The eMetabolomics project is funded by the Netherlands eScience Center and is carried out at Wageningen University and the Netherlands eScience Center in collaboration with the Netherlands Metabolomics Centre. The project develops chemo-informatics based methods for metabolite identification and biochemical network reconstruction in an integrative metabolomics data analysis workflow.
 
 Homepage: http://www.emetabolomics.org
