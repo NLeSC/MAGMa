@@ -27,7 +27,7 @@
                     To login an account is required.
                 </p>
                 <p>
-                    An account can be requested from <a href="mailto:Lars.Ridder@wur.nl">Lars.Ridder@wur.nl</a>
+                    An account can be requested from <a href="mailto:l.ridder@esciencecenter.nl">Lars Ridder</a>
                 </p>
                 <h3>Account benefits</h3>
                 <p>
