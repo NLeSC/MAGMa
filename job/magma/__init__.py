@@ -45,7 +45,10 @@ class MagmaSession(object):
         and enables starting different engines to perform MAGMa functions """
 
     def __init__(self, db_name, description="", loglevel='info'):
-        engine = create_engine('sqlite:///' + db_name, echo=False)
+        if db_name == None:
+            engine = create_engine('sqlite://', echo=False)
+        else:
+            engine = create_engine('sqlite:///' + db_name, echo=False)
         session = sessionmaker()
         session.configure(bind=engine)
         self.db_session = session()
