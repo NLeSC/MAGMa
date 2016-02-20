@@ -9,6 +9,7 @@ import argparse
 import urllib2
 import zipfile
 import StringIO
+import base64
 from rdkit import Chem, Geometry
 from rdkit.Chem import AllChem, Descriptors
 
@@ -25,7 +26,7 @@ def process_hmdb(args):
                                              mim INTEGER NOT NULL,
                                              charge INTEGER NOT NULL,
                                              natoms INTEGER NOT NULL,
-                                             molblock BLOB,
+                                             molblock TEXT,
                                              inchikey TEXT,
                                              smiles TEXT,
                                              molform TEXT,
@@ -114,7 +115,7 @@ def process_hmdb(args):
                 print 'complex:', hmdb_id, smiles
                 continue
             conf = mol.GetConformer(0)
-            molblock = zlib.compress(''.join(record))
+            molblock = base64.encodestring(zlib.compress(''.join(record)))
             molform = Chem.rdMolDescriptors.CalcMolFormula(mol)
             mim = Chem.rdMolDescriptors.CalcExactMolWt(mol)
             charge = 0
@@ -152,7 +153,7 @@ def process_hmdb(args):
                                     hmdb_id,
                                     int(mim * 1e6),
                                     charge,
-                                    buffer(molblock),
+                                    unicode(molblock),
                                     unicode(smiles),
                                     unicode(molform),
                                     unicode(molname, 'utf-8', 'xmlcharrefreplace'),
@@ -171,7 +172,7 @@ def process_hmdb(args):
                                 int(mim * 1e6),
                                 charge,
                                 int(natoms),
-                                buffer(molblock),
+                                unicode(molblock),
                                 unicode(inchikey),
                                 unicode(smiles),
                                 unicode(molform),
