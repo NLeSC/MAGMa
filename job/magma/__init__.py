@@ -1197,6 +1197,10 @@ class PubChemEngine(object):
     """Engine to retrieve candidate molecules from PubChem"""
 
     def __init__(self, db, dbfilename='', max_64atoms=False, incl_halo='', min_refscore='', online=True):
+        self.name = db
+        self.incl_halo = False
+        if incl_halo != '' and incl_halo != 'False':
+            self.incl_halo = True
         if config.getboolean('magma job', 'structure_database.online') and online:
             self.query = self.query_online
             self.service = config.get('magma job', 'structure_database.service')+'/'+db
@@ -1204,19 +1208,13 @@ class PubChemEngine(object):
             self.query = self.query_local
             databases = {'pubchem': 'structure_database.pubchem', 'kegg': 'structure_database.kegg'}
             halo_databases = {'pubchem': 'structure_database.pubchem_halo', 'kegg': 'structure_database.kegg_halo'}
-            self.name = set
             if dbfilename == '':
                 dbfilename = config.get('magma job', databases[db])
             self.conn = sqlite3.connect(dbfilename)
             self.conn.text_factory = str
             self.c = self.conn.cursor()
-            self.incl_halo = False
-            if incl_halo != '' and incl_halo != 'False':
-                self.incl_halo = True
-                if incl_halo == 'True':
-                    halo_filename = config.get('magma job', halo_databases[db])
-                else:
-                    halo_filename = incl_halo
+            if self.incl_halo == True:
+                halo_filename = config.get('magma job', halo_databases[db])
                 self.connh = sqlite3.connect(halo_filename)
                 self.connh.text_factory = str
                 self.ch = self.connh.cursor()
@@ -1226,30 +1224,23 @@ class PubChemEngine(object):
             if max_64atoms:
                 self.where += ' AND natoms <= 64'
 
-    def query_online(self, low, high, charge, halo=False):
-        r = requests.post(self.service, data=json.dumps([[low, high, charge]]))
-        return r.json
+    def query_online(self, low, high, charge):
+        r = requests.post(self.service, data=json.dumps([low, high, charge, self.incl_halo]))
+        return r.json()
 
-    def query_local(self, low, high, charge, halo=False):
+    def query_local(self, low, high, charge):
         """ Return all molecules with given charge from HMDB between low and high mass limits """
-        if halo:
-            return self.ch.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
+        result = self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
                                 (charge, low, high)).fetchall()
-        else:
-            return self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
+        if self.incl_halo:
+            result += self.ch.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
                                 (charge, low, high)).fetchall()
+        return result
 
     def query_on_mim(self, low, high, charge):
         """ Return all molecules with given charge between low and high mass limits """
         molecules = []
         result = self.query(low, high, charge)
-        self.add_result2molecules(result, molecules)
-        if self.incl_halo:
-            result += self.query(low, high, charge, halo=True)
-            self.add_result2molecules(result, molecules)
-        return result
-
-    def add_result2molecules(self, result, molecules):
         for (cid, mim, charge, natoms, molblock, inchikey, smiles, molform, name, refs, logp) in result:
             if self.name == 'pubchem':
                 refscore = refs
@@ -1263,10 +1254,10 @@ class PubChemEngine(object):
                 for keggid in keggids[1:]:
                     reference += '<br><a href="http://www.genome.jp/dbget-bin/www_bget?cpd:' + \
                         keggid + '" target="_blank">' + keggid + ' (Kegg)</a>'
-                
-            molecules.append([cid,zlib.decompress(molblock),molform])
+            else:
+                exit(self.name)
             molecules.append(get_molecule(
-                           zlib.decompress(molblock),
+                           zlib.decompress(base64.decodestring(molblock)),
                            name+' (' + str(cid) + ')',
                            refscore,
                            0,
@@ -1278,6 +1269,7 @@ class PubChemEngine(object):
                            reference=reference,
                            logp=float(logp) / 10.0,
                            ))
+        return molecules
 
     def check_inchi(self, mim, inchikey14):
         self.c.execute('SELECT cid,name,refscore FROM molecules WHERE charge IN (-1,0,1) AND mim between ? and ? and inchikey = ?',
@@ -1313,8 +1305,8 @@ class HmdbEngine(object):
             self.c = self.conn.cursor()
         
     def query_online(self, low, high, charge):
-        r = requests.post(self.service, data=json.dumps([[low, high, charge]]))
-        return r.json
+        r = requests.post(self.service, data=json.dumps([low, high, charge, True]))
+        return r.json()
 
     def query_local(self, low, high, charge):
         """ Return all molecules with given charge from HMDB between low and high mass limits """

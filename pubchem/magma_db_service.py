@@ -1,26 +1,21 @@
 from waitress import serve
 from pyramid.config import Configurator
 
-from magma import PubChemEngine,KeggEngine,HmdbEngine
+from magma import PubChemEngine,HmdbEngine
 
 
 def masses(request):
-    db_engines = {
-                 'pubchem': PubChemEngine,
-                 'kegg': KeggEngine,
-                 'hmdb': HmdbEngine
-                 }
-    queries = request.json_body
+    query = request.json_body
+    low, high, charge, incl_halo = query
     selected_db = request.matchdict['dbname']
     if selected_db == 'hmdb':
         db_engine = HmdbEngine(online = False)
     elif selected_db == 'kegg':
-        db_engine = PubChemEngine('kegg', online = False)
+        db_engine = PubChemEngine('kegg', incl_halo = incl_halo, online = False)
     elif selected_db == 'pubchem':
-        db_engine = PubChemEngine('pubchem', online = False)
+        db_engine = PubChemEngine('pubchem', incl_halo = incl_halo, online = False)
     results = []
-    for low, high, charge in queries:
-        results += db_engine.query_local(low, high, charge)
+    return db_engine.query_local(low, high, charge)
     print results
     return results
 
@@ -31,3 +26,4 @@ if __name__ == '__main__':
     config.add_view(masses, route_name='masses', renderer='json')
     app = config.make_wsgi_app()
     serve(app, host='0.0.0.0', port=8080)
+
