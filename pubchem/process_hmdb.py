@@ -40,7 +40,7 @@ def process_hmdb(args):
         exit()
 
     if args.data_dir == None:
-        zf = urllib2.urlopen('http://www.hmdb.ca/downloads/structures.zip')
+        zf = urllib2.urlopen('http://www.hmdb.ca/system/downloads/current/structures.zip')
     else:
         zf = open(args.data_dir + 'structures.zip')
     sdfile = zipfile.ZipFile(StringIO.StringIO(zf.read())).open('structures.sdf')
@@ -103,7 +103,7 @@ def process_hmdb(args):
             elif line == "> <GENERIC_NAME>\n":
                 molname = str(sdfile.readline()[:-1])
             elif line == "> <INCHI_KEY>\n":
-                inchi_key = sdfile.readline()[9:-1]
+                inchi_key = sdfile.readline()[:-1]
         if line != "" and skip == False:
             record[3] = repr(y).rjust(3) + repr(bonds).rjust(3) + record[3][6:]
             molblock = ''.join(record)
