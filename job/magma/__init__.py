@@ -286,7 +286,7 @@ class StructureEngine(object):
         self.db_session = db_session
         self.pubchem_names = pubchem_names
         if pubchem_names:
-            self.pubchem_engine = PubChemEngine()
+            self.pubchem_engine = PubChemEngine('pubchem')
         self.metabolize_engine = None
         if call_back_url is not None:
             self.call_back_engine = CallBackEngine(call_back_url)
@@ -1199,7 +1199,7 @@ class PubChemEngine(object):
     def __init__(self, db, dbfilename='', max_64atoms=False, incl_halo='', min_refscore='', online=True):
         self.name = db
         self.incl_halo = False
-        if incl_halo != '' and incl_halo != 'False':
+        if incl_halo != '' and incl_halo != False:
             self.incl_halo = True
         if config.getboolean('magma job', 'structure_database.online') and online:
             self.query = self.query_online
@@ -1383,7 +1383,7 @@ class ExportMoleculesEngine(object):
                     columns = ['name','refscore','formula','mim']
                 for column in columns:
                     if column[:1] != '_' and column != 'mol' and column != 'metadata' and column != 'fragments' and column != 'smiles':
-                        file.write(' ' + column + '=' + str(molecule.__getattribute__(column)))
+                        file.write(' ' + column + '=' + str(molecule.__getattribute__(column)).replace(" ","_"))
                 file.write('\n')
                 
         file.close()

@@ -14,10 +14,7 @@ def masses(request):
         db_engine = PubChemEngine('kegg', incl_halo = incl_halo, online = False)
     elif selected_db == 'pubchem':
         db_engine = PubChemEngine('pubchem', incl_halo = incl_halo, online = False)
-    results = []
     return db_engine.query_local(low, high, charge)
-    print results
-    return results
 
 if __name__ == '__main__':
 

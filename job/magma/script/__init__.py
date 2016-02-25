@@ -167,9 +167,9 @@ class MagmaCommand(object):
                 for x in range(len(db_options)):
                     db_opts[x]=db_options[x]
                 if args.structure_database == 'pubchem':
-                    query_engine=magma.PubChemEngine('pubchem', db_opts[0], (db_opts[2]=='True'), db_opts[3], db_opts[4])
+                    query_engine=magma.PubChemEngine('pubchem', db_opts[0], (db_opts[2]=='True'), db_opts[3]=='True', db_opts[4])
                 elif args.structure_database == 'kegg':
-                    query_engine=magma.PubChemEngine('kegg', db_opts[0], (db_opts[2]=='True'), db_opts[3])
+                    query_engine=magma.PubChemEngine('kegg', db_opts[0], (db_opts[2]=='True'), db_opts[3]=='True')
                 elif args.structure_database == 'hmdb':
                     query_engine=magma.HmdbEngine(db_opts[0], (db_opts[2]=='True'))
                 elif args.structure_database == 'metacyc':
@@ -310,7 +310,7 @@ class MagmaCommand(object):
             magma_session = self.get_magma_session(args.db)
         export_engine = magma_session.get_export_molecules_engine()
         if args.assigned:
-            export_engine.export_assigned_molecules(args.output_format, args.filename)
+            export_engine.export_assigned_molecules(args.filename)
         else:
             export_engine.export_molecules(args.output_format, args.filename)
 

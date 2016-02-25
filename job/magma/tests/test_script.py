@@ -203,6 +203,7 @@ class TestMagmaCommand(unittest.TestCase):
         args.description = None
         args.filename = sdfile.name
         args.assigned = None
+        args.output_format = 'sdf'
         self.mc.export_structures(args)
         
         scores=''
@@ -341,6 +342,7 @@ class TestMagmaCommand(unittest.TestCase):
         args.description = None
         args.filename = sdfile.name
         args.assigned = None
+        args.output_format = 'sdf'
         self.mc.export_structures(args)
         nonmatched=0
         hl=False
