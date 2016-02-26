@@ -687,6 +687,30 @@ class MsDataEngine(object):
                 self.db_session.add(
                     Peak(scanid=scan.scanid, mz=mz, intensity=intensity))
 
+    def store_mgf(self, mgf_file):
+        mgf = open(mgf_file, 'r')
+        while mgf.readline() != 'BEGIN IONS\n':
+            pass
+        peaklist = []
+        rt=0.0
+        while True:
+            line = mgf.readline()
+            if line[:8] == "PEPMASS=":
+                precursormz = float(line.split()[0][8:])
+                precursorintensity = int(float(line.split()[1]))
+            elif line[:12] == "RTINSECONDS=":
+                rt = float(line[12:])/60
+            elif line == 'END IONS\n':
+                break
+            else:
+                try:
+                    mz = float(line.split()[0])
+                    intensity = int(float(line.split()[1]))
+                    peaklist.append([mz,intensity])
+                except:
+                    pass
+        self.store_peak_list(1, rt, precursormz, [precursormz,precursorintensity], peaklist)
+
     def store_peak_list(self, scanid, rt, precursormz, basepeak, peaklist):
         self.db_session.add(Scan(
             scanid=scanid,

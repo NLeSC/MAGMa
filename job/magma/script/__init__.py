@@ -51,7 +51,7 @@ class MagmaCommand(object):
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # read_ms_data arguments
         sc.add_argument('ms_data', type=str, help="file with MS/MS data")
-        sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml", "mass_tree","form_tree_pos","form_tree_neg"])
+        sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml", "mass_tree","form_tree_pos","form_tree_neg","mgf"])
         sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
         sc.add_argument('-m', '--max_ms_level', help="Maximum MS level to be processsed (default: %(default)s)", default=10,type=int)
         sc.add_argument('-a', '--abs_peak_cutoff', help="Absolute intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
@@ -94,7 +94,7 @@ class MagmaCommand(object):
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # annotate arguments
         sc.add_argument('ms_data', type=str, help="file with MS/MS data")
-        sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mass_tree", choices=["mass_tree","form_tree_pos","form_tree_neg"])
+        sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mass_tree", choices=["mass_tree","form_tree_pos","form_tree_neg","mgf"])
         sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
         sc.add_argument('-e', '--output_format', help="Output format for ranked compound list (default: %(default)s)", default="smiles", choices=["smiles","sdf"])
         sc.add_argument('-p', '--mz_precision', help="Maximum relative m/z error (ppm) (default: %(default)s)", default=5,type=float)
@@ -147,8 +147,11 @@ class MagmaCommand(object):
                     precursor_mz_precision=0.001,
                     max_ms_level=99,
                     call_back_url=args.call_back_url)
-            tree_type={"mass_tree":0,"form_tree_neg":-1,"form_tree_pos":1}[args.ms_data_format]
-            ms_data_engine.store_manual_tree(args.ms_data,tree_type)
+            if args.ms_data_format == "mgf":
+                ms_data_engine.store_mgf(args.ms_data)
+            else:
+                tree_type={"mass_tree":0,"form_tree_neg":-1,"form_tree_pos":1}[args.ms_data_format]
+                ms_data_engine.store_manual_tree(args.ms_data,tree_type)
 
             # annotate
             annotate_engine = magma_session.get_annotate_engine(skip_fragmentation=False,
@@ -247,6 +250,8 @@ class MagmaCommand(object):
                     call_back_url=args.call_back_url)
             if args.ms_data_format == "mzxml":
                 ms_data_engine.store_mzxml_file(args.ms_data, args.scan, args.time_limit)
+            elif args.ms_data_format == "mgf":
+                ms_data_engine.store_mgf(args.ms_data)
             else:
                 tree_type={"mass_tree":0,"form_tree_neg":-1,"form_tree_pos":1}[args.ms_data_format]
                 ms_data_engine.store_manual_tree(args.ms_data,tree_type)
