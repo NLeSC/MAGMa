@@ -1250,7 +1250,11 @@ class PubChemEngine(object):
 
     def query_online(self, low, high, charge):
         r = requests.post(self.service, data=json.dumps([low, high, charge, self.incl_halo]))
-        return r.json()
+        try:
+            result = r.json()
+        except:
+            result = r.json # for compatibility with older version of requests
+        return result
 
     def query_local(self, low, high, charge):
         """ Return all molecules with given charge from HMDB between low and high mass limits """
