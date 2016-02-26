@@ -689,7 +689,7 @@ class MsDataEngine(object):
 
     def store_mgf(self, mgf_file):
         mgf = open(mgf_file, 'r')
-        while mgf.readline() != 'BEGIN IONS\n':
+        while mgf.readline()[:10] != 'BEGIN IONS':
             pass
         peaklist = []
         rt=0.0
@@ -700,7 +700,7 @@ class MsDataEngine(object):
                 precursorintensity = int(float(line.split()[1]))
             elif line[:12] == "RTINSECONDS=":
                 rt = float(line[12:])/60
-            elif line == 'END IONS\n':
+            elif line[:8] == 'END IONS':
                 break
             else:
                 try:

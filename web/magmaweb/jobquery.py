@@ -245,6 +245,7 @@ class JobQuery(object):
         valid_formats = colander.OneOf(['mzxml',
                                         'mass_tree',
                                         'form_tree',
+                                        'mgf',
                                         ])
         schema.add(colander.SchemaNode(colander.String(),
                                        validator=valid_formats,
@@ -620,6 +621,8 @@ class JobQuery(object):
             return cls._example()
         elif selection == 'example2':
             return cls._example2()
+        elif selection == 'example3':
+            return cls._example3()
 
         return dict(scenario=[
             {'type': 'phase1', 'steps': '2'},
@@ -723,4 +726,24 @@ class JobQuery(object):
         return dict(ms_data="\n".join(example_tree),
                     ms_data_format='form_tree',
                     ionisation_mode=-1,
+                    )
+
+    @classmethod
+    def _example3(cls):
+        """Returns dictionary with params for example MS data set"""
+        example_tree = [
+            'BEGIN IONS',
+            'TITLE=CASMI 2014, Challenge 9',
+            'PEPMASS=308.0912 100.0',
+            '116.0165 3.2',
+            '144.0114 6.3',
+            '162.0219 40.2',
+            '179.0485 100.0',
+            '233.0590 21.6',
+            '290.0802 5.1',
+            'END IONS',
+        ]
+        return dict(ms_data="\n".join(example_tree),
+                    ms_data_format='mgf',
+                    ionisation_mode=1,
                     )

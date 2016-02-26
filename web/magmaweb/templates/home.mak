@@ -160,6 +160,7 @@ Ext.onReady(function() {
   // hook up example action
   form.down('component[action=loadmsdataexample]').addListener('click', scan_controller.loadExample, scan_controller);
   form.down('component[action=loadmsdataexample2]').addListener('click', scan_controller.loadExample2, scan_controller);
+  form.down('component[action=loadmsdataexample3]').addListener('click', scan_controller.loadExample3, scan_controller);
 
   var header = {
     border: false,

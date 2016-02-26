@@ -24,7 +24,8 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
     store: [
       ['mzxml', 'mzXML'],
       ['mass_tree', 'Mass Tree'],
-      ['form_tree', 'Formula Tree']
+      ['form_tree', 'Formula Tree'],
+      ['mgf', 'MGF']
     ],
     allowBlank: false,
     fieldLabel: 'Format',
@@ -47,14 +48,19 @@ Ext.define('Esc.magmaweb.view.scan.UploadFieldSet', {
     }, {
       xtype: 'button',
       margin: '0 5 0 5',
-      text: 'Chlorogenic acid (Mass Tree)',
-      flex: 1,
+      text: 'Mass Tree<br>Chlorogenic acid',
+      flex: 2,
       action: 'loadmsdataexample'
     }, {
       xtype: 'button',
-      text: 'Chlorogenic acid (Formula Tree)',
-      flex: 1,
+      text: 'Formula Tree<br>Chlorogenic acid',
+      flex: 2,
       action: 'loadmsdataexample2'
+    }, {
+      xtype: 'button',
+      text: 'MGF<br>Glutathione',
+      flex: 1,
+      action: 'loadmsdataexample3'
     }],
     anchor: '90%'
   }, {

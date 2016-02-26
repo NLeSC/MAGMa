@@ -78,6 +78,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
       'scanuploadform component[action=loadmsdataexample2]': {
         click: this.loadExample2
       },
+      'scanuploadform component[action=loadmsdataexample3]': {
+        click: this.loadExample3
+      },
       'scanuploadform component[name=ms_data_format]': {
         change: this.changeMsDataFormat
       }
@@ -423,6 +426,9 @@ Ext.define('Esc.magmaweb.controller.Scans', {
   loadExample2: function(field) {
     this._loadExample('example2');
   },
+  loadExample3: function(field) {
+    this._loadExample('example3');
+  },
   _loadExample: function(example_name) {
     var form = this.getUploadForm().getForm();
     var example_url = this.application.runInfoUrl() + '?selection=' + example_name;
@@ -497,7 +503,7 @@ Ext.define('Esc.magmaweb.controller.Scans', {
         'ms_intensity_cutoff',
         'msms_intensity_cutoff'
       ]);
-    } else if (value == 'mass_tree') {
+    } else if (value == 'mass_tree' || value == 'mgf') {
       // hide form fields not required for mass_tree
       hide_form_fields([
         'filter_heading',
