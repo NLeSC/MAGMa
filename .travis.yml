@@ -10,6 +10,7 @@ before_install:
   - conda install --yes numpy cython lxml nose coverage setuptools
   - pip install zope.interface py-bcrypt
   - cd conda && wget -nc http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip && cd .. && unzip -qnd web/magmaweb/static conda/ext-4.2.1-gpl.zip
+  - pip install http://www.parallelpython.com/downloads/pp/pp-1.6.4.zip
 install:
   - cd job && python setup.py develop && cd ..
   - python web/setup.py develop
