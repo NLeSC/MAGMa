@@ -17,6 +17,12 @@ try:
 except ImportError:
     raise Exception('RDKit with INCHI support is required')
 
+# Test if pp is present
+try:
+    import pp
+except ImportError:
+    raise Exception('Parallel Python (pp) is required')
+
 # Only use Cython if it is available, else just use the pre-generated files
 try:
     from Cython.Distutils import build_ext
@@ -46,7 +52,7 @@ setup(
                    "Topic :: Scientific/Engineering :: Chemistry",
                    ],
     packages=find_packages(),
-    install_requires=['sqlalchemy', 'lxml', 'numpy', 'pp', 'requests', 'macauthlib', 'mock', 'nose', 'coverage'],
+    install_requires=['sqlalchemy', 'lxml', 'numpy', 'requests', 'macauthlib', 'mock', 'nose', 'coverage'],
     package_data={
         'magma': ['data/*.smirks', 'script/reactor'],
         },
