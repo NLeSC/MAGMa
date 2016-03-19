@@ -1300,6 +1300,10 @@ class PubChemEngine(object):
         return molecules
 
     def check_inchi(self, mim, inchikey14):
+        """ Function to look up uploaded structures in PubChem based on inchikey. Returns refscore and reference.
+            Only available if PubChem database is installed locally""" 
+        if config.getboolean('magma job', 'structure_database.online'):
+            return False
         self.c.execute('SELECT cid,name,refscore FROM molecules WHERE charge IN (-1,0,1) AND mim between ? and ? and inchikey = ?',
                        (int(mim * 1e6) - 1, int(mim * 1e6) + 1, inchikey14))
         result = self.c.fetchall()
