@@ -408,9 +408,9 @@ sc.add_argument('-s', '--skip_names',
 sc.add_argument('-f', '--halogens',
                 help="Generate database with halogenated compounds (default: %(default)s)", action="store_true")
 sc.add_argument('-d', '--data_dir',
-                help="Directory where PubChem data is stored (default: %(default)s)", default="./", type=str)
+                help="Directory where PubChem data has been downloaded (default: %(default)s)", default="./", type=str)
 sc.add_argument('-b', '--database_dir',
-                help="Directory where PubChem databases are stored (default: %(default)s)", default="./", type=str)
+                help="Directory where MAGMa databases will be stored (default: %(default)s)", default="./", type=str)
 sc.set_defaults(func=process)
 
 args = mainparser.parse_args(sys.argv[1:])
