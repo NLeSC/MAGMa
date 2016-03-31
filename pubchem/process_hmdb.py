@@ -9,6 +9,7 @@ import argparse
 import urllib2
 import zipfile
 import StringIO
+import base64
 from rdkit import Chem, Geometry
 from rdkit.Chem import AllChem, Descriptors
 
@@ -25,7 +26,7 @@ def process_hmdb(args):
                                              mim INTEGER NOT NULL,
                                              charge INTEGER NOT NULL,
                                              natoms INTEGER NOT NULL,
-                                             molblock BLOB,
+                                             molblock TEXT,
                                              inchikey TEXT,
                                              smiles TEXT,
                                              molform TEXT,
@@ -39,7 +40,7 @@ def process_hmdb(args):
         exit()
 
     if args.data_dir == None:
-        zf = urllib2.urlopen('http://www.hmdb.ca/downloads/structures.zip')
+        zf = urllib2.urlopen('http://www.hmdb.ca/system/downloads/current/structures.zip')
     else:
         zf = open(args.data_dir + 'structures.zip')
     sdfile = zipfile.ZipFile(StringIO.StringIO(zf.read())).open('structures.sdf')
@@ -102,7 +103,7 @@ def process_hmdb(args):
             elif line == "> <GENERIC_NAME>\n":
                 molname = str(sdfile.readline()[:-1])
             elif line == "> <INCHI_KEY>\n":
-                inchi_key = sdfile.readline()[9:-1]
+                inchi_key = sdfile.readline()[:-1]
         if line != "" and skip == False:
             record[3] = repr(y).rjust(3) + repr(bonds).rjust(3) + record[3][6:]
             molblock = ''.join(record)
@@ -114,7 +115,7 @@ def process_hmdb(args):
                 print 'complex:', hmdb_id, smiles
                 continue
             conf = mol.GetConformer(0)
-            molblock = zlib.compress(''.join(record))
+            molblock = base64.encodestring(zlib.compress(''.join(record)))
             molform = Chem.rdMolDescriptors.CalcMolFormula(mol)
             mim = Chem.rdMolDescriptors.CalcExactMolWt(mol)
             charge = 0
@@ -152,7 +153,7 @@ def process_hmdb(args):
                                     hmdb_id,
                                     int(mim * 1e6),
                                     charge,
-                                    buffer(molblock),
+                                    unicode(molblock),
                                     unicode(smiles),
                                     unicode(molform),
                                     unicode(molname, 'utf-8', 'xmlcharrefreplace'),
@@ -171,7 +172,7 @@ def process_hmdb(args):
                                 int(mim * 1e6),
                                 charge,
                                 int(natoms),
-                                buffer(molblock),
+                                unicode(molblock),
                                 unicode(inchikey),
                                 unicode(smiles),
                                 unicode(molform),

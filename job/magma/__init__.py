@@ -11,6 +11,7 @@ import zlib
 import copy
 import pkg_resources
 import logging
+import json
 from lxml import etree
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
@@ -45,7 +46,10 @@ class MagmaSession(object):
         and enables starting different engines to perform MAGMa functions """
 
     def __init__(self, db_name, description="", loglevel='info'):
-        engine = create_engine('sqlite:///' + db_name, echo=False)
+        if db_name == None:
+            engine = create_engine('sqlite://', echo=False)
+        else:
+            engine = create_engine('sqlite:///' + db_name, echo=False)
         session = sessionmaker()
         session.configure(bind=engine)
         self.db_session = session()
@@ -259,13 +263,13 @@ def get_molecule(molblock, name, refscore, predicted, mim=None, smiles=None, nat
     if mim > mass_filter:
         return
     return Molecule(
-        mol=unicode(molblock, 'utf-8', 'xmlcharrefreplace'),
+        mol=unicode(molblock),
         refscore=refscore,
         inchikey14=unicode(inchikey14),
         smiles=unicode(smiles),
         formula=unicode(molform),
         predicted=predicted,
-        name=unicode(name, 'utf-8', 'xmlcharrefreplace'),
+        name=unicode(name),
         nhits=0,
         mim=mim,
         natoms=natoms,
@@ -282,7 +286,7 @@ class StructureEngine(object):
         self.db_session = db_session
         self.pubchem_names = pubchem_names
         if pubchem_names:
-            self.pubchem_engine = PubChemEngine()
+            self.pubchem_engine = PubChemEngine('pubchem')
         self.metabolize_engine = None
         if call_back_url is not None:
             self.call_back_engine = CallBackEngine(call_back_url)
@@ -682,6 +686,30 @@ class MsDataEngine(object):
             if intensity > self.abs_peak_cutoff:
                 self.db_session.add(
                     Peak(scanid=scan.scanid, mz=mz, intensity=intensity))
+
+    def store_mgf(self, mgf_file):
+        mgf = open(mgf_file, 'r')
+        while mgf.readline()[:10] != 'BEGIN IONS':
+            pass
+        peaklist = []
+        rt=0.0
+        while True:
+            line = mgf.readline()
+            if line[:8] == "PEPMASS=":
+                precursormz = float(line.split()[0][8:])
+                precursorintensity = int(float(line.split()[1]))
+            elif line[:12] == "RTINSECONDS=":
+                rt = float(line[12:])/60
+            elif line[:8] == 'END IONS':
+                break
+            else:
+                try:
+                    mz = float(line.split()[0])
+                    intensity = int(float(line.split()[1]))
+                    peaklist.append([mz,intensity])
+                except:
+                    pass
+        self.store_peak_list(1, rt, precursormz, [precursormz,precursorintensity], peaklist)
 
     def store_peak_list(self, scanid, rt, precursormz, basepeak, peaklist):
         self.db_session.add(Scan(
@@ -1192,45 +1220,72 @@ class PubChemEngine(object):
 
     """Engine to retrieve candidate molecules from PubChem"""
 
-    def __init__(self, dbfilename='', max_64atoms=False, incl_halo='', min_refscore=''):
-        self.name = 'PubChem'
-        if dbfilename == '':
-            dbfilename = config.get('magma job', 'structure_database.pubchem')
-        self.conn = sqlite3.connect(dbfilename)
-        self.conn.text_factory = str
-        self.c = self.conn.cursor()
+    def __init__(self, db, dbfilename='', max_64atoms=False, incl_halo='', min_refscore='', online=True):
+        self.name = db
         self.incl_halo = False
-        if incl_halo != '' and incl_halo != 'False':
+        if incl_halo != '' and incl_halo != False:
             self.incl_halo = True
-            if incl_halo == 'True':
-                halo_filename = config.get('magma job', 'structure_database.pubchem_halo')
-            else:
-                halo_filename = incl_halo
-            self.connh = sqlite3.connect(halo_filename)
-            self.connh.text_factory = str
-            self.ch = self.connh.cursor()
-        self.where = ''
-        if min_refscore != '':
-            self.where += ' AND refscore >= ' + min_refscore
-        if max_64atoms:
-            self.where += ' AND natoms <= 64'
+        if config.getboolean('magma job', 'structure_database.online') and online:
+            self.query = self.query_online
+            self.service = config.get('magma job', 'structure_database.service')+'/'+db
+        else:
+            self.query = self.query_local
+            databases = {'pubchem': 'structure_database.pubchem', 'kegg': 'structure_database.kegg'}
+            halo_databases = {'pubchem': 'structure_database.pubchem_halo', 'kegg': 'structure_database.kegg_halo'}
+            if dbfilename == '':
+                dbfilename = config.get('magma job', databases[db])
+            self.conn = sqlite3.connect(dbfilename)
+            self.conn.text_factory = str
+            self.c = self.conn.cursor()
+            if self.incl_halo == True:
+                halo_filename = config.get('magma job', halo_databases[db])
+                self.connh = sqlite3.connect(halo_filename)
+                self.connh.text_factory = str
+                self.ch = self.connh.cursor()
+            self.where = ''
+            if min_refscore != '':
+                self.where += ' AND refscore >= ' + min_refscore
+            if max_64atoms:
+                self.where += ' AND natoms <= 64'
+
+    def query_online(self, low, high, charge):
+        r = requests.post(self.service, data=json.dumps([low, high, charge, self.incl_halo]))
+        try:
+            result = r.json()
+        except:
+            result = r.json # for compatibility with older version of requests
+        return result
+
+    def query_local(self, low, high, charge):
+        """ Return all molecules with given charge from HMDB between low and high mass limits """
+        result = self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
+                                (charge, low, high)).fetchall()
+        if self.incl_halo:
+            result += self.ch.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
+                                (charge, low, high)).fetchall()
+        return result
 
     def query_on_mim(self, low, high, charge):
-        """ Return all molecules with given charge from PubChem between low and high mass limits """
+        """ Return all molecules with given charge between low and high mass limits """
         molecules = []
-        result = self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
-                                (charge, low, high))
-        self.add_result2molecules(result, molecules)
-        if self.incl_halo:
-            result = self.ch.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
-                                     (charge, low, high))
-            self.add_result2molecules(result, molecules)
-        return molecules
-
-    def add_result2molecules(self, result, molecules):
-        for (cid, mim, charge, natoms, molblock, inchikey, smiles, molform, name, refscore, logp) in result:
+        result = self.query(low, high, charge)
+        for (cid, mim, charge, natoms, molblock, inchikey, smiles, molform, name, refs, logp) in result:
+            if self.name == 'pubchem':
+                refscore = refs
+                reference = '<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&'+\
+                            'LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>'
+            elif self.name == 'kegg':
+                refscore = None
+                keggids = refs.split(',')
+                reference = '<a href="http://www.genome.jp/dbget-bin/www_bget?cpd:' + \
+                    keggids[0] + '" target="_blank">' + keggids[0] + ' (Kegg)</a>'
+                for keggid in keggids[1:]:
+                    reference += '<br><a href="http://www.genome.jp/dbget-bin/www_bget?cpd:' + \
+                        keggid + '" target="_blank">' + keggid + ' (Kegg)</a>'
+            else:
+                exit(self.name)
             molecules.append(get_molecule(
-                           zlib.decompress(molblock),
+                           zlib.decompress(base64.decodestring(molblock)),
                            name+' (' + str(cid) + ')',
                            refscore,
                            0,
@@ -1239,12 +1294,16 @@ class PubChemEngine(object):
                            molform=molform,
                            inchikey14=inchikey,
                            smiles=smiles,
-                           reference='<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid='+\
-                                     str(cid)+'" target="_blank">'+str(cid)+' (PubChem)</a>',
+                           reference=reference,
                            logp=float(logp) / 10.0,
                            ))
+        return molecules
 
     def check_inchi(self, mim, inchikey14):
+        """ Function to look up uploaded structures in PubChem based on inchikey. Returns refscore and reference.
+            Only available if PubChem database is installed locally""" 
+        if config.getboolean('magma job', 'structure_database.online'):
+            return False
         self.c.execute('SELECT cid,name,refscore FROM molecules WHERE charge IN (-1,0,1) AND mim between ? and ? and inchikey = ?',
                        (int(mim * 1e6) - 1, int(mim * 1e6) + 1, inchikey14))
         result = self.c.fetchall()
@@ -1257,86 +1316,42 @@ class PubChemEngine(object):
             return False
 
 
-class KeggEngine(object):
-
-    """Engine to retrieve candidate molecules from the Kegg subset of PubChem"""
-
-    def __init__(self, dbfilename='', max_64atoms=False, incl_halo=''):
-        self.name = 'Kegg'
-        if dbfilename == '':
-            dbfilename = config.get('magma job', 'structure_database.kegg')
-        self.conn = sqlite3.connect(dbfilename)
-        self.conn.text_factory = str
-        self.c = self.conn.cursor()
-        self.incl_halo = False
-        if incl_halo != '' and incl_halo != 'False':
-            self.incl_halo = True
-            if incl_halo == 'True':
-                halo_filename = config.get('magma job', 'structure_database.kegg_halo')
-            else:
-                halo_filename = incl_halo
-            self.connh = sqlite3.connect(halo_filename)
-            self.connh.text_factory = str
-            self.ch = self.connh.cursor()
-        self.where = ''
-        if max_64atoms == True:
-            self.where += ' AND natoms <= 64'
-
-    def query_on_mim(self, low, high, charge):
-        """ Return all molecules with given charge from Kegg between low and high mass limits """
-        molecules = []
-        result = self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
-                                (charge, low, high))
-        self.add_result2molecules(result, molecules)
-        if self.incl_halo:
-            result = self.ch.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
-                                     (charge, low, high))
-            self.add_result2molecules(result, molecules)
-        return molecules
-
-    def add_result2molecules(self, result, molecules):
-        for (cid, mim, charge, natoms, molblock, inchikey, smiles, molform, name, reference, logp) in result:
-            keggids = reference.split(',')
-            keggrefs = '<a href="http://www.genome.jp/dbget-bin/www_bget?cpd:' + \
-                keggids[0] + '" target="_blank">' + keggids[0] + ' (Kegg)</a>'
-            for keggid in keggids[1:]:
-                keggrefs += '<br><a href="http://www.genome.jp/dbget-bin/www_bget?cpd:' + \
-                    keggid + '" target="_blank">' + keggid + ' (Kegg)</a>'
-            molecules.append(get_molecule(
-                           zlib.decompress(molblock),
-                           name + ' (' + str(cid) + ')',
-                           None,
-                           0,
-                           mim=float(mim / 1e6),
-                           natoms=natoms,
-                           molform=molform,
-                           inchikey14=inchikey,
-                           smiles=smiles,
-                           reference=keggrefs,
-                           logp=float(logp) / 10.0,
-                           ))
-
-
 class HmdbEngine(object):
 
     """Engine to retrieve candidate molecules from HMDB"""
 
-    def __init__(self, dbfilename='', max_64atoms=False):
+    def __init__(self, dbfilename='', max_64atoms=False, online=True):
         self.name = 'Human Metabolite Database'
-        if dbfilename == '':
-            dbfilename = config.get('magma job', 'structure_database.hmdb')
-        self.where = ''
-        if max_64atoms == True:
-            self.where += ' AND natoms <= 64'
-        self.conn = sqlite3.connect(dbfilename)
-        self.conn.text_factory = str
-        self.c = self.conn.cursor()
+        if config.getboolean('magma job', 'structure_database.online') and online:
+            self.query = self.query_online
+            self.service = config.get('magma job', 'structure_database.service')+'/hmdb'
+        else:
+            self.query = self.query_local
+            if dbfilename == '':
+                dbfilename = config.get('magma job', 'structure_database.hmdb')
+            self.where = ''
+            if max_64atoms == True:
+                self.where += ' AND natoms <= 64'
+            self.conn = sqlite3.connect(dbfilename)
+            self.conn.text_factory = str
+            self.c = self.conn.cursor()
+        
+    def query_online(self, low, high, charge):
+        r = requests.post(self.service, data=json.dumps([low, high, charge, True]))
+        try:
+            result = r.json()
+        except:
+            result = r.json # for compatibility with older version of requests
+        return result
+
+    def query_local(self, low, high, charge):
+        """ Return all molecules with given charge from HMDB between low and high mass limits """
+        return self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
+                                (charge, low, high)).fetchall()
 
     def query_on_mim(self, low, high, charge):
-        """ Return all molecules with given charge from HMDB between low and high mass limits """
-        result = self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
-                                (charge, low, high))
         molecules = []
+        result = self.query(low, high, charge)
         for (cid, mim, charge, natoms, molblock, inchikey, smiles, molform, name, reference, logp) in result:
             hmdb_ids = reference.split(',')
             hmdb_refs = '<a href="http://www.hmdb.ca/metabolites/' + \
@@ -1345,7 +1360,7 @@ class HmdbEngine(object):
                 hmdb_refs += '<br><a href="http://www.hmdb.ca/metabolites/' + \
                     hmdb_id + '" target="_blank">' + hmdb_id + ' (HMDB)</a>'
             molecules.append(get_molecule(
-                           zlib.decompress(molblock),
+                           zlib.decompress(base64.decodestring(molblock)),
                            name + ' (' + str(cid) + ')',
                            None,
                            0,
@@ -1365,8 +1380,8 @@ class ExportMoleculesEngine(object):
     def __init__(self, db_session):
         self.db_session = db_session
 
-    def export_molecules(self, filename=None, columns=None, sortcolumn='refscore', descend=True):
-        """ Write SDFile with candidate molecules to filename (or stdout).
+    def export_molecules(self, output_format='sdf', filename=None, columns=None, sortcolumn='refscore', descend=True):
+        """ Write SDFile or smiles with candidate molecules to filename (or stdout).
             If data is for a single percursor ion: also provide candidate scores and sort accordingly """
         if filename is None:
             file = sys.stdout
@@ -1386,15 +1401,27 @@ class ExportMoleculesEngine(object):
             else:
                 result = self.db_session.query(Molecule, Molecule.molid).order_by(sortcolumn).all()
         for molecule, value in result:
-            file.write(molecule.mol)
-            if nprecursors == 1:
-                file.write('> <score>\n%.5f\n\n' % value)
-            if columns is None:
-                columns = dir(molecule)
-            for column in columns:
-                if column[:1] != '_' and column != 'mol' and column != 'metadata' and column != 'fragments':
-                    file.write('> <' + column + '>\n' + str(molecule.__getattribute__(column)) + '\n\n')
-            file.write('$$$$\n')
+            if output_format == 'sdf':
+                file.write(molecule.mol)
+                if nprecursors == 1:
+                    file.write('> <score>\n%.5f\n\n' % value)
+                if columns is None:
+                    columns = dir(molecule)
+                for column in columns:
+                    if column[:1] != '_' and column != 'mol' and column != 'metadata' and column != 'fragments':
+                        file.write('> <' + column + '>\n' + str(molecule.__getattribute__(column)) + '\n\n')
+                file.write('$$$$\n')
+            else:
+                file.write(molecule.smiles)
+                if nprecursors == 1:
+                    file.write(' score=%.5f' % value)
+                if columns is None:
+                    columns = ['name','refscore','formula','mim']
+                for column in columns:
+                    if column[:1] != '_' and column != 'mol' and column != 'metadata' and column != 'fragments' and column != 'smiles':
+                        file.write(' ' + column + '=' + str(molecule.__getattribute__(column)).replace(" ","_"))
+                file.write('\n')
+                
         file.close()
 
     def export_assigned_molecules(self, filename=None):

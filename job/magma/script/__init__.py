@@ -41,7 +41,7 @@ class MagmaCommand(object):
         sc.add_argument('-s', '--scenario', default=None, type=str, help="""Scenario file, each line defines a separate stage:
                                         action(glycosidase/gut/phase1[_selected]/phase2[_selected]/mass_filter),value(nsteps/mass limit)""")
         sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
-        sc.add_argument('-p', '--pubchem_names', help="Get references to PubChem (default: %(default)s)", action="store_true")
+        sc.add_argument('-p', '--pubchem_names', help="Get references to PubChem. Only available with local PubChem database (default: %(default)s)", action="store_true")
         sc.add_argument('-l', '--log', help="Set logging level (default: %(default)s)", default='info',choices=['debug','info','warn','error'])
         sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")
@@ -51,7 +51,7 @@ class MagmaCommand(object):
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # read_ms_data arguments
         sc.add_argument('ms_data', type=str, help="file with MS/MS data")
-        sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml", "mass_tree","form_tree_pos","form_tree_neg"])
+        sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml", "mass_tree","form_tree_pos","form_tree_neg","mgf"])
         sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
         sc.add_argument('-m', '--max_ms_level', help="Maximum MS level to be processsed (default: %(default)s)", default=10,type=int)
         sc.add_argument('-a', '--abs_peak_cutoff', help="Absolute intensity threshold for storing peaks in database (default: %(default)s)", default=1000,type=float)
@@ -68,8 +68,8 @@ class MagmaCommand(object):
         sc = subparsers.add_parser("annotate", help=self.annotate.__doc__, description=self.annotate.__doc__)
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # annotate arguments
-        sc.add_argument('-c', '--ms_intensity_cutoff', help="Minimum intensity of MS1 precursor ion peaks to be annotated (default: %(default)s)", default=1e6,type=float)
-        sc.add_argument('-d', '--msms_intensity_cutoff', help="Minimum intensity of of fragment peaks to be annotated, as percentage of basepeak (default: %(default)s)", default=5,type=float)
+        sc.add_argument('-c', '--ms_intensity_cutoff', help="Minimum intensity of MS1 precursor ion peaks to be annotated (default: %(default)s)", default=0,type=float)
+        sc.add_argument('-d', '--msms_intensity_cutoff', help="Minimum intensity of of fragment peaks to be annotated, as percentage of basepeak (default: %(default)s)", default=0,type=float)
         sc.add_argument('-j', '--molids', help="structure ids, comma separated", type=str)
         sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bond breaks to generate substructures (default: %(default)s)", default=3,type=int)
         sc.add_argument('-w', '--max_water_losses', help="Maximum number of additional water (OH) and/or ammonia (NH2) losses (default: %(default)s)", default=1,type=int)
@@ -90,9 +90,34 @@ class MagmaCommand(object):
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.annotate)
 
+        sc = subparsers.add_parser("light", help=self.annotate.__doc__, description=self.light.__doc__)
+        sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
+        # annotate arguments
+        sc.add_argument('ms_data', type=str, help="file with MS/MS data")
+        sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mass_tree", choices=["mass_tree","form_tree_pos","form_tree_neg","mgf"])
+        sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
+        sc.add_argument('-e', '--output_format', help="Output format for ranked compound list (default: %(default)s)", default="smiles", choices=["smiles","sdf"])
+        sc.add_argument('-p', '--mz_precision', help="Maximum relative m/z error (ppm) (default: %(default)s)", default=5,type=float)
+        sc.add_argument('-q', '--mz_precision_abs', help="Maximum absolute m/z error (Da) (default: %(default)s)", default=0.001,type=float)
+        sc.add_argument('-b', '--max_broken_bonds', help="Maximum number of bond breaks to generate substructures (default: %(default)s)", default=3,type=int)
+        sc.add_argument('-w', '--max_water_losses', help="Maximum number of additional water (OH) and/or ammonia (NH2) losses (default: %(default)s)", default=1,type=int)
+        sc.add_argument('--slow', help="Skip fast calculations of molecules up to 64 atoms (default: %(default)s)", action="store_true")
+        sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["pubchem","kegg","hmdb"])
+        sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,incl_halo,min_refscore(only for PubChem) (default: %(default)s)",default=",1200,False",type=str)
+        sc.add_argument('--adducts' ,default=None,type=str, help="""Specify adduct (as comma separated list) for matching at MS1.
+                                                                        Positive mode: [Na,K,NH4] Negative mode: [Cl]
+                                                                        (default: %(default)s)""")
+        sc.add_argument('--max_charge', help="Maximum charge state (default: %(default)s)", default=1,type=int)
+        sc.add_argument('-n', '--ncpus', help="Number of parallel cpus to use for annotation (default: %(default)s)", default=1,type=int)
+        sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
+        sc.add_argument('-l', '--log', help="Set logging level (default: %(default)s)", default='info',choices=['debug','info','warn','error'])
+        sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
+        sc.set_defaults(func=self.light)
+
         sc = subparsers.add_parser("export_structures", help=self.export_structures.__doc__, description=self.export_structures.__doc__)
         sc.add_argument('-f', '--filename', help="Output filename (default: stdout)", default=None, type=str)
         sc.add_argument('-a', '--assigned', help="Only assigned molecules (default: %(default)s)", action="store_true")
+        sc.add_argument('-e', '--output_format', help="Output format for ranked compound list (default: %(default)s)", default="smiles", choices=["smiles","sdf"])
         sc.add_argument('db', type=str, help="Sqlite database file with results")
         sc.set_defaults(func=self.export_structures)
 
@@ -105,6 +130,65 @@ class MagmaCommand(object):
     def init_db(self,args):
         """Initialize database"""
         return self.get_magma_session(args.db,"")
+    
+    def light(self, args):
+        """
+        This option runs all MAGMa components in one go to generate a ranked list of compounds (smiles of SDF) for a single spectrum/spectral tree.
+        (This will not create a database file for the webapplication)
+        """
+        try:
+
+            # read_ms_data
+            magma_session = self.get_magma_session(None, args.description, args.log)
+            ms_data_engine = magma_session.get_ms_data_engine(ionisation_mode=args.ionisation_mode,
+                    abs_peak_cutoff=0,
+                    mz_precision=args.mz_precision,
+                    mz_precision_abs=args.mz_precision_abs,
+                    precursor_mz_precision=0.001,
+                    max_ms_level=99,
+                    call_back_url=args.call_back_url)
+            if args.ms_data_format == "mgf":
+                ms_data_engine.store_mgf(args.ms_data)
+            else:
+                tree_type={"mass_tree":0,"form_tree_neg":-1,"form_tree_pos":1}[args.ms_data_format]
+                ms_data_engine.store_manual_tree(args.ms_data,tree_type)
+
+            # annotate
+            annotate_engine = magma_session.get_annotate_engine(skip_fragmentation=False,
+                max_broken_bonds=args.max_broken_bonds,
+                max_water_losses=args.max_water_losses,
+                ms_intensity_cutoff=0,
+                msms_intensity_cutoff=0,
+                adducts=args.adducts,
+                max_charge=args.max_charge,
+                call_back_url=args.call_back_url)
+            annotate_engine.build_spectra()
+            pubchem_molids=[]
+            if args.structure_database != "":
+                db_opts=['','','','','']
+                db_options=args.db_options.split(',')
+                for x in range(len(db_options)):
+                    db_opts[x]=db_options[x]
+                if args.structure_database == 'pubchem':
+                    query_engine=magma.PubChemEngine('pubchem', db_opts[0], (db_opts[2]=='True'), db_opts[3]=='True', db_opts[4])
+                elif args.structure_database == 'kegg':
+                    query_engine=magma.PubChemEngine('kegg', db_opts[0], (db_opts[2]=='True'), db_opts[3]=='True')
+                elif args.structure_database == 'hmdb':
+                    query_engine=magma.HmdbEngine(db_opts[0], (db_opts[2]=='True'))
+                elif args.structure_database == 'metacyc':
+                    query_engine=magma.MetaCycEngine(db_opts[0], (db_opts[2]=='True'))
+                pubchem_molids=annotate_engine.get_db_candidates(query_engine, db_opts[1])
+            annotate_engine.search_structures(ncpus=args.ncpus, fast= not args.slow, time_limit=args.time_limit)
+            magma_session.commit()
+            # export results
+            export_engine = magma_session.get_export_molecules_engine()
+            export_engine.export_molecules(args.output_format)
+
+        except Exception as error:
+            if args.log == 'debug':
+                logging.exception(error)
+            else:
+                logging.error(error)
 
     def add_structures(self, args, magma_session=None):
         try:
@@ -166,6 +250,8 @@ class MagmaCommand(object):
                     call_back_url=args.call_back_url)
             if args.ms_data_format == "mzxml":
                 ms_data_engine.store_mzxml_file(args.ms_data, args.scan, args.time_limit)
+            elif args.ms_data_format == "mgf":
+                ms_data_engine.store_mgf(args.ms_data)
             else:
                 tree_type={"mass_tree":0,"form_tree_neg":-1,"form_tree_pos":1}[args.ms_data_format]
                 ms_data_engine.store_manual_tree(args.ms_data,tree_type)
@@ -202,9 +288,9 @@ class MagmaCommand(object):
                 for x in range(len(db_options)):
                     db_opts[x]=db_options[x]
                 if args.structure_database == 'pubchem':
-                    query_engine=magma.PubChemEngine(db_opts[0], (db_opts[2]=='True'), db_opts[3], db_opts[4])
+                    query_engine=magma.PubChemEngine('pubchem', db_opts[0], (db_opts[2]=='True'), db_opts[3]=='True', db_opts[4])
                 elif args.structure_database == 'kegg':
-                    query_engine=magma.KeggEngine(db_opts[0], (db_opts[2]=='True'), db_opts[3])
+                    query_engine=magma.PubChemEngine('kegg', db_opts[0], (db_opts[2]=='True'), db_opts[3]=='True')
                 elif args.structure_database == 'hmdb':
                     query_engine=magma.HmdbEngine(db_opts[0], (db_opts[2]=='True'))
                 elif args.structure_database == 'metacyc':
@@ -231,7 +317,7 @@ class MagmaCommand(object):
         if args.assigned:
             export_engine.export_assigned_molecules(args.filename)
         else:
-            export_engine.export_molecules(args.filename)
+            export_engine.export_molecules(args.output_format, args.filename)
 
     def run(self, argv=sys.argv[1:]):
         """Parse arguments and run subcommand"""
