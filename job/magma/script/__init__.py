@@ -50,7 +50,7 @@ class MagmaCommand(object):
         sc = subparsers.add_parser("read_ms_data", help=self.read_ms_data.__doc__, description=self.read_ms_data.__doc__)
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # read_ms_data arguments
-        sc.add_argument('ms_data', type=str, help="file with MS/MS data")
+        sc.add_argument('ms_data', type=str, help="file with LC-MS/MS data")
         sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mzxml", choices=["mzxml", "mass_tree","form_tree_pos","form_tree_neg","mgf"])
         sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
         sc.add_argument('-m', '--max_ms_level', help="Maximum MS level to be processsed (default: %(default)s)", default=10,type=int)
@@ -93,7 +93,7 @@ class MagmaCommand(object):
         sc = subparsers.add_parser("light", help=self.annotate.__doc__, description=self.light.__doc__)
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # annotate arguments
-        sc.add_argument('ms_data', type=str, help="file with MS/MS data")
+        sc.add_argument('ms_data', type=str, help="file with LC-MS/MS data")
         sc.add_argument('-f', '--ms_data_format', help="MS data input format (default: %(default)s)", default="mass_tree", choices=["mass_tree","form_tree_pos","form_tree_neg","mgf"])
         sc.add_argument('-i', '--ionisation_mode', help="Ionisation mode (default: %(default)s)", default="1", choices=["-1", "1"])
         sc.add_argument('-e', '--output_format', help="Output format for ranked compound list (default: %(default)s)", default="smiles", choices=["smiles","sdf"])
@@ -130,7 +130,7 @@ class MagmaCommand(object):
     def init_db(self,args):
         """Initialize database"""
         return self.get_magma_session(args.db,"")
-    
+
     def light(self, args):
         """
         This option runs all MAGMa components in one go to generate a ranked list of compounds (smiles of SDF) for a single spectrum/spectral tree.

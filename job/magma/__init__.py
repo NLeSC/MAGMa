@@ -498,7 +498,7 @@ class StructureEngine(object):
 
 class MsDataEngine(object):
 
-    """ Engine to read MS/MS data """
+    """ Engine to read LC-MS/MS data """
 
     def __init__(self, db_session, ionisation_mode, abs_peak_cutoff, mz_precision, mz_precision_abs,
                  precursor_mz_precision, max_ms_level, call_back_url=None):
@@ -825,7 +825,7 @@ class MsDataEngine(object):
 
 class AnnotateEngine(object):
 
-    """ Engine to perform MAGMa annotation of the MS/MS data based candidate molecules present
+    """ Engine to perform MAGMa annotation of the LC-MS/MS data based candidate molecules present
         or retrieved from a chemical database """
 
     def __init__(self, db_session, skip_fragmentation, max_broken_bonds, max_water_losses,
@@ -1301,7 +1301,7 @@ class PubChemEngine(object):
 
     def check_inchi(self, mim, inchikey14):
         """ Function to look up uploaded structures in PubChem based on inchikey. Returns refscore and reference.
-            Only available if PubChem database is installed locally""" 
+            Only available if PubChem database is installed locally"""
         if config.getboolean('magma job', 'structure_database.online'):
             return False
         self.c.execute('SELECT cid,name,refscore FROM molecules WHERE charge IN (-1,0,1) AND mim between ? and ? and inchikey = ?',
@@ -1335,7 +1335,7 @@ class HmdbEngine(object):
             self.conn = sqlite3.connect(dbfilename)
             self.conn.text_factory = str
             self.c = self.conn.cursor()
-        
+
     def query_online(self, low, high, charge):
         r = requests.post(self.service, data=json.dumps([low, high, charge, True]))
         try:
@@ -1421,7 +1421,7 @@ class ExportMoleculesEngine(object):
                     if column[:1] != '_' and column != 'mol' and column != 'metadata' and column != 'fragments' and column != 'smiles':
                         file.write(' ' + column + '=' + str(molecule.__getattribute__(column)).replace(" ","_"))
                 file.write('\n')
-                
+
         file.close()
 
     def export_assigned_molecules(self, filename=None):

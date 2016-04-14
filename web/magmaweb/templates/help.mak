@@ -16,8 +16,8 @@
                 <h1>MAGMa Help page</h1>
                 <h2 id="home">Home page</h2>
                 The home page enables to run a new MAGMa job. This requires three types of input:
-                <h3 id="msdata">MS Data</h3>
-                MS Data can be imported, either as file or via the text field, as:
+                <h3 id="msdata">LC-MS/MS Data</h3>
+                LC-MS/MS Data can be imported, either as file or via the text field, as:
                 <ul>
                     <li>mzXML: a public dataformat that can be generated with
                         <ul>
