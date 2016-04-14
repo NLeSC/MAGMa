@@ -63,7 +63,7 @@ Ext.onReady(function() {
     	margin: 5
     },
     items:[{
-    	title: 'MS Data',
+    	title: 'LC-MS/MS Data',
         xtype : 'uploadmsdatafieldset',
         flex: 1,
         minHeight: 490,
