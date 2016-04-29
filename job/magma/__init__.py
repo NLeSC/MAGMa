@@ -1225,7 +1225,7 @@ class PubChemEngine(object):
         self.incl_halo = False
         if incl_halo != '' and incl_halo != False:
             self.incl_halo = True
-        if config.getboolean('magma job', 'structure_database.online') and online:
+        if config.getboolean('magma job', 'structure_database.online') and online and dbfilename == '':
             self.query = self.query_online
             self.service = config.get('magma job', 'structure_database.service')+'/'+db
         else:
@@ -1322,7 +1322,7 @@ class HmdbEngine(object):
 
     def __init__(self, dbfilename='', max_64atoms=False, online=True):
         self.name = 'Human Metabolite Database'
-        if config.getboolean('magma job', 'structure_database.online') and online:
+        if config.getboolean('magma job', 'structure_database.online') and online and dbfilename == "":
             self.query = self.query_online
             self.service = config.get('magma job', 'structure_database.service')+'/hmdb'
         else:
