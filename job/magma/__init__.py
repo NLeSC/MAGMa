@@ -1380,13 +1380,9 @@ class ExportMoleculesEngine(object):
     def __init__(self, db_session):
         self.db_session = db_session
 
-    def export_molecules(self, output_format='sdf', filename=None, columns=None, sortcolumn='refscore', descend=True):
-        """ Write SDFile or smiles with candidate molecules to filename (or stdout).
+    def export_molecules(self, output_format='sdf', file=sys.stdout, columns=None, sortcolumn='refscore', descend=True):
+        """ Write SDFile or smiles with candidate molecules to file (or stdout).
             If data is for a single percursor ion: also provide candidate scores and sort accordingly """
-        if filename is None:
-            file = sys.stdout
-        else:
-            file = open(filename, 'w')
         # If data is for a single percursor ion: also provide candidate scores and sort accordingly
         nprecursors = self.db_session.query(Fragment.mz, Fragment.scanid).\
                       filter(Fragment.parentfragid == 0).distinct().count()
@@ -1422,15 +1418,9 @@ class ExportMoleculesEngine(object):
                         file.write(' ' + column + '=' + str(molecule.__getattribute__(column)).replace(" ","_"))
                 file.write('\n')
                 
-        file.close()
-
-    def export_assigned_molecules(self, filename=None):
-        """ Write SDFile with assigned candidate molecules to filename (or stdout).
+    def export_assigned_molecules(self, file=sys.stdout):
+        """ Write SDFile with assigned candidate molecules to file (or stdout).
             Include scanid, RT and m/z of assigned peaks """
-        if filename is None:
-            file = sys.stdout
-        else:
-            file = open(filename, 'w')
         result = self.db_session.query(Molecule, Peak, Scan.rt).\
                  filter(Molecule.molid == Peak.assigned_molid).filter(Peak.scanid == Scan.scanid).all()
         for molecule, peak, rt in result:
@@ -1445,8 +1435,6 @@ class ExportMoleculesEngine(object):
                     file.write('> <' + column + '>\n' + str(peak.__getattribute__(column)) + '\n\n')
             file.write('> <rt>\n' + str(rt) + '\n\n')
             file.write('$$$$\n')
-        file.close()
-
 
 def search_structure(mol, mim, molcharge, peaks, max_broken_bonds, max_water_losses, precision,
                      mz_precision_abs, use_all_peaks, ionisation_mode, skip_fragmentation, fast, ions):

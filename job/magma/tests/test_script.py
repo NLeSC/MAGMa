@@ -3,6 +3,7 @@ import argparse
 import magma.script
 import tempfile, os
 import pkg_resources
+from StringIO import StringIO
 from magma.models import Base, Molecule, Scan, Peak, Fragment, Run
 
 class TestMagmaCommand(unittest.TestCase):
@@ -218,6 +219,58 @@ class TestMagmaCommand(unittest.TestCase):
 
         os.remove(sdfile.name)
         os.remove(dbfile.name)
+
+    def test_light_glutathion_mgf(self):
+        treefile = tempfile.NamedTemporaryFile(delete=False)
+
+        args = argparse.Namespace()
+        args.ms_data = treefile.name
+        args.description = 'Example'
+        args.ionisation_mode = 1
+        args.abs_peak_cutoff = 0
+        args.mz_precision = 5
+        args.mz_precision_abs = 0.001
+        args.precursor_mz_precision = 0.005
+        args.max_ms_level = 5
+        args.ms_data_format = 'mgf'
+        args.log = 'debug'
+        args.call_back_url = None
+
+        # allow,but not require, commas at the end of a line
+        treefile.write("""BEGIN IONS
+TITLE=CASMI 2014, Challenge 9
+PEPMASS=308.0912 100.0
+16.0165 3.2
+144.0114 6.3
+162.0219 40.2
+179.0485 100.0
+233.0590 21.6
+290.0802 5.1
+END IONS
+""")
+        treefile.close()
+
+        args.skip_fragmentation = False
+        args.max_broken_bonds = 3
+        args.max_water_losses = 1
+        args.adducts = None
+        args.max_charge = 1
+        args.ncpus = 1
+        args.slow = False
+        args.time_limit = None
+        args.structure_database = ""
+
+        args.structure_database = 'hmdb'
+        args.db_options=pkg_resources.resource_filename('magma', "tests/HMDB_MAGMa_test.db")
+        args.read_molecules = 'NC(CCC(=O)NC(CS)C(=O)NCC(=O)O)C(=O)O'
+        args.output_format = 'smiles'
+        out = StringIO()
+        self.mc.light(args, out)
+        
+        self.assertEqual(out.getvalue(),u'NC(CCC(=O)NC(CS)C(=O)NCC(=O)O)C(=O)O score=1.22932 name= refscore=None formula=C10H17N3O6S mim=307.083805984\n')
+
+        os.remove(treefile.name)
+        
 
     def test_JWH015_example_with_fast_option(self):
         dbfile = tempfile.NamedTemporaryFile(delete=False)

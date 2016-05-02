@@ -104,9 +104,10 @@ class MagmaCommand(object):
         sc.add_argument('--slow', help="Skip fast calculations of molecules up to 64 atoms (default: %(default)s)", action="store_true")
         sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["pubchem","kegg","hmdb"])
         sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,incl_halo,min_refscore(only for PubChem) (default: %(default)s)",default=",1200,False",type=str)
-        sc.add_argument('--adducts' ,default=None,type=str, help="""Specify adduct (as comma separated list) for matching at MS1.
+        sc.add_argument('-a', '--adducts' , default=None,type=str, help="""Specify adduct (as comma separated list) for matching at MS1.
                                                                         Positive mode: [Na,K,NH4] Negative mode: [Cl]
                                                                         (default: %(default)s)""")
+        sc.add_argument('-r', '--read_molecules', default=None, type=str, help="Read molecules from filename.sdf, from filename.smiles, or from a smiles string")
         sc.add_argument('--max_charge', help="Maximum charge state (default: %(default)s)", default=1,type=int)
         sc.add_argument('-n', '--ncpus', help="Number of parallel cpus to use for annotation (default: %(default)s)", default=1,type=int)
         sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
@@ -131,7 +132,7 @@ class MagmaCommand(object):
         """Initialize database"""
         return self.get_magma_session(args.db,"")
     
-    def light(self, args):
+    def light(self, args, file=sys.stdout):
         """
         This option runs all MAGMa components in one go to generate a ranked list of compounds (smiles of SDF) for a single spectrum/spectral tree.
         (This will not create a database file for the webapplication)
@@ -152,6 +153,16 @@ class MagmaCommand(object):
             else:
                 tree_type={"mass_tree":0,"form_tree_neg":-1,"form_tree_pos":1}[args.ms_data_format]
                 ms_data_engine.store_manual_tree(args.ms_data,tree_type)
+            magma_session.commit()
+
+            # read structures
+            if args.read_molecules != None:
+                struct_engine = magma_session.get_structure_engine()
+                if args.read_molecules[-4:] == '.sdf':
+                    struct_engine.read_sdf(args.read_molecules)
+                else:
+                    struct_engine.read_smiles(args.read_molecules)
+                magma_session.commit()
 
             # annotate
             annotate_engine = magma_session.get_annotate_engine(skip_fragmentation=False,
@@ -182,7 +193,7 @@ class MagmaCommand(object):
             magma_session.commit()
             # export results
             export_engine = magma_session.get_export_molecules_engine()
-            export_engine.export_molecules(args.output_format)
+            export_engine.export_molecules(args.output_format, file=file)
 
         except Exception as error:
             if args.log == 'debug':
@@ -315,9 +326,9 @@ class MagmaCommand(object):
             magma_session = self.get_magma_session(args.db)
         export_engine = magma_session.get_export_molecules_engine()
         if args.assigned:
-            export_engine.export_assigned_molecules(args.filename)
+            export_engine.export_assigned_molecules(file = open(args.filename, 'w'))
         else:
-            export_engine.export_molecules(args.output_format, args.filename)
+            export_engine.export_molecules(args.output_format, file = open(args.filename, 'w'))
 
     def run(self, argv=sys.argv[1:]):
         """Parse arguments and run subcommand"""
