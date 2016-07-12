@@ -697,7 +697,10 @@ class MsDataEngine(object):
             line = mgf.readline()
             if line[:8] == "PEPMASS=":
                 precursormz = float(line.split()[0][8:])
-                precursorintensity = float(line.split()[1])
+                if len(line.split()) > 1:
+                    precursorintensity = float(line.split()[1])
+                else:
+                    precursorintensity = 100.0
             elif line[:12] == "RTINSECONDS=":
                 rt = float(line[12:])/60
             elif line[:8] == 'END IONS':
