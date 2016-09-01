@@ -8,7 +8,7 @@ README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = ['pyramid==1.4.5',
-            'SQLAlchemy',
+            'SQLAlchemy>=0.8.0,<1.1.0',
             'pyramid_tm',
             'pyramid_multiauth',
             'pyramid_macauth',
