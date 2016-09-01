@@ -12,7 +12,7 @@ RUN pip install http://www.parallelpython.com/downloads/pp/pp-1.6.4.zip
 
 RUN apt-get update && apt-get install  -y -q gcc 
 
-RUN git clone -b master https://github.com/NLeSC/MAGMa.git
+ADD ./job /MAGMa/job
 
 WORKDIR /MAGMa/job
 RUN /opt/conda/bin/python setup.py develop
@@ -24,3 +24,4 @@ WORKDIR /data
 VOLUME /data
 
 ENTRYPOINT ["magma"]
+
