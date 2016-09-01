@@ -17,7 +17,7 @@ RUN git clone -b master https://github.com/NLeSC/MAGMa.git
 WORKDIR /MAGMa/job
 RUN /opt/conda/bin/python setup.py develop
 
-WORKDIR /
+WORKDIR /root
 RUN echo '[magma job]\nstructure_database.online = True\nstructure_database.service = http://www.emetabolomics.org/magma/molecules' > magma_job.ini
 
 WORKDIR /data
