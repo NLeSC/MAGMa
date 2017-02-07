@@ -43,7 +43,7 @@ MAGMa requires
 RDKit installation
 ~~~~~~~~~~~~~~~~~~
 
-See https://github.com/rdkit/rdkit/blob/master/Docs/Book/Install.rst for RDKit installation instructions.
+See https://github.com/rdkit/rdkit/blob/master/Docs/Book/Install.md for RDKit installation instructions.
 Download release from https://github.com/rdkit/rdkit/releases
 
 .. code-block:: bash
