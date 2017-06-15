@@ -25,17 +25,17 @@ def process(args):
         kegg_info = parse_kegg_file(args.kegg)
         print len(kegg_info), 'kegg compound names read'
     if not args.skip_names:
-        create_names_db(args.data_dir)
+        create_names_db(args.data_dir, args.database_dir)
     create_pubchem_dbs(args.data_dir, args.database_dir, kegg_info, args.halogens)
 
 
-def create_names_db(data_dir):
+def create_names_db(data_dir, dbs_dir):
     "Generate Pubchem_names.db which is used later by create_pubchem_dbs"
     try:
-        os.remove(data_dir + "/Pubchem_Names.db")
+        os.remove(dbs_dir + "/Pubchem_Names.db")
     except:
         pass
-    conn = sqlite3.connect(data_dir + "/Pubchem_Names.db")
+    conn = sqlite3.connect(dbs_dir + "/Pubchem_Names.db")
     curs = conn.cursor()
     curs.execute("CREATE TABLE names (cid INTEGER PRIMARY KEY, name TEXT, refscore INTEGER)")
     meshfile = gzip.open(data_dir + "/ftp.ebi.ac.uk/pub/databases/pubchem/Compound/Extras/CID-MeSH.gz")
@@ -64,8 +64,11 @@ def create_names_db(data_dir):
             name = mesh[curr_cid]
         while splitnames[0] == curr_cid:
             splitnames = namesfile.readline().split("\t")
-        curs.execute('INSERT INTO names (cid, name, refscore) VALUES (?,?,?)', (int(
-            curr_cid), unicode(name, 'utf-8', 'xmlcharrefreplace'), sid_count))
+        try:
+            curs.execute('INSERT INTO names (cid, name, refscore) VALUES (?,?,?)', (int(
+                curr_cid), unicode(name, 'utf-8', 'xmlcharrefreplace'), sid_count))
+        except:
+            print 'Compound name:\n', name, '\ncould not be encoded.'
     conn.commit()
 
 
@@ -110,15 +113,15 @@ def create_pubchem_dbs(data_dir, dbs_dir, kegg_info, halogens):
     pubchem_dir = data_dir + \
         "/ftp.ebi.ac.uk/pub/databases/pubchem/Compound/CURRENT-Full/SDF/"
     # open database with compound names
-    conn_names = sqlite3.connect(data_dir + "/Pubchem_Names.db")
+    conn_names = sqlite3.connect(dbs_dir + "/Pubchem_Names.db")
     curs_names = conn_names.cursor()
 
     # generate a database with a list of all compound SDFs
     try:
-        os.remove(data_dir + "/Pubchem_Listing.db")
+        os.remove(dbs_dir + "/Pubchem_Listing.db")
     except:
         pass
-    conn_list = sqlite3.connect(data_dir + '/Pubchem_Listing.db')
+    conn_list = sqlite3.connect(dbs_dir + '/Pubchem_Listing.db')
     curs_list = conn_list.cursor()
     curs_list.execute(
         'CREATE TABLE files (file TEXT UNIQUE NOT NULL, processed INTEGER, time REAL)')
@@ -415,3 +418,4 @@ sc.set_defaults(func=process)
 
 args = mainparser.parse_args(sys.argv[1:])
 args.func(args)
+
