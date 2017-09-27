@@ -32,8 +32,7 @@ Or by using yui compressor
    wget https://github.com/yui/yuicompressor/releases/download/v2.4.8/yuicompressor-2.4.8.jar
    java -jar yuicompressor-2.4.8.jar ext-debug.js -o ext.js
 
-2. Create users and register jobs see :ref:`User management <user>` or `docs/user.rst <docs/user.rst>`_.
-3. Install MAGMa web and it's dependencies
+2. Install MAGMa web and it's dependencies
 
 .. code-block:: bash
 
@@ -42,11 +41,13 @@ Or by using yui compressor
    cd web
    python setup.py develop
 
+3. Create users and register jobs see :ref:`User management <user>` or `docs/user.rst <docs/user.rst>`_.
 4. Configure and start web server
 
 .. code-block:: bash
 
    cp production.ini-dist development.ini # make copy of example configuration
+   mkdir data # default location; to store data elsewhere modify development.ini
    pserve development.ini --reload # starts web server
 
 Goto http://localhost:6543/magma

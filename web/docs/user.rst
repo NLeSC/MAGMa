@@ -3,7 +3,12 @@
 User & job management
 =====================
 
-Users and jobs can be added/edited/deleted using the `magma-web` script.
+Users and jobs can be added/edited/deleted using the `magma-web` script. For options, run:
+
+.. code-block:: bash
+
+   magma-web -h
+   magma-web add -h
 
 Anonymous and restricted mode
 =============================
