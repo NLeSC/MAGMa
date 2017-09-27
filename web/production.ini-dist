@@ -21,7 +21,7 @@ cookie.path = magma
 # It's not needed to create a user account
 # A route requiring permission will create a guest account with an unique id.
 # The login/logout button will be hidden as they have no function
-auto_register = false
+auto_register = true
 # force restriction so calculations go faster
 restricted = false
 
@@ -31,11 +31,11 @@ access_token.expires_in = 30758400
 # account used for updating status of jobs
 monitor_user = joblauncher
 
-# user database
+# user database (directory should exist)
 sqlalchemy.url = sqlite:///%(here)s/data/users.db?timeout=30
 
 # In magmaweb/static/ which ExtJS directory to use
-extjsroot = extjs-4.2.0
+extjsroot = ext-4.2.1.883
 
 jobfactory.root_dir = %(here)s/data/jobs
 # url to which job request is submitted
@@ -46,9 +46,9 @@ jobfactory.submit_url = http://localhost:9998/job
 # Example script:
 # tar -zxf Magma-1.1.tar.gz
 # Magma-1.1/magma "$@"
-jobfactory.init_script: tar -zxf Magma-1.1-rh57-x86_64.tar.gz
-  export PATH=Magma-1.1:$PATH
-jobfactory.tarball = /home/stefanv/workspace/magma/job/Magma-1.1.tar.gz
+#jobfactory.init_script: tar -zxf Magma-1.1-rh57-x86_64.tar.gz
+#  export PATH=Magma-1.1:$PATH
+#jobfactory.tarball = /home/stefanv/workspace/magma/job/Magma-1.1.tar.gz
 
 # To submit job to local installation of MAGMaJob
 jobfactory.init_script = . /home/stefanv/workspace/magma/env/bin/activate

@@ -161,7 +161,8 @@ Then start uWSGI with:
 Minimize javascript
 -------------------
 
-Install Sencha SDK tools by following instructions at http://www.sencha.com/products/sencha-cmd .
+Install Sencha SDK tools by following instructions at http://www.sencha.com/products/sencha-cmd use version 4.x.x.
+Direct download https://cdn.sencha.com/cmd/4.0.5.87/SenchaCmd-4.0.5.87-linux-x64.run.zip.
 
 Then concatenate and compress javascript with:
 

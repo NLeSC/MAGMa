@@ -2,7 +2,36 @@ MAGMa
 =====
 
 MAGMa is a abbreviation for 'Ms Annotation based on in silico Generated Metabolites'.
-Magma subproject which performs actual calculations.
+MAGMa subproject which performs actual calculations.
+
+Docker
+------
+
+The MAGMa command-line script can be executed in a Docker container. For more information on installing and running Docker see https://www.docker.com/.
+With the Docker image it is particularly straightforward to run the "light" subcommand which takes a single MS/MS spectrum as input, retrieves candidate structures from the online databases or a local file and writes the result as smiles or sdf to stdout.
+
+Examples:
+
+.. code-block:: bash
+
+   $ docker run nlesc/magma light -h
+   $ cat >glutathione.mgf 
+   BEGIN IONS
+   TITLE=CASMI 2014, Challenge 9
+   PEPMASS=308.0912 100.0
+   116.0165 3.2
+   144.0114 6.3
+   162.0219 40.2
+   179.0485 100.0
+   233.0590 21.6
+   290.0802 5.1
+   END IONS
+   ^d
+   $ docker run -v $PWD:/data nlesc/magma light -f mgf -s hmdb glutathione.mgf
+   
+
+
+   
 
 Requirements
 ------------
@@ -14,7 +43,7 @@ MAGMa requires
 RDKit installation
 ~~~~~~~~~~~~~~~~~~
 
-See https://github.com/rdkit/rdkit/blob/master/Docs/Book/Install.rst for RDKit installation instructions.
+See https://github.com/rdkit/rdkit/blob/master/Docs/Book/Install.md for RDKit installation instructions.
 Download release from https://github.com/rdkit/rdkit/releases
 
 .. code-block:: bash

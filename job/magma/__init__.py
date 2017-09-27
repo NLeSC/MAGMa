@@ -631,18 +631,24 @@ class MsDataEngine(object):
                         decoded = zlib.decompress(decoded)
                 except:
                     pass
+                double_precision = False
+                try:
+                    if child.attrib['precision'] == '64':
+                        double_precision = True
+                except:
+                    pass
                 if comp is None or len(comp) == 0:
-                    self.store_mzxml_peaks(scan, decoded)
+                    self.store_mzxml_peaks(scan, decoded, double_precision)
                 else:
                     # generate composite spectrum with the existing scan of the same precursor
-                    self.merge_spectrum(comp[0], scan, decoded)
+                    self.merge_spectrum(comp[0], scan, decoded, double_precision)
             if child.tag == namespace + 'scan' and int(child.attrib['msLevel']) <= self.max_ms_level:
                 self.store_mzxml_scan(child, scan.scanid, namespace)
         if comp is None or len(comp) == 0:
             self.db_session.add(scan)
         self.db_session.flush()
 
-    def merge_spectrum(self, existing_scan, newscan, decoded):
+    def merge_spectrum(self, existing_scan, newscan, decoded, double_precision):
         """ Generate composite spectrum: in case of matching m/z values, keep the peak with
             highest intensity """
         logger.info('Merging scans ' + str(existing_scan.scanid) + ' and ' + str(newscan.scanid))
@@ -654,8 +660,12 @@ class MsDataEngine(object):
             existing_scan.basepeakintensity = newscan.basepeakintensity
             existing_scan.basepeakmz = newscan.basepeakmz
         self.db_session.add(existing_scan)
-        tmp_size = len(decoded) / 4
-        unpack_format1 = ">%df" % tmp_size
+        if double_precision:
+            tmp_size = len(decoded) / 8
+            unpack_format1 = ">%dd" % tmp_size
+        else:
+            tmp_size = len(decoded) / 4
+            unpack_format1 = ">%df" % tmp_size
         unpacked = struct.unpack(unpack_format1, decoded)
         for mz, intensity in zip(unpacked[::2], unpacked[1::2]):
             if intensity > self.abs_peak_cutoff:
@@ -678,9 +688,13 @@ class MsDataEngine(object):
                     if replace:
                         self.db_session.add(Peak(scanid=existing_scan.scanid, mz=mz, intensity=intensity))
 
-    def store_mzxml_peaks(self, scan, decoded):
-        tmp_size = len(decoded) / 4
-        unpack_format1 = ">%df" % tmp_size
+    def store_mzxml_peaks(self, scan, decoded, double_precision):
+        if double_precision:
+            tmp_size = len(decoded) / 8
+            unpack_format1 = ">%dd" % tmp_size
+        else:
+            tmp_size = len(decoded) / 4
+            unpack_format1 = ">%df" % tmp_size
         unpacked = struct.unpack(unpack_format1, decoded)
         for mz, intensity in zip(unpacked[::2], unpacked[1::2]):
             if intensity > self.abs_peak_cutoff:
