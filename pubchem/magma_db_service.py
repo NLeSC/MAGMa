@@ -12,9 +12,9 @@ def molecules(request):
     if selected_db == 'hmdb':
         db_engine = HmdbEngine(online = False)
     elif selected_db == 'kegg':
-        db_engine = PubChemEngine('kegg', online = False)
+        db_engine = PubChemEngine('kegg', incl_halo=True, online = False)
     elif selected_db == 'pubchem':
-        db_engine = PubChemEngine('pubchem', online = False)
+        db_engine = PubChemEngine('pubchem', incl_halo=True, online = False)
     return db_engine.query_local(select, incl_halo)
 
 if __name__ == '__main__':

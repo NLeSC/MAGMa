@@ -286,7 +286,7 @@ class StructureEngine(object):
         self.db_session = db_session
         self.pubchem_names = pubchem_names
         if pubchem_names:
-            self.pubchem_engine = PubChemEngine('pubchem')
+            self.pubchem_engine = PubChemEngine('pubchem', incl_halo=True)
         self.metabolize_engine = None
         if call_back_url is not None:
             self.call_back_engine = CallBackEngine(call_back_url)
@@ -373,7 +373,7 @@ class StructureEngine(object):
             if in_pubchem != False:
                 name, reference, refscore = in_pubchem
                 if newmol.name == '':
-                    newmol.name = unicode(name, 'utf-8', 'xmlcharrefreplace')
+                    newmol.name = unicode(str(name), 'utf-8', 'xmlcharrefreplace')
                 if newmol.reference == "None":
                     newmol.reference = unicode(reference)
                 if newmol.refscore is None:
@@ -1251,13 +1251,13 @@ class PubChemEngine(object):
             self.conn = sqlite3.connect(dbfilename)
             self.conn.text_factory = str
             self.c = self.conn.cursor()
-        self.incl_halo = False
-        if incl_halo != '' and incl_halo != False:
-            self.incl_halo = True
             halo_filename = config.get('magma job', halo_databases[db])
             self.connh = sqlite3.connect(halo_filename)
             self.connh.text_factory = str
             self.ch = self.connh.cursor()
+        self.incl_halo = False
+        if incl_halo != '' and incl_halo != False:
+            self.incl_halo = True
         self.where = ''
         if min_refscore != '':
             self.where += ' AND refscore >= ' + min_refscore
@@ -1321,11 +1321,9 @@ class PubChemEngine(object):
     def check_inchi(self, mim, inchikey14):
         """ Function to look up uploaded structures in PubChem based on inchikey. Returns refscore and reference.
             Only available if PubChem database is installed locally""" 
-        if config.getboolean('magma job', 'structure_database.online'):
-            return False
-        self.c.execute('SELECT cid,name,refscore FROM molecules WHERE charge IN (-1,0,1) AND mim between ? and ? and inchikey = ?',
-                       (int(mim * 1e6) - 1, int(mim * 1e6) + 1, inchikey14))
-        result = self.c.fetchall()
+        select = 'SELECT cid,name,refscore FROM molecules WHERE charge IN (-1,0,1) AND mim between {:d} and {:d} AND inchikey == "{:s}"'.format(
+                       int(mim * 1e6) - 1, int(mim * 1e6) + 1, inchikey14)
+        result = self.query(select, True)
         if len(result) > 0:
             cid, name, refscore = result[0]
             reference = '<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid=' +\
