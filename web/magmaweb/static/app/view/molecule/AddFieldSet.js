@@ -72,6 +72,8 @@ Ext.define('Esc.magmaweb.view.molecule.AddFieldSet', {
             min_refscore.setVisible(value == 'pubchem');
             var excl_halo = this.up('form').down('checkbox[name="excl_halo"]');
             excl_halo.setVisible(value == 'pubchem' || value == 'kegg');
+            var ids_file = this.up('form').down('filefield[name="ids_file"]');
+            ids_file.setVisible(value == 'pubchem');
           }
         }
       }, {
@@ -107,6 +109,15 @@ Ext.define('Esc.magmaweb.view.molecule.AddFieldSet', {
         checked: true,
         hidden: true,
         anchor: '80%'
+      }, {
+        xtype: 'filefield',
+        fieldLabel: 'Selected pubchem ID\'s',
+        name: 'ids_file',
+        id: 'ids_filefield',
+        emptyText: 'Upload from file',
+        hidden: true,
+        anchor: '80%'
+
       }]
     }, {
       title: 'Upload',

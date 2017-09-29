@@ -1237,7 +1237,7 @@ class PubChemEngine(object):
 
     """Engine to retrieve candidate molecules from PubChem"""
 
-    def __init__(self, db, dbfilename='', max_64atoms=False, incl_halo='', min_refscore='', online=True):
+    def __init__(self, db, dbfilename='', max_64atoms=False, incl_halo='', min_refscore='', ids_file='', online=True):
         self.name = db
         self.incl_halo = False
         if incl_halo != '' and incl_halo != False:
@@ -1264,6 +1264,9 @@ class PubChemEngine(object):
                 self.where += ' AND refscore >= ' + min_refscore
             if max_64atoms:
                 self.where += ' AND natoms <= 64'
+            if ids_file:
+                ids = ','.join([i[:-1] for i in open(ids_file, 'r')])
+                self.where += ' AND cid IN (' + ids + ')'
 
     def query_online(self, low, high, charge):
         r = requests.post(self.service, data=json.dumps([low, high, charge, self.incl_halo]))
@@ -1275,8 +1278,8 @@ class PubChemEngine(object):
 
     def query_local(self, low, high, charge):
         """ Return all molecules with given charge from HMDB between low and high mass limits """
-        result = self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
-                                (charge, low, high)).fetchall()
+        select = 'SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where
+        result = self.c.execute(select, (charge, low, high)).fetchall()
         if self.incl_halo:
             result += self.ch.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
                                 (charge, low, high)).fetchall()

@@ -106,6 +106,9 @@ class JobQuery(object):
         schema.add(colander.SchemaNode(colander.Boolean(),
                                        missing=False,
                                        name='excl_halo'))
+        schema.add(colander.SchemaNode(self.File(),
+                                       missing=colander.null,
+                                       name='ids_file'))
 
     def _addMetabolizeSchema(self, schema):
         scenario = colander.SchemaNode(colander.Mapping())
@@ -293,6 +296,18 @@ class JobQuery(object):
                                        validator=colander.Range(0, 1),
                                        name='mz_precision_abs'))
         return schema
+
+    def _write_ids_file(self, params):
+        ids_file = file(os.path.join(self.dir, 'ids.dat'), 'w')
+        idsf = params['ids_file'].file
+        idsf.seek(0)
+        while 1:
+            data = idsf.read(2 << 16)
+            if not data:
+                break
+            ids_file.write(data)
+        idsf.close()
+        ids_file.close()
 
     def _write_msfile(self, params):
         msfile = file(os.path.join(self.dir, 'ms_data.dat'), 'w')
@@ -551,13 +566,18 @@ class JobQuery(object):
         if params['structure_database'] is not colander.null:
             script += " --structure_database '{structure_database}'"
             script += " --db_options"
-            script += " ',{max_mim},{max_64atoms},{incl_halo},{min_refscore}'"
+            script += " ',{max_mim},{max_64atoms},{incl_halo},{min_refscore}"
+            if not params['ids_file'] is colander.null:
+                script += ",ids.dat"
+                self._write_ids_file(params)
+                self.prestaged.append('ids.dat')
+            script += "'"
             sd = self.escape(params['structure_database'])
             script_substitutions['structure_database'] = sd
             db_options = {'max_mim': self.escape(params['max_mz']),
                           'min_refscore': self.escape(params['min_refscore']),
                           'max_64atoms': self.restricted,
-                          'incl_halo': self.escape(not params['excl_halo'])
+                          'incl_halo': self.escape(not params['excl_halo']),
                           }
             script_substitutions.update(db_options)
 

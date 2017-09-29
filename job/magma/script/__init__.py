@@ -77,7 +77,7 @@ class MagmaCommand(object):
         sc.add_argument('--skip_fragmentation', help="Skip substructure annotation of fragment peaks (default: %(default)s)", action="store_true")
         sc.add_argument('-f', '--fast', help="Quick calculations for molecules up to 64 atoms (default: %(default)s)", action="store_true")
         sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["pubchem","kegg","hmdb"])
-        sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,incl_halo,min_refscore(only for PubChem) (default: %(default)s)",default=",1200,False",type=str)
+        sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,incl_halo,min_refscore(only for PubChem),ids_file (default: %(default)s)",default=",1200,False",type=str)
         sc.add_argument('-a', '--adducts' ,default=None,type=str, help="""Specify adduct (as comma separated list) for matching at MS1.
                                                                         Positive mode: [Na,K,NH4] Negative mode: [Cl]
                                                                         (default: %(default)s)""")
@@ -103,7 +103,7 @@ class MagmaCommand(object):
         sc.add_argument('-w', '--max_water_losses', help="Maximum number of additional water (OH) and/or ammonia (NH2) losses (default: %(default)s)", default=1,type=int)
         sc.add_argument('--slow', help="Skip fast calculations of molecules up to 64 atoms (default: %(default)s)", action="store_true")
         sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["pubchem","kegg","hmdb"])
-        sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,incl_halo,min_refscore(only for PubChem) (default: %(default)s)",default=",1200,False",type=str)
+        sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,incl_halo,min_refscore(only for PubChem),ids_file (default: %(default)s)",default=",1200,False",type=str)
         sc.add_argument('-a', '--adducts' , default=None,type=str, help="""Specify adduct (as comma separated list) for matching at MS1.
                                                                         Positive mode: [Na,K,NH4] Negative mode: [Cl]
                                                                         (default: %(default)s)""")
@@ -176,12 +176,12 @@ class MagmaCommand(object):
             annotate_engine.build_spectra()
             pubchem_molids=[]
             if args.structure_database != "":
-                db_opts=['','','','','']
+                db_opts=['','','','','','']
                 db_options=args.db_options.split(',')
                 for x in range(len(db_options)):
                     db_opts[x]=db_options[x]
                 if args.structure_database == 'pubchem':
-                    query_engine=magma.PubChemEngine('pubchem', db_opts[0], (db_opts[2]=='True'), db_opts[3]=='True', db_opts[4])
+                    query_engine=magma.PubChemEngine('pubchem', db_opts[0], (db_opts[2]=='True'), db_opts[3]=='True', db_opts[4], db_opts[5])
                 elif args.structure_database == 'kegg':
                     query_engine=magma.PubChemEngine('kegg', db_opts[0], (db_opts[2]=='True'), db_opts[3]=='True')
                 elif args.structure_database == 'hmdb':
@@ -294,12 +294,12 @@ class MagmaCommand(object):
             annotate_engine.build_spectra(scans)
             pubchem_molids=[]
             if args.structure_database != "":
-                db_opts=['','','','','']
+                db_opts=['','','','','','']
                 db_options=args.db_options.split(',')
                 for x in range(len(db_options)):
                     db_opts[x]=db_options[x]
                 if args.structure_database == 'pubchem':
-                    query_engine=magma.PubChemEngine('pubchem', db_opts[0], (db_opts[2]=='True'), db_opts[3]=='True', db_opts[4])
+                    query_engine=magma.PubChemEngine('pubchem', db_opts[0], (db_opts[2]=='True'), db_opts[3]=='True', db_opts[4], db_opts[5])
                 elif args.structure_database == 'kegg':
                     query_engine=magma.PubChemEngine('kegg', db_opts[0], (db_opts[2]=='True'), db_opts[3]=='True')
                 elif args.structure_database == 'hmdb':
