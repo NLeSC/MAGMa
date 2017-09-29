@@ -25,7 +25,7 @@ class MagmaCommand(object):
         sc.add_argument('-z', '--description', help="Description of the job (default: %(default)s)", default="",type=str)
         # add_structures arguments
         sc.add_argument('-t', '--structure_format', help="Structure input type (default: %(default)s)", default="smiles", choices=["smiles", "sdf"])
-        sc.add_argument('-p', '--pubchem_names', help="Get references to PubChem (default: %(default)s)", action="store_true")
+        sc.add_argument('-g', '--pubchem_names', help="Get references to PubChem (default: %(default)s)", action="store_true")
         sc.add_argument('-m', '--mass_filter', help="Filter input structures on maximum monoisotopic mass (default: %(default)s)", default=9999,type=int)
         sc.add_argument('-l', '--log', help="Set logging level (default: %(default)s)", default='info',choices=['debug','info','warn','error'])
         sc.add_argument('structures', type=str, help="File with structures, or a single smiles string")
@@ -104,6 +104,7 @@ class MagmaCommand(object):
         sc.add_argument('--slow', help="Skip fast calculations of molecules up to 64 atoms (default: %(default)s)", action="store_true")
         sc.add_argument('-s', '--structure_database', help="Retrieve molecules from structure database  (default: %(default)s)", default="", choices=["pubchem","kegg","hmdb"])
         sc.add_argument('-o', '--db_options', help="Specify structure database option: db_filename,max_mim,max_64atoms,incl_halo,min_refscore(only for PubChem),ids_file (default: %(default)s)",default=",1200,False",type=str)
+        sc.add_argument('-g', '--pubchem_names', help="Get references to PubChem (default: %(default)s)", action="store_true")
         sc.add_argument('-a', '--adducts' , default=None,type=str, help="""Specify adduct (as comma separated list) for matching at MS1.
                                                                         Positive mode: [Na,K,NH4] Negative mode: [Cl]
                                                                         (default: %(default)s)""")
@@ -157,7 +158,7 @@ class MagmaCommand(object):
 
             # read structures
             if args.read_molecules != None:
-                struct_engine = magma_session.get_structure_engine()
+                struct_engine = magma_session.get_structure_engine(pubchem_names=args.pubchem_names)
                 if args.read_molecules[-4:] == '.sdf':
                     struct_engine.read_sdf(args.read_molecules)
                 else:

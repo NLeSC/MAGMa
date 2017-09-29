@@ -212,7 +212,7 @@ class JobQuery(object):
             metsfile.write(params['structures'])
         metsfile.close()
 
-        script = "{{magma}} add_structures -p -t '{structure_format}'"
+        script = "{{magma}} add_structures -g -t '{structure_format}'"
         script += " structures.dat {{db}}"
         sf = self.escape(params['structure_format'])
         self.script += script.format(structure_format=sf)
