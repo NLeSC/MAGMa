@@ -1285,7 +1285,7 @@ class PubChemEngine(object):
     def query_on_mim(self, low, high, charge):
         """ Return all molecules with given charge between low and high mass limits """
         molecules = []
-        select = 'SELECT * FROM molecules WHERE charge = {:d} AND mim BETWEEN {:f} AND {:f} {:s}'.format(
+        select = 'SELECT * FROM molecules WHERE charge = {:d} AND mim BETWEEN {:d} AND {:d} {:s}'.format(
             charge, low, high, self.where)
         result = self.query(select, self.incl_halo)
         for (cid, mim, charge, natoms, molblock, inchikey, smiles, molform, name, refs, logp) in result:
@@ -1347,29 +1347,30 @@ class HmdbEngine(object):
             self.query = self.query_local
             if dbfilename == '':
                 dbfilename = config.get('magma job', 'structure_database.hmdb')
-            self.where = ''
-            if max_64atoms == True:
-                self.where += ' AND natoms <= 64'
             self.conn = sqlite3.connect(dbfilename)
             self.conn.text_factory = str
             self.c = self.conn.cursor()
-        
-    def query_online(self, low, high, charge):
-        r = requests.post(self.service, data=json.dumps([low, high, charge, True]))
+        self.where = ''
+        if max_64atoms == True:
+            self.where += ' AND natoms <= 64'
+
+    def query_online(self, select):
+        r = requests.post(self.service, data=json.dumps([select]))
         try:
             result = r.json()
         except:
             result = r.json # for compatibility with older version of requests
         return result
 
-    def query_local(self, low, high, charge):
+    def query_local(self, select):
         """ Return all molecules with given charge from HMDB between low and high mass limits """
-        return self.c.execute('SELECT * FROM molecules WHERE charge = ? AND mim BETWEEN ? AND ? %s' % self.where,
-                                (charge, low, high)).fetchall()
+        return self.c.execute(select).fetchall()
 
     def query_on_mim(self, low, high, charge):
         molecules = []
-        result = self.query(low, high, charge)
+        select = 'SELECT * FROM molecules WHERE charge = {:d} AND mim BETWEEN {:d} AND {:d} {:s}'.format(
+                                charge, low, high, self.where)
+        result = self.query(select)
         for (cid, mim, charge, natoms, molblock, inchikey, smiles, molform, name, reference, logp) in result:
             hmdb_ids = reference.split(',')
             hmdb_refs = '<a href="http://www.hmdb.ca/metabolites/' + \

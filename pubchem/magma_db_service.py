@@ -6,8 +6,7 @@ from magma import PubChemEngine,HmdbEngine
 
 def molecules(request):
     query = request.json_body
-    select, incl_halo = query
-    print select
+    print query
     selected_db = request.matchdict['dbname']
     if selected_db == 'hmdb':
         db_engine = HmdbEngine(online = False)
@@ -15,7 +14,7 @@ def molecules(request):
         db_engine = PubChemEngine('kegg', incl_halo=True, online = False)
     elif selected_db == 'pubchem':
         db_engine = PubChemEngine('pubchem', incl_halo=True, online = False)
-    return db_engine.query_local(select, incl_halo)
+    return db_engine.query_local(*query)
 
 if __name__ == '__main__':
 
