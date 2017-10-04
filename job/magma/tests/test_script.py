@@ -234,6 +234,7 @@ class TestMagmaCommand(unittest.TestCase):
         args.max_ms_level = 5
         args.ms_data_format = 'mgf'
         args.log = 'debug'
+        args.pubchem_names = False
         args.call_back_url = None
 
         # allow,but not require, commas at the end of a line
