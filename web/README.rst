@@ -280,6 +280,7 @@ Javascript
 ----------
 
 The ExtJS tests can be run using karma runner (http://karma-runner.github.io/).
+The tests require NodeJS v6.
 
 .. code-block:: bash
 

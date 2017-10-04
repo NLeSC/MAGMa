@@ -1,8 +1,6 @@
 language: python
 python:
   - "2.7"
-node_js:
-  - "6"
 before_install:
   - wget -nc http://repo.continuum.io/miniconda/Miniconda-3.5.5-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p conda
@@ -13,6 +11,8 @@ before_install:
   - pip install zope.interface py-bcrypt
   - pip install http://www.parallelpython.com/downloads/pp/pp-1.6.4.zip
   - cd conda && wget -nc http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip && cd .. && unzip -qnd web/magmaweb/static conda/ext-4.2.1-gpl.zip
+  - nvm install 6.11.4
+  - nvm use 6.11.4
 install:
   - cd job && python setup.py develop && cd ..
   - python web/setup.py develop
