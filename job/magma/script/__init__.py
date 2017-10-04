@@ -41,7 +41,7 @@ class MagmaCommand(object):
         sc.add_argument('-s', '--scenario', default=None, type=str, help="""Scenario file, each line defines a separate stage:
                                         action(glycosidase/gut/phase1[_selected]/phase2[_selected]/mass_filter),value(nsteps/mass limit)""")
         sc.add_argument('-t', '--time_limit', help="Maximum allowed time in minutes (default: %(default)s)", default=None,type=float)
-        sc.add_argument('-p', '--pubchem_names', help="Get references to PubChem. Only available with local PubChem database (default: %(default)s)", action="store_true")
+        sc.add_argument('-g', '--pubchem_names', help="Get references to PubChem. Only available with local PubChem database (default: %(default)s)", action="store_true")
         sc.add_argument('-l', '--log', help="Set logging level (default: %(default)s)", default='info',choices=['debug','info','warn','error'])
         sc.add_argument('--call_back_url', help="Call back url (default: %(default)s)", default=None,type=str)
         sc.add_argument('db', type=str, help="Sqlite database file with results")

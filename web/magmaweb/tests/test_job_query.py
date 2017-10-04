@@ -215,7 +215,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_structures(params)
 
         sf = 'structures.dat'
-        script = "{magma} add_structures -p -t 'smiles' structures.dat {db}\n"
+        script = "{magma} add_structures -g -t 'smiles' structures.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=[sf],
                                   script=script,
@@ -236,7 +236,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.add_structures(params)
 
-        script = "{magma} add_structures -p -t 'smiles' structures.dat {db}\n"
+        script = "{magma} add_structures -g -t 'smiles' structures.dat {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['structures.dat'],
                                   script=script,
@@ -260,8 +260,8 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
 
         sf = 'structures.dat'
         scen = 'scenario.csv'
-        script = "{magma} add_structures -p -t 'smiles' structures.dat {db} |"
-        script += "{magma} metabolize -p --scenario scenario.csv"
+        script = "{magma} add_structures -g -t 'smiles' structures.dat {db} |"
+        script += "{magma} metabolize -g --scenario scenario.csv"
         script += " --call_back_url '/' -j - {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=[sf, scen],
@@ -285,7 +285,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_structures(params, True)
 
         sf = 'structures.dat'
-        script = "{magma} add_structures -p -t 'smiles' structures.dat {db} |"
+        script = "{magma} add_structures -g -t 'smiles' structures.dat {db} |"
         script += "{magma} annotate -c '200000.0'"
         script += " -d '10.0' -b '4'"
         script += " --max_water_losses '1' --call_back_url '/'"
@@ -314,9 +314,9 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         query = self.jobquery.add_structures(params, True)
 
         sf = 'structures.dat'
-        script = "{magma} add_structures -p -t 'smiles'"
+        script = "{magma} add_structures -g -t 'smiles'"
         script += " structures.dat {db} |"
-        script += "{magma} metabolize -p --scenario scenario.csv"
+        script += "{magma} metabolize -g --scenario scenario.csv"
         script += " --call_back_url '/' -j - {db} |"
         script += "{magma} annotate -c '200000.0'"
         script += " -d '10.0' -b '4'"
@@ -739,7 +739,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize(params)
 
-        script = "{magma} metabolize -p --scenario scenario.csv"
+        script = "{magma} metabolize -g --scenario scenario.csv"
         script += " --call_back_url '/' {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['scenario.csv'],
@@ -757,7 +757,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize(params)
 
-        script = "{magma} metabolize -p --scenario scenario.csv"
+        script = "{magma} metabolize -g --scenario scenario.csv"
         script += " --call_back_url '/' {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['scenario.csv'],
@@ -787,7 +787,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
                             ])
         query = self.jobquery.metabolize(params, True)
 
-        script = "{magma} metabolize -p --scenario scenario.csv"
+        script = "{magma} metabolize -g --scenario scenario.csv"
         script += " --call_back_url '/' {db} |"
         script += "{magma} annotate"
         script += " -c '200000.0' -d '10.0'"
@@ -811,7 +811,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize(params)
 
-        script = "{magma} metabolize -p --scenario scenario.csv"
+        script = "{magma} metabolize -g --scenario scenario.csv"
         script += " --call_back_url '/' --time_limit 3 {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['scenario.csv'],
@@ -849,7 +849,7 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize_one(params)
 
-        script = "echo '123' | {magma} metabolize -p -j - "
+        script = "echo '123' | {magma} metabolize -g -j - "
         script += "--scenario scenario.csv --call_back_url '/' {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['scenario.csv'],
@@ -873,7 +873,7 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
 
         query = self.jobquery.metabolize_one(params, True)
 
-        script = "echo '123' | {magma} metabolize -p -j - --scenario scenario.csv"
+        script = "echo '123' | {magma} metabolize -g -j - --scenario scenario.csv"
         script += " --call_back_url '/' {db} |"
         script += "{magma} annotate"
         script += " -c '200000.0' -d '10.0'"
@@ -1047,10 +1047,10 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += " --call_back_url '/'"
         expected_script += " ms_data.dat {db}\n"
 
-        expected_script += "{magma} add_structures -p -t 'smiles'"
+        expected_script += "{magma} add_structures -g -t 'smiles'"
         expected_script += " structures.dat {db}\n"
 
-        expected_script += "{magma} metabolize -p --scenario scenario.csv"
+        expected_script += "{magma} metabolize -g --scenario scenario.csv"
         expected_script += " --call_back_url '/' {db}\n"
 
         expected_script += "{magma} annotate -c '200000.0'"
@@ -1113,7 +1113,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += " --call_back_url '/'"
         expected_script += " ms_data.dat {db}\n"
 
-        expected_script += "{magma} add_structures -p -t 'smiles'"
+        expected_script += "{magma} add_structures -g -t 'smiles'"
         expected_script += " structures.dat {db}\n"
 
         expected_script += "{magma} annotate -c '200000.0'"

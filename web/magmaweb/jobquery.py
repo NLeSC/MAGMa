@@ -457,7 +457,7 @@ class JobQuery(object):
         self._write_scenario_file(params)
         self.prestaged.append('scenario.csv')
 
-        script = "{{magma}} metabolize -p"
+        script = "{{magma}} metabolize -g"
         script += " --scenario scenario.csv"
         script += " --call_back_url '{call_back_url}'"
         script_substitutions = {
@@ -506,7 +506,7 @@ class JobQuery(object):
         self._write_scenario_file(params)
         self.prestaged.append('scenario.csv')
 
-        script = "echo '{molid}' | {{magma}} metabolize -p -j -"
+        script = "echo '{molid}' | {{magma}} metabolize -g -j -"
         script += " --scenario scenario.csv"
         script += " --call_back_url '{call_back_url}' {{db}}"
         script_substitutions = {
