@@ -17,7 +17,7 @@ install:
   - cd web && npm install && cd ..
 before_script:
   - npm install karma-cli
-  - pip install nose coveralls
+  - pip install nose 'coveralls<1.2'
   - cd job && echo -e '[magma job]\nstructure_database.online = False\nstructure_database.pubchem=magma/tests/HMDB_MAGMa_test.db\nstructure_database.pubchem_halo=magma/tests/HMDB_MAGMa_test.db' > magma_job.ini && cd ..
 script:
   - cd job && nosetests && cd ..
