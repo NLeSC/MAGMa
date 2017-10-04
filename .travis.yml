@@ -1,6 +1,8 @@
 language: python
 python:
   - "2.7"
+node_js:
+  - "6"
 before_install:
   - wget -nc http://repo.continuum.io/miniconda/Miniconda-3.5.5-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p conda
@@ -22,7 +24,7 @@ before_script:
 script:
   - cd job && nosetests && cd ..
   - cd web && nosetests && cd ..
-  - cd web && node_modules/karma/bin/karma start && cd ..
+  - cd web && export PHANTOMJS_BIN=$PWD/node_modules/phantomjs-prebuilt/bin/phantomjs && node_modules/karma/bin/karma start && cd ..
   - cp web/.coverage .coverage.web && cp job/.coverage .coverage.job && coverage combine && coveralls
 # TODO add Javascript coverage from web/coverage/*/lcov.info
 sudo: false
