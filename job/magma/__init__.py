@@ -1493,8 +1493,8 @@ def search_structure(mol, mim, molcharge, peaks, max_broken_bonds, max_water_los
                 for childfrag, childscore, childbbreaks, childmass, childH in \
                         fragment_engine.find_fragments(mz_neutral, fragment, precision, mz_precision_abs):
                     if childfrag & fragment == childfrag:
-                        ion = '[X' + '+' * (childH > 0) + '-' * (childH < 0) + str(abs(childH)) * (not -2 < childH < 2) + \
-                                'H' * (childH != 0) + ']' + '+' * (ionisation_mode > 0) + '-' * (ionisation_mode < 0)
+                        ion = '[X' + '+' * int(childH > 0) + '-' * int(childH < 0) + str(abs(childH)) * int(not -2 < childH < 2) + \
+                                'H' * int(childH != 0) + ']' + '+' * int(ionisation_mode > 0) + '-' * int(ionisation_mode < 0)
                         childhit = gethit(childpeak, childfrag, childscore * (childpeak.intensity**0.5),
                                           childbbreaks, childmass, childH * pars.Hmass, ion)
                         if besthit.score is None or besthit.score > childhit.score or \
