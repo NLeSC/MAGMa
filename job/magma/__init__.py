@@ -703,11 +703,18 @@ class MsDataEngine(object):
 
     def store_mgf(self, mgf_file):
         mgf = open(mgf_file, 'r')
-        while mgf.readline()[:10] != 'BEGIN IONS':
-            pass
+        line = mgf.readline()
+        while line:
+            if line[:10] == 'BEGIN IONS':
+                break
+            line = mgf.readline()
+        else:
+            logger.info('Error in MGF file: no "BEGIN IONS"')
+            return
         peaklist = []
         rt=0.0
-        while True:
+        precursormz = None
+        while line:
             line = mgf.readline()
             if line[:8] == "PEPMASS=":
                 precursormz = float(line.split()[0][8:])
@@ -726,6 +733,9 @@ class MsDataEngine(object):
                     peaklist.append([mz,intensity])
                 except:
                     pass
+        if not precursormz:
+            logger.info('Error in MGF file: no precursor mass defined with "PEPMASS=..."')
+            return
         self.store_peak_list(1, rt, precursormz, [precursormz,precursorintensity], peaklist)
 
     def store_peak_list(self, scanid, rt, precursormz, basepeak, peaklist):
