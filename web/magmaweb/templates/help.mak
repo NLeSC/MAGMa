@@ -47,6 +47,9 @@
     MS2_peakX_formula: MS2_peakX_intenstity
 )</pre>
                     </li>
+                    </li>
+                    <li><a href="http://www.matrixscience.com/help/data_file_help.html#GEN">Mascot Generic Format (MGF)</a> 
+                    </li>
                 </ul>
                 During import the mzXML data can be filtered on:
                 <ul>
@@ -68,10 +71,18 @@
                 <h3 id="molecules">Molecules</h3>
                 Molecules can be imported by:
                 <ul>
-                    <li>Retrieval from a Database (PubChem, Kegg or Human Metabolite Database). Precursor ion m/z values of all MS2 scans are used to query the database on mono-isotopic mass, assuming [M-H]<sup>-</sup> or [M+H]<sup>+</sup> ions, depending
-                        on the specified ionisation mode.</li>
-                    <li>Upload from smiles or SDF (Structure Data File format).</li>
-                    <li>Drawing a molecule.</li>
+                    <li>Retrieval from a <b>Database</b> (PubChem, Kegg or Human Metabolite Database). Precursor ion m/z values of all MS2 scans are used to query the database on mono-isotopic mass, assuming [M-H]<sup>-</sup> or [M+H]<sup>+</sup> ions, depending
+                        on the specified ionisation mode. The query can be further filtered on:
+                        <ul>
+                        <li>A maximum Mass (Da)</li>
+                        <li>Excluding halogenated compounds (default)</li>
+                        In case of a pubchem query:
+                        <li>A minimum PubChem reference score, relating to the number of occurences of the compounds in different databases linked to PubChem. For more info on this score, please read [<a href="http://dx.doi.org/10.1021/ac400861a">Ridder et al. 2013</a>; <a href="http://dx.doi.org/10.5702/massspectrometry.S0033">Ridder et al. 2014</a>] </li>
+                        <li>Selected pubchem ID's, by uploading a file that contains one pubchem ID per line. Text after the pubchem ID is ignored, allowing comments.</li>
+                        </ul>
+                    </li>
+                    <li><b>Upload</b> from smiles or SDF (Structure Data File format).</li>
+                    <li><b>Draw</b>ing a molecule.</li>
                 </ul>
                 Metabolizing molecules:
                 <br>
@@ -79,7 +90,7 @@
                 "scenario". The buttons "Drugs" and "Polyphenols" provide predefined scenario's that can be used to generate human metabolites for these classes of compounds. Phase1 and phase2 human biotransformation rules are derived according to the
                 method outlined in [<a href="http://dx.doi.org/10.1002/cmdc.200700312">Ridder
       and Wagener 2008</a>]. Phase1_selected and phase2_selected are subsets including the most common rules: more than 5% of the metabolites they predict for a large and diverse set of clinically studied compounds agreed with the clinical observations.
-                The "glycosidase" and "gut" rules are described in [Ridder et al. submitted]. The first set of rules defined in the scenario is applied to all uploaded or drawn molecule(s). Subsequent stages are also applied to products of the preceding
+                The "glycosidase" and "gut" rules are described in [<a href="http://pubs.acs.org/doi/abs/10.1021/ac403875b">Ridder et al. 2014</a>]. The first set of rules defined in the scenario is applied to all uploaded or drawn molecule(s). Subsequent stages are also applied to products of the preceding
                 steps. When a mass filter is applied, the subsequent stage in the scenario are performed only on molecules below the specified mass limit. The value in the "Steps" column determines either the number of reaction steps to be applied with
                 the specified set of rules, or the mass limit in case of a mass filter step. The glycosidase rule can also be used with the word "complete", which will iterate the glycosidase rule until no further metabolites are generated. In this case
                 only the end products are used for further processing.
