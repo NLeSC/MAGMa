@@ -105,6 +105,8 @@ def configure(config):
     config.add_settings(auto_register=auto_register)
     restricted = asbool(settings.get('restricted', False))
     config.add_settings(restricted=restricted)
+    ncpus = settings.get('ncpus', 1)
+    config.add_settings(ncpus=ncpus)
 
     # Setup connection to user database
     engine = engine_from_config(settings)

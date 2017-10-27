@@ -36,6 +36,7 @@ class JobQuery(object):
                  prestaged=None,
                  status_callback_url=None,
                  restricted=False,
+                 ncpus=1
                  ):
         """Contruct JobQuery
 
@@ -51,23 +52,25 @@ class JobQuery(object):
         self.prestaged = prestaged or []
         self.status_callback_url = status_callback_url
         self.restricted = restricted
+        self.ncpus=ncpus
 
     def __eq__(self, other):
         return (self.dir == other.dir and
                 self.script == other.script and
                 self.prestaged == other.prestaged and
                 self.status_callback_url == other.status_callback_url and
-                self.restricted == other.restricted
+                self.restricted == other.restricted and
+                self.ncpus == other.ncpus
                 )
 
     def __repr__(self):
         """Return a printable representation."""
         s = "JobQuery({!r}, script={!r}, "
         s += "prestaged={!r}, status_callback_url={!r},"
-        s += "restricted={!r})"
+        s += "restricted={!r}, ncpus={!r})"
         return s.format(self.dir, self.script,
                         self.prestaged, self.status_callback_url,
-                        self.restricted,
+                        self.restricted, self.ncpus
                         )
 
     def escape(self, string):
@@ -552,6 +555,7 @@ class JobQuery(object):
         script += " -c '{ms_intensity_cutoff}' -d '{msms_intensity_cutoff}'"
         script += " -b '{max_broken_bonds}'"
         script += " --max_water_losses '{max_water_losses}'"
+        script += " --ncpus '{ncpus}'"
         script += " --call_back_url '{call_back_url}'"
         ms_ic = params['ms_intensity_cutoff']
         msms_ic = params['msms_intensity_cutoff']
@@ -561,6 +565,7 @@ class JobQuery(object):
             'max_broken_bonds': self.escape(params['max_broken_bonds']),
             'max_water_losses': self.escape(params['max_water_losses']),
             'call_back_url': self.status_callback_url,
+            'ncpus': self.ncpus
         }
 
         if params['structure_database'] is not colander.null:

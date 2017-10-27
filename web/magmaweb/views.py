@@ -69,7 +69,8 @@ class Views(object):
             job.ms_filename = 'Uploaded as text'
         status_url = self.request.route_url('status.json', jobid=job.id)
         restricted = self.request.registry.settings['restricted']
-        jobquery = job.jobquery(status_url, restricted)
+        ncpus = self.request.registry.settings['ncpus']
+        jobquery = job.jobquery(status_url, restricted, ncpus)
 
         jobquery = jobquery.allinone(self.request.POST)
 

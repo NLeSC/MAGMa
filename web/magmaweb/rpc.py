@@ -21,6 +21,7 @@ class RpcViews(object):
         self.request = request
         self.job_factory = make_job_factory(request.registry.settings)
         self.restricted = self.request.registry.settings['restricted']
+        self.ncpus = self.request.registry.settings['ncpus']
 
     def new_job(self):
         """Returns clone of job of current request"""
@@ -52,7 +53,7 @@ class RpcViews(object):
         Annotation is performed if current job has ms data
         """
         job = self.new_job()
-        jobquery = job.jobquery(self._status_url(job), self.restricted)
+        jobquery = job.jobquery(self._status_url(job), self.restricted, self.ncpus)
         has_scans = job.db.maxMSLevel() > 0
         params = self.request.POST
         try:
@@ -94,7 +95,7 @@ class RpcViews(object):
         except AttributeError:
             job.ms_filename = 'Uploaded as text'
         has_molecules = job.db.moleculesTotalCount() > 0
-        jobquery = job.jobquery(self._status_url(job), self.restricted)
+        jobquery = job.jobquery(self._status_url(job), self.restricted, self.ncpus)
         jobquery = jobquery.add_ms_data(self.request.POST, has_molecules)
         self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}
@@ -106,7 +107,7 @@ class RpcViews(object):
         Annotation is performed if current job has ms data
         """
         job = self.new_job()
-        jobquery = job.jobquery(self._status_url(job), self.restricted)
+        jobquery = job.jobquery(self._status_url(job), self.restricted, self.ncpus)
         has_scans = job.db.maxMSLevel() > 0
         jobquery = jobquery.metabolize(self.request.POST, has_scans)
         self.submit_query(jobquery, job)
@@ -122,7 +123,7 @@ class RpcViews(object):
         """
         job = self.new_job()
         has_scans = job.db.maxMSLevel() > 0
-        jobquery = job.jobquery(self._status_url(job), self.restricted)
+        jobquery = job.jobquery(self._status_url(job), self.restricted, self.ncpus)
         jobquery = jobquery.metabolize_one(self.request.POST, has_scans)
         self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}
@@ -133,7 +134,7 @@ class RpcViews(object):
 
         """
         job = self.new_job()
-        jobquery = job.jobquery(self._status_url(job), self.restricted)
+        jobquery = job.jobquery(self._status_url(job), self.restricted, self.ncpus)
         jobquery = jobquery.annotate(self.request.POST)
         self.submit_query(jobquery, job)
         return {'success': True, 'jobid': str(job.id)}

@@ -432,7 +432,7 @@ class Job(object):
         """
         return str(self.id)
 
-    def jobquery(self, status_callback_url, restricted):
+    def jobquery(self, status_callback_url, restricted, ncpus):
         """Returns :class:`JobQuery`
 
         'status_callback_url' is the url to PUT status of job to.
@@ -441,6 +441,7 @@ class Job(object):
         return JobQuery(self.dir,
                         status_callback_url=status_callback_url,
                         restricted=restricted,
+                        ncpus=ncpus
                         )
 
     def get_description(self):
