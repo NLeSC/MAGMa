@@ -50,7 +50,7 @@ class JobQueryTestCase(unittest.TestCase):
                       status_callback_url='foo', restricted=True)
         s = "JobQuery('y', script='z', prestaged=[123], "
         s += "status_callback_url='foo',"
-        s += "restricted=True)"
+        s += "restricted=True, ncpus=1)"
         self.assertEqual(jq.__repr__(), s)
 
     def test_escape_single_quote(self):
@@ -288,7 +288,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         script = "{magma} add_structures -g -t 'smiles' structures.dat {db} |"
         script += "{magma} annotate -c '200000.0'"
         script += " -d '10.0' -b '4'"
-        script += " --max_water_losses '1' --call_back_url '/'"
+        script += " --max_water_losses '1' --ncpus '1' --call_back_url '/'"
         script += " -j - --fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=[sf],
@@ -320,7 +320,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
         script += " --call_back_url '/' -j - {db} |"
         script += "{magma} annotate -c '200000.0'"
         script += " -d '10.0' -b '4'"
-        script += " --max_water_losses '1' --call_back_url '/'"
+        script += " --max_water_losses '1' --ncpus '1' --call_back_url '/'"
         script += " -j - --fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=[sf, 'scenario.csv'],
@@ -496,7 +496,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
         script += "{magma} annotate -c '200000.0'"
         script += " -d '10.0'"
         script += " -b '4'"
-        script += " --max_water_losses '1' --call_back_url '/' --fast {db}\n"
+        script += " --max_water_losses '1' --ncpus '1' --call_back_url '/' --fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['ms_data.dat'],
                                   script=script,
@@ -792,7 +792,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
         script += "{magma} annotate"
         script += " -c '200000.0' -d '10.0'"
         script += " -b '4'"
-        script += " --max_water_losses '1' --call_back_url '/' -j -"
+        script += " --max_water_losses '1' --ncpus '1' --call_back_url '/' -j -"
         script += " --fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['scenario.csv'],
@@ -878,7 +878,7 @@ class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
         script += "{magma} annotate"
         script += " -c '200000.0' -d '10.0'"
         script += " -b '4'"
-        script += " --max_water_losses '1' --call_back_url '/' -j -"
+        script += " --max_water_losses '1' --ncpus '1' --call_back_url '/' -j -"
         script += " --fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=['scenario.csv'],
@@ -903,7 +903,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
         script = "{magma} annotate -c '200000.0' -d '10.0'"
         script += " -b '4'"
-        script += " --max_water_losses '1' --call_back_url '/' --fast {db}\n"
+        script += " --max_water_losses '1' --ncpus '1' --call_back_url '/' --fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=[],
                                   script=script,
@@ -920,7 +920,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
         script = "{magma} annotate -c '0.0' -d '0.0'"
         script += " -b '4'"
-        script += " --max_water_losses '1' --call_back_url '/' --fast {db}\n"
+        script += " --max_water_losses '1' --ncpus '1' --call_back_url '/' --fast {db}\n"
         expected_query = JobQuery(directory=self.jobdir,
                                   prestaged=[],
                                   script=script,
@@ -942,7 +942,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
         script = "{magma} annotate -c '200000.0' -d '10.0'"
         script += " -b '4'"
-        script += " --max_water_losses '1' --call_back_url '/'"
+        script += " --max_water_losses '1' --ncpus '1' --call_back_url '/'"
         script += " --structure_database 'pubchem'"
         script += " --db_options ',1200,False,True,1'"
         script += " --fast {db}\n"
@@ -968,7 +968,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
         script = "{magma} annotate -c '200000.0' -d '10.0'"
         script += " -b '4'"
-        script += " --max_water_losses '1' --call_back_url '/'"
+        script += " --max_water_losses '1' --ncpus '1' --call_back_url '/'"
         script += " --structure_database 'pubchem'"
         script += " --db_options ',1200,True,True,1'"
         script += " --time_limit 3 --fast {db}\n"
@@ -995,7 +995,7 @@ class JobQueryAnnotateTestCase(JobQueryActionTestCase):
 
         script = "{magma} annotate -c '200000.0' -d '10.0'"
         script += " -b '4'"
-        script += " --max_water_losses '1' --call_back_url '/'"
+        script += " --max_water_losses '1' --ncpus '1' --call_back_url '/'"
         script += " --structure_database 'pubchem'"
         script += " --db_options ',1200,False,False,1'"
         script += " --fast {db}\n"
@@ -1055,7 +1055,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
 
         expected_script += "{magma} annotate -c '200000.0'"
         expected_script += " -d '10.0' -b '4'"
-        expected_script += " --max_water_losses '1' --call_back_url '/'"
+        expected_script += " --max_water_losses '1' --ncpus '1' --call_back_url '/'"
         expected_script += " --fast {db}\n"
 
         expected_query = JobQuery(directory=self.jobdir,
@@ -1119,7 +1119,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += "{magma} annotate -c '200000.0'"
         expected_script += " -d '10.0'"
         expected_script += " -b '4'"
-        expected_script += " --max_water_losses '1' --call_back_url '/'"
+        expected_script += " --max_water_losses '1' --ncpus '1' --call_back_url '/'"
         expected_script += " --fast {db}\n"
 
         expected_query = JobQuery(directory=self.jobdir,
@@ -1166,7 +1166,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         expected_script += "{magma} annotate -c '200000.0'"
         expected_script += " -d '10.0'"
         expected_script += " -b '4'"
-        expected_script += " --max_water_losses '1' --call_back_url '/'"
+        expected_script += " --max_water_losses '1' --ncpus '1' --call_back_url '/'"
         expected_script += " --structure_database 'pubchem'"
         expected_script += " --db_options ',1200,False,True,1'"
         expected_script += " --fast {db}\n"

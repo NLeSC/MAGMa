@@ -15,7 +15,7 @@ class AbstractViewsTestCase(unittest.TestCase):
                          'access_token.expires_in': 360,
                          'auto_register': False,
                          'restricted': False,
-                         }
+                         'ncpus': 1}
         self.config = testing.setUp(settings=self.settings)
         self.config.add_route('status.json', '/status/{jobid}.json')
 
@@ -74,7 +74,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(job.ms_filename, r'c:\bla\bla\F1234.mzxml')
         job.jobquery.assert_called_with('http://example.com/status/foo.json',
                                         False,
-                                        )
+                                        1)
 
     def test_allinone_with_ms_data_as_text(self):
         post = {'ms_data': 'somexml', 'ms_data_file': ''}
@@ -97,7 +97,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         self.assertEqual(job.ms_filename, 'Uploaded as text')
         job.jobquery.assert_called_with('http://example.com/status/foo.json',
                                         False,
-                                        )
+                                        1)
 
     def test_allinone_restricted(self):
         self.config.add_settings(restricted=True)
@@ -115,7 +115,7 @@ class ViewsTestCase(AbstractViewsTestCase):
 
         job.jobquery.assert_called_with('http://example.com/status/foo.json',
                                         True,
-                                        )
+                                        1)
 
     def test_allinone_no_jobmanager(self):
         from magmaweb.job import JobSubmissionError

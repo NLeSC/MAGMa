@@ -696,7 +696,7 @@ class JobTestCase(unittest.TestCase):
 
     def test_jobquery(self):
         status_cb_url = 'http://example/status/{}.json'.format(self.job.id)
-        jobquery = self.job.jobquery(status_cb_url, False)
+        jobquery = self.job.jobquery(status_cb_url, False, 1)
 
         ejobquery = JobQuery(self.jobdir,
                              status_callback_url=status_cb_url,
@@ -708,7 +708,7 @@ class JobTestCase(unittest.TestCase):
 
     def test_jobquery_restricted(self):
         status_cb_url = 'http://example/status/{}.json'.format(self.job.id)
-        jobquery = self.job.jobquery(status_cb_url, True)
+        jobquery = self.job.jobquery(status_cb_url, True, 1)
 
         ejobquery = JobQuery(self.jobdir,
                              status_callback_url=status_cb_url,
