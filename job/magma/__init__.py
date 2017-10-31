@@ -1274,7 +1274,7 @@ class PubChemEngine(object):
         if max_64atoms:
             self.where += ' AND natoms <= 64'
         if ids_file:
-            ids = ','.join([i.split()[0] for i in open(ids_file, 'r')])
+            ids = ','.join([i.split()[0] for i in open(ids_file, 'r') if i != '\n'])
             self.where += ' AND cid IN (' + ids + ')'
 
     def query_online(self, select, incl_halo):
