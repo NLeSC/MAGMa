@@ -3,7 +3,7 @@ FROM continuumio/miniconda:4.3.14
 MAINTAINER Lars Ridder <l.ridder@esciencecenter.nl> 
  
 RUN conda config --set auto_update_conda false && \
-conda install -y rdkit rdkit && \
+conda install -y -c rdkit rdkit && \
 conda install -y cython lxml nose coverage && \
 conda clean -y -s -p -t -l -i
 
