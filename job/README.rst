@@ -14,7 +14,7 @@ Examples:
 
 .. code-block:: bash
 
-   $ docker run nlesc/magma light -h
+   $ docker run --rm nlesc/magma light -h
    $ cat >glutathione.mgf 
    BEGIN IONS
    TITLE=CASMI 2014, Challenge 9
@@ -27,7 +27,7 @@ Examples:
    290.0802 5.1
    END IONS
    ^d
-   $ docker run -v $PWD:/data nlesc/magma light -f mgf -s hmdb glutathione.mgf
+   $ docker run --rm -v $PWD:/data nlesc/magma light -f mgf -s hmdb glutathione.mgf
    
 
 
@@ -95,21 +95,29 @@ Annotate a tree file using PubChem database:
 Configuration
 -------------
 
-Configuration is optional.
-Defaults to using 'rdkit' as chemical engine.
+A 'magma_job.ini' config file is read from users home directory (~/).
 
-A 'magma_job.ini' config file is read from current working directory or from users home directory (~/).
-
-Exampe config file:
+Exampe config file to read candidate molecules from the emetabolomics server:
 
 .. code-block:: INI
 
    [magma job]
-   # Location of structure database to fetch candidate molecules to match against ms peak trees
-   # db is expected to be available at where job is executed
-   structure_database.pubchem = /media/PubChem/Pubchem_MAGMa.db
-   structure_database.kegg = /media/PubChem/Pubchem_MAGMa_kegg.db
-   structure_database.hmdb = /home/ridderl/hmdb/HMDB_MAGMa.db
+   # Retrieve candidate molecules from the emetabolomics server
+   structure_database.online = True
+   structure_database.service = http://www.emetabolomics.org/magma/molecules
+
+Example config file to read candidate molecules from local databases (can be created by the scripts in MAGMa/pubchem):
+
+.. code-block:: INI
+
+   [magma job]
+   # Location of structure database from which to retrieve candidate molecules locally
+   structure_database.online = False
+   structure_database.pubchem = /home/user/magma_databases/Pubchem_MAGMa.db
+   structure_database.pubchem_halo = /home/user/magma_databases/Pubchem_MAGMa_halo.db
+   structure_database.kegg = /home/user/magma_databases/Pubchem_MAGMa_kegg.db
+   structure_database.kegg_halo = /home/user/magma_databases/Pubchem_MAGMa_kegg_halo.db
+   structure_database.hmdb = /home/user/magma_databases/HMDB_MAGMa.db
 
    # MACS authentication, used for sending progress reports to MAGMa web application
    macs.id = <MAC key identifier>
