@@ -1287,15 +1287,19 @@ class PubChemEngine(object):
 
     def query_local(self, select, incl_halo):
         """ Return all molecules with given charge from HMDB between low and high mass limits """
-        result = self.c.execute(select).fetchall()
+        # Allow only single select statements
+        if select.find(';') > -1:
+            return None
+        select_statement = "SELECT " + select
+        result = self.c.execute(select_statement).fetchall()
         if incl_halo:
-            result += self.ch.execute(select).fetchall()
+            result += self.ch.execute(select_statement).fetchall()
         return result
 
     def query_on_mim(self, low, high, charge):
         """ Return all molecules with given charge between low and high mass limits """
         molecules = []
-        select = 'SELECT * FROM molecules WHERE charge = {:d} AND mim BETWEEN {:d} AND {:d} {:s}'.format(
+        select = '* FROM molecules WHERE charge = {:d} AND mim BETWEEN {:d} AND {:d} {:s}'.format(
             charge, low, high, self.where)
         result = self.query(select, self.incl_halo)
         for (cid, mim, charge, natoms, molblock, inchikey, smiles, molform, name, refs, logp) in result:
@@ -1331,7 +1335,7 @@ class PubChemEngine(object):
     def check_inchi(self, mim, inchikey14):
         """ Function to look up uploaded structures in PubChem based on inchikey. Returns refscore and reference.
             Only available if PubChem database is installed locally""" 
-        select = 'SELECT cid,name,refscore FROM molecules WHERE charge IN (-1,0,1) AND mim between {:d} and {:d} AND inchikey == "{:s}"'.format(
+        select = 'cid,name,refscore FROM molecules WHERE charge IN (-1,0,1) AND mim between {:d} and {:d} AND inchikey == "{:s}"'.format(
                        int(mim * 1e6) - 1, int(mim * 1e6) + 1, inchikey14)
         result = self.query(select, True)
         if len(result) > 0:
@@ -1374,11 +1378,15 @@ class HmdbEngine(object):
 
     def query_local(self, select):
         """ Return all molecules with given charge from HMDB between low and high mass limits """
-        return self.c.execute(select).fetchall()
+        # Allow only single select statements
+        if select.find(';') > -1:
+            return None
+        select_statement = "SELECT " + select
+        return self.c.execute(select_statement).fetchall()
 
     def query_on_mim(self, low, high, charge):
         molecules = []
-        select = 'SELECT * FROM molecules WHERE charge = {:d} AND mim BETWEEN {:d} AND {:d} {:s}'.format(
+        select = '* FROM molecules WHERE charge = {:d} AND mim BETWEEN {:d} AND {:d} {:s}'.format(
                                 charge, low, high, self.where)
         result = self.query(select)
         for (cid, mim, charge, natoms, molblock, inchikey, smiles, molform, name, reference, logp) in result:
