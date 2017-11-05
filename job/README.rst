@@ -28,69 +28,32 @@ Examples:
    END IONS
    ^d
    $ docker run --rm -v $PWD:/data nlesc/magma light -f mgf -s hmdb glutathione.mgf
-   
 
-
-   
-
-Requirements
-------------
-
-MAGMa requires
-* RDKit with INCHI support.
-* libxml2-dev and libxslt-dev for mzxml file parsing.
-
-RDKit installation
-~~~~~~~~~~~~~~~~~~
-
-See https://github.com/rdkit/rdkit/blob/master/Docs/Book/Install.md for RDKit installation instructions.
-Download release from https://github.com/rdkit/rdkit/releases
-
-.. code-block:: bash
-
-   sudo apt-get install flex bison build-essential python-numpy cmake python-dev sqlite3 libsqlite3-dev libboost-dev libboost-python-dev libboost-regex-dev
-   virtualenv env
-   . env/bin/activate
-   pip install numpy
-   tar -zxf Release_2014_09_2.tar.gz
-   cd rdkit-Release_2014_09_2/
-   cd External/INCHI-API/
-   ./download-inchi.sh
-   cd ../..
-   mkdir build
-   cd build
-   cmake -DRDK_BUILD_INCHI_SUPPORT=ON ..
-   make -j 4
-   make install
-
-To `env/bin/activate` add:
-
-.. code-block:: bash
-
-   export RDBASE=<somedir>/rdkit-Release_2014_09_2
-   export LD_LIBRARY_PATH=$RDBASE/lib
-   export PYTHONPATH=$PYTHONPATH:$RDBASE
-
-`<somedir>` should be replaced with path where RDKit was untarred.
-
-Development installation
+Installation
 ------------------------
 
 .. code-block:: bash
 
-   pip install cython
+   # Install conda
+   wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh
+   bash Miniconda2-latest-Linux-x86_64.sh
+   
+   # Optionally, create a dedicated conda environment and activate
+   conda create -n magma
+   source activate magma
+   
+   # Install dependencies
+   conda install -c rdkit rdkit
+   conda install cython lxml nose coverage
+   pip install http://www.parallelpython.com/downloads/pp/pp-1.6.4.zip
+   
+   # If needed install C compiler
+   sudo apt-get update && sudo apt-get install gcc
+   
+   # Install MAGMa
+   git clone https://github.com/NLeSC/MAGMa.git
+   cd MAGMa/job
    python setup.py develop
-
-Usage
------
-
-Annotate a tree file using PubChem database:
-
-.. code-block:: bash
-
-   echo '353.087494: 69989984 (191.055756: 54674544 (85.029587: 2596121, 93.034615: 1720164, 109.029442: 917026, 111.045067: 1104891 (81.034691: 28070, 83.014069: 7618, 83.050339: 25471, 93.034599: 36300, 96.021790: 8453), 127.039917: 2890439 (57.034718: 16911, 81.034706: 41459, 83.050301: 35131, 85.029533: 236887, 99.045074: 73742, 109.029404: 78094), 171.029587: 905226, 173.045212: 2285841 (71.013992: 27805, 93.034569: 393710, 111.008629: 26219, 111.045029: 339595, 137.024292: 27668, 155.034653: 145773), 191.055725: 17000514), 353.087097: 4146696)' > example.tree
-   magma read_ms_data --ms_data_format tree -l 5 -a 0  example.tree results.db
-   magma annotate -p5 -q0 -c0 -d0 -b3 -i -1 -s pubchem -o ../pubchem/Pubchem_MAGMa_new.db,0,9999 -f results.db
 
 Configuration
 -------------
@@ -122,6 +85,17 @@ Example config file to read candidate molecules from local databases (can be cre
    # MACS authentication, used for sending progress reports to MAGMa web application
    macs.id = <MAC key identifier>
    macs.key = <MAC key>
+
+Usage
+-----
+
+Annotate a tree file using PubChem database:
+
+.. code-block:: bash
+
+   echo '353.087494: 69989984 (191.055756: 54674544 (85.029587: 2596121, 93.034615: 1720164, 109.029442: 917026, 111.045067: 1104891 (81.034691: 28070, 83.014069: 7618, 83.050339: 25471, 93.034599: 36300, 96.021790: 8453), 127.039917: 2890439 (57.034718: 16911, 81.034706: 41459, 83.050301: 35131, 85.029533: 236887, 99.045074: 73742, 109.029404: 78094), 171.029587: 905226, 173.045212: 2285841 (71.013992: 27805, 93.034569: 393710, 111.008629: 26219, 111.045029: 339595, 137.024292: 27668, 155.034653: 145773), 191.055725: 17000514), 353.087097: 4146696)' > example.tree
+   magma read_ms_data --ms_data_format tree -l 5 -a 0  example.tree results.db
+   magma annotate -p5 -q0 -c0 -d0 -b3 -i -1 -s pubchem -o ../pubchem/Pubchem_MAGMa_new.db,0,9999 -f results.db
 
 Running on cluster
 ------------------
