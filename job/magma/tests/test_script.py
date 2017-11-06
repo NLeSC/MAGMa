@@ -11,10 +11,6 @@ class TestMagmaCommand(unittest.TestCase):
     def setUp(self):
         self.mc = magma.script.MagmaCommand()
 
-    def test_version(self):
-
-        self.assertEqual(self.mc.version(), '1.0')
-
     def test_theogallin_example(self):
         mzxmlfile = pkg_resources.resource_filename('magma', "tests/theogallin.mzXML")
         sdfile = pkg_resources.resource_filename('magma', "tests/theogallin.sdf")
