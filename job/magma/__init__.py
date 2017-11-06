@@ -39,6 +39,7 @@ DisableLog('rdApp.warning')
 logging.basicConfig(format='%(levelname)s: %(message)s')
 logger = logging.getLogger('MagmaLogger')
 
+# Keep version in sink with setup.py of both job and web
 __version__ = '1.3'
 
 

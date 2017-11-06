@@ -39,7 +39,7 @@ ext_modules = [Extension('magma.fragmentation_cy',
 
 setup(
     name='Magma',
-    version=__version__,
+    version='1.3',
     license='commercial',
     author='Lars Ridder',
     author_email='lars.ridder@esciencecenter.nl>',
