@@ -2,6 +2,7 @@ import os
 from setuptools import setup, find_packages
 from setuptools.extension import Extension
 import numpy as np
+from magma import __version__
 
 here = os.path.abspath(os.path.dirname(__file__))
 try:
@@ -38,7 +39,7 @@ ext_modules = [Extension('magma.fragmentation_cy',
 
 setup(
     name='Magma',
-    version="1.2",
+    version=__version__,
     license='commercial',
     author='Lars Ridder',
     author_email='lars.ridder@esciencecenter.nl>',

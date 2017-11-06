@@ -30,7 +30,7 @@ if sys.version_info[:3] < (2, 5, 0):
     requires.append('pysqlite')
 
 setup(name='MAGMaWeb',
-      version='0.0',
+      version='1.3',
       description='MAGMaWeb',
       long_description=README + '\n\n' + CHANGES,
       classifiers=["Programming Language :: Python",

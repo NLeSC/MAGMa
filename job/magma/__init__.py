@@ -39,6 +39,8 @@ DisableLog('rdApp.warning')
 logging.basicConfig(format='%(levelname)s: %(message)s')
 logger = logging.getLogger('MagmaLogger')
 
+__version__ = '1.3'
+
 
 class MagmaSession(object):
 
@@ -63,6 +65,7 @@ class MagmaSession(object):
         self.db_session.add(rundata)
         self.db_session.commit()
         logger.setLevel(getattr(logging, loglevel.upper()))
+        logger.info('STARTING MAGMa ' + __version__)
 
     def get_structure_engine(self, pubchem_names=False, call_back_url=None):
         return StructureEngine(self.db_session, pubchem_names, call_back_url)

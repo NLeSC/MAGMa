@@ -124,7 +124,7 @@ class MagmaCommand(object):
         sc.set_defaults(func=self.export_structures)
 
     def version(self):
-        return '1.0' # TODO move to main magma package and reuse in setup.py so version is specified in one place
+        return magma.__version__ # TODO move to main magma package and reuse in setup.py so version is specified in one place
 
     def get_magma_session(self, db, description="",log='warn'):
         return magma.MagmaSession(db, description,log)
