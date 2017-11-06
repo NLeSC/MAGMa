@@ -2,7 +2,6 @@ import os
 from setuptools import setup, find_packages
 from setuptools.extension import Extension
 import numpy as np
-from magma import __version__
 
 here = os.path.abspath(os.path.dirname(__file__))
 try:
