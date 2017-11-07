@@ -14,6 +14,9 @@ The eMetabolomics research project
 .. image:: https://img.shields.io/badge/docker-ready-blue.svg
     :target: https://hub.docker.com/r/nlesc/magma
 
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1043226.svg
+   :target: https://doi.org/10.5281/zenodo.1043226
+
 The eMetabolomics project is funded by the Netherlands eScience Center and is carried out at Wageningen University and the Netherlands eScience Center in collaboration with the Netherlands Metabolomics Centre. The project develops chemo-informatics based methods for metabolite identification and biochemical network reconstruction in an integrative metabolomics data analysis workflow.
 
 Homepage: http://www.emetabolomics.org
