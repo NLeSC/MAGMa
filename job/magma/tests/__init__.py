@@ -135,7 +135,9 @@ class TestStructureEngine(unittest.TestCase):
     def test_add_structure(self):
         se = magma.StructureEngine(self.db_session)
 
-        molblock = Chem.MolToMolBlock(Chem.MolFromSmiles('CCO'))
+        mol = Chem.MolFromSmiles('CCO')
+        AllChem.Compute2DCoords(mol)
+        molblock = Chem.MolToMolBlock(mol)
 
         molid = se.add_structure(molblock, 'ethanol', 1.0, False)
 

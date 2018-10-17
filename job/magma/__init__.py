@@ -334,7 +334,6 @@ class StructureEngine(object):
         try:
             mol = Chem.MolFromSmiles(smiles)
             mol.SetProp('_Name', name)
-            AllChem.Compute2DCoords(mol)
             return self.add_structure(
                 Chem.MolToMolBlock(mol), name, None, predicted=0, mass_filter=mass_filter)
         except:
@@ -378,16 +377,28 @@ class StructureEngine(object):
                         logger.info(
                             'Duplicate structure, kept old one: ' + newmol.name)
                         return dup.molid
+        molblock = False
         if self.pubchem_names:
             in_pubchem = self.pubchem_engine.check_inchi(newmol.mim, newmol.inchikey14)
             if in_pubchem != False:
-                name, reference, refscore = in_pubchem
+                name, reference, refscore, molblock = in_pubchem
                 if newmol.name == '':
                     newmol.name = unicode(str(name), 'utf-8', 'xmlcharrefreplace')
                 if newmol.reference == "None":
                     newmol.reference = unicode(reference)
                 if newmol.refscore is None:
                     newmol.refscore = refscore
+        # add (from pubchem) or generate (with RDKit) 2D coordinates if needed
+        coordinates = [[float(c) for c in l.split()[:3]] for l in newmol.mol.split('\n')[4:6]]
+        if coordinates == [[0,0,0],[0,0,0]]:
+            if molblock:
+                newmol.mol = molblock
+                logger.debug('Added coordinates from Pubchem for: ' + newmol.name)
+            else:
+                mol = Chem.MolFromMolBlock(newmol.mol)
+                AllChem.Compute2DCoords(mol)
+                newmol.mol = Chem.MolToMolBlock(mol)
+                logger.debug('Generated coordinates for: ' + newmol.name)
         self.db_session.add(newmol)
         logger.debug('Added molecule: ' + newmol.name)
         self.db_session.flush()
@@ -1345,14 +1356,14 @@ class PubChemEngine(object):
     def check_inchi(self, mim, inchikey14):
         """ Function to look up uploaded structures in PubChem based on inchikey. Returns refscore and reference.
             Only available if PubChem database is installed locally""" 
-        select = 'cid,name,refscore FROM molecules WHERE charge IN (-1,0,1) AND mim between {:d} and {:d} AND inchikey == "{:s}"'.format(
+        select = 'molblock,cid,name,refscore FROM molecules WHERE charge IN (-1,0,1) AND mim between {:d} and {:d} AND inchikey == "{:s}"'.format(
                        int(mim * 1e6) - 1, int(mim * 1e6) + 1, inchikey14)
         result = self.query(select, True)
         if len(result) > 0:
-            cid, name, refscore = result[0]
+            molblock, cid, name, refscore = result[0]
             reference = '<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid=' +\
                 str(cid) + '" target="_blank">' + str(cid) + ' (PubChem)</a>'
-            return [name, reference, refscore]
+            return [name, reference, refscore, zlib.decompress(base64.decodestring(molblock))]
         else:
             return False
 
