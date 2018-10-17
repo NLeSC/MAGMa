@@ -376,8 +376,8 @@ class StructureEngine(object):
                     # TODO remove any fragments related to this structure as well
                     else:
                         logger.info(
-                            'Duplicate structure, kept new one: ' + newmol.name)
-                        return
+                            'Duplicate structure, kept old one: ' + newmol.name)
+                        return dup.molid
         if self.pubchem_names:
             in_pubchem = self.pubchem_engine.check_inchi(newmol.mim, newmol.inchikey14)
             if in_pubchem != False:
