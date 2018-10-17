@@ -325,16 +325,22 @@ class StructureEngine(object):
                 name = '_'.join(splitline[1:])
             else:
                 name = ''
-            try:
-                mol = Chem.MolFromSmiles(smiles)
-                mol.SetProp('_Name', name)
-                AllChem.Compute2DCoords(mol)
-                molids.add(self.add_structure(
-                    Chem.MolToMolBlock(mol), name, None, predicted=0, mass_filter=mass_filter))
-            except:
-                logger.warn(
-                    'Failed to read smiles: ' + smiles + ' (' + name + ')')
+            molid = self.add_smiles(smiles, name=name, mass_filter=mass_filter)
+            if molid is not None:
+                molids.add(molid)
         logger.info(str(len(molids)) + ' molecules added to library\n')
+
+    def add_smiles(self, smiles, name='', mass_filter=9999):
+        try:
+            mol = Chem.MolFromSmiles(smiles)
+            mol.SetProp('_Name', name)
+            AllChem.Compute2DCoords(mol)
+            return self.add_structure(
+                Chem.MolToMolBlock(mol), name, None, predicted=0, mass_filter=mass_filter)
+        except:
+            logger.warn(
+                'Failed to read smiles: ' + smiles + ' (' + name + ')')
+            return None
 
     def add_structure(self, molblock, name, refscore, predicted,
                       mim=None, smiles=None, natoms=None, inchi=None, molform=None, reference=None, logp=None, mass_filter=9999):
