@@ -3,7 +3,7 @@ import argparse
 import magma.script
 import tempfile, os
 import pkg_resources
-from StringIO import StringIO
+from io import StringIO
 from magma.models import Base, Molecule, Scan, Peak, Fragment, Run
 
 class TestMagmaCommand(unittest.TestCase):
@@ -92,7 +92,7 @@ class TestMagmaCommand(unittest.TestCase):
         os.remove(dbfile.name)
 
     def test_chlorogenic_acid_example_without_fast_option(self):
-        treefile = tempfile.NamedTemporaryFile(delete=False)
+        treefile = tempfile.NamedTemporaryFile(mode='w', delete=False)
         dbfile = tempfile.NamedTemporaryFile(delete=False)
 
         args = argparse.Namespace()
@@ -217,7 +217,7 @@ class TestMagmaCommand(unittest.TestCase):
         os.remove(dbfile.name)
 
     def test_light_glutathion_mgf(self):
-        treefile = tempfile.NamedTemporaryFile(delete=False)
+        treefile = tempfile.NamedTemporaryFile(mode='w', delete=False)
 
         args = argparse.Namespace()
         args.ms_data = treefile.name
@@ -263,15 +263,18 @@ END IONS
         args.output_format = 'smiles'
         out = StringIO()
         self.mc.light(args, out)
-        
-        self.assertEqual(out.getvalue(),u'NC(CCC(=O)NC(CS)C(=O)NCC(=O)O)C(=O)O score=1.22932 name= refscore=None formula=C10H17N3O6S mim=307.083805984\n')
+        smiles, score, name, refscore, formula, mim = out.getvalue().split()
+        self.assertEqual(smiles, u'NC(CCC(=O)NC(CS)C(=O)NCC(=O)O)C(=O)O')
+        self.assertEqual(score, u'score=1.22932')
+        self.assertEqual(formula, u'formula=C10H17N3O6S')
+        self.assertEqual(mim[:16], u'mim=307.08380598')
 
         os.remove(treefile.name)
         
 
     def test_JWH015_example_with_fast_option(self):
         dbfile = tempfile.NamedTemporaryFile(delete=False)
-        treefile = tempfile.NamedTemporaryFile(delete=False)
+        treefile = tempfile.NamedTemporaryFile(mode='w', delete=False)
         args = argparse.Namespace()
         args.db = dbfile.name
         args.ms_data = treefile.name
@@ -326,7 +329,7 @@ END IONS
         args.structures = 'c1ccc2ccccc2c1C(=O)c3c4ccccc4n(CCC)c3C'
         self.mc.add_structures(args)
 
-        scenariofile = tempfile.NamedTemporaryFile(delete=False)
+        scenariofile = tempfile.NamedTemporaryFile(mode='w', delete=False)
         args = argparse.Namespace()
         args.db = dbfile.name
         args.description = None

@@ -26,13 +26,13 @@ class MagmaCommand(object):
             "add", help=self.add.__doc__, description=self.add.__doc__)
         sc_add.add_argument(
             'user', help="user id (default: %(default)s)",
-            default=None, type=unicode)
+            default=None, type=str)
         sc_add.add_argument(
             'name', help="name (default: %(default)s)",
-            default=None, type=unicode)
+            default=None, type=str)
         sc_add.add_argument(
             'email', help="e-mail address (default: %(default)s)",
-            default=None, type=unicode)
+            default=None, type=str)
         sc_add.add_argument(
             'password', help="password (default: %(default)s)",
             default=None, type=str)
@@ -43,19 +43,19 @@ class MagmaCommand(object):
             description=self.update.__doc__)
         sc_update.add_argument(
             '-u', '--user', help="change user id (default: %(default)s)",
-            default=argparse.SUPPRESS, type=unicode)
+            default=argparse.SUPPRESS, type=str)
         sc_update.add_argument(
             '-n', '--name', help="change display name (default: %(default)s)",
-            default=argparse.SUPPRESS, type=unicode)
+            default=argparse.SUPPRESS, type=str)
         sc_update.add_argument(
             '-e', '--email', help="change email (default: %(default)s)",
-            default=argparse.SUPPRESS, type=unicode)
+            default=argparse.SUPPRESS, type=str)
         sc_update.add_argument(
             '-p', '--password', help="change password (default: %(default)s)",
             default=argparse.SUPPRESS, type=str)
         sc_update.add_argument(
             'userid', help="user id (default: %(default)s)",
-            default=None, type=unicode)
+            default=None, type=str)
         sc_update.set_defaults(func=self.update)
 
         sc_remove = sp.add_parser(
@@ -63,15 +63,15 @@ class MagmaCommand(object):
             description=self.remove.__doc__)
         sc_remove.add_argument(
             'user', help="user id (default: %(default)s)",
-            default=None, type=unicode)
+            default=None, type=str)
         sc_remove.set_defaults(func=self.remove)
 
         sc_owner = sp.add_parser(
             "owner", help=self.owner.__doc__, description=self.owner.__doc__)
         sc_owner.add_argument(
-            'job', help="job identifier", default=None, type=unicode)
+            'job', help="job identifier", default=None, type=str)
         sc_owner.add_argument(
-            'user', help="user id", default=None, type=unicode)
+            'user', help="user id", default=None, type=str)
         sc_owner.set_defaults(func=self.owner)
 
         sc_import = sp.add_parser(
@@ -81,7 +81,7 @@ class MagmaCommand(object):
             'dbfile', help="job sqlite result db file",
             default=None, type=argparse.FileType('r'))
         sc_import.add_argument(
-            'owner', help="user id", default=None, type=unicode)
+            'owner', help="user id", default=None, type=str)
         sc_import.set_defaults(func=self.importjob)
 
     def add(self, args):
@@ -111,7 +111,7 @@ class MagmaCommand(object):
         "Remove user and his/her jobs"
         user = User.by_id(args.user)
         for jobmeta in user.jobs:
-            print jobmeta.jobid
+            print(jobmeta.jobid)
             self.job_factory.fromId(jobmeta.jobid).delete()
         User.delete(user)
         commit()
@@ -128,7 +128,7 @@ class MagmaCommand(object):
         dbfile = args.dbfile
         owner = args.owner
         job = self.job_factory.fromDb(dbfile, owner)
-        print job.id
+        print(job.id)
         commit()
 
     def configure(self, config_file):

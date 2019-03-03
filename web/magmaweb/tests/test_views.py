@@ -1,11 +1,16 @@
 import unittest
 import datetime
+import json
 from pyramid import testing
 from mock import Mock, patch
 from magmaweb.views import Views, JobViews, InCompleteJobViews
 from magmaweb.job import JobFactory, Job, JobDb, JobQuery
 from magmaweb.job import JobError, JobIncomplete
 from magmaweb.user import User, JobMeta
+try:  # to stay python 2 compatible
+    from StringIO import StringIO
+except:
+    from io import StringIO
 
 
 class AbstractViewsTestCase(unittest.TestCase):
@@ -137,7 +142,7 @@ class ViewsTestCase(AbstractViewsTestCase):
             views.allinone()
 
         expected_json = {'success': False, 'msg': 'Unable to submit query'}
-        self.assertEquals(json.loads(e.exception.body), expected_json)
+        self.assertEqual(json.loads(e.exception.body), expected_json)
         views.job_factory.fromScratch.assert_called_with('bob')
         jobquery.allinone.assert_called_with(post)
         views.job_factory.submitQuery.assert_called_with(jobquery.allinone(),
@@ -153,9 +158,8 @@ class ViewsTestCase(AbstractViewsTestCase):
     def test_uploaddb_post(self):
         self.config.add_route('results', '/results/{jobid}')
         from cgi import FieldStorage
-        import StringIO
         dbfile = FieldStorage()
-        dbfile.file = StringIO.StringIO()
+        dbfile.file = StringIO()
         request = testing.DummyRequest(post={'db_file': dbfile})
         request.user = User('bob', 'Bob Example', 'bob@example.com')
         views = Views(request)
@@ -420,7 +424,7 @@ class ViewsTestCase(AbstractViewsTestCase):
         request = testing.DummyRequest()
         request.user = None
         request.url = 'http://example.com/status'
-        request.method = u'PUT'
+        request.method = 'PUT'
         route_mapper = self.config.get_routes_mapper()
         request.matched_route = route_mapper.get_route('status.json')
         request.registry.settings['auto_register'] = True
@@ -532,7 +536,7 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
         with self.assertRaises(JobError) as e:
             views.job_status()
 
-        self.assertEquals(e.exception.job, job)
+        self.assertEqual(e.exception.job, job)
 
     def test_jobstatusjson_complete(self):
         request = testing.DummyRequest()
@@ -697,7 +701,7 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
         exp_response = {'success': True, 'message': 'Deleted job'}
         self.assertDictEqual(response, exp_response)
         job.delete.assert_called_with()
-        self.assertEquals(request.response.status_int, 204)
+        self.assertEqual(request.response.status_int, 204)
 
     def test_delete_incompletejob(self):
         request = testing.DummyRequest()
@@ -739,8 +743,9 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
         with self.assertRaises(HTTPInternalServerError) as e:
             views.delete()
 
-        expected = '{"msg": "Failed to cancel job", "success": false}'
-        self.assertEquals(e.exception.body, expected)
+        expected = json.loads('{"msg": "Failed to cancel job", "success": false}')
+        value = json.loads(e.exception.body)
+        self.assertEqual(value, expected)
 
     def test_error(self):
         request = testing.DummyRequest()
@@ -812,8 +817,7 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
     def test_stderr(self):
         request = testing.DummyRequest()
         job = self.fake_job()
-        import StringIO
-        log = StringIO.StringIO()
+        log = StringIO()
         log.write('bla')
         log.seek(0)
         job.stderr.return_value = log
@@ -827,8 +831,7 @@ class InCompleteJobViewsTestCase(AbstractViewsTestCase):
     def test_stdout(self):
         request = testing.DummyRequest()
         job = self.fake_job()
-        import StringIO
-        log = StringIO.StringIO()
+        log = StringIO()
         log.write('bla')
         log.seek(0)
         job.stdout.return_value = log
@@ -986,8 +989,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
         job.db.scansWithMolecules.assert_called_once_with(filters=[], molid=1, mz=None, scanid=None)
 
     def test_moleculescsv(self):
-        import StringIO
-        csv = StringIO.StringIO()
+        csv = StringIO()
         csv.write('bla')
         job = self.fake_job()
         job.db.molecules2csv.return_value = csv
@@ -1000,11 +1002,10 @@ class JobViewsTestCase(AbstractViewsTestCase):
         response = views.moleculescsv()
 
         self.assertEqual(response.content_type, 'text/csv')
-        self.assertEqual(response.body, 'bla')
+        self.assertEqual(response.body, b'bla')
 
     def test_moleculescsv_somecols(self):
-        import StringIO
-        csv = StringIO.StringIO()
+        csv = StringIO()
         csv.write('bla')
         job = self.fake_job()
         job.db.molecules2csv.return_value = csv
@@ -1034,7 +1035,7 @@ class JobViewsTestCase(AbstractViewsTestCase):
 
         job.db.molecules2sdf.assert_called_with([], cols=[])
         self.assertEqual(response.content_type, 'chemical/x-mdl-sdfile')
-        self.assertEqual(response.body, 'bla')
+        self.assertEqual(response.body, b'bla')
 
     def test_moleculessdf_somecols(self):
         job = self.fake_job()

@@ -3,6 +3,10 @@ import unittest
 from magmaweb.job import JobDb, ScanRequiredError
 from magmaweb.models import Scan, Peak, Run, Molecule, Fragment
 from magmaweb.tests.test_job import initTestingDB
+try:  # to stay python 2 compatible
+    from StringIO import StringIO
+except:
+    from io import StringIO
 
 
 class JobDbTestCaseAbstract(unittest.TestCase):
@@ -20,7 +24,7 @@ class JobDbTestCase(JobDbTestCaseAbstract):
 
     def test_runInfo(self):
         runInfo = self.job.runInfo()
-        self.assertEqual(runInfo.ms_filename, u'F123456.mzxml')
+        self.assertEqual(runInfo.ms_filename, 'F123456.mzxml')
         self.assertEqual(runInfo.abs_peak_cutoff, 1000)
         self.assertEqual(runInfo.max_ms_level, 3)
         self.assertEqual(runInfo.precursor_mz_precision, 10)
@@ -31,7 +35,7 @@ class JobDbTestCase(JobDbTestCaseAbstract):
         self.assertEqual(runInfo.msms_intensity_cutoff, 50)
         self.assertEqual(runInfo.mz_precision, 10)
         self.assertEqual(runInfo.mz_precision_abs, 0.002)
-        self.assertEqual(runInfo.description, u'My first description')
+        self.assertEqual(runInfo.description, 'My first description')
         self.assertEqual(runInfo.max_water_losses, 1)
 
     def test_runInfo_maxrunid(self):
@@ -39,16 +43,16 @@ class JobDbTestCase(JobDbTestCaseAbstract):
             ionisation_mode=-1, skip_fragmentation=True,
             ms_intensity_cutoff=200000.0, msms_intensity_cutoff=50,
             mz_precision=10, mz_precision_abs=0.002, use_all_peaks=True,
-            ms_filename=u'F123456.mzxml', abs_peak_cutoff=1000,
+            ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
             max_ms_level=3, precursor_mz_precision=10,
-            max_broken_bonds=4, description=u'My second description',
+            max_broken_bonds=4, description='My second description',
             max_water_losses=1,
         ))
 
         runInfo = self.job.runInfo()
 
         # run with highest id is returned
-        self.assertEqual(runInfo.description, u'My second description')
+        self.assertEqual(runInfo.description, 'My second description')
 
     def test_maxMSLevel(self):
         maxmslevel = self.job.maxMSLevel()
@@ -196,11 +200,11 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
 
     def test_default(self):
         response = self.job.molecules()
-        url1 = u'<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
-        url1 += u'?cid=289">CID: 289</a>'
-        url2 = u'<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
-        url2 += u'?cid=152432">CID: 152432</a>'
-        self.assertEquals(
+        url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url1 += '?cid=289">CID: 289</a>'
+        url2 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url2 += '?cid=152432">CID: 152432</a>'
+        self.assertEqual(
             response,
             {
                 'total': 2,
@@ -209,41 +213,41 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
                 'rows': [{
                     'molid': 72,
                     'predicted': False,
-                    'mol': u'Molfile',
-                    'formula': u'C6H6O2',
+                    'mol': 'Molfile',
+                    'formula': 'C6H6O2',
                     'nhits': 1,
-                    'name': u'pyrocatechol',
+                    'name': 'pyrocatechol',
                     'refscore': 1.0,
                     'reactionsequence': {
-                        u'reactantof': {
-                            u'esterase': {
-                                u'nr': 2,
-                                u'nrp': 1
+                        'reactantof': {
+                            'esterase': {
+                                'nr': 2,
+                                'nrp': 1
                             }
                         }
                     },
-                    'smiles': u'C1=CC=C(C(=C1)O)O',
-                    'inchikey14': u'YCIMNLLNPGFGHC',
+                    'smiles': 'C1=CC=C(C(=C1)O)O',
+                    'inchikey14': 'YCIMNLLNPGFGHC',
                     'mim': 110.03677, 'logp': 1.231,
                     'assigned': False,
                     'reference': url1
                 }, {
                     'predicted': False, 'molid': 352,
-                    'mol': u"Molfile of dihydroxyphenyl-valerolactone",
-                    'formula': u"C11H12O4",
+                    'mol': "Molfile of dihydroxyphenyl-valerolactone",
+                    'formula': "C11H12O4",
                     'nhits': 1,
-                    'name': u"dihydroxyphenyl-valerolactone",
+                    'name': "dihydroxyphenyl-valerolactone",
                     'refscore': 1.0,
                     'reactionsequence': {
-                        u'productof': {
-                            u'theogallin': {
-                                u'nr': 1,
-                                u'nrp': 0
+                        'productof': {
+                            'theogallin': {
+                                'nr': 1,
+                                'nrp': 0
                             }
                         }
                     },
-                    'smiles': u"O=C1CCC(Cc2ccc(O)c(O)c2)O1",
-                    'inchikey14': u'ZNXXWTPQHVLMQT',
+                    'smiles': "O=C1CCC(Cc2ccc(O)c(O)c2)O1",
+                    'inchikey14': 'ZNXXWTPQHVLMQT',
                     'mim': 208.07355, 'logp': 2.763,
                     'assigned': False,
                     'reference': url2
@@ -303,7 +307,7 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
 
     def test_filteredon_formula(self):
         response = self.job.molecules(filters=[{"type": "string",
-                                                "value": u"C6",
+                                                "value": "C6",
                                                 "field": "formula"}])
 
         self.assertEqual(response['total'], 1)
@@ -364,7 +368,7 @@ class JobDbMoleculesTestCase(JobDbTestCaseAbstract):
     def test_filteredon_reaction(self):
         filters = [{"type": "reaction",
                     "product": 3,
-                    "name": u"esterase",
+                    "name": "esterase",
                     "field": "reactionsequence",
                     }]
         response = self.job.molecules(filters=filters)
@@ -523,8 +527,7 @@ class JobDbMolecules2csvTestCase(JobDbTestCaseAbstract):
     def test_it(self):
         csvfile = self.job.molecules2csv(self.job.molecules()['rows'])
         import csv
-        import StringIO
-        expected_csvfile = StringIO.StringIO()
+        expected_csvfile = StringIO()
         cols = ['name', 'smiles', 'refscore', 'reactionsequence',
                 'nhits', 'formula', 'mim', 'predicted', 'logp', 'reference']
         csvwriter = csv.DictWriter(expected_csvfile, cols)
@@ -564,8 +567,7 @@ class JobDbMolecules2csvTestCase(JobDbTestCaseAbstract):
         mets = self.job.molecules(scanid=641)['rows']
         csvfile = self.job.molecules2csv(mets)
         import csv
-        import StringIO
-        expected_csvfile = StringIO.StringIO()
+        expected_csvfile = StringIO()
         cols = ['name', 'smiles', 'refscore', 'reactionsequence',
                 'nhits', 'formula', 'mim', 'predicted', 'logp', 'reference',
                 'score']
@@ -595,7 +597,7 @@ class JobDbMolecules2csvTestCase(JobDbTestCaseAbstract):
 
         response = self.job.molecules2csv(mets, cols=cols)
 
-        self.assertEquals(
+        self.assertEqual(
             response.getvalue(),
             'name,mim\r\n' +
             'pyrocatechol,110.03677\r\n'
@@ -747,7 +749,7 @@ class JobScansWithMoleculesTestCase(JobDbTestCaseAbstract):
         ])
 
     def test_formula(self):
-        filters = [{"type": "string", "value": u"C6", "field": "formula"}]
+        filters = [{"type": "string", "value": "C6", "field": "formula"}]
 
         response = self.job.scansWithMolecules(filters=filters)
 
@@ -797,7 +799,7 @@ class JobScansWithMoleculesTestCase(JobDbTestCaseAbstract):
     def test_filteredon_nrscansgt_and_formula(self):
         filters = [{"type": "numeric", "comparison": "lt",
                     "value": 2, "field": "nhits"},
-                   {"type": "string", "value": u"C6", "field": "formula"}]
+                   {"type": "string", "value": "C6", "field": "formula"}]
 
         response = self.job.scansWithMolecules(filters=filters)
 
@@ -913,7 +915,7 @@ class JobFragmentsTestCase(JobDbTestCaseAbstract):
         response = self.job.fragments(molid=72, scanid=641, node='root')
         self.assertEqual(response, {
             'children': [{
-                'atoms': u'0,1,2,3,4,5,6,7',
+                'atoms': '0,1,2,3,4,5,6,7',
                 'children': [],
                 'deltah': -1.0,
                 'deltappm': -1.84815979523607e-08,
@@ -922,8 +924,8 @@ class JobFragmentsTestCase(JobDbTestCaseAbstract):
                 'leaf': True,
                 'mass': 110.0367794368,
                 'molid': 72,
-                'mol': u'Molfile',
-                'formula': u'C5H4',
+                'mol': 'Molfile',
+                'formula': 'C5H4',
                 'mslevel': 1,
                 'mz': 109.0295639038086,
                 'scanid': 641,
@@ -937,7 +939,7 @@ class JobFragmentsTestCase(JobDbTestCaseAbstract):
         response = self.job.fragments(molid=352, scanid=870, node='root')
         self.assertEqual(response, {
             'children': [{
-                'atoms': u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14',
+                'atoms': '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14',
                 'children': [{
                     'atoms': "6,7,8,9,10,11,12,13,14",
                     'deltah': 0,
@@ -976,7 +978,7 @@ class JobFragmentsTestCase(JobDbTestCaseAbstract):
                 'leaf': False,
                 'mass': 208.0735588736,
                 'molid': 352,
-                'mol': u'Molfile of dihydroxyphenyl-valerolactone',
+                'mol': 'Molfile of dihydroxyphenyl-valerolactone',
                 'mslevel': 1,
                 'mz': 207.066284179688,
                 'scanid': 870,
@@ -1010,7 +1012,7 @@ class JobFragmentsTestCase(JobDbTestCaseAbstract):
         response = self.job.fragments(molid=72, scanid=641, node='root')
         self.assertEqual(response, {
             'children': [{
-                'atoms': u'0,1,2,3,4,5,6,7',
+                'atoms': '0,1,2,3,4,5,6,7',
                 'children': [],
                 'deltah': -1.0,
                 'deltappm': -1.84815979523607e-08,
@@ -1019,7 +1021,7 @@ class JobFragmentsTestCase(JobDbTestCaseAbstract):
                 'leaf': True,
                 'mass': 110.0367794368,
                 'molid': 72,
-                'mol': u'Molfile',
+                'mol': 'Molfile',
                 'mslevel': 1,
                 'mz': 109.0295639038086,
                 'scanid': 641,
@@ -1042,7 +1044,7 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
 
     def test_default(self):
         response = self.job.molecules()
-        self.assertEquals(
+        self.assertEqual(
             response,
             {
                 'total': 1,
@@ -1051,17 +1053,17 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                 'rows': [{
                     'molid': 12,
                     'predicted': True,
-                    'mol': u'Molfile',
-                    'formula': u'C11H12O7S',
+                    'mol': 'Molfile',
+                    'formula': 'C11H12O7S',
                     'nhits': 1,
-                    'name': u'5-(3,4)-dihydroxyphenyl-g-valerolactone (F)',
+                    'name': '5-(3,4)-dihydroxyphenyl-g-valerolactone (F)',
                     'refscore': 0.119004,
-                    'reactionsequence': [u'sulfation_(aromatic_hydroxyl)'],
-                    'smiles': u'Oc1ccc(CC2OC(=O)CC2)cc1OS(O)(=O)=O',
-                    'inchikey14': u'YAXFVDUJDAQPTJ',
+                    'reactionsequence': ['sulfation_(aromatic_hydroxyl)'],
+                    'smiles': 'Oc1ccc(CC2OC(=O)CC2)cc1OS(O)(=O)=O',
+                    'inchikey14': 'YAXFVDUJDAQPTJ',
                     'mim': 288.0303734299, 'logp':1.9027,
                     'assigned': False,
-                    'reference': u''
+                    'reference': ''
                 }]
             }
         )
@@ -1070,7 +1072,7 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
         response = self.job.fragments(molid=12, scanid=1, node='root')
         self.assertEqual(response, {
             'children': [{
-                'atoms': u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
+                'atoms': '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
                 'children': [],
                 'deltah': -1.0,
                 'deltappm': -7.046696487857745e-09,
@@ -1079,7 +1081,7 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                 'leaf': True,
                 'mass': 288.0303734299,
                 'molid': 12,
-                'mol': u'Molfile',
+                'mol': 'Molfile',
                 'mslevel': 1,
                 'mz': 287.015686035156,
                 'scanid': 1,
@@ -1087,7 +1089,7 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                 'isAssigned': False,
                 'formula': "C4H6O2",
             }, {
-                'atoms': u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
+                'atoms': '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
                 'deltah': -1.0,
                 'deltappm': -7.020570507205176e-09,
                 'expanded': True,
@@ -1095,7 +1097,7 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                 'leaf': False,
                 'mz': 287.023132324219,
                 'molid': 12,
-                'mol': u'Molfile',
+                'mol': 'Molfile',
                 'mslevel': 1,
                 'mass': 288.0303734299,
                 'scanid': 1,
@@ -1109,8 +1111,8 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                     'mz': 207.066223144531,
                     'mass': 207.0657338415,
                     'score': 0.5,
-                    'mol': u'Molfile',
-                    'atoms': u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14',
+                    'mol': 'Molfile',
+                    'atoms': '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14',
                     'expanded': True,
                     'leaf': True,
                     'mslevel': 2,
@@ -1124,8 +1126,8 @@ class JobWithAllPeaksTestCase(unittest.TestCase):
                     'mz': 287.022827148438,
                     'mass': 288.0303734299,
                     'score': 0.0,
-                    'mol': u'Molfile',
-                    'atoms': u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
+                    'mol': 'Molfile',
+                    'atoms': '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
                     'expanded': True,
                     'leaf': True,
                     'mslevel': 2,

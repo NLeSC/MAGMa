@@ -2,7 +2,11 @@
 import uuid
 import os
 import csv
-import StringIO
+import io
+try:  # to stay python 2 compatible
+    from StringIO import StringIO
+except:
+    from io import StringIO
 import json
 import shutil
 import logging
@@ -100,7 +104,7 @@ def make_job_factory(params):
     """
     prefix = 'jobfactory.'
     d = {k.replace(prefix, ''): v
-         for k, v in params.iteritems()
+         for k, v in params.items()
          if k.startswith(prefix)}
     return JobFactory(**d)
 
@@ -275,7 +279,7 @@ class JobFactory(object):
         jdir = self._makeJobDir(jobid)
 
         # copy db of old job into new jobdir
-        src = open(self.id2db(job.id))
+        src = open(self.id2db(job.id), 'rb')
         self._copyFile(src, jobid)
         src.close()
 
@@ -348,7 +352,7 @@ class JobFactory(object):
         if (self.tarball is not None):
             body['prestaged'].append(self.tarball)
 
-        job.state = u'PENDING'
+        job.state = 'PENDING'
 
         # Job launcher will try to report states of the submitted job
         # even before this request has been handled
@@ -367,7 +371,7 @@ class JobFactory(object):
             # store launcher url so job can be cancelled later
             job.launcher_url = launcher_url
         except requests.exceptions.RequestException:
-            job.state = u'SUBMISSION_ERROR'
+            job.state = 'SUBMISSION_ERROR'
             raise JobSubmissionError()
 
     def id2jobdir(self, jid):
@@ -493,16 +497,16 @@ class Job(object):
     def stderr(self):
         """Returns stderr text file or empty file if stderr does not exist"""
         try:
-            return open(os.path.join(self.dir, 'stderr.txt'), 'rb')
+            return io.open(os.path.join(self.dir, 'stderr.txt'), 'rb')
         except IOError:
-            return StringIO.StringIO()
+            return StringIO()
 
     def stdout(self):
         """Returns stdout text file or empty file if stdout does not exist"""
         try:
-            return open(os.path.join(self.dir, 'stdout.txt'), 'rb')
+            return io.open(os.path.join(self.dir, 'stdout.txt'), 'rb')
         except IOError:
-            return StringIO.StringIO()
+            return StringIO()
 
     @property
     def created_at(self):
@@ -558,7 +562,7 @@ class Job(object):
         """Checks if job is complete
 
         If mustBeFilled==True then checks
-            if jobs contains molecules, mspectras and fragments.
+            if jobs contains molecules, mspectra and fragments.
 
         Returns true or raises JobError or JobIncomplete or MissingDataError
         """
@@ -567,7 +571,7 @@ class Job(object):
                 if not self.db.hasMolecules():
                     raise MissingDataError(self, 'No molecules found')
                 elif not self.db.hasMspectras():
-                    raise MissingDataError(self, 'No mass spectras found')
+                    raise MissingDataError(self, 'No mass spectra found')
                 elif not self.db.hasFragments():
                     raise MissingDataError(self, 'No fragments found')
             return True
@@ -665,7 +669,7 @@ class JobDb(object):
                    'nhits': met.nhits,
                    'mim': met.mim,
                    'logp': met.logp,
-                   'assigned': r.assigned > 0,
+                   'assigned': r.assigned != None and r.assigned > 0,
                    'reference': met.reference,
                    }
             if ('score' in r.keys()):
@@ -857,10 +861,10 @@ class JobDb(object):
             A empty list selects all columns.
 
         Return
-        :class:`StringIO.StringIO`
+        :class:`StringIO`
         """
         cols = cols or []
-        csvstr = StringIO.StringIO()
+        csvstr = StringIO()
         headers = [
             'name', 'smiles', 'refscore', 'reactionsequence',
             'nhits', 'formula', 'mim', 'predicted', 'logp',

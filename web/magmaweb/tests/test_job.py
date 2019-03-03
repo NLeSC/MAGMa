@@ -3,6 +3,7 @@ import datetime
 import os
 import uuid
 import unittest
+import io
 from mock import Mock, patch
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -40,32 +41,32 @@ def populateTestingDB(session):
     session
         session connection to db
     """
-    url1 = u'<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
-    url1 += u'?cid=289">CID: 289</a>'
-    url2 = u'<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
-    url2 += u'?cid=152432">CID: 152432</a>'
+    url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+    url1 += '?cid=289">CID: 289</a>'
+    url2 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+    url2 += '?cid=152432">CID: 152432</a>'
     session.add(Run(
         ionisation_mode=-1, skip_fragmentation=True,
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=50,
         mz_precision=10, mz_precision_abs=0.002, use_all_peaks=True,
-        ms_filename=u'F123456.mzxml', abs_peak_cutoff=1000,
+        ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
         max_ms_level=3, precursor_mz_precision=10,
-        max_broken_bonds=4, description=u'My first description',
+        max_broken_bonds=4, description='My first description',
         max_water_losses=1,
     ))
     session.add(Molecule(
-        molid=72, mol=u'Molfile', refscore=1.0,
+        molid=72, mol='Molfile', refscore=1.0,
         reactionsequence={
-                             u'reactantof': {
-                                 u'esterase': {
-                                     u'nr': 2,
-                                     u'nrp': 1
+                             'reactantof': {
+                                 'esterase': {
+                                     'nr': 2,
+                                     'nrp': 1
                                  }
                              }
                          },
-        smiles=u'C1=CC=C(C(=C1)O)O', inchikey14=u'YCIMNLLNPGFGHC',
-        formula=u'C6H6O2', predicted=False, nhits=1,
-        name=u'pyrocatechol', mim=110.03677, logp=1.231,
+        smiles='C1=CC=C(C(=C1)O)O', inchikey14='YCIMNLLNPGFGHC',
+        formula='C6H6O2', predicted=False, nhits=1,
+        name='pyrocatechol', mim=110.03677, logp=1.231,
         reference=url1
     ))
     session.add(Scan(
@@ -86,27 +87,27 @@ def populateTestingDB(session):
         mass=110.0367794368,
         score=200,
         parentfragid=0,
-        atoms=u"0,1,2,3,4,5,6,7",
+        atoms="0,1,2,3,4,5,6,7",
         deltah=-1.0,
         deltappm=-1.84815979523607e-08,
-        formula=u"C5H4",
+        formula="C5H4",
     ))
     # fragments of molid=352 + scanid=870
     session.add(Molecule(
         predicted=False, molid=352,
-        mol=u"Molfile of dihydroxyphenyl-valerolactone",
-        formula=u"C11H12O4",
-        name=u"dihydroxyphenyl-valerolactone",
+        mol="Molfile of dihydroxyphenyl-valerolactone",
+        formula="C11H12O4",
+        name="dihydroxyphenyl-valerolactone",
         refscore=1.0, reactionsequence={
-                                               u'productof': {
-                                                   u'theogallin': {
-                                                       u'nr': 1,
-                                                       u'nrp': 0
+                                               'productof': {
+                                                   'theogallin': {
+                                                       'nr': 1,
+                                                       'nrp': 0
                                                    }
                                                }
                                            },
-        smiles=u"O=C1CCC(Cc2ccc(O)c(O)c2)O1",
-        inchikey14=u'ZNXXWTPQHVLMQT',
+        smiles="O=C1CCC(Cc2ccc(O)c(O)c2)O1",
+        inchikey14='ZNXXWTPQHVLMQT',
         reference=url2,
         mim=208.07355, logp=2.763, nhits=1
     ))
@@ -139,27 +140,27 @@ def populateTestingDB(session):
     session.add_all([Fragment(
         fragid=1707, molid=352, scanid=870, mass=208.0735588736,
         mz=207.066284179688, score=100, parentfragid=0,
-        atoms=u"0,1,2,3,4,5,6,7,8,9,10,11,12,13,14", deltah=-1,
+        atoms="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14", deltah=-1,
         deltappm=-8.18675317722029e-09,
-        formula=u"C3H5O3",
+        formula="C3H5O3",
     ), Fragment(
         fragid=1708, molid=352, scanid=871, mass=123.0446044689,
         mz=123.04508972167969, score=201, parentfragid=1707,
-        atoms=u"6,7,8,9,10,11,12,13,14", deltah=0,
+        atoms="6,7,8,9,10,11,12,13,14", deltah=0,
         deltappm=3.943698856902144e-12,
-        formula=u"C3H5O3",
+        formula="C3H5O3",
     ), Fragment(
         fragid=1709, molid=352, scanid=871, mass=164.08372962939995,
         mz=163.07623291015625, score=65, parentfragid=1707,
-        atoms=u"3,4,5,6,7,8,9,10,11,12,13,14", deltah=-1,
+        atoms="3,4,5,6,7,8,9,10,11,12,13,14", deltah=-1,
         deltappm=-1.235815738001507e-08,
-        formula=u"C3H5O3",
+        formula="C3H5O3",
     ), Fragment(
         fragid=1710, scanid=872, molid=352, mass=116.0626002568,
         mz=119.08654022216797, score=4, parentfragid=1709,
-        atoms=u"4,5,6,7,8,9,11,13,14", deltah=3,
+        atoms="4,5,6,7,8,9,11,13,14", deltah=3,
         deltappm=5.0781684060061766e-08,
-        formula=u"C3H5O3",
+        formula="C3H5O3",
     )])
 
     session.flush()
@@ -171,22 +172,22 @@ def populateWithUseAllPeaks(session):
         ionisation_mode=-1, skip_fragmentation=True,
         ms_intensity_cutoff=200000.0, msms_intensity_cutoff=50,
         mz_precision=10, mz_precision_abs=0.002, use_all_peaks=False,
-        ms_filename=u'F123456.mzxml', abs_peak_cutoff=1000,
+        ms_filename='F123456.mzxml', abs_peak_cutoff=1000,
         max_ms_level=3, precursor_mz_precision=10,
-        max_broken_bonds=4, description=u'My second description',
+        max_broken_bonds=4, description='My second description',
         max_water_losses=1,
     ))
     session.add(Molecule(
         molid=12,
         refscore=0.119004,
         reactionsequence=['sulfation_(aromatic_hydroxyl)'],
-        smiles=u'Oc1ccc(CC2OC(=O)CC2)cc1OS(O)(=O)=O',
-        inchikey14=u'YAXFVDUJDAQPTJ',
-        formula=u'C11H12O7S',
+        smiles='Oc1ccc(CC2OC(=O)CC2)cc1OS(O)(=O)=O',
+        inchikey14='YAXFVDUJDAQPTJ',
+        formula='C11H12O7S',
         predicted=True,
-        name=u'5-(3,4)-dihydroxyphenyl-g-valerolactone (F)',
-        mol=u'Molfile',
-        reference=u'',
+        name='5-(3,4)-dihydroxyphenyl-g-valerolactone (F)',
+        mol='Molfile',
+        reference='',
         mim=288.0303734299,
         logp=1.9027,
         nhits=1
@@ -239,10 +240,10 @@ def populateWithUseAllPeaks(session):
         mass=288.0303734299,
         score=0.0,
         parentfragid=0,
-        atoms=u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
+        atoms='0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
         deltah=-1.0,
         deltappm=-7.046696487857745e-09,
-        formula=u"C4H6O2",
+        formula="C4H6O2",
     ), Fragment(
         fragid=18,
         molid=12,
@@ -251,10 +252,10 @@ def populateWithUseAllPeaks(session):
         mass=288.0303734299,
         score=0.5,
         parentfragid=0,
-        atoms=u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
+        atoms='0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
         deltah=-1.0,
         deltappm=-7.020570507205176e-09,
-        formula=u"C4H6O2",
+        formula="C4H6O2",
     ), Fragment(
         fragid=19,
         molid=12,
@@ -263,10 +264,10 @@ def populateWithUseAllPeaks(session):
         mass=207.0657338415,
         score=0.5,
         parentfragid=18,
-        atoms=u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14',
+        atoms='0,1,2,3,4,5,6,7,8,9,10,11,12,13,14',
         deltah=0.0,
         deltappm=2.3630267823129625e-12,
-        formula=u"C4H6O2",
+        formula="C4H6O2",
     ), Fragment(
         fragid=20,
         molid=12,
@@ -275,10 +276,10 @@ def populateWithUseAllPeaks(session):
         mass=288.0303734299,
         score=0.0,
         parentfragid=18,
-        atoms=u'0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
+        atoms='0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18',
         deltah=-1.0,
         deltappm=-7.021641217476223e-09,
-        formula=u"C4H6O2",
+        formula="C4H6O2",
     )])
 
 
@@ -328,9 +329,9 @@ class JobFactoryTestCase(unittest.TestCase):
         engine = create_engine('sqlite:///:memory:')
         mu.DBSession.configure(bind=engine)
         mu.Base.metadata.create_all(engine)  # @UndefinedVariable
-        mu.DBSession().add(mu.User(u'bob', u'Bob', u'bob@example.com'))
+        mu.DBSession().add(mu.User('bob', 'Bob', 'bob@example.com'))
         jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
-        mu.DBSession().add(mu.JobMeta(jobid, owner=u'bob'))
+        mu.DBSession().add(mu.JobMeta(jobid, owner='bob'))
 
     def tearDown(self):
         import shutil
@@ -362,22 +363,23 @@ class JobFactoryTestCase(unittest.TestCase):
         self.factory._copyFile = Mock()
         self.factory._makeJobSession = Mock(return_value=initTestingDB())
 
-        dbfile = os.tmpfile()
+        import tempfile
+        dbfile = tempfile.TemporaryFile()
 
-        job = self.factory.fromDb(dbfile, u'bob')
+        job = self.factory.fromDb(dbfile, 'bob')
 
         self.assertIsInstance(job.id, uuid.UUID)
-        self.assertEqual(job.dir, u'/mydir')
-        self.assertEqual(job.meta.owner, u'bob')
-        self.assertEqual(job.meta.description, u'My first description')
-        self.assertEqual(job.meta.ms_filename, u'F123456.mzxml')
-        self.assertEqual(job.meta.state, u'STOPPED')
+        self.assertEqual(job.dir, '/mydir')
+        self.assertEqual(job.meta.owner, 'bob')
+        self.assertEqual(job.meta.description, 'My first description')
+        self.assertEqual(job.meta.ms_filename, 'F123456.mzxml')
+        self.assertEqual(job.meta.state, 'STOPPED')
 
         self.factory._makeJobDir.assert_called_with(job.id)
         self.factory._copyFile.assert_called_with(dbfile, job.id)
         o = mu.DBSession().query(mu.JobMeta.owner
                                  ).filter(mu.JobMeta.jobid == job.id).scalar()
-        self.assertEqual(o, u'bob', 'job meta has been inserted')
+        self.assertEqual(o, 'bob', 'job meta has been inserted')
 
     def test_fromid(self):
         jobid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
@@ -386,7 +388,7 @@ class JobFactoryTestCase(unittest.TestCase):
 
         job = self.factory.fromId(jobid)
 
-        self.assertEqual(job.owner, u'bob')
+        self.assertEqual(job.owner, 'bob')
         self.assertEqual(job.db.session, 456)
         self.assertEqual(job.dir, 789)
         self.factory._makeJobSession.assert_called_with(jobid)
@@ -400,7 +402,7 @@ class JobFactoryTestCase(unittest.TestCase):
         with self.assertRaises(JobNotFound) as exc:
             self.factory.fromId(jobid)
         self.assertEqual(exc.exception.jobid, jobid)
-        self.assertEqual(exc.exception.message, "Job not found in database")
+        self.assertEqual(str(exc.exception), "Job not found in database")
 
     def test_fromid_notfoundasdb(self):
         jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
@@ -409,11 +411,11 @@ class JobFactoryTestCase(unittest.TestCase):
         with self.assertRaises(JobNotFound) as exc:
             self.factory.fromId(jobid)
         self.assertEqual(exc.exception.jobid, jobid)
-        self.assertEqual(exc.exception.message, "Data of job not found")
+        self.assertEqual(str(exc.exception), "Data of job not found")
 
     def test_submitQuery(self):
         self.factory.init_script = "# make magma available"
-        job = self.factory.fromScratch(u'bob')
+        job = self.factory.fromScratch('bob')
 
         self.factory.script_fn = 'script.sh'
         cmd = "magma add_structures -t smiles structures.dat results.db\n"
@@ -446,13 +448,13 @@ class JobFactoryTestCase(unittest.TestCase):
                             'status_callback_url': status_cb_url
                             }
         self.factory.submitJob2Launcher.assert_called_with(jobmanager_query)
-        self.assertEqual(job.state, u'PENDING')
+        self.assertEqual(job.state, 'PENDING')
         self.assertEqual(job.launcher_url, launcher_url)
 
     def test_submitQuery_with_tarball(self):
         self.factory.tarball = 'Magma-1.1.tar.gz'
         self.factory.submitJob2Launcher = Mock()
-        job = self.factory.fromScratch(u'bob')
+        job = self.factory.fromScratch('bob')
         jobquery = JobQuery(job.dir, "", [])
         status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
         jobquery.status_callback_url = status_cb_url
@@ -473,14 +475,14 @@ class JobFactoryTestCase(unittest.TestCase):
                             'status_callback_url': status_cb_url
                             }
         self.factory.submitJob2Launcher.assert_called_with(jobmanager_query)
-        self.assertEqual(job.state, u'PENDING')
+        self.assertEqual(job.state, 'PENDING')
 
     def test_submitQuery_no_joblauncher(self):
         from requests.exceptions import ConnectionError
         from magmaweb.job import JobSubmissionError
         exc = ConnectionError('[Errno 111] Connection refused')
         self.factory.submitJob2Launcher = Mock(side_effect=exc)
-        job = self.factory.fromScratch(u'bob')
+        job = self.factory.fromScratch('bob')
         jobquery = JobQuery(job.dir, "", [])
         status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
         jobquery.status_callback_url = status_cb_url
@@ -495,7 +497,7 @@ class JobFactoryTestCase(unittest.TestCase):
         from magmaweb.job import JobSubmissionError
         exc = HTTPError('422 Client Error: Unprocessable Entity')
         self.factory.submitJob2Launcher = Mock(side_effect=exc)
-        job = self.factory.fromScratch(u'bob')
+        job = self.factory.fromScratch('bob')
         jobquery = JobQuery(job.dir, "", [])
         status_cb_url = 'http://example.com/status/{}.json'.format(job.id)
         jobquery.status_callback_url = status_cb_url
@@ -528,7 +530,7 @@ class JobFactoryTestCase(unittest.TestCase):
 
         launcher_url = 'http://localhost:9998/job/'
         launcher_url += '11111111-1111-1111-1111-111111111111'
-        self.assertEquals(resp, launcher_url)
+        self.assertEqual(resp, launcher_url)
 
     def test_fromScratch(self):
         # mock/stub private methods which do external calls
@@ -538,35 +540,35 @@ class JobFactoryTestCase(unittest.TestCase):
         self.factory._makeJobSession = Mock(return_value=db)
         self.factory._addJobMeta = Mock()
 
-        job = self.factory.fromScratch(u'bob')
+        job = self.factory.fromScratch('bob')
 
         self.assertIsInstance(job.id, uuid.UUID)
-        self.assertEqual(job.dir, u'/mydir')
-        self.assertEqual(job.meta.owner, u'bob')
-        self.assertEqual(job.meta.state, u'STOPPED')
-        self.assertEqual(job.meta.description, u'')
-        self.assertEqual(job.meta.ms_filename, u'')
+        self.assertEqual(job.dir, '/mydir')
+        self.assertEqual(job.meta.owner, 'bob')
+        self.assertEqual(job.meta.state, 'STOPPED')
+        self.assertEqual(job.meta.description, '')
+        self.assertEqual(job.meta.ms_filename, '')
         self.assertEqual(job.db.maxMSLevel(), 0)
         self.factory._makeJobDir.assert_called_with(job.id)
 
     def test_cloneJob(self):
-        oldjob = self.factory.fromScratch(u'ed')
-        oldjob.description = u'My first description'
-        oldjob.ms_filename = u'F123456.mzxml'
+        oldjob = self.factory.fromScratch('ed')
+        oldjob.description = 'My first description'
+        oldjob.ms_filename = 'F123456.mzxml'
 
-        job = self.factory.cloneJob(oldjob, u'bob')
+        job = self.factory.cloneJob(oldjob, 'bob')
 
         self.assertIsInstance(job.id, uuid.UUID)
         self.assertNotEqual(job.id, oldjob.id)
-        self.assertEqual(job.meta.owner, u'bob')
-        self.assertEqual(job.meta.description, u'My first description')
-        self.assertEqual(job.meta.ms_filename, u'F123456.mzxml')
-        self.assertEqual(job.meta.state, u'STOPPED')
+        self.assertEqual(job.meta.owner, 'bob')
+        self.assertEqual(job.meta.description, 'My first description')
+        self.assertEqual(job.meta.ms_filename, 'F123456.mzxml')
+        self.assertEqual(job.meta.state, 'STOPPED')
         self.assertEqual(job.meta.parentjobid, oldjob.id)
 
     @patch('requests.delete')
     def test_cancel(self, ua):
-        job = self.factory.fromScratch(u'ed')
+        job = self.factory.fromScratch('ed')
         url = 'http://localhost:9998/job/70a00fe2-f698-41ed-b28c-b37c22f10440'
         job.launcher_url = url
 
@@ -602,7 +604,7 @@ class JobNotFoundTestCase(unittest.TestCase):
         jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
         e = JobNotFound('Job not found', jobid)
         self.assertEqual(e.jobid, jobid)
-        self.assertEqual(e.message, 'Job not found')
+        self.assertEqual(str(e), 'Job not found')
 
 
 class JobTestCase(unittest.TestCase):
@@ -612,12 +614,12 @@ class JobTestCase(unittest.TestCase):
         self.jobid = uuid.UUID('11111111-1111-1111-1111-111111111111')
         self.created_at = datetime.datetime(2012, 11, 14, 10, 48, 26, 504478)
         self.meta = mu.JobMeta(jobid=self.jobid,
-                               description=u"My desc",
-                               state=u'STOPPED',
+                               description="My desc",
+                               state='STOPPED',
                                parentjobid=self.parentjobid,
-                               owner=u'bob',
+                               owner='bob',
                                created_at=self.created_at,
-                               ms_filename=u'F1234.mzxml',
+                               ms_filename='F1234.mzxml',
                                is_public=False,
                                )
         self.db = Mock(JobDb)
@@ -645,52 +647,52 @@ class JobTestCase(unittest.TestCase):
         self.assertEqual(self.job.__name__, str(self.jobid))
 
     def test_get_description(self):
-        self.assertEqual(self.job.description, u'My desc')
+        self.assertEqual(self.job.description, 'My desc')
 
     def test_set_description(self):
-        self.job.description = u'My second description'
+        self.job.description = 'My second description'
 
-        self.assertEqual(self.job.description, u'My second description')
-        self.assertEqual(self.job.meta.description, u'My second description')
+        self.assertEqual(self.job.description, 'My second description')
+        self.assertEqual(self.job.meta.description, 'My second description')
         self.assertEqual(self.job.db.runInfo().description,
-                         u'My second description')
+                         'My second description')
 
     def test_set_description_withoutruninfo(self):
         self.job.db.runInfo.return_value = None
 
-        self.job.description = u'My second description'
+        self.job.description = 'My second description'
 
-        self.assertEqual(self.job.description, u'My second description')
-        self.assertEqual(self.job.meta.description, u'My second description')
+        self.assertEqual(self.job.description, 'My second description')
+        self.assertEqual(self.job.meta.description, 'My second description')
 
     def test_owner(self):
-        self.assertEqual(self.job.owner, u'bob')
+        self.assertEqual(self.job.owner, 'bob')
 
     def test_set_owner(self):
-        self.job.owner = u'ed'
-        self.assertEqual(self.job.owner, u'ed')
+        self.job.owner = 'ed'
+        self.assertEqual(self.job.owner, 'ed')
 
     def test_stderr(self):
         log = self.job.stderr()
-        self.assertIsInstance(log, file)
+        self.assertIsInstance(log, io.IOBase)
         self.assertEqual(log.name, self.jobdir + '/stderr.txt')
-        self.assertEqual(log.read(), 'Error log')
+        self.assertEqual(log.read(), b'Error log')
 
     def test_stderr_empty(self):
         open_stub = Mock(side_effect=IOError('File not found'))
-        with patch('__builtin__.open', open_stub):
+        with patch('io.open', open_stub):
             log = self.job.stderr()
             self.assertEqual(log.read(), '')
 
     def test_stdout(self):
         log = self.job.stdout()
-        self.assertIsInstance(log, file)
+        self.assertIsInstance(log, io.IOBase)
         self.assertEqual(log.name, self.jobdir + '/stdout.txt')
-        self.assertEqual(log.read(), 'Log')
+        self.assertEqual(log.read(), b'Log')
 
     def test_stdout_empty(self):
         open_stub = Mock(side_effect=IOError('File not found'))
-        with patch('__builtin__.open', open_stub):
+        with patch('io.open', open_stub):
             log = self.job.stdout()
             self.assertEqual(log.read(), '')
 
@@ -718,42 +720,42 @@ class JobTestCase(unittest.TestCase):
         self.assertEqual(jobquery, ejobquery)
 
     def test_state(self):
-        self.assertEquals(self.job.state, u'STOPPED')
+        self.assertEqual(self.job.state, 'STOPPED')
 
     def test_set_state(self):
-        self.job.state = u'RUNNING'
+        self.job.state = 'RUNNING'
 
-        self.assertEquals(self.job.state, u'RUNNING')
+        self.assertEqual(self.job.state, 'RUNNING')
 
     def test_parent(self):
-        self.assertEquals(self.job.parent, self.parentjobid)
+        self.assertEqual(self.job.parent, self.parentjobid)
 
     def test_set_parent(self):
         jid = uuid.UUID('3ad25048-26f6-11e1-851e-00012e260790')
         self.job.parent = jid
 
-        self.assertEquals(self.job.parent, jid)
+        self.assertEqual(self.job.parent, jid)
 
     def test_created_at(self):
         self.assertEqual(self.job.created_at, self.created_at)
 
     def test_ms_filename(self):
-        self.assertEqual(self.job.ms_filename, u'F1234.mzxml')
+        self.assertEqual(self.job.ms_filename, 'F1234.mzxml')
 
     def test_set_ms_filename(self):
-        self.job.ms_filename = u'F4567.mzxml'
+        self.job.ms_filename = 'F4567.mzxml'
 
-        self.assertEqual(self.job.ms_filename, u'F4567.mzxml')
-        self.assertEqual(self.job.meta.ms_filename, u'F4567.mzxml')
-        self.assertEqual(self.job.db.runInfo().ms_filename, u'F4567.mzxml')
+        self.assertEqual(self.job.ms_filename, 'F4567.mzxml')
+        self.assertEqual(self.job.meta.ms_filename, 'F4567.mzxml')
+        self.assertEqual(self.job.db.runInfo().ms_filename, 'F4567.mzxml')
 
     def test_set_ms_filename_withoutruninfo(self):
         self.job.db.runInfo.return_value = None
 
-        self.job.ms_filename = u'F4567.mzxml'
+        self.job.ms_filename = 'F4567.mzxml'
 
-        self.assertEqual(self.job.ms_filename, u'F4567.mzxml')
-        self.assertEqual(self.job.meta.ms_filename, u'F4567.mzxml')
+        self.assertEqual(self.job.ms_filename, 'F4567.mzxml')
+        self.assertEqual(self.job.meta.ms_filename, 'F4567.mzxml')
 
     @patch('magmaweb.user.JobMeta')
     @patch('magmaweb.job.shutil')
@@ -767,20 +769,20 @@ class JobTestCase(unittest.TestCase):
         jm.delete.assert_called_with(self.meta)
 
     def test_is_public(self):
-        self.assertEquals(self.job.is_public, False)
+        self.assertEqual(self.job.is_public, False)
 
     def test_set_is_public(self):
         self.job.is_public = True
 
-        self.assertEquals(self.job.is_public, True)
+        self.assertEqual(self.job.is_public, True)
 
     def test_is_complete(self):
-        self.job.state = u'STOPPED'
+        self.job.state = 'STOPPED'
         self.assertTrue(self.job.is_complete())
 
     def test_is_complete_running(self):
-        running_states = (u'PENDING', u'PRE_STAGING', u'RUNNING',
-                          u'POST_STAGING', u'Progress: 50%')
+        running_states = ('PENDING', 'PRE_STAGING', 'RUNNING',
+                          'POST_STAGING', 'Progress: 50%')
         for running_state in running_states:
             self.job.state = running_state
             with self.assertRaises(JobIncomplete) as e:
@@ -789,7 +791,7 @@ class JobTestCase(unittest.TestCase):
             self.assertEqual(e.exception.job, self.job)
 
     def test_is_complete_error(self):
-        self.job.state = u'ERROR'
+        self.job.state = 'ERROR'
         with self.assertRaises(JobError) as e:
             self.job.is_complete()
 
@@ -824,7 +826,7 @@ class JobTestCase(unittest.TestCase):
             self.job.is_complete(True)
 
         self.assertEqual(e.exception.job, self.job)
-        self.assertEqual(e.exception.message, 'No mass spectras found')
+        self.assertEqual(e.exception.message, 'No mass spectra found')
 
     def test_is_complete_unfilled_fragments(self):
         self.job.db.hasMolecules = Mock(return_value=True)

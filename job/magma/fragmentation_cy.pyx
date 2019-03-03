@@ -27,7 +27,7 @@ cdef class FragmentEngine(object):
     cdef list fragment_masses, fragment_info
     cdef int[64] atomHs
     cdef dict atom_elements
-    cdef char * mol
+    cdef str mol
 
     def __init__(self, mol, max_broken_bonds, max_water_losses, ionisation_mode, skip_fragmentation, molcharge):
         cdef unsigned long long bondbits

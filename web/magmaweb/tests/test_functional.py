@@ -43,14 +43,14 @@ class FunctionalPrivateTests(FunctionalTests):
         # Setup owner of job
         jf = make_job_factory(self.settings)
         with transaction.manager:
-            user = User(u'bob', u'Bob Example',
-                        u'bob@example.com', 'mypassword')
+            user = User('bob', 'Bob Example',
+                        'bob@example.com', 'mypassword')
             DBSession().add(user)
-            self.job = jf.fromScratch(u'bob')
+            self.job = jf.fromScratch('bob')
             self.jobid = self.job.id
 
     def do_login(self):
-        params = {u'userid': u'bob', u'password': u'mypassword'}
+        params = {'userid': 'bob', 'password': 'mypassword'}
         self.testapp.post('/login', params)
 
     def fake_jobid(self):
@@ -62,7 +62,7 @@ class FunctionalPrivateTests(FunctionalTests):
     def test_home(self):
         self.do_login()
         res = self.testapp.get('/', status=200)
-        self.assertTrue('Submit' in res.body)
+        self.assertTrue(b'Submit' in res.body)
 
     def test_molecules(self):
         self.do_login()
@@ -71,61 +71,61 @@ class FunctionalPrivateTests(FunctionalTests):
         res_url = '/results/' + str(jobid)
         res_url += '/molecules.json?limit=10&start=0'
         res = self.testapp.get(res_url, status=200)
-        url1 = u'<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
-        url1 += u'?cid=289">CID: 289</a>'
-        url2 = u'<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
-        url2 += u'?cid=152432">CID: 152432</a>'
+        url1 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url1 += '?cid=289">CID: 289</a>'
+        url2 = '<a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi'
+        url2 += '?cid=152432">CID: 152432</a>'
         self.assertEqual(json.loads(res.body), {
-            u'totalUnfiltered': 2,
-            u'total': 2,
-            u'scans': [{
-                u'rt': 933.317,
-                u'id': 641
+            'totalUnfiltered': 2,
+            'total': 2,
+            'scans': [{
+                'rt': 933.317,
+                'id': 641
             }, {
-                u'rt': 1254.15,
-                u'id': 870
+                'rt': 1254.15,
+                'id': 870
             }],
-            u'rows': [{
-                u'molid': 72,
-                u'predicted': False,
-                u'mol': u'Molfile',
-                u'formula': u'C6H6O2',
-                u'nhits': 1,
-                u'name': u'pyrocatechol',
-                u'refscore': 1.0,
-                u'reactionsequence': {
-                                         u'reactantof': {
-                                             u'esterase': {
-                                                 u'nr': 2,
-                                                 u'nrp': 1
+            'rows': [{
+                'molid': 72,
+                'predicted': False,
+                'mol': 'Molfile',
+                'formula': 'C6H6O2',
+                'nhits': 1,
+                'name': 'pyrocatechol',
+                'refscore': 1.0,
+                'reactionsequence': {
+                                         'reactantof': {
+                                             'esterase': {
+                                                 'nr': 2,
+                                                 'nrp': 1
                                              }
                                          }
                                      },
-                u'smiles': u'C1=CC=C(C(=C1)O)O',
-                u'inchikey14': u'YCIMNLLNPGFGHC',
-                u'mim': 110.03677, u'logp': 1.231,
-                u'assigned': False,
-                u'reference': url1
+                'smiles': 'C1=CC=C(C(=C1)O)O',
+                'inchikey14': 'YCIMNLLNPGFGHC',
+                'mim': 110.03677, 'logp': 1.231,
+                'assigned': False,
+                'reference': url1
             }, {
-                u'predicted': False, 'molid': 352,
-                u'mol': u"Molfile of dihydroxyphenyl-valerolactone",
-                u'formula': u"C11H12O4",
-                u'nhits': 1,
-                u'name': u"dihydroxyphenyl-valerolactone",
-                u'refscore': 1.0,
-                u'reactionsequence': {
-                                         u'productof': {
-                                             u'theogallin': {
-                                                 u'nr': 1,
-                                                 u'nrp': 0
+                'predicted': False, 'molid': 352,
+                'mol': "Molfile of dihydroxyphenyl-valerolactone",
+                'formula': "C11H12O4",
+                'nhits': 1,
+                'name': "dihydroxyphenyl-valerolactone",
+                'refscore': 1.0,
+                'reactionsequence': {
+                                         'productof': {
+                                             'theogallin': {
+                                                 'nr': 1,
+                                                 'nrp': 0
                                              }
                                          }
                                      },
-                u'smiles': u"O=C1CCC(Cc2ccc(O)c(O)c2)O1",
-                u'inchikey14': u'ZNXXWTPQHVLMQT',
-                u'mim': 208.07355, u'logp': 2.763,
-                u'assigned': False,
-                u'reference': url2
+                'smiles': "O=C1CCC(Cc2ccc(O)c(O)c2)O1",
+                'inchikey14': 'ZNXXWTPQHVLMQT',
+                'mim': 208.07355, 'logp': 2.763,
+                'assigned': False,
+                'reference': url2
             }]
         })
 
@@ -160,4 +160,4 @@ class FunctionalPublicTests(FunctionalTests):
         # Visiting / redirects to /login
         # which automatically registers/logins and redirects back to /
         res = self.testapp.get('/', status=302).follow(status=200)
-        self.assertTrue('Submit' in res.body)
+        self.assertTrue(b'Submit' in res.body)

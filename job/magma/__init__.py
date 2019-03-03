@@ -16,18 +16,23 @@ from lxml import etree
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
-from models import Base, Molecule, Reaction, fill_molecules_reactions, Scan, Peak, Fragment, Run
+from magma.models import Base, Molecule, Reaction, fill_molecules_reactions, Scan, Peak, Fragment, Run
 import requests
 import macauthlib  # required to update callback url
 from requests.auth import AuthBase
 import pp
-import cPickle as pickle
-import types
+try: # to stay python 2 compatible
+    import cPickle as pickle
+except:
+    import pickle
+from magma import pars, types
 from magma.errors import FileFormatError, DataProcessingError
-import pars
 
-import ConfigParser
-config = ConfigParser.ConfigParser()
+try: # to stay python 2 compatible
+    import ConfigParser as configparser
+except:
+    import configparser
+config = configparser.ConfigParser()
 # read config file from current working directory or users home dir
 config.read(['magma_job.ini', os.path.expanduser('~/magma_job.ini')])
 
@@ -62,7 +67,7 @@ class MagmaSession(object):
         except:
             rundata = Run()
         if rundata.description is None:
-            rundata.description = unicode(description)
+            rundata.description = description
         self.db_session.add(rundata)
         self.db_session.commit()
         logger.setLevel(getattr(logging, loglevel.upper()))
@@ -267,17 +272,17 @@ def get_molecule(molblock, name, refscore, predicted, mim=None, smiles=None, nat
     if mim > mass_filter:
         return
     return Molecule(
-        mol=unicode(molblock),
+        mol=molblock,
         refscore=refscore,
-        inchikey14=unicode(inchikey14),
-        smiles=unicode(smiles),
-        formula=unicode(molform),
+        inchikey14=inchikey14,
+        smiles=smiles,
+        formula=molform,
         predicted=predicted,
-        name=unicode(name),
+        name=name,
         nhits=0,
         mim=mim,
         natoms=natoms,
-        reference=unicode(reference),
+        reference=reference,
         logp=logp,
         reactionsequence={})
 
@@ -383,9 +388,10 @@ class StructureEngine(object):
             if in_pubchem != False:
                 name, reference, refscore, molblock = in_pubchem
                 if newmol.name == '':
-                    newmol.name = unicode(str(name), 'utf-8', 'xmlcharrefreplace')
+#                    newmol.name = str(name, 'utf-8', 'xmlcharrefreplace')
+                    newmol.name = name
                 if newmol.reference == "None":
-                    newmol.reference = unicode(reference)
+                    newmol.reference = reference
                 if newmol.refscore is None:
                     newmol.refscore = refscore
         # add (from pubchem) or generate (with RDKit) 2D coordinates if needed
@@ -418,19 +424,19 @@ class StructureEngine(object):
             self.metabolize_engine = MetabolizeEngine()
         molids = set()
         products = self.metabolize_engine.metabolize(parent, metabolism, endpoints)
-        for product in products.values():
+        for product in products.values(): # list(products.values()):
             molecule = get_molecule(Chem.MolToMolBlock(product[1]), "", None, 1)
             new_molid = self.add_molecule(molecule, merge=True)
             molids.add(new_molid)
             reactid = self.db_session.query(Reaction.reactid).filter(
                             Reaction.reactant == molid,
                             Reaction.product == new_molid,
-                            Reaction.name == unicode(product[0])).all()
+                            Reaction.name == product[0]).all()
             if len(reactid) == 0:
                 react = Reaction(
                     reactant=molid,
                     product=new_molid,
-                    name=unicode(product[0])
+                    name=product[0]
                 )
                 self.db_session.add(react)
                 self.db_session.flush()
@@ -570,7 +576,7 @@ class MsDataEngine(object):
         rundata = self.db_session.query(Run).one()
         if rundata.ms_filename is not None:
             raise DataProcessingError('Attempt to read MS data twice')
-        rundata.ms_filename = unicode(mzxml_file)
+        rundata.ms_filename = mzxml_file
         self.db_session.add(rundata)
         self.ms_filename = mzxml_file
         tree = etree.parse(mzxml_file)
@@ -646,7 +652,7 @@ class MsDataEngine(object):
                                                           Scan.precursormz == scan.precursormz,
                                                           Scan.precursorintensity == scan.precursorintensity).all()
             if child.tag == namespace + 'peaks':
-                decoded = base64.decodestring(child.text)
+                decoded = base64.b64decode(child.text)
                 try:
                     if child.attrib['compressionType'] == 'zlib':
                         decoded = zlib.decompress(decoded)
@@ -955,7 +961,7 @@ class AnnotateEngine(object):
                 ions[c][ionmass] = '[M' + ions[c][ionmass] + ']' + str(c) * (c > 1) + \
                     '-' * (self.ionisation_mode < 0) + '+' * (self.ionisation_mode > 0)
         for c in range(1, maxcharge + 1):
-            logger.info('Adducts with charge ' + str(self.ionisation_mode * c) + ': ' + str(ions[c].values()))
+            logger.info('Adducts with charge ' + str(self.ionisation_mode * c) + ': ' + str(list(ions[c].values())))
         return ions
 
     def build_spectrum(self, dbscan):
@@ -1094,7 +1100,7 @@ class AnnotateEngine(object):
         check_duplicates = (self.db_session.query(Molecule.molid).count() > 0)
         logger.debug('check duplicates: ' + str(check_duplicates))
         molids = set([])
-        for molecule in candidate.itervalues():
+        for molecule in candidate.values():
             molid = struct_engine.add_molecule(molecule, check_duplicates=check_duplicates, merge=True)
             molids.add(molid)
 
@@ -1200,7 +1206,7 @@ class AnnotateEngine(object):
                     logger.debug('Molecule ' + str(structure.molid) + ': No match')
                 else:
                     logger.debug('Molecule ' + str(structure.molid) + ': ' +
-                                 structure.name.encode('utf-8') + ' -> ' + str(frags) + ' fragments')
+                                 structure.name + ' -> ' + str(frags) + ' fragments')
                     for hit in hits:
                         score = self.store_hit(hit, structure.molid, 0)
                         logger.debug('Scan: ' + str(hit.scan) + ' - Mz: ' + str(hit.mz) + ' - ' + 'Score: ' + str(score))
@@ -1251,11 +1257,11 @@ class AnnotateEngine(object):
             mass=hit.mass,
             score=score,
             parentfragid=parentfragid,
-            atoms=unicode(hit.atomstring),
-            smiles=unicode(hit.smiles),
+            atoms=hit.atomstring,
+            smiles=hit.smiles,
             deltah=hit.deltaH,
             deltappm=deltappm,
-            formula=unicode(hit.formula+'<br>'+hit.ion)
+            formula=hit.formula+'<br>'+hit.ion
             ))
         if len(hit.besthits) > 0:
             for childhit in hit.besthits:
@@ -1339,7 +1345,7 @@ class PubChemEngine(object):
             else:
                 exit(self.name)
             molecules.append(get_molecule(
-                           zlib.decompress(base64.decodestring(molblock)),
+                           zlib.decompress(base64.b64decode(molblock)).decode(),
                            name+' (' + str(cid) + ')',
                            refscore,
                            0,
@@ -1363,7 +1369,7 @@ class PubChemEngine(object):
             molblock, cid, name, refscore = result[0]
             reference = '<a href="http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&cmd=Link&LinkName=pccompound_pccompound_sameisotopic_pulldown&from_uid=' +\
                 str(cid) + '" target="_blank">' + str(cid) + ' (PubChem)</a>'
-            return [name, reference, refscore, zlib.decompress(base64.decodestring(molblock))]
+            return [name, reference, refscore, zlib.decompress(base64.b64decode(molblock)).decode()]
         else:
             return False
 
@@ -1418,7 +1424,7 @@ class HmdbEngine(object):
                 hmdb_refs += '<br><a href="http://www.hmdb.ca/metabolites/' + \
                     hmdb_id + '" target="_blank">' + hmdb_id + ' (HMDB)</a>'
             molecules.append(get_molecule(
-                           zlib.decompress(base64.decodestring(molblock)),
+                           zlib.decompress(base64.b64decode(molblock)).decode(),
                            name + ' (' + str(cid) + ')',
                            None,
                            0,
@@ -1468,13 +1474,13 @@ class ExportMoleculesEngine(object):
             else:
                 file.write(molecule.smiles)
                 if nprecursors == 1:
-                    file.write(' score=%.5f' % value)
+                    file.write(u' score=%.5f' % value)
                 if columns is None:
                     columns = ['name','refscore','formula','mim']
                 for column in columns:
                     if column[:1] != '_' and column != 'mol' and column != 'metadata' and column != 'fragments' and column != 'smiles':
-                        file.write(' ' + column + '=' + str(molecule.__getattribute__(column)).replace(" ","_"))
-                file.write('\n')
+                        file.write(u' ' + column + '=' + str(molecule.__getattribute__(column)).replace(" ","_"))
+                file.write(u'\n')
                 
     def export_assigned_molecules(self, file=sys.stdout):
         """ Write SDFile with assigned candidate molecules to file (or stdout).
