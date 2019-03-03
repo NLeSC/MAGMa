@@ -1579,7 +1579,7 @@ def search_structure(mol, mim, molcharge, peaks, max_broken_bonds, max_water_los
             if i != False:
                 if not Fragmented:
                     fragment_engine = Fragmentation.FragmentEngine(
-                        mol, max_broken_bonds, max_water_losses, ionisation_mode, skip_fragmentation, molcharge)
+                        str(mol), max_broken_bonds, max_water_losses, ionisation_mode, skip_fragmentation, molcharge)
                     if fragment_engine.accepted():
                         frags = fragment_engine.generate_fragments()
                     Fragmented = True
