@@ -35,8 +35,12 @@ Installation
 .. code-block:: bash
 
    # Install conda
+   # For python 2:
    wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh
-   bash Miniconda2-latest-Linux-x86_64.sh
+   sh Miniconda2-latest-Linux-x86_64.sh
+   # Or, for python 3:
+   wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+   sh Miniconda3-latest-Linux-x86_64.sh
    
    # Optionally, create a dedicated conda environment and activate
    conda create -n magma
