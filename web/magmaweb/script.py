@@ -42,16 +42,16 @@ class MagmaCommand(object):
             "update", help=self.update.__doc__,
             description=self.update.__doc__)
         sc_update.add_argument(
-            '-u', '--user', help="change user id (default: %(default)s)",
+            '-u', '--user', help="change user id)",
             default=argparse.SUPPRESS, type=str)
         sc_update.add_argument(
-            '-n', '--name', help="change display name (default: %(default)s)",
+            '-n', '--name', help="change display name",
             default=argparse.SUPPRESS, type=str)
         sc_update.add_argument(
-            '-e', '--email', help="change email (default: %(default)s)",
+            '-e', '--email', help="change email",
             default=argparse.SUPPRESS, type=str)
         sc_update.add_argument(
-            '-p', '--password', help="change password (default: %(default)s)",
+            '-p', '--password', help="change password",
             default=argparse.SUPPRESS, type=str)
         sc_update.add_argument(
             'userid', help="user id (default: %(default)s)",
