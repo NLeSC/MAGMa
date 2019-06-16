@@ -334,8 +334,17 @@ class StructureEngine(object):
         try:
             mol = Chem.MolFromSmiles(smiles)
             mol.SetProp('_Name', name)
-            return self.add_structure(
-                Chem.MolToMolBlock(mol), name, None, predicted=0, mass_filter=mass_filter)
+            newmol = get_molecule(Chem.MolToMolBlock(mol), name, None, 0)
+            if self.pubchem_names:
+                self.get_pubchem_data(newmol, get_coordinates=True)
+            # generate 2D coordinates if needed
+            coordinates = [[float(c) for c in l.split()[:3]] for l in newmol.mol.split('\n')[4:6]]
+            if coordinates == [[0,0,0],[0,0,0]]:
+                mol = Chem.MolFromMolBlock(newmol.mol)
+                AllChem.Compute2DCoords(mol)
+                newmol.mol = Chem.MolToMolBlock(mol)
+                logger.debug('Generated coordinates for: ' + newmol.name)
+            return self.add_molecule(newmol, mass_filter)
         except:
             logger.warn(
                 'Failed to read smiles: ' + smiles + ' (' + name + ')')
@@ -345,13 +354,22 @@ class StructureEngine(object):
                       mim=None, smiles=None, natoms=None, inchi=None, molform=None, reference=None, logp=None, mass_filter=9999):
         """ Get molecule with given attributes and add to database
             Return molid """
-        molecule = get_molecule(
+        newmol = get_molecule(
             molblock, name, refscore, predicted, mim, natoms, inchi, molform, reference, logp)
-        return self.add_molecule(molecule, mass_filter)
+        molblock = False
+        # add (from pubchem) or generate (with RDKit) 2D coordinates if needed
+        coordinates = [[float(c) for c in l.split()[:3]] for l in newmol.mol.split('\n')[4:6]]
+        get_coordinates = (coordinates == [[0,0,0],[0,0,0]])
+        pubchem_data = self.pubchem_names and self.get_pubchem_data(newmol, get_coordinates)
+        if get_coordinates and not pubchem_data:
+            mol = Chem.MolFromMolBlock(newmol.mol)
+            AllChem.Compute2DCoords(mol)
+            newmol.mol = Chem.MolToMolBlock(mol)
+            logger.debug('Generated coordinates for: ' + newmol.name)
+        return self.add_molecule(newmol, mass_filter)
 
     def add_molecule(self, newmol, mass_filter=9999, check_duplicates=True, merge=False):
         """ Add molecule to database
-            Optionally lookup name in pubchem
             Return molid """
         # Checking duplicates is slow, option to turn off should only be used
         # when candidates from a single chemical db query are added
@@ -377,32 +395,27 @@ class StructureEngine(object):
                         logger.info(
                             'Duplicate structure, kept old one: ' + newmol.name)
                         return dup.molid
-        molblock = False
-        if self.pubchem_names:
-            in_pubchem = self.pubchem_engine.check_inchi(newmol.mim, newmol.inchikey14)
-            if in_pubchem != False:
-                name, reference, refscore, molblock = in_pubchem
-                if newmol.name == '':
-                    newmol.name = unicode(str(name), 'utf-8', 'xmlcharrefreplace')
-                if newmol.reference == "None":
-                    newmol.reference = unicode(reference)
-                if newmol.refscore is None:
-                    newmol.refscore = refscore
-        # add (from pubchem) or generate (with RDKit) 2D coordinates if needed
-        coordinates = [[float(c) for c in l.split()[:3]] for l in newmol.mol.split('\n')[4:6]]
-        if coordinates == [[0,0,0],[0,0,0]]:
-            if molblock:
-                newmol.mol = molblock
-                logger.debug('Added coordinates from Pubchem for: ' + newmol.name)
-            else:
-                mol = Chem.MolFromMolBlock(newmol.mol)
-                AllChem.Compute2DCoords(mol)
-                newmol.mol = Chem.MolToMolBlock(mol)
-                logger.debug('Generated coordinates for: ' + newmol.name)
         self.db_session.add(newmol)
         logger.debug('Added molecule: ' + newmol.name)
         self.db_session.flush()
         return newmol.molid
+
+    def get_pubchem_data(self, mol, get_coordinates=False):
+        # Complement metadata with data from pubchem, optionally also coordinates
+        in_pubchem = self.pubchem_engine.check_inchi(mol.mim, mol.inchikey14)
+        if in_pubchem != False:
+            name, reference, refscore, molblock = in_pubchem
+            if mol.name == '':
+                mol.name = unicode(str(name), 'utf-8', 'xmlcharrefreplace')
+            if mol.reference == "None":
+                mol.reference = unicode(reference)
+            if mol.refscore is None:
+                mol.refscore = refscore
+            if get_coordinates:
+                mol.mol = molblock
+                logger.debug('Added coordinates from Pubchem for: ' + mol.name)
+            return True
+        return False
 
     def metabolize(self, molid, metabolism, endpoints=False):
         """ Metabolize a molecule based on a set of metabolism rules and store
