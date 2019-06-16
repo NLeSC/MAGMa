@@ -1,4 +1,4 @@
-FROM continuumio/miniconda:4.3.14
+FROM continuumio/miniconda
 
 MAINTAINER Lars Ridder <l.ridder@esciencecenter.nl> 
  
