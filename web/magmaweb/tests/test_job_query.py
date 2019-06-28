@@ -55,7 +55,7 @@ class JobQueryTestCase(unittest.TestCase):
 
     def test_escape_single_quote(self):
         jq = JobQuery('/y')
-        self.assertEquals(jq.escape("'"), '&#39;')
+        self.assertEqual(jq.escape("'"), '&#39;')
 
     def test_defaults(self):
         expected = dict(scenario=[
@@ -169,15 +169,15 @@ class JobQueryFileTestCase(unittest.TestCase):
         f = FieldStorage()
         df = JobQuery.File().deserialize(None, f)
 
-        self.assertEquals(f, df)
+        self.assertEqual(f, df)
 
     def test_null(self):
         from colander import null
-        self.assertEquals(JobQuery.File().deserialize(None, null), null)
+        self.assertEqual(JobQuery.File().deserialize(None, null), null)
 
     def test_emptystring(self):
         from colander import null
-        self.assertEquals(JobQuery.File().deserialize(None, ''), null)
+        self.assertEqual(JobQuery.File().deserialize(None, ''), null)
 
     def test_invalid(self):
         from colander import Invalid, SchemaNode
@@ -189,7 +189,7 @@ class JobQueryFileTestCase(unittest.TestCase):
                              {'filefield': '12345 is not a cgi.FieldStorage'})
 
     def test_serialize(self):
-        self.assertEquals(JobQuery.File().serialize(None, 12345), 12345)
+        self.assertEqual(JobQuery.File().serialize(None, 12345), 12345)
 
 
 class JobQueryActionTestCase(unittest.TestCase):
@@ -205,7 +205,7 @@ class JobQueryActionTestCase(unittest.TestCase):
         shutil.rmtree(self.jobdir)
 
     def fetch_file(self, filename):
-        return file(os.path.join(self.jobdir, filename)).read()
+        return open(os.path.join(self.jobdir, filename)).read()
 
 
 class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
@@ -227,7 +227,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
     def test_structures_as_file(self):
         import tempfile
         from cgi import FieldStorage
-        sfile = tempfile.TemporaryFile()
+        sfile = tempfile.TemporaryFile(mode="r+")
         sfile.write('foo')
         sfile.flush()
         sfield = FieldStorage()
@@ -350,7 +350,7 @@ class JobQueryAddStructuresTestCase(JobQueryActionTestCase):
     def test_with_structure_as_string_and_file(self):
         import tempfile
         from cgi import FieldStorage
-        sfile = tempfile.TemporaryFile()
+        sfile = tempfile.TemporaryFile(mode="r+")
         sfile.write('foo')
         sfile.flush()
         sfield = FieldStorage()
@@ -370,7 +370,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
     def test_ms_data_as_file(self):
         import tempfile
         from cgi import FieldStorage
-        msfile = tempfile.TemporaryFile()
+        msfile = tempfile.TemporaryFile(mode="r+")
         msfile.write('foo')
         msfile.flush()
         msfield = FieldStorage()
@@ -444,7 +444,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
     def test_with_ms_data_as_string_and_file(self):
         import tempfile
         from cgi import FieldStorage
-        msfile = tempfile.TemporaryFile()
+        msfile = tempfile.TemporaryFile(mode="r+")
         msfile.write('foo')
         msfile.flush()
         msfield = FieldStorage()
@@ -468,7 +468,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
     def test_with_annotate(self):
         import tempfile
         from cgi import FieldStorage
-        msfile = tempfile.TemporaryFile()
+        msfile = tempfile.TemporaryFile(mode="r+")
         msfile.write('foo')
         msfile.flush()
         msfield = FieldStorage()
@@ -580,7 +580,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
             self.jobquery.add_ms_data(params)
 
         msg = 'Require ionisation_mode when ms_data_format=form_tree'
-        self.assertEquals(e.exception.msg, msg)
+        self.assertEqual(e.exception.msg, msg)
 
     def test_mzxml_with_scan(self):
         params = {'ms_data_format': 'mzxml',
@@ -673,7 +673,7 @@ class JobQueryAddMSDataTestCase(JobQueryActionTestCase):
             self.jobquery.add_ms_data(params)
 
         msg = 'Require MS1 scan number'
-        self.assertEquals(e.exception.msg, msg)
+        self.assertEqual(e.exception.msg, msg)
 
     def test_resticted(self):
         self.jobquery.restricted = True
@@ -835,7 +835,7 @@ class JobQueryMetabolizeTestCase(JobQueryActionTestCase):
             self.jobquery.metabolize(params)
 
         msg = 'Not allowed to metabolize structure database'
-        self.assertEquals(e.exception.msg, msg)
+        self.assertEqual(e.exception.msg, msg)
 
 
 class JobQueryMetabolizeOneTestCase(JobQueryActionTestCase):
@@ -1013,7 +1013,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         self.maxDiff = 100000
         import tempfile
         from cgi import FieldStorage
-        ms_data_file = tempfile.NamedTemporaryFile()
+        ms_data_file = tempfile.NamedTemporaryFile(mode="r+")
         ms_data_file.write('foo')
         ms_data_file.flush()
         msfield = FieldStorage()
@@ -1077,7 +1077,7 @@ class JobQueryAllInOneTestCase(JobQueryActionTestCase):
         self.maxDiff = 100000
         import tempfile
         from cgi import FieldStorage
-        ms_data_file = tempfile.NamedTemporaryFile()
+        ms_data_file = tempfile.NamedTemporaryFile(mode="r+")
         ms_data_file.write('foo')
         ms_data_file.flush()
         msfield = FieldStorage()

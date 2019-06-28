@@ -4,7 +4,7 @@ Sqlalchemy models for magma result database
 import json
 from sqlalchemy import Column
 from sqlalchemy import Integer
-from sqlalchemy import Unicode
+from sqlalchemy import String
 from sqlalchemy import Float
 from sqlalchemy import Boolean
 from sqlalchemy import ForeignKey
@@ -51,16 +51,16 @@ class ReactionSequence(TypeDecorator):
 
     Stored in database as json serialized string.
     """
-    impl = Unicode
+    impl = String
 
     def process_bind_param(self, value, dialect):
         if value is not None:
-            value = unicode(json.dumps(value))
+            value = json.dumps(value)
         return value
 
     def process_result_value(self, value, dialect):
-        if value is u'':
-            value = u'{}'
+        if value is '':
+            value = '{}'
         if value is not None:
             try:
                 value = json.loads(value)
@@ -75,19 +75,19 @@ class Molecule(Base):
     # Id of a molecule
     molid = Column(Integer, primary_key=True, autoincrement=True)
     # molfile as string
-    mol = Column(Unicode)
+    mol = Column(String)
     # A newline seperated list of reactions
     reactionsequence = Column(ReactionSequence, default={})
     # Inchikey first 14 chars
-    inchikey14 = Column(Unicode, unique=True)
+    inchikey14 = Column(String, unique=True)
     # Smile string
-    smiles = Column(Unicode)
+    smiles = Column(String)
     # Molecular formula
-    formula = Column(Unicode)
+    formula = Column(String)
     # Whether molecule was given as query or is a result a of reaction
     predicted = Column(Boolean)
     # Name of molecule
-    name = Column(Unicode)
+    name = Column(String)
     # Number of lvl1 scans fragments are found for this molecule
     nhits = Column(Integer)
     # Monoisotopic mass
@@ -97,7 +97,7 @@ class Molecule(Base):
     # Calculated logP
     logp = Column(Float)
     refscore = Column(Float)
-    reference = Column(Unicode)
+    reference = Column(String)
     # each molecule is fragmented into fragments
     fragments = relationship('Fragment', backref='molecule')
 
@@ -109,7 +109,7 @@ class Reaction(Base):
     reactid = Column(Integer, primary_key=True, autoincrement=True)
     reactant = Column(Integer, ForeignKey('molecules.molid'))
     product = Column(Integer, ForeignKey('molecules.molid'))
-    name = Column(Unicode)
+    name = Column(String)
 
 
 def fill_molecules_reactions_reactants(session, reactions):
@@ -247,13 +247,13 @@ class Fragment(Base):
     parentfragid = Column(Integer, ForeignKey('fragments.fragid'))
     # Atom indices of molecule which are the fragment
     # is a comma seperated list, starting with 0
-    atoms = Column(Unicode)
+    atoms = Column(String)
     deltah = Column(Float)
     # (mz+deltah*1.007825032-mass)/(mz*1e6)  as deltappm
     deltappm = Column(Float)
-    smiles = Column(Unicode)
+    smiles = Column(String)
     # molecular formula of fragment
-    formula = Column(Unicode)
+    formula = Column(String)
     # A fragment can have child fragments
     children_backref = backref('parent', remote_side=[fragid])
     children = relationship('Fragment', backref=children_backref,
@@ -271,10 +271,10 @@ class Run(Base):
     # Run identifier
     runid = Column(Integer, primary_key=True, autoincrement=True)
     # Description of the run
-    description = Column(Unicode)
+    description = Column(String)
 
     # ms data parsing parameters
-    ms_filename = Column(Unicode)
+    ms_filename = Column(String)
     # abs intensity threshold for storing peaks in database
     abs_peak_cutoff = Column(Float)
     # maximum ms level to be included in the analysis

@@ -35,8 +35,12 @@ Installation
 .. code-block:: bash
 
    # Install conda
+   # For python 2:
    wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh
-   bash Miniconda2-latest-Linux-x86_64.sh
+   sh Miniconda2-latest-Linux-x86_64.sh
+   # Or, for python 3:
+   wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+   sh Miniconda3-latest-Linux-x86_64.sh
    
    # Optionally, create a dedicated conda environment and activate
    conda create -n magma
@@ -45,7 +49,10 @@ Installation
    # Install dependencies
    conda install -c rdkit rdkit
    conda install cython lxml nose coverage
+   # For python 2:
    pip install http://www.parallelpython.com/downloads/pp/pp-1.6.4.zip
+   # For python 3:
+   pip install https://www.parallelpython.com/downloads/pp/pp-1.6.4.4.zip
    
    # If needed install C compiler
    sudo apt-get update && sudo apt-get install gcc

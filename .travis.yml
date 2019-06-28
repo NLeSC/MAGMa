@@ -1,15 +1,18 @@
 language: python
 python:
-  - "2.7"
+  - 2.7
+  - 3.5
 before_install:
-  - wget -nc http://repo.continuum.io/miniconda/Miniconda-3.5.5-Linux-x86_64.sh -O miniconda.sh
+  - if [ $TRAVIS_PYTHON_VERSION = 2.7 ]; then wget -nc http://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh; fi
+  - if [ $TRAVIS_PYTHON_VERSION = 3.5 ]; then wget -nc http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; fi
   - bash miniconda.sh -b -p conda
   - source conda/bin/activate root
   - conda update --yes -q conda
   - conda install --yes -c rdkit rdkit
   - conda install --yes numpy cython lxml nose coverage setuptools pip
   - pip install zope.interface py-bcrypt
-  - pip install http://www.parallelpython.com/downloads/pp/pp-1.6.4.zip
+  - if [ $TRAVIS_PYTHON_VERSION = 2.7 ]; then pip install http://www.parallelpython.com/downloads/pp/pp-1.6.4.zip; fi
+  - if [ $TRAVIS_PYTHON_VERSION = 3.5 ]; then pip install http://www.parallelpython.com/downloads/pp/pp-1.6.4.4.zip; fi
   - cd conda && wget -nc http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip && cd .. && unzip -qnd web/magmaweb/static conda/ext-4.2.1-gpl.zip
   - nvm install 6.11.4
   - nvm use 6.11.4

@@ -11,11 +11,11 @@ from magma.models import Base, Molecule, Scan, Peak, Fragment, Run
 
 class TestMagmaSession(unittest.TestCase):
     def test_construct_with_new_db(self):
-        ms = magma.MagmaSession(':memory:', u'My description')
+        ms = magma.MagmaSession(':memory:', 'My description')
 
         self.assertIsInstance(ms, magma.MagmaSession)
         rundata = ms.db_session.query(Run).one()
-        self.assertEqual(rundata.description, u'My description')
+        self.assertEqual(rundata.description, 'My description')
 
     def test_construct_with_existing_db(self):
         # create db with run description
@@ -24,20 +24,20 @@ class TestMagmaSession(unittest.TestCase):
         engine = create_engine('sqlite:///'+dbfile.name)
         Base.metadata.create_all(engine)
         session = sessionmaker(bind=engine)()
-        session.add(Run(description=u'My first description'))
+        session.add(Run(description='My first description'))
         session.commit()
         dbfile.close()
 
-        ms = magma.MagmaSession(dbfile.name, u'My second description')
+        ms = magma.MagmaSession(dbfile.name, 'My second description')
 
         rundata = ms.db_session.query(Run).one()
         # first description is not overwritten
-        self.assertEqual(rundata.description, u'My first description')
+        self.assertEqual(rundata.description, 'My first description')
 
         os.remove(dbfile.name)
 
     def test_get_structure_engine_default(self):
-        ms = magma.MagmaSession(':memory:', u'My description')
+        ms = magma.MagmaSession(':memory:', 'My description')
         se = ms.get_structure_engine()
 
         self.assertIsInstance(se, magma.StructureEngine)
@@ -46,7 +46,7 @@ class TestMagmaSession(unittest.TestCase):
 
 
     def test_get_structure_engine_custom(self):
-        ms = magma.MagmaSession(':memory:', u'My description')
+        ms = magma.MagmaSession(':memory:', 'My description')
         args = {
                 'pubchem_names': True,
                 }
@@ -57,7 +57,7 @@ class TestMagmaSession(unittest.TestCase):
         self.assertIsInstance(se.pubchem_engine, magma.PubChemEngine)
 
     def test_get_ms_data_engine_default(self):
-        ms = magma.MagmaSession(':memory:', u'My description')
+        ms = magma.MagmaSession(':memory:', 'My description')
         se = ms.get_ms_data_engine()
 
         self.assertIsInstance(se, magma.MsDataEngine)
@@ -72,7 +72,7 @@ class TestMagmaSession(unittest.TestCase):
                                        }, rundata.__dict__)
 
     def test_get_ms_data_engine_custom(self):
-        ms = magma.MagmaSession(':memory:', u'My description')
+        ms = magma.MagmaSession(':memory:', 'My description')
         args = {
                 'ionisation_mode': -1,
                 'abs_peak_cutoff': 10001,
@@ -88,7 +88,7 @@ class TestMagmaSession(unittest.TestCase):
         self.assertDictContainsSubset(args, rundata.__dict__)
 
     def test_get_annotate_engine_default(self):
-        ms = magma.MagmaSession(':memory:', u'My description')
+        ms = magma.MagmaSession(':memory:', 'My description')
         ms.get_ms_data_engine()
         se = ms.get_annotate_engine()
 
@@ -104,7 +104,7 @@ class TestMagmaSession(unittest.TestCase):
                                        }, rundata.__dict__)
 
     def test_get_annotate_engine_custom(self):
-        ms = magma.MagmaSession(':memory:', u'My description')
+        ms = magma.MagmaSession(':memory:', 'My description')
         ms.get_ms_data_engine()
         args = {
                 'skip_fragmentation': True,
@@ -147,10 +147,10 @@ class TestStructureEngine(unittest.TestCase):
                               'mol': molblock,
                               'refscore': 1.0,
                               'reactionsequence': {},
-                              'inchikey14': u'LFQSCWFLJHTTHZ',
-                              'formula': u'C2H6O',
+                              'inchikey14': 'LFQSCWFLJHTTHZ',
+                              'formula': 'C2H6O',
                               'predicted': False,
-                              'name': u'ethanol',
+                              'name': 'ethanol',
                               'mim': 46.0418648147,
                               'logp': -0.0014000000000000123
                              },
@@ -210,7 +210,7 @@ class TestStructureEngine(unittest.TestCase):
                                         molblock, '5-(3,4,5)-trihydroxyphenyl-g-valerolactone (F,U)',
                                         1.0, 0, 'PARENT', 1
                                         )
-        se.metabolize(parent_molid, u'phase1234')
+        se.metabolize(parent_molid, 'phase1234')
 
         # TODO metabolize requires at least one SMIRKS query
         # if none given then raise exception
@@ -220,7 +220,7 @@ class TestStructureEngine(unittest.TestCase):
     def test_metabolize_bad_molid(self):
         se = magma.StructureEngine(self.db_session)
         parent_molid = 1
-        se.metabolize(parent_molid, u'phase1')
+        se.metabolize(parent_molid, 'phase1')
 
         self.assertEqual(self.db_session.query(Molecule).count(), 0)
 
@@ -233,9 +233,9 @@ class TestStructureEngine(unittest.TestCase):
                                         )
         se.metabolize = mock.Mock(return_value=set([1]))
 
-        se.metabolize_all(u'phase1')
+        se.metabolize_all('phase1')
 
-        se.metabolize.assert_called_with(parent_molid, u'phase1',False)
+        se.metabolize.assert_called_with(parent_molid, 'phase1',False)
 
 class TestMsDataEngine(unittest.TestCase):
     def setUp(self):
@@ -247,7 +247,7 @@ class TestMsDataEngine(unittest.TestCase):
         mde = magma.MsDataEngine(self.db_session, 1, 1000, 5, 0.001, 0.005, 3)
         # create corrupt manual tree file
         import tempfile, os
-        treefile = tempfile.NamedTemporaryFile(delete=False)
+        treefile = tempfile.NamedTemporaryFile(mode='w', delete=False)
         treefile.write("""320.2: 999 (
     123.12    1
     135.2    3
@@ -330,7 +330,7 @@ class TestMsDataEngine(unittest.TestCase):
         mde = magma.MsDataEngine(self.db_session, -1, 1000, 5, 0.001, 0.005, 3)
         # create corrupt manual tree file
         import tempfile, os
-        treefile = tempfile.NamedTemporaryFile(delete=False)
+        treefile = tempfile.NamedTemporaryFile(mode='w', delete=False)
         treefile.write('C6H5At: 999 (C6H5: 1000, At: 100)')
         treefile.close()
 
@@ -604,4 +604,4 @@ M  END
                                         ae.ionisation_mode,
                                         ae.skip_fragmentation, fast, ae.ions)
 
-        self.assertEquals(result, ([], 0))
+        self.assertEqual(result, ([], 0))

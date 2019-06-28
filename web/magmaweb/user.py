@@ -52,7 +52,7 @@ class UUIDType(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is None:
             return None
-        return unicode(value)
+        return str(value)
 
     def process_result_value(self, value, dialect):
         if value is None or value == '':
@@ -120,13 +120,13 @@ class User(Base):
 
     @classmethod
     def generate(cls,
-                 displayname=u'Temporary user',
-                 email=u'example@example.com',
+                 displayname='Temporary user',
+                 email='example@example.com',
                  ):
         """Generates a user with a uuid as userid
         and adds it to the db and commits
         """
-        userid = unicode(uuid.uuid4())
+        userid = str(uuid.uuid4())
         user = User(userid, displayname, email)
         cls.add(user)
         return user
@@ -148,11 +148,11 @@ class JobMeta(Base):
                             backref=backref('parent', remote_side=[jobid]))
 
     def __init__(self, jobid, owner,
-                 description=u'', parentjobid=None,
-                 state=u'STOPPED', ms_filename=u'',
+                 description='', parentjobid=None,
+                 state='STOPPED', ms_filename='',
                  created_at=None,
                  is_public=False,
-                 launcher_url=u'',
+                 launcher_url='',
                  ):
         self.jobid = jobid
         self.owner = owner

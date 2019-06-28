@@ -201,7 +201,7 @@ class JobQuery(object):
 
         params = schema.deserialize(params)
 
-        metsfile = file(os.path.join(self.dir, 'structures.dat'), 'w')
+        metsfile = open(os.path.join(self.dir, 'structures.dat'), 'w')
         if not params['structures_file'] is colander.null:
             sf = params['structures_file'].file
             sf.seek(0)
@@ -301,7 +301,7 @@ class JobQuery(object):
         return schema
 
     def _write_ids_file(self, params):
-        ids_file = file(os.path.join(self.dir, 'ids.dat'), 'w')
+        ids_file = open(os.path.join(self.dir, 'ids.dat'), 'w')
         idsf = params['ids_file'].file
         idsf.seek(0)
         while 1:
@@ -313,7 +313,7 @@ class JobQuery(object):
         ids_file.close()
 
     def _write_msfile(self, params):
-        msfile = file(os.path.join(self.dir, 'ms_data.dat'), 'w')
+        msfile = open(os.path.join(self.dir, 'ms_data.dat'), 'w')
         if not params['ms_data_file'] is colander.null:
             msf = params['ms_data_file'].file
             msf.seek(0)

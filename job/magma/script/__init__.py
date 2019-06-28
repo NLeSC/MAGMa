@@ -235,13 +235,13 @@ class MagmaCommand(object):
             elif args.molids is None:
                 molids=struct_engine.metabolize_all(args.metabolism_types, args.n_reaction_steps)
                 for molid in molids:
-                    print molid
+                    print(molid)
             else:
                 molids=[]
                 for reactantid in args.molids:
                     molids.extend(struct_engine.metabolize(reactantid, args.metabolism_types, args.n_reaction_steps))
                 for molid in set(molids):
-                    print molid
+                    print(molid)
             magma_session.fill_molecules_reactions()
         except Exception as error:
             if args.log == 'debug':

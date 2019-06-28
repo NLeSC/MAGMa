@@ -1,5 +1,5 @@
 import numpy
-import pars
+from magma import pars
 import os
 from rdkit import Chem
 
@@ -144,7 +144,7 @@ class FragmentEngine(object):
                 score += self.bondscore[bond]
                 bondbreaks += 1
         if score == 0:
-            print "score=0: ", fragment, bondbreaks
+            print("score=0: ", fragment, bondbreaks)
         return bondbreaks, score
 
     def score_fragment_rel2parent(self, fragment, parent):
