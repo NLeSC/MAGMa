@@ -313,7 +313,7 @@ class JobQuery(object):
         ids_file.close()
 
     def _write_msfile(self, params):
-        msfile = open(os.path.join(self.dir, 'ms_data.dat'), 'wb')
+        msfile = open(os.path.join(self.dir, 'ms_data.dat'), 'w')
         if not params['ms_data_file'] is colander.null:
             msf = params['ms_data_file'].file
             msf.seek(0)

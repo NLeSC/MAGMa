@@ -189,7 +189,7 @@ class Views(object):
 
         # in anonymous mode we don't want the job status to be updated
         # by anyone so return the login form
-        is_put = self.request.method == u'PUT'
+        is_put = self.request.method == 'PUT'
         route_name = self.request.matched_route.name
         status_update = route_name == 'status.json' and is_put
 
@@ -333,13 +333,13 @@ class InCompleteJobViews(object):
         # parse job launcher request
         if self.request.content_type == 'application/json':
             status = json.loads(self.request.body)
-            if status[u'done']:
+            if status['done']:
                 jobstate = 'STOPPED'
-                hasExitCode = status[u'exitCode'] is not None
-                exitCodeErr = status[u'exitCode'] != 0
+                hasExitCode = status['exitCode'] is not None
+                exitCodeErr = status['exitCode'] != 0
                 if hasExitCode and exitCodeErr:
                     jobstate = 'ERROR'
-                if status[u'exception']:
+                if status['exception']:
                     jobstate = 'ERROR'
             else:
                 jobstate = status['state']
