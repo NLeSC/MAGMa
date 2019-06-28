@@ -20,6 +20,7 @@ def configure(config):
     `config` is a instance of :class:Configurator.
     """
     settings = config.get_settings()
+    config.include('pyramid_mako')
     config.include('pyramid_tm')
 
     # for human users

@@ -28,7 +28,7 @@ class TestConfigure(unittest.TestCase):
 
     def testTransaction(self):
         configure(self.config)
-        self.config.include.assert_called_once_with('pyramid_tm')
+        self.config.include.assert_called_with('pyramid_tm')
 
     def testAuth(self):
         configure(self.config)

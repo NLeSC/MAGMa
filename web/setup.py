@@ -7,11 +7,12 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
-requires = ['pyramid==1.4.5',
+requires = ['pyramid',
             'SQLAlchemy>=0.8.0,<1.1.0',
-            'pyramid_tm==0.11',
+            'pyramid_tm',
             'pyramid_multiauth',
             'pyramid_macauth',
+            'pyramid_mako',
             'zope.sqlalchemy',
             'colander',
             'py-bcrypt',
